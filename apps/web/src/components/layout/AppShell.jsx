@@ -211,6 +211,7 @@ export default function AppShell() {
     !permission || isSuperAdmin || permissions.includes(permission);
 
   const navGroups = NAV_GROUPS.filter((g) => !g.superAdminOnly || isSuperAdmin)
+    .filter((g) => !isSuperAdmin || g.label === null)
     .map((g) => ({ ...g, items: g.items.filter((item) => hasPermission(item.permission)) }))
     .filter((g) => g.items.length > 0);
 
@@ -256,7 +257,7 @@ export default function AppShell() {
           <span className="text-sm text-muted-foreground">{user?.email ?? ''}</span>
           <div className="flex items-center gap-2">
             <ThemeConfiguratorTrigger />
-            <NotificationBell />
+            {!isSuperAdmin && <NotificationBell />}
             <Button variant="ghost" size="sm" onClick={logout} className="gap-1.5">
               <LogOut size={15} />
               Logout
