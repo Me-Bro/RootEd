@@ -26,6 +26,14 @@ pnpm dev:web    # Vite frontend on :5173
 **Frontend:** React 19, Vite, TailwindCSS 4, React Query 5
 **Infra:** Docker, Nginx, MongoDB (replica set), Redis, Minio (S3-compatible)
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
+
 ## License
 
-Not yet licensed.
+[MIT](LICENSE)

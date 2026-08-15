@@ -150,7 +150,7 @@ Docker Compose (`docker-compose.yml`) brings up: MongoDB 7 (replica set `rs0`, i
 
 ## Current State
 
-Per `IMPLEMENTATION-PLAN.md`: MVP phases 1–8 largely complete. Known gaps and open bugs (see `IMPLEMENTATION-PLAN.md` "Known Bugs & Gaps" for the full, current list):
+MVP largely complete. Known gaps and open bugs:
 - Jest/Supertest integration tests minimal (only `apps/api/src/__tests__/tenant-isolation.test.js` exists — 4 tests against `mongodb-memory-server`); no route-level Supertest coverage
 - Playwright E2E specs exist for auth, academic (attendance/students), fee payments, staff leaves, and expense entries, plus an axe accessibility spec — but coverage is not exhaustive
 - i18n translation files incomplete (only `en`; `hi`/`ta`/`es`/`fr` not created)
