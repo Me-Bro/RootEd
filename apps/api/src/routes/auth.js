@@ -17,7 +17,7 @@ import {
 } from '../services/auth.service.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate } from '../middleware/authenticate.js';
-import { resolvePermissions } from '../middleware/requirePermission.js';
+import { resolvePermissions, effectivePermissionsFor } from '../middleware/requirePermission.js';
 import { Tenant } from '../models/Tenant.js';
 import { env } from '../config/env.js';
 import { auditLog } from '../services/audit.service.js';
@@ -231,8 +231,9 @@ router.get('/me', authenticate, async (req, res, next) => {
     const user = await User.findById(req.user.sub, 'email systemRole status mfaEnabled').lean();
     if (!user) return next(new AppError('User not found', 404));
 
-    let permissions = [];
-    if (user.systemRole !== 'super_admin') {
+    const impersonatedPermissions = effectivePermissionsFor(req.user);
+    let permissions = impersonatedPermissions ?? [];
+    if (!impersonatedPermissions && user.systemRole !== 'super_admin') {
       const subdomain = req.hostname.replace(`.${env.APP_DOMAIN}`, '');
       const tenant =
         subdomain && subdomain !== req.hostname
@@ -241,7 +242,11 @@ router.get('/me', authenticate, async (req, res, next) => {
       if (tenant) permissions = await resolvePermissions(req.user.sub, tenant._id.toString());
     }
 
-    res.json({ ...user, permissions });
+    res.json({
+      ...user,
+      permissions,
+      impersonatedTenantId: req.user.impersonatedTenantId ?? null,
+    });
   } catch (err) {
     next(err);
   }

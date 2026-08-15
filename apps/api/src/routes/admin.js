@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { authenticate, requireSystemRole } from '../middleware/authenticate.js';
+import { AppError } from '../middleware/errorHandler.js';
 import { Tenant } from '../models/Tenant.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { TenantMembership } from '../models/TenantMembership.js';
@@ -10,6 +11,7 @@ import {
   archiveTenant,
   restoreTenant,
 } from '../services/tenant.service.js';
+import { signAccessToken } from '../services/auth.service.js';
 import { auditLog } from '../services/audit.service.js';
 import { getFlags, toggleFlag } from '../services/featureFlag.service.js';
 import { calculateFinalPrice, DISCOUNT_RATES } from '../services/billing.service.js';
@@ -20,7 +22,10 @@ router.use(authenticate, requireSystemRole('super_admin'));
 
 const createTenantSchema = z.object({
   name: z.string().min(2),
-  subdomain: z.string().min(2).regex(/^[a-z0-9-]+$/),
+  subdomain: z
+    .string()
+    .min(2)
+    .regex(/^[a-z0-9-]+$/),
   plan: z.enum(['starter', 'growth', 'pro', 'enterprise']).default('starter'),
   adminEmail: z.string().email(),
   adminPassword: z.string().min(8).optional(),
@@ -34,7 +39,13 @@ router.post('/tenants', async (req, res, next) => {
     const data = createTenantSchema.parse(req.body);
     const tenant = await createTenant(data);
     delete data.adminPassword; // don't leak password in audit
-    await auditLog({ actorId: req.user.sub, action: 'tenant.created', target: { model: 'Tenant', id: tenant._id }, after: tenant, ip: req.ip });
+    await auditLog({
+      actorId: req.user.sub,
+      action: 'tenant.created',
+      target: { model: 'Tenant', id: tenant._id },
+      after: tenant,
+      ip: req.ip,
+    });
     res.status(201).json(tenant);
   } catch (err) {
     next(err);
@@ -49,7 +60,11 @@ router.get('/tenants', async (req, res, next) => {
     if (req.query.status) filter.status = req.query.status;
 
     const [tenants, total] = await Promise.all([
-      Tenant.find(filter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+      Tenant.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
       Tenant.countDocuments(filter),
     ]);
 
@@ -64,6 +79,32 @@ router.get('/tenants/:id', async (req, res, next) => {
     const tenant = await Tenant.findById(req.params.id).lean();
     if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
     res.json(tenant);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/tenants/:id/impersonate', async (req, res, next) => {
+  try {
+    const tenant = await Tenant.findById(req.params.id).lean();
+    if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+    if (tenant.status !== 'active') throw new AppError('Tenant is not active', 400);
+
+    const accessToken = signAccessToken({
+      sub: req.user.sub,
+      systemRole: req.user.systemRole,
+      impersonatedTenantId: tenant._id.toString(),
+    });
+
+    await auditLog({
+      actorId: req.user.sub,
+      action: 'tenant.impersonation.started',
+      tenantId: tenant._id,
+      target: { model: 'Tenant', id: tenant._id },
+      ip: req.ip,
+    });
+
+    res.json({ accessToken, subdomain: tenant.subdomain });
   } catch (err) {
     next(err);
   }
@@ -106,7 +147,11 @@ router.get('/tenants/:id/audit', async (req, res, next) => {
     }
 
     const [logs, total] = await Promise.all([
-      AuditLog.find(filter).sort({ at: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+      AuditLog.find(filter)
+        .sort({ at: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
       AuditLog.countDocuments(filter),
     ]);
 
@@ -119,7 +164,12 @@ router.get('/tenants/:id/audit', async (req, res, next) => {
 router.patch('/tenants/:id/suspend', async (req, res, next) => {
   try {
     const tenant = await suspendTenant(req.params.id);
-    await auditLog({ actorId: req.user.sub, action: 'tenant.suspended', target: { model: 'Tenant', id: tenant._id }, ip: req.ip });
+    await auditLog({
+      actorId: req.user.sub,
+      action: 'tenant.suspended',
+      target: { model: 'Tenant', id: tenant._id },
+      ip: req.ip,
+    });
     res.json(tenant);
   } catch (err) {
     next(err);
@@ -129,7 +179,12 @@ router.patch('/tenants/:id/suspend', async (req, res, next) => {
 router.patch('/tenants/:id/archive', async (req, res, next) => {
   try {
     const tenant = await archiveTenant(req.params.id);
-    await auditLog({ actorId: req.user.sub, action: 'tenant.archived', target: { model: 'Tenant', id: tenant._id }, ip: req.ip });
+    await auditLog({
+      actorId: req.user.sub,
+      action: 'tenant.archived',
+      target: { model: 'Tenant', id: tenant._id },
+      ip: req.ip,
+    });
     res.json(tenant);
   } catch (err) {
     next(err);
@@ -139,7 +194,12 @@ router.patch('/tenants/:id/archive', async (req, res, next) => {
 router.patch('/tenants/:id/restore', async (req, res, next) => {
   try {
     const tenant = await restoreTenant(req.params.id);
-    await auditLog({ actorId: req.user.sub, action: 'tenant.restored', target: { model: 'Tenant', id: tenant._id }, ip: req.ip });
+    await auditLog({
+      actorId: req.user.sub,
+      action: 'tenant.restored',
+      target: { model: 'Tenant', id: tenant._id },
+      ip: req.ip,
+    });
     res.json(tenant);
   } catch (err) {
     next(err);
@@ -161,7 +221,11 @@ router.get('/audit', async (req, res, next) => {
     }
 
     const [logs, total] = await Promise.all([
-      AuditLog.find(filter).sort({ at: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+      AuditLog.find(filter)
+        .sort({ at: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
       AuditLog.countDocuments(filter),
     ]);
 

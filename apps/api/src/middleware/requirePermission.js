@@ -1,5 +1,5 @@
 import { TenantMembership } from '../models/TenantMembership.js';
-import { Role } from '../models/Role.js';
+import { Role, DEFAULT_ROLE_TEMPLATES } from '../models/Role.js';
 import { redis } from '../config/redis.js';
 import { AppError } from './errorHandler.js';
 
@@ -26,8 +26,18 @@ export async function resolvePermissions(userId, tenantId) {
 export function requirePermission(permission) {
   return async (req, _res, next) => {
     try {
-      if (req.user?.systemRole === 'super_admin') return next();
       if (!req.tenant) return next(new AppError('Tenant context missing', 400));
+
+      // A super_admin only gets tenant-module access while actively impersonating
+      // that specific tenant (see POST /admin/tenants/:id/impersonate) — not by
+      // virtue of the systemRole alone. This keeps every tenant_admin-equivalent
+      // action attributable to an explicit, audited impersonation session.
+      if (req.user?.systemRole === 'super_admin') {
+        if (req.user.impersonatedTenantId === req.tenant._id.toString()) return next();
+        return next(
+          new AppError('Forbidden — impersonate this tenant to access tenant modules', 403)
+        );
+      }
 
       const permissions = await resolvePermissions(req.user.sub, req.tenant._id.toString());
       if (!permissions.includes(permission)) return next(new AppError('Forbidden', 403));
@@ -36,4 +46,10 @@ export function requirePermission(permission) {
       next(err);
     }
   };
+}
+
+export function effectivePermissionsFor(user) {
+  return user?.systemRole === 'super_admin' && user.impersonatedTenantId
+    ? DEFAULT_ROLE_TEMPLATES.tenant_admin
+    : null;
 }

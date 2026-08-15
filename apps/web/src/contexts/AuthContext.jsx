@@ -1,7 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api, { setAccessToken, setLogoutHandler, clearCsrfToken } from '../lib/api.js';
-
-const AuthContext = createContext(null);
+import { AuthContext } from './auth-context.js';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -26,7 +25,16 @@ export function AuthProvider({ children }) {
   }, [logout]);
 
   useEffect(() => {
-    api.post('/auth/refresh')
+    // The impersonation callback page supplies its own token via loginWithToken;
+    // this refresh (using the admin-domain's refresh cookie, absent here) must
+    // not race it and clear the freshly-set impersonation token.
+    if (window.location.pathname === '/impersonate') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional skip-refresh on impersonation callback
+      setLoading(false);
+      return;
+    }
+    api
+      .post('/auth/refresh')
       .then(({ data }) => {
         setAccessToken(data.accessToken);
         setToken(data.accessToken);
@@ -43,7 +51,11 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback(async (email, password, totpCode) => {
-    const { data } = await api.post('/auth/login', { email, password, ...(totpCode ? { totpCode } : {}) });
+    const { data } = await api.post('/auth/login', {
+      email,
+      password,
+      ...(totpCode ? { totpCode } : {}),
+    });
     setAccessToken(data.accessToken);
     setToken(data.accessToken);
     try {
@@ -55,13 +67,22 @@ export function AuthProvider({ children }) {
     return data;
   }, []);
 
+  // Used by the impersonation callback: an access token issued out-of-band by
+  // POST /admin/tenants/:id/impersonate, landing on a fresh page load on the
+  // tenant's own subdomain (no refresh cookie there, so the mount-time refresh
+  // effect above will fail harmlessly before this resolves).
+  const loginWithToken = useCallback(async (token) => {
+    setAccessToken(token);
+    setToken(token);
+    const meRes = await api.get('/auth/me');
+    setUser(meRes.data);
+    setLoading(false);
+    return meRes.data;
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, accessToken, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, accessToken, loading, login, loginWithToken, logout }}>
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  return useContext(AuthContext);
 }

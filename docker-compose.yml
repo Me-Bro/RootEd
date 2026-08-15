@@ -96,6 +96,7 @@ services:
       dockerfile: apps/web/Dockerfile
       args:
         VITE_API_URL: ''
+        VITE_APP_DOMAIN: ${APP_DOMAIN:-rooted.app}
     ports:
       - '5173:80'
     depends_on:

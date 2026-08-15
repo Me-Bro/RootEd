@@ -39,7 +39,7 @@ router.post('/years', requirePermission('tenant:admin'), async (req, res, next) 
   }
 });
 
-router.get('/years', async (req, res, next) => {
+router.get('/years', requirePermission('students:read'), async (req, res, next) => {
   try {
     const tenantId = req.tenant._id;
     const years = await withCache(`years:${tenantId}`, 300, () =>
@@ -51,9 +51,12 @@ router.get('/years', async (req, res, next) => {
   }
 });
 
-router.get('/years/:id', async (req, res, next) => {
+router.get('/years/:id', requirePermission('students:read'), async (req, res, next) => {
   try {
-    const year = await AcademicYear.findOne({ _id: req.params.id, tenantId: req.tenant._id }).lean();
+    const year = await AcademicYear.findOne({
+      _id: req.params.id,
+      tenantId: req.tenant._id,
+    }).lean();
     if (!year) return res.status(404).json({ error: 'Not found' });
     res.json(year);
   } catch (err) {
@@ -83,14 +86,20 @@ router.patch('/years/:id/activate', requirePermission('tenant:admin'), async (re
 router.post('/terms', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
     const { academicYearId, name, startDate, endDate } = req.body;
-    const term = await Term.create({ tenantId: req.tenant._id, academicYearId, name, startDate, endDate });
+    const term = await Term.create({
+      tenantId: req.tenant._id,
+      academicYearId,
+      name,
+      startDate,
+      endDate,
+    });
     res.status(201).json(term);
   } catch (err) {
     next(err);
   }
 });
 
-router.get('/terms', async (req, res, next) => {
+router.get('/terms', requirePermission('students:read'), async (req, res, next) => {
   try {
     const filter = { tenantId: req.tenant._id };
     if (req.query.yearId) filter.academicYearId = req.query.yearId;
@@ -127,7 +136,7 @@ router.post('/classes', requirePermission('tenant:admin'), async (req, res, next
   }
 });
 
-router.get('/classes', async (req, res, next) => {
+router.get('/classes', requirePermission('students:read'), async (req, res, next) => {
   try {
     const classes = await Class.find({ tenantId: req.tenant._id }).sort({ gradeLevel: 1 }).lean();
 
@@ -139,7 +148,10 @@ router.get('/classes', async (req, res, next) => {
         if (!sectionsByClass[key]) sectionsByClass[key] = [];
         sectionsByClass[key].push(s);
       }
-      const result = classes.map((c) => ({ ...c, sections: sectionsByClass[c._id.toString()] || [] }));
+      const result = classes.map((c) => ({
+        ...c,
+        sections: sectionsByClass[c._id.toString()] || [],
+      }));
       return res.json(result);
     }
 
@@ -154,14 +166,19 @@ router.get('/classes', async (req, res, next) => {
 router.post('/sections', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
     const { classId, name, classTeacherId } = req.body;
-    const section = await Section.create({ tenantId: req.tenant._id, classId, name, classTeacherId });
+    const section = await Section.create({
+      tenantId: req.tenant._id,
+      classId,
+      name,
+      classTeacherId,
+    });
     res.status(201).json(section);
   } catch (err) {
     next(err);
   }
 });
 
-router.get('/sections', async (req, res, next) => {
+router.get('/sections', requirePermission('students:read'), async (req, res, next) => {
   try {
     const filter = { tenantId: req.tenant._id };
     if (req.query.classId) filter.classId = req.query.classId;
@@ -191,14 +208,20 @@ router.patch('/sections/:id', requirePermission('tenant:admin'), async (req, res
 router.post('/subjects', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
     const { name, code, classId, creditHours } = req.body;
-    const subject = await Subject.create({ tenantId: req.tenant._id, name, code, classId, creditHours });
+    const subject = await Subject.create({
+      tenantId: req.tenant._id,
+      name,
+      code,
+      classId,
+      creditHours,
+    });
     res.status(201).json(subject);
   } catch (err) {
     next(err);
   }
 });
 
-router.get('/subjects', async (req, res, next) => {
+router.get('/subjects', requirePermission('students:read'), async (req, res, next) => {
   try {
     const filter = { tenantId: req.tenant._id };
     if (req.query.classId) filter.classId = req.query.classId;
@@ -227,13 +250,23 @@ router.patch('/subjects/:id', requirePermission('tenant:admin'), async (req, res
 
 router.post('/students', requirePermission('students:write'), async (req, res, next) => {
   try {
-    const { admissionNo, firstName, lastName, sectionId, dateOfBirth, gender, parentContacts } = req.body;
+    const { admissionNo, firstName, lastName, sectionId, dateOfBirth, gender, parentContacts } =
+      req.body;
     const tenantId = req.tenant._id;
 
     const existing = await Student.findOne({ tenantId, admissionNo });
     if (existing) return res.status(409).json({ error: 'Admission number already exists' });
 
-    const student = await Student.create({ tenantId, admissionNo, firstName, lastName, sectionId, dateOfBirth, gender, parentContacts });
+    const student = await Student.create({
+      tenantId,
+      admissionNo,
+      firstName,
+      lastName,
+      sectionId,
+      dateOfBirth,
+      gender,
+      parentContacts,
+    });
     res.status(201).json(student);
   } catch (err) {
     next(err);
@@ -249,7 +282,11 @@ router.get('/students', requirePermission('students:read'), async (req, res, nex
     if (req.query.status) filter.status = req.query.status;
 
     const [students, total] = await Promise.all([
-      Student.find(filter).sort({ lastName: 1, firstName: 1 }).skip((page - 1) * limit).limit(limit).lean(),
+      Student.find(filter)
+        .sort({ lastName: 1, firstName: 1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
       Student.countDocuments(filter),
     ]);
 
@@ -283,84 +320,129 @@ router.patch('/students/:id', requirePermission('students:write'), async (req, r
   }
 });
 
-router.post('/students/import', requirePermission('students:write'), upload.single('file'), async (req, res, next) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+router.post(
+  '/students/import',
+  requirePermission('students:write'),
+  upload.single('file'),
+  async (req, res, next) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-    const records = parse(req.file.buffer, {
-      columns: true,
-      skip_empty_lines: true,
-      trim: true,
-    });
+      const records = parse(req.file.buffer, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true,
+      });
 
-    const tenantId = req.tenant._id;
-    let created = 0;
-    let skipped = 0;
-    const errors = [];
+      const tenantId = req.tenant._id;
+      let created = 0;
+      let skipped = 0;
+      const errors = [];
 
-    for (const row of records) {
-      try {
-        const { admissionNo, firstName, lastName, sectionId: sectionName, dateOfBirth, gender } = row;
+      for (const row of records) {
+        try {
+          const {
+            admissionNo,
+            firstName,
+            lastName,
+            sectionId: sectionName,
+            dateOfBirth,
+            gender,
+          } = row;
 
-        if (!admissionNo || !firstName || !lastName) {
-          errors.push({ row, reason: 'Missing required fields' });
-          continue;
+          if (!admissionNo || !firstName || !lastName) {
+            errors.push({ row, reason: 'Missing required fields' });
+            continue;
+          }
+
+          const existing = await Student.findOne({ tenantId, admissionNo });
+          if (existing) {
+            skipped++;
+            continue;
+          }
+
+          let resolvedSectionId;
+          if (sectionName) {
+            const section = await Section.findOne({ tenantId, name: sectionName });
+            if (section) resolvedSectionId = section._id;
+          }
+
+          await Student.create({
+            tenantId,
+            admissionNo,
+            firstName,
+            lastName,
+            sectionId: resolvedSectionId,
+            dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+            gender: gender || undefined,
+          });
+          created++;
+        } catch (rowErr) {
+          errors.push({ row, reason: rowErr.message });
         }
-
-        const existing = await Student.findOne({ tenantId, admissionNo });
-        if (existing) {
-          skipped++;
-          continue;
-        }
-
-        let resolvedSectionId;
-        if (sectionName) {
-          const section = await Section.findOne({ tenantId, name: sectionName });
-          if (section) resolvedSectionId = section._id;
-        }
-
-        await Student.create({
-          tenantId,
-          admissionNo,
-          firstName,
-          lastName,
-          sectionId: resolvedSectionId,
-          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
-          gender: gender || undefined,
-        });
-        created++;
-      } catch (rowErr) {
-        errors.push({ row, reason: rowErr.message });
       }
-    }
 
-    res.json({ created, skipped, errors });
-  } catch (err) {
-    next(err);
+      res.json({ created, skipped, errors });
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 // ── Timetable ─────────────────────────────────────────────────────────────────
 
 router.post('/timetable', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
-    const { academicYearId, sectionId, subjectId, teacherId, dayOfWeek, periodNumber, startTime, endTime } = req.body;
+    const {
+      academicYearId,
+      sectionId,
+      subjectId,
+      teacherId,
+      dayOfWeek,
+      periodNumber,
+      startTime,
+      endTime,
+    } = req.body;
     const tenantId = req.tenant._id;
 
-    const teacherConflict = await Timetable.findOne({ tenantId, academicYearId, teacherId, dayOfWeek, periodNumber });
-    if (teacherConflict) return res.status(409).json({ error: 'Teacher already has a class at this time' });
+    const teacherConflict = await Timetable.findOne({
+      tenantId,
+      academicYearId,
+      teacherId,
+      dayOfWeek,
+      periodNumber,
+    });
+    if (teacherConflict)
+      return res.status(409).json({ error: 'Teacher already has a class at this time' });
 
-    const sectionConflict = await Timetable.findOne({ tenantId, academicYearId, sectionId, dayOfWeek, periodNumber });
-    if (sectionConflict) return res.status(409).json({ error: 'Section already has a class at this period' });
+    const sectionConflict = await Timetable.findOne({
+      tenantId,
+      academicYearId,
+      sectionId,
+      dayOfWeek,
+      periodNumber,
+    });
+    if (sectionConflict)
+      return res.status(409).json({ error: 'Section already has a class at this period' });
 
-    const entry = await Timetable.create({ tenantId, academicYearId, sectionId, subjectId, teacherId, dayOfWeek, periodNumber, startTime, endTime });
+    const entry = await Timetable.create({
+      tenantId,
+      academicYearId,
+      sectionId,
+      subjectId,
+      teacherId,
+      dayOfWeek,
+      periodNumber,
+      startTime,
+      endTime,
+    });
     res.status(201).json(entry);
   } catch (err) {
     next(err);
   }
 });
 
-router.get('/timetable', async (req, res, next) => {
+router.get('/timetable', requirePermission('students:read'), async (req, res, next) => {
   try {
     const filter = { tenantId: req.tenant._id };
     if (req.query.sectionId) filter.sectionId = req.query.sectionId;
@@ -382,7 +464,10 @@ router.get('/timetable', async (req, res, next) => {
 
 router.delete('/timetable/:id', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
-    const entry = await Timetable.findOneAndDelete({ _id: req.params.id, tenantId: req.tenant._id });
+    const entry = await Timetable.findOneAndDelete({
+      _id: req.params.id,
+      tenantId: req.tenant._id,
+    });
     if (!entry) return res.status(404).json({ error: 'Not found' });
     res.json({ deleted: true });
   } catch (err) {
@@ -452,26 +537,37 @@ router.post('/grades', requirePermission('grades:write'), async (req, res, next)
     const tenantId = req.tenant._id;
     const gradedBy = req.user.sub;
 
-    const ops = grades.map(({ studentId, subjectId, termId, academicYearId, score, letterGrade, weightage, remarks }) => ({
-      updateOne: {
-        filter: { tenantId, studentId, subjectId, termId },
-        update: {
-          $set: {
-            tenantId,
-            studentId,
-            subjectId,
-            termId,
-            academicYearId,
-            score,
-            letterGrade,
-            weightage: weightage ?? 1,
-            gradedBy,
-            remarks,
+    const ops = grades.map(
+      ({
+        studentId,
+        subjectId,
+        termId,
+        academicYearId,
+        score,
+        letterGrade,
+        weightage,
+        remarks,
+      }) => ({
+        updateOne: {
+          filter: { tenantId, studentId, subjectId, termId },
+          update: {
+            $set: {
+              tenantId,
+              studentId,
+              subjectId,
+              termId,
+              academicYearId,
+              score,
+              letterGrade,
+              weightage: weightage ?? 1,
+              gradedBy,
+              remarks,
+            },
           },
+          upsert: true,
         },
-        upsert: true,
-      },
-    }));
+      })
+    );
 
     await Grade.bulkWrite(ops);
     res.json({ saved: ops.length });

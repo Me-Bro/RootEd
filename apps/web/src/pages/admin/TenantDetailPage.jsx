@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api.js';
+import { buildImpersonateUrl } from '../../lib/impersonation.js';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
@@ -304,6 +305,13 @@ export default function TenantDetailPage() {
   const archive = useAction('archive');
   const restore = useAction('restore');
 
+  const impersonate = useMutation({
+    mutationFn: () => api.post(`/admin/tenants/${id}/impersonate`).then((r) => r.data),
+    onSuccess: ({ accessToken, subdomain }) => {
+      window.location.href = buildImpersonateUrl(subdomain, accessToken);
+    },
+  });
+
   if (isLoading) return <p className="text-gray-500">Loading…</p>;
   if (error) return <p className="text-red-500">Failed to load tenant</p>;
 
@@ -315,6 +323,16 @@ export default function TenantDetailPage() {
           <Badge variant={statusVariant(tenant.status)}>{tenant.status}</Badge>
         </div>
         <div className="flex gap-2">
+          {tenant.status === 'active' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => impersonate.mutate()}
+              disabled={impersonate.isPending}
+            >
+              {impersonate.isPending ? 'Signing in…' : 'Login as tenant admin'}
+            </Button>
+          )}
           {tenant.status === 'active' && (
             <Button
               variant="outline"
