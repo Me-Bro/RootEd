@@ -230,6 +230,11 @@ export default function AppShell() {
   const navGroups = NAV_GROUPS.filter(
     (g) => !g.superAdminOnly || (isSuperAdmin && !isImpersonating)
   )
+    // A super_admin with no active impersonation has no tenant context — hide
+    // tenant modules (Academic/Staff/Expense/Fees/Inventory) entirely rather
+    // than showing links that 404 against /tenant/* endpoints. Once impersonating
+    // a tenant, treat them like any tenant_admin and let the permission filter below decide.
+    .filter((g) => !isSuperAdmin || isImpersonating || g.label === null)
     .map((g) => ({ ...g, items: g.items.filter((item) => hasPermission(item.permission)) }))
     .filter((g) => g.items.length > 0);
 
@@ -290,7 +295,7 @@ export default function AppShell() {
           <span className="text-sm text-muted-foreground">{user?.email ?? ''}</span>
           <div className="flex items-center gap-2">
             <ThemeConfiguratorTrigger />
-            <NotificationBell />
+            {(!isSuperAdmin || isImpersonating) && <NotificationBell />}
             <Button variant="ghost" size="sm" onClick={logout} className="gap-1.5">
               <LogOut size={15} />
               Logout
