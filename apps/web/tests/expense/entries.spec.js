@@ -1,14 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
-import { readFileSync } from 'fs';
-import { createTestApiClient } from '../fixtures/data.js';
 
 const FIXTURE_DIR = path.join(import.meta.dirname, '../fixtures/files');
-
-function getTestIds() {
-  const p = path.join(import.meta.dirname, '../seed/.test-ids.json');
-  return JSON.parse(readFileSync(p, 'utf-8'));
-}
 
 test.describe('Expenses page', () => {
   test('shows Expenses page with New Expense button', async ({ page }) => {
@@ -32,7 +25,6 @@ test.describe('Expenses page', () => {
 
   test('creates an expense entry via form', async ({ page }) => {
     const title = `E2E Expense ${Date.now()}`;
-    const ids = getTestIds();
 
     await page.goto('/expense');
     await page.getByRole('button', { name: 'New Expense' }).click();
@@ -77,7 +69,6 @@ test.describe('Expenses page', () => {
 
   test('approves a pending expense', async ({ page }) => {
     const title = `E2E Approve ${Date.now()}`;
-    const ids = getTestIds();
 
     // Create via UI first
     await page.goto('/expense');
@@ -140,7 +131,9 @@ test.describe('Expenses page', () => {
     for (const tab of ['All', 'Pending', 'Approved', 'Rejected']) {
       await page.getByRole('button', { name: tab }).click();
       await page.waitForLoadState('networkidle');
-      await expect(page.locator('.text-destructive').filter({ hasText: /Failed to load/ })).not.toBeVisible();
+      await expect(
+        page.locator('.text-destructive').filter({ hasText: /Failed to load/ })
+      ).not.toBeVisible();
     }
   });
 });

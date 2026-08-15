@@ -2,7 +2,7 @@ import { Worker } from 'bullmq';
 import PDFDocument from 'pdfkit';
 import { redis } from '../config/redis.js';
 import { logger } from '../utils/logger.js';
-import { InventoryItem, Consumable, FixedAsset } from '../models/InventoryItem.js';
+import { Consumable, FixedAsset } from '../models/InventoryItem.js';
 import { calculateDepreciation } from '../services/inventory.service.js';
 import { uploadBuffer, getSignedUrl } from '../services/storage.service.js';
 
@@ -22,7 +22,8 @@ async function generateValuationPdf(tenantId, year, month) {
 
   const fixedAssetRows = fixedAssets.map((item) => {
     const depreciation = calculateDepreciation(item, asOfDate);
-    const currentValue = item.currentValue != null ? item.currentValue - depreciation : (item.unitCost ?? 0);
+    const currentValue =
+      item.currentValue != null ? item.currentValue - depreciation : (item.unitCost ?? 0);
     return {
       name: item.name,
       sku: item.sku,
@@ -68,17 +69,24 @@ async function generateValuationPdf(tenantId, year, month) {
       x = 50;
       const rowY = doc.y;
       doc.fontSize(9);
-      doc.text(row.name, x, rowY, { width: 160 }); x += 160;
-      doc.text(row.sku, x, rowY, { width: 80 }); x += 80;
-      doc.text(String(row.quantity), x, rowY, { width: 50 }); x += 50;
-      doc.text(row.unitCost.toFixed(2), x, rowY, { width: 80 }); x += 80;
+      doc.text(row.name, x, rowY, { width: 160 });
+      x += 160;
+      doc.text(row.sku, x, rowY, { width: 80 });
+      x += 80;
+      doc.text(String(row.quantity), x, rowY, { width: 50 });
+      x += 50;
+      doc.text(row.unitCost.toFixed(2), x, rowY, { width: 80 });
+      x += 80;
       doc.text(row.totalValue.toFixed(2), x, rowY, { width: 80 });
       doc.moveDown(0.5);
     }
 
     doc.moveTo(50, doc.y).lineTo(540, doc.y).stroke();
     doc.moveDown(0.3);
-    doc.fontSize(10).font('Helvetica-Bold').text(`Consumables Total: ${consumablesTotal.toFixed(2)}`, { align: 'right' });
+    doc
+      .fontSize(10)
+      .font('Helvetica-Bold')
+      .text(`Consumables Total: ${consumablesTotal.toFixed(2)}`, { align: 'right' });
     doc.font('Helvetica');
     doc.moveDown(1.5);
 
@@ -103,18 +111,26 @@ async function generateValuationPdf(tenantId, year, month) {
       x = 50;
       const rowY = doc.y;
       doc.fontSize(9);
-      doc.text(row.name, x, rowY, { width: 180 }); x += 180;
-      doc.text(row.sku, x, rowY, { width: 80 }); x += 80;
-      doc.text(row.depreciationMethod.toUpperCase(), x, rowY, { width: 80 }); x += 80;
+      doc.text(row.name, x, rowY, { width: 180 });
+      x += 180;
+      doc.text(row.sku, x, rowY, { width: 80 });
+      x += 80;
+      doc.text(row.depreciationMethod.toUpperCase(), x, rowY, { width: 80 });
+      x += 80;
       doc.text(row.currentValue.toFixed(2), x, rowY, { width: 100 });
       doc.moveDown(0.5);
     }
 
     doc.moveTo(50, doc.y).lineTo(540, doc.y).stroke();
     doc.moveDown(0.3);
-    doc.fontSize(10).font('Helvetica-Bold').text(`Fixed Assets Total: ${fixedAssetsTotal.toFixed(2)}`, { align: 'right' });
+    doc
+      .fontSize(10)
+      .font('Helvetica-Bold')
+      .text(`Fixed Assets Total: ${fixedAssetsTotal.toFixed(2)}`, { align: 'right' });
     doc.moveDown(0.5);
-    doc.fontSize(12).text(`Grand Total Portfolio Value: ${grandTotal.toFixed(2)}`, { align: 'right' });
+    doc
+      .fontSize(12)
+      .text(`Grand Total Portfolio Value: ${grandTotal.toFixed(2)}`, { align: 'right' });
     doc.font('Helvetica');
 
     doc.end();
@@ -125,7 +141,11 @@ export function startStockValuationWorker() {
   const worker = new Worker(
     'stock-valuation',
     async (job) => {
-      const { tenantId, period: { year, month }, requestedBy } = job.data;
+      const {
+        tenantId,
+        period: { year, month },
+        requestedBy,
+      } = job.data;
 
       logger.info({ tenantId, year, month, requestedBy }, 'Stock valuation job started');
 

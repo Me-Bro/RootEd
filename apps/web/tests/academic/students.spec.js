@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
 import path from 'path';
-import { createTestApiClient } from '../fixtures/data.js';
 
 const FIXTURE_DIR = path.join(import.meta.dirname, '../fixtures/files');
 
@@ -107,7 +106,9 @@ test.describe('Students page', () => {
 
     // Table refreshes — either shows students or empty state
     const rows = page.locator('table tbody tr');
-    const empty = page.locator('[class*="EmptyState"], [class*="empty"]').or(page.getByText('No students'));
+    const empty = page
+      .locator('[class*="EmptyState"], [class*="empty"]')
+      .or(page.getByText('No students'));
     await expect(rows.first().or(empty.first())).toBeVisible({ timeout: 8_000 });
   });
 });

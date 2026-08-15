@@ -8,7 +8,7 @@
  *
  * Saves seeded IDs to tests/seed/.test-ids.json on the host.
  */
-import { execSync, spawnSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import { writeFileSync, mkdirSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -17,16 +17,20 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const clean = process.argv.includes('--clean') ? '--clean' : '';
 const repoRoot = resolve(__dirname, '../../../..');
 
-const COMPOSE_FILES = '-f docker-compose.yml -f docker-compose.test.yml';
-const COMPOSE_CMD = `docker compose ${COMPOSE_FILES}`;
-
 // Run seed inside the API container (avoids pnpm symlink issues on Windows)
 const result = spawnSync(
   'docker',
   [
-    'compose', '-f', 'docker-compose.yml', '-f', 'docker-compose.test.yml',
-    'exec', 'api',
-    'node', `src/scripts/seed-test-data.js`, ...(clean ? ['--clean'] : []),
+    'compose',
+    '-f',
+    'docker-compose.yml',
+    '-f',
+    'docker-compose.test.yml',
+    'exec',
+    'api',
+    'node',
+    `src/scripts/seed-test-data.js`,
+    ...(clean ? ['--clean'] : []),
   ],
   { cwd: repoRoot, encoding: 'utf-8' }
 );

@@ -6,7 +6,11 @@ import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from '../../components/ui/dialog.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
@@ -25,10 +29,18 @@ function AddStaffModal({ open, onOpenChange }) {
   const [step, setStep] = useState(0);
   const [error, setError] = useState('');
 
-  const { register, handleSubmit, getValues, formState: { errors } } = useForm({
+  const { register, handleSubmit, getValues } = useForm({
     defaultValues: {
-      firstName: '', lastName: '', employeeId: '', designation: '', department: '', joiningDate: '',
-      phone: '', address: '', dateOfBirth: '', gender: '',
+      firstName: '',
+      lastName: '',
+      employeeId: '',
+      designation: '',
+      department: '',
+      joiningDate: '',
+      phone: '',
+      address: '',
+      dateOfBirth: '',
+      gender: '',
     },
   });
 
@@ -57,8 +69,8 @@ function AddStaffModal({ open, onOpenChange }) {
                   i === step
                     ? 'bg-primary text-primary-foreground'
                     : i < step
-                    ? 'bg-muted text-foreground'
-                    : 'bg-muted text-muted-foreground',
+                      ? 'bg-muted text-foreground'
+                      : 'bg-muted text-muted-foreground',
                 ].join(' ')}
               >
                 {s}
@@ -102,23 +114,33 @@ function AddStaffModal({ open, onOpenChange }) {
           {step === 2 && (
             <div className="flex flex-col gap-2 text-sm">
               <p className="font-medium text-muted-foreground">Review Details</p>
-              {Object.entries(getValues()).map(([k, v]) => v ? (
-                <div key={k} className="flex justify-between border-b border-border py-1">
-                  <span className="text-muted-foreground capitalize">{k.replace(/([A-Z])/g, ' $1')}</span>
-                  <span className="font-medium">{v}</span>
-                </div>
-              ) : null)}
+              {Object.entries(getValues()).map(([k, v]) =>
+                v ? (
+                  <div key={k} className="flex justify-between border-b border-border py-1">
+                    <span className="text-muted-foreground capitalize">
+                      {k.replace(/([A-Z])/g, ' $1')}
+                    </span>
+                    <span className="font-medium">{v}</span>
+                  </div>
+                ) : null
+              )}
             </div>
           )}
 
           {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
 
           <DialogFooter className="mt-4">
-            <Button variant="outline" type="button" onClick={step === 0 ? () => onOpenChange(false) : () => setStep((s) => s - 1)}>
+            <Button
+              variant="outline"
+              type="button"
+              onClick={step === 0 ? () => onOpenChange(false) : () => setStep((s) => s - 1)}
+            >
               {step === 0 ? 'Cancel' : 'Back'}
             </Button>
             {step < STEPS.length - 1 ? (
-              <Button type="button" onClick={() => setStep((s) => s + 1)}>Next</Button>
+              <Button type="button" onClick={() => setStep((s) => s + 1)}>
+                Next
+              </Button>
             ) : (
               <Button type="submit" disabled={mutation.isPending}>
                 {mutation.isPending ? 'Saving…' : 'Submit'}
@@ -136,7 +158,11 @@ export default function StaffPage() {
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
 
-  const { data: members = [], isLoading, error } = useQuery({
+  const {
+    data: members = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['staff-members', department, search],
     queryFn: () => {
       const params = new URLSearchParams();
@@ -168,7 +194,11 @@ export default function StaffPage() {
           className="h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <option value="">All Departments</option>
-          {departments.map((d) => <option key={d} value={d}>{d}</option>)}
+          {departments.map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -183,14 +213,20 @@ export default function StaffPage() {
         {members.map((m) => (
           <TableRow key={m._id} className="bg-card">
             <TableCell className="px-4 py-3 font-mono text-xs">{m.employeeId || '—'}</TableCell>
-            <TableCell className="px-4 py-3">{m.firstName} {m.lastName}</TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">{m.designation || '—'}</TableCell>
+            <TableCell className="px-4 py-3">
+              {m.firstName} {m.lastName}
+            </TableCell>
+            <TableCell className="px-4 py-3 text-muted-foreground">
+              {m.designation || '—'}
+            </TableCell>
             <TableCell className="px-4 py-3 text-muted-foreground">{m.department || '—'}</TableCell>
             <TableCell className="px-4 py-3">
               <Badge variant={statusVariant(m.employmentStatus)}>{m.employmentStatus}</Badge>
             </TableCell>
             <TableCell className="px-4 py-3">
-              <Button variant="outline" size="sm">View</Button>
+              <Button variant="outline" size="sm">
+                View
+              </Button>
             </TableCell>
           </TableRow>
         ))}

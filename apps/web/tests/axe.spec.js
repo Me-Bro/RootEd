@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import { checkA11y, injectAxe } from 'axe-playwright';
 
 test('login page has no critical accessibility violations', async ({ page }) => {

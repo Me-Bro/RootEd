@@ -1,34 +1,41 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/Button';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
 const COLOR_PRESETS = [
-  { name: 'Brand',   primary: 'oklch(0.488 0.243 264.376)', fg: 'oklch(0.985 0 0)' },
-  { name: 'Black',   primary: 'oklch(0.205 0 0)',           fg: 'oklch(0.985 0 0)' },
-  { name: 'Blue',    primary: 'oklch(0.588 0.198 248)',     fg: 'oklch(0.985 0 0)' },
-  { name: 'Red',     primary: 'oklch(0.528 0.196 27)',      fg: 'oklch(0.985 0 0)' },
-  { name: 'Green',   primary: 'oklch(0.648 0.175 145)',     fg: 'oklch(0.985 0 0)' },
-  { name: 'Purple',  primary: 'oklch(0.545 0.218 295)',     fg: 'oklch(0.985 0 0)' },
-  { name: 'Orange',  primary: 'oklch(0.698 0.165 55)',      fg: 'oklch(0.985 0 0)' },
-  { name: 'Pink',    primary: 'oklch(0.658 0.188 350)',     fg: 'oklch(0.985 0 0)' },
+  { name: 'Brand', primary: 'oklch(0.488 0.243 264.376)', fg: 'oklch(0.985 0 0)' },
+  { name: 'Black', primary: 'oklch(0.205 0 0)', fg: 'oklch(0.985 0 0)' },
+  { name: 'Blue', primary: 'oklch(0.588 0.198 248)', fg: 'oklch(0.985 0 0)' },
+  { name: 'Red', primary: 'oklch(0.528 0.196 27)', fg: 'oklch(0.985 0 0)' },
+  { name: 'Green', primary: 'oklch(0.648 0.175 145)', fg: 'oklch(0.985 0 0)' },
+  { name: 'Purple', primary: 'oklch(0.545 0.218 295)', fg: 'oklch(0.985 0 0)' },
+  { name: 'Orange', primary: 'oklch(0.698 0.165 55)', fg: 'oklch(0.985 0 0)' },
+  { name: 'Pink', primary: 'oklch(0.658 0.188 350)', fg: 'oklch(0.985 0 0)' },
 ];
 
 const FONT_OPTIONS = [
-  { label: 'Geist',       value: "'Geist Variable', system-ui, sans-serif" },
-  { label: 'Inter',       value: "'Inter', system-ui, sans-serif" },
-  { label: 'Roboto',      value: "'Roboto', system-ui, sans-serif" },
-  { label: 'Open Sans',   value: "'Open Sans', system-ui, sans-serif" },
-  { label: 'Montserrat',  value: "'Montserrat', system-ui, sans-serif" },
-  { label: 'Poppins',     value: "'Poppins', system-ui, sans-serif" },
+  { label: 'Geist', value: "'Geist Variable', system-ui, sans-serif" },
+  { label: 'Inter', value: "'Inter', system-ui, sans-serif" },
+  { label: 'Roboto', value: "'Roboto', system-ui, sans-serif" },
+  { label: 'Open Sans', value: "'Open Sans', system-ui, sans-serif" },
+  { label: 'Montserrat', value: "'Montserrat', system-ui, sans-serif" },
+  { label: 'Poppins', value: "'Poppins', system-ui, sans-serif" },
 ];
 
 const FONT_SIZE_OPTIONS = [12, 13, 14, 15, 16];
 
 const STORAGE_KEY = 'theme-config';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const DEFAULT_CONFIG = {
   primaryColor: 'oklch(0.488 0.243 264.376)',
   primaryFg: 'oklch(0.985 0 0)',
@@ -37,6 +44,7 @@ export const DEFAULT_CONFIG = {
   fontSize: 14,
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function applyThemeConfig(config) {
   const root = document.documentElement;
   root.style.setProperty('--primary', config.primaryColor);
@@ -50,6 +58,7 @@ export function applyThemeConfig(config) {
   root.style.setProperty('--theme-font-size-base', `${config.fontSize}px`);
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function loadPersistedTheme() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -61,7 +70,9 @@ export function loadPersistedTheme() {
       return;
     }
     applyThemeConfig(saved);
-  } catch { /* ignore corrupt data */ }
+  } catch {
+    /* ignore corrupt data */
+  }
 }
 
 export function ThemeConfiguratorTrigger() {
@@ -73,7 +84,16 @@ export function ThemeConfiguratorTrigger() {
         className="p-2 rounded-md hover:bg-muted text-muted-foreground"
         aria-label="Theme settings"
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <circle cx="12" cy="12" r="3" />
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
         </svg>
@@ -101,7 +121,7 @@ function ThemeConfigurator({ open, onOpenChange }) {
   }, [config]);
 
   function set(updates) {
-    setConfig(prev => ({ ...prev, ...updates }));
+    setConfig((prev) => ({ ...prev, ...updates }));
   }
 
   function reset() {
@@ -123,7 +143,7 @@ function ThemeConfigurator({ open, onOpenChange }) {
           <div className="flex flex-col gap-3">
             <Label>Primary Color</Label>
             <div className="grid grid-cols-4 gap-2">
-              {COLOR_PRESETS.map(preset => (
+              {COLOR_PRESETS.map((preset) => (
                 <button
                   key={preset.name}
                   title={preset.name}
@@ -139,7 +159,8 @@ function ThemeConfigurator({ open, onOpenChange }) {
               ))}
             </div>
             <p className="text-xs text-muted-foreground">
-              Active: {COLOR_PRESETS.find(p => p.primary === config.primaryColor)?.name ?? 'Custom'}
+              Active:{' '}
+              {COLOR_PRESETS.find((p) => p.primary === config.primaryColor)?.name ?? 'Custom'}
             </p>
           </div>
 
@@ -155,7 +176,7 @@ function ThemeConfigurator({ open, onOpenChange }) {
               max={1.5}
               step={0.125}
               value={config.borderRadius}
-              onChange={e => set({ borderRadius: parseFloat(e.target.value) })}
+              onChange={(e) => set({ borderRadius: parseFloat(e.target.value) })}
               className="w-full accent-primary cursor-pointer"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
@@ -169,7 +190,7 @@ function ThemeConfigurator({ open, onOpenChange }) {
           <div className="flex flex-col gap-2">
             <Label>Font Family</Label>
             <div className="flex flex-col gap-1">
-              {FONT_OPTIONS.map(opt => (
+              {FONT_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => set({ fontFamily: opt.value })}
@@ -191,7 +212,7 @@ function ThemeConfigurator({ open, onOpenChange }) {
           <div className="flex flex-col gap-2">
             <Label>Font Size</Label>
             <div className="flex gap-2">
-              {FONT_SIZE_OPTIONS.map(size => (
+              {FONT_SIZE_OPTIONS.map((size) => (
                 <button
                   key={size}
                   onClick={() => set({ fontSize: size })}

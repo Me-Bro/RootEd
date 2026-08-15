@@ -45,7 +45,15 @@ export async function assignFeesToSection(sectionId, feeStructureId, tenantId) {
   return { created, skipped };
 }
 
-export async function recordPayment({ assignmentId, amount, paymentMethod, transactionId, collectedBy, notes, tenantId }) {
+export async function recordPayment({
+  assignmentId,
+  amount,
+  paymentMethod,
+  transactionId,
+  collectedBy,
+  notes,
+  tenantId,
+}) {
   const assignment = await FeeAssignment.findOne({ _id: assignmentId, tenantId });
   if (!assignment) throw new Error('FeeAssignment not found');
 
@@ -76,7 +84,14 @@ export async function recordPayment({ assignmentId, amount, paymentMethod, trans
   await assignment.save();
 
   const student = await Student.findOne({ _id: assignment.studentId, tenantId }).lean();
-  const receiptPdfKey = await generateReceiptPdf({ payment, student, receiptNumber, amount, paymentMethod, tenantId });
+  const receiptPdfKey = await generateReceiptPdf({
+    payment,
+    student,
+    receiptNumber,
+    amount,
+    paymentMethod,
+    tenantId,
+  });
 
   await FeePayment.findOneAndUpdate({ _id: payment._id, tenantId }, { $set: { receiptPdfKey } });
   payment.receiptPdfKey = receiptPdfKey;
@@ -84,7 +99,14 @@ export async function recordPayment({ assignmentId, amount, paymentMethod, trans
   return payment;
 }
 
-async function generateReceiptPdf({ payment, student, receiptNumber, amount, paymentMethod, tenantId }) {
+async function generateReceiptPdf({
+  payment,
+  student,
+  receiptNumber,
+  amount,
+  paymentMethod,
+  tenantId,
+}) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     const chunks = [];
@@ -130,18 +152,24 @@ export async function initiateOnlinePayment(assignmentId, tenantId) {
   const assignment = await FeeAssignment.findOne({ _id: assignmentId, tenantId }).lean();
   if (!assignment) throw new Error('FeeAssignment not found');
 
-  const student = await Student.findOne({ _id: assignment.studentId, tenantId }).lean();
-
   const payments = await FeePayment.find({ tenantId, assignmentId }).lean();
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-  const outstanding = (assignment.totalAmount - (assignment.discountAmount || 0)) - totalPaid;
+  const outstanding = assignment.totalAmount - (assignment.discountAmount || 0) - totalPaid;
 
   if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
-    return { orderId: 'mock_order', amount: Math.round(outstanding * 100), currency: 'INR', mock: true };
+    return {
+      orderId: 'mock_order',
+      amount: Math.round(outstanding * 100),
+      currency: 'INR',
+      mock: true,
+    };
   }
 
   const Razorpay = (await import('razorpay')).default;
-  const razorpay = new Razorpay({ key_id: env.RAZORPAY_KEY_ID, key_secret: env.RAZORPAY_KEY_SECRET });
+  const razorpay = new Razorpay({
+    key_id: env.RAZORPAY_KEY_ID,
+    key_secret: env.RAZORPAY_KEY_SECRET,
+  });
 
   const order = await razorpay.orders.create({
     amount: Math.round(outstanding * 100),
@@ -149,7 +177,12 @@ export async function initiateOnlinePayment(assignmentId, tenantId) {
     receipt: assignmentId.toString(),
   });
 
-  return { orderId: order.id, amount: order.amount, currency: order.currency, key: env.RAZORPAY_KEY_ID };
+  return {
+    orderId: order.id,
+    amount: order.amount,
+    currency: order.currency,
+    key: env.RAZORPAY_KEY_ID,
+  };
 }
 
 export async function getDefaulters(tenantId, academicYearId) {

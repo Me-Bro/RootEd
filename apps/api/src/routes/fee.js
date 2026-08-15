@@ -7,9 +7,12 @@ import { FeeStructure } from '../models/FeeStructure.js';
 import { FeeAssignment } from '../models/FeeAssignment.js';
 import { FeePayment } from '../models/FeePayment.js';
 import { FeeDiscount } from '../models/FeeDiscount.js';
-import { Student } from '../models/Student.js';
-import { Section } from '../models/Section.js';
-import { assignFeesToSection, recordPayment, getDefaulters, initiateOnlinePayment } from '../services/fee.service.js';
+import {
+  assignFeesToSection,
+  recordPayment,
+  getDefaulters,
+  initiateOnlinePayment,
+} from '../services/fee.service.js';
 import { getSignedUrl } from '../services/storage.service.js';
 import { env } from '../config/env.js';
 
@@ -131,7 +134,10 @@ router.get('/payments', requirePermission('fees:read'), async (req, res, next) =
 
 router.get('/payments/:id/receipt', requirePermission('fees:read'), async (req, res, next) => {
   try {
-    const payment = await FeePayment.findOne({ _id: req.params.id, tenantId: req.tenant._id }).lean();
+    const payment = await FeePayment.findOne({
+      _id: req.params.id,
+      tenantId: req.tenant._id,
+    }).lean();
     if (!payment) return res.status(404).json({ error: 'Not found' });
     if (!payment.receiptPdfKey) return res.status(404).json({ error: 'Receipt not generated yet' });
 
@@ -242,12 +248,18 @@ router.get('/export/collection', requirePermission('fees:write'), async (req, re
       .populate({
         path: 'studentId',
         select: 'firstName lastName admissionNo sectionId',
-        populate: { path: 'sectionId', select: 'name classId', populate: { path: 'classId', select: 'name' } },
+        populate: {
+          path: 'sectionId',
+          select: 'name classId',
+          populate: { path: 'classId', select: 'name' },
+        },
       })
       .lean();
 
     const filtered = req.query.classId
-      ? payments.filter((p) => p.studentId?.sectionId?.classId?._id?.toString() === req.query.classId)
+      ? payments.filter(
+          (p) => p.studentId?.sectionId?.classId?._id?.toString() === req.query.classId
+        )
       : payments;
 
     const lines = ['studentName,admissionNo,class,amount,date,method'];
@@ -257,7 +269,9 @@ router.get('/export/collection', requirePermission('fees:write'), async (req, re
       const admissionNo = s?.admissionNo || '';
       const className = s?.sectionId?.classId?.name || '';
       const date = p.paymentDate ? new Date(p.paymentDate).toISOString().split('T')[0] : '';
-      lines.push(`"${name}","${admissionNo}","${className}",${p.amount},"${date}","${p.paymentMethod}"`);
+      lines.push(
+        `"${name}","${admissionNo}","${className}",${p.amount},"${date}","${p.paymentMethod}"`
+      );
     }
 
     res.setHeader('Content-Type', 'text/csv');
