@@ -9,8 +9,6 @@ function getTestIds() {
 }
 
 test.describe('Fee Collection', () => {
-  let assignmentStudentName;
-
   test.beforeAll(async ({ request }) => {
     const ids = getTestIds();
     const client = await createTestApiClient(request, 'super_admin');
@@ -21,8 +19,6 @@ test.describe('Fee Collection', () => {
       academicYearId: ids.academicYear._id,
       dueDate: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10),
     });
-
-    assignmentStudentName = `${ids.students[0].admissionNo}`;
   });
 
   test('shows Fee Collection page with tabs', async ({ page }) => {

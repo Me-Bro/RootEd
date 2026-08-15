@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import { tenantScopePlugin } from './plugins/tenantScope.js';
 
 const auditLogSchema = new mongoose.Schema(
   {

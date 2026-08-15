@@ -23,10 +23,7 @@ export async function issueItem(itemId, quantity, issuedTo, dueDate, movedBy, te
   });
 
   if (item.itemType === 'consumable') {
-    await Consumable.findOneAndUpdate(
-      { _id: itemId, tenantId },
-      { $inc: { quantity: -quantity } }
-    );
+    await Consumable.findOneAndUpdate({ _id: itemId, tenantId }, { $inc: { quantity: -quantity } });
   }
 
   return movement;
@@ -92,7 +89,7 @@ export async function checkLowStock(tenantId) {
   return lowStockItems;
 }
 
-export function calculateDepreciation(item, asAsOfDate = new Date()) {
+export function calculateDepreciation(item, _asOfDate = new Date()) {
   if (item.itemType !== 'fixed_asset') return 0;
 
   const usefulLifeYears = item.usefulLifeYears || 5;
@@ -101,7 +98,7 @@ export function calculateDepreciation(item, asAsOfDate = new Date()) {
   if (item.depreciationMethod === 'wdv') {
     const rate = 1 - Math.pow(1 / usefulLifeYears, 1);
     const currentValue = item.currentValue != null ? item.currentValue : originalCost;
-    return currentValue * (1 - 1 / usefulLifeYears);
+    return currentValue * rate;
   }
 
   return originalCost / usefulLifeYears;

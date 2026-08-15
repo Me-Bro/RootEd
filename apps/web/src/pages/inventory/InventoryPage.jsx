@@ -5,7 +5,11 @@ import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from '../../components/ui/dialog.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
@@ -24,9 +28,17 @@ function AddItemModal({ open, onOpenChange }) {
   const queryClient = useQueryClient();
   const [itemType, setItemType] = useState('consumable');
   const [form, setForm] = useState({
-    name: '', category: '', sku: '', unitCost: '', location: '',
-    quantity: '', reorderLevel: '',
-    assetId: '', purchaseDate: '', usefulLifeYears: '5', depreciationMethod: 'slm',
+    name: '',
+    category: '',
+    sku: '',
+    unitCost: '',
+    location: '',
+    quantity: '',
+    reorderLevel: '',
+    assetId: '',
+    purchaseDate: '',
+    usefulLifeYears: '5',
+    depreciationMethod: 'slm',
   });
   const [error, setError] = useState('');
 
@@ -37,8 +49,12 @@ function AddItemModal({ open, onOpenChange }) {
   const mutation = useMutation({
     mutationFn: () => {
       const payload = {
-        itemType, name: form.name, category: form.category,
-        sku: form.sku || undefined, unitCost: Number(form.unitCost) || 0, location: form.location,
+        itemType,
+        name: form.name,
+        category: form.category,
+        sku: form.sku || undefined,
+        unitCost: Number(form.unitCost) || 0,
+        location: form.location,
       };
       if (itemType === 'consumable') {
         payload.quantity = Number(form.quantity) || 0;
@@ -55,7 +71,19 @@ function AddItemModal({ open, onOpenChange }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       onOpenChange(false);
-      setForm({ name: '', category: '', sku: '', unitCost: '', location: '', quantity: '', reorderLevel: '', assetId: '', purchaseDate: '', usefulLifeYears: '5', depreciationMethod: 'slm' });
+      setForm({
+        name: '',
+        category: '',
+        sku: '',
+        unitCost: '',
+        location: '',
+        quantity: '',
+        reorderLevel: '',
+        assetId: '',
+        purchaseDate: '',
+        usefulLifeYears: '5',
+        depreciationMethod: 'slm',
+      });
       setError('');
     },
     onError: (err) => setError(err.response?.data?.error || 'Failed to create'),
@@ -67,7 +95,14 @@ function AddItemModal({ open, onOpenChange }) {
         <DialogHeader>
           <DialogTitle>Add Inventory Item</DialogTitle>
         </DialogHeader>
-        <form id="add-item" onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="flex flex-col gap-4">
+        <form
+          id="add-item"
+          onSubmit={(e) => {
+            e.preventDefault();
+            mutation.mutate();
+          }}
+          className="flex flex-col gap-4"
+        >
           <div className="flex gap-3">
             {['consumable', 'fixed_asset'].map((t) => (
               <button
@@ -88,21 +123,50 @@ function AddItemModal({ open, onOpenChange }) {
           <Input label="Name" value={form.name} onChange={update('name')} required />
           <Input label="Category" value={form.category} onChange={update('category')} required />
           <Input label="SKU (auto-generated if empty)" value={form.sku} onChange={update('sku')} />
-          <Input label="Unit Cost" type="number" value={form.unitCost} onChange={update('unitCost')} min="0" />
+          <Input
+            label="Unit Cost"
+            type="number"
+            value={form.unitCost}
+            onChange={update('unitCost')}
+            min="0"
+          />
           <Input label="Location" value={form.location} onChange={update('location')} />
 
           {itemType === 'consumable' && (
             <>
-              <Input label="Initial Quantity" type="number" value={form.quantity} onChange={update('quantity')} min="0" />
-              <Input label="Reorder Level" type="number" value={form.reorderLevel} onChange={update('reorderLevel')} min="0" />
+              <Input
+                label="Initial Quantity"
+                type="number"
+                value={form.quantity}
+                onChange={update('quantity')}
+                min="0"
+              />
+              <Input
+                label="Reorder Level"
+                type="number"
+                value={form.reorderLevel}
+                onChange={update('reorderLevel')}
+                min="0"
+              />
             </>
           )}
 
           {itemType === 'fixed_asset' && (
             <>
               <Input label="Asset ID" value={form.assetId} onChange={update('assetId')} />
-              <Input label="Purchase Date" type="date" value={form.purchaseDate} onChange={update('purchaseDate')} />
-              <Input label="Useful Life (years)" type="number" value={form.usefulLifeYears} onChange={update('usefulLifeYears')} min="1" />
+              <Input
+                label="Purchase Date"
+                type="date"
+                value={form.purchaseDate}
+                onChange={update('purchaseDate')}
+              />
+              <Input
+                label="Useful Life (years)"
+                type="number"
+                value={form.usefulLifeYears}
+                onChange={update('usefulLifeYears')}
+                min="1"
+              />
               <SelectField
                 label="Depreciation Method"
                 value={form.depreciationMethod}
@@ -117,7 +181,9 @@ function AddItemModal({ open, onOpenChange }) {
           {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button type="submit" form="add-item" disabled={mutation.isPending}>
             {mutation.isPending ? 'Creating…' : 'Create'}
           </Button>
@@ -129,7 +195,12 @@ function AddItemModal({ open, onOpenChange }) {
 
 function IssueModal({ open, onOpenChange, item }) {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({ entityType: 'staff', entityId: '', quantity: '1', dueDate: '' });
+  const [form, setForm] = useState({
+    entityType: 'staff',
+    entityId: '',
+    quantity: '1',
+    dueDate: '',
+  });
   const [error, setError] = useState('');
 
   function update(field) {
@@ -138,11 +209,13 @@ function IssueModal({ open, onOpenChange, item }) {
 
   const mutation = useMutation({
     mutationFn: () =>
-      api.post(`/inventory/items/${item._id}/issue`, {
-        quantity: Number(form.quantity),
-        issuedTo: { entityType: form.entityType, entityId: form.entityId },
-        dueDate: form.dueDate || undefined,
-      }).then((r) => r.data),
+      api
+        .post(`/inventory/items/${item._id}/issue`, {
+          quantity: Number(form.quantity),
+          issuedTo: { entityType: form.entityType, entityId: form.entityId },
+          dueDate: form.dueDate || undefined,
+        })
+        .then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-movements'] });
@@ -159,7 +232,14 @@ function IssueModal({ open, onOpenChange, item }) {
         <DialogHeader>
           <DialogTitle>Issue Item: {item?.name}</DialogTitle>
         </DialogHeader>
-        <form id="issue-item" onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="flex flex-col gap-4">
+        <form
+          id="issue-item"
+          onSubmit={(e) => {
+            e.preventDefault();
+            mutation.mutate();
+          }}
+          className="flex flex-col gap-4"
+        >
           <SelectField
             label="Issued To"
             value={form.entityType}
@@ -168,15 +248,36 @@ function IssueModal({ open, onOpenChange, item }) {
             <SelectItem value="staff">Staff</SelectItem>
             <SelectItem value="student">Student</SelectItem>
           </SelectField>
-          <Input label="Entity ID" value={form.entityId} onChange={update('entityId')} required placeholder="Staff/Student ID" />
+          <Input
+            label="Entity ID"
+            value={form.entityId}
+            onChange={update('entityId')}
+            required
+            placeholder="Staff/Student ID"
+          />
           {item?.itemType === 'consumable' && (
-            <Input label="Quantity" type="number" value={form.quantity} onChange={update('quantity')} required min="1" max={item?.quantity} />
+            <Input
+              label="Quantity"
+              type="number"
+              value={form.quantity}
+              onChange={update('quantity')}
+              required
+              min="1"
+              max={item?.quantity}
+            />
           )}
-          <Input label="Due Date (optional)" type="date" value={form.dueDate} onChange={update('dueDate')} />
+          <Input
+            label="Due Date (optional)"
+            type="date"
+            value={form.dueDate}
+            onChange={update('dueDate')}
+          />
           {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button type="submit" form="issue-item" disabled={mutation.isPending}>
             {mutation.isPending ? 'Issuing…' : 'Issue'}
           </Button>
@@ -204,7 +305,9 @@ function QrModal({ open, onOpenChange, item }) {
           {data?.qrCodeDataUrl && (
             <img src={data.qrCodeDataUrl} alt={`QR code for ${item?.sku}`} className="w-48 h-48" />
           )}
-          <p className="text-xs text-muted-foreground">{item?.name} — {item?.sku}</p>
+          <p className="text-xs text-muted-foreground">
+            {item?.name} — {item?.sku}
+          </p>
         </div>
         <DialogFooter>
           <Button onClick={() => onOpenChange(false)}>Close</Button>
@@ -244,7 +347,11 @@ function ItemsTab() {
             <option value="consumable">Consumable</option>
             <option value="fixed_asset">Fixed Asset</option>
           </select>
-          <Input placeholder="Search name or SKU…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input
+            placeholder="Search name or SKU…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
         <Button onClick={() => setShowAdd(true)}>Add Item</Button>
       </div>
@@ -266,13 +373,19 @@ function ItemsTab() {
               </Badge>
             </TableCell>
             <TableCell className="px-4 py-3">
-              {item.itemType === 'consumable' ? `${item.quantity} units` : (item.condition || '—')}
+              {item.itemType === 'consumable' ? `${item.quantity} units` : item.condition || '—'}
             </TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">{item.location || '—'}</TableCell>
+            <TableCell className="px-4 py-3 text-muted-foreground">
+              {item.location || '—'}
+            </TableCell>
             <TableCell className="px-4 py-3">
               <div className="flex gap-2">
-                <Button size="sm" onClick={() => setIssueItem(item)}>Issue</Button>
-                <Button size="sm" variant="outline" onClick={() => setQrItem(item)}>QR</Button>
+                <Button size="sm" onClick={() => setIssueItem(item)}>
+                  Issue
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setQrItem(item)}>
+                  QR
+                </Button>
               </div>
             </TableCell>
           </TableRow>
@@ -280,14 +393,18 @@ function ItemsTab() {
       </DataTable>
 
       <AddItemModal open={showAdd} onOpenChange={setShowAdd} />
-      <IssueModal open={Boolean(issueItem)} onOpenChange={(v) => !v && setIssueItem(null)} item={issueItem} />
+      <IssueModal
+        open={Boolean(issueItem)}
+        onOpenChange={(v) => !v && setIssueItem(null)}
+        item={issueItem}
+      />
       <QrModal open={Boolean(qrItem)} onOpenChange={(v) => !v && setQrItem(null)} item={qrItem} />
     </div>
   );
 }
 
 function MovementsTab() {
-  const [itemId, setItemId] = useState('');
+  const [itemId] = useState('');
   const [type, setType] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -306,7 +423,8 @@ function MovementsTab() {
   });
 
   const returnMutation = useMutation({
-    mutationFn: (movementId) => api.post(`/inventory/movements/${movementId}/return`).then((r) => r.data),
+    mutationFn: (movementId) =>
+      api.post(`/inventory/movements/${movementId}/return`).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-movements'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
@@ -323,7 +441,9 @@ function MovementsTab() {
         >
           <option value="">All Types</option>
           {['purchase', 'issue', 'return', 'scrap', 'transfer', 'adjustment'].map((t) => (
-            <option key={t} value={t}>{t}</option>
+            <option key={t} value={t}>
+              {t}
+            </option>
           ))}
         </select>
         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
@@ -350,14 +470,25 @@ function MovementsTab() {
               {m.dueDate ? new Date(m.dueDate).toLocaleDateString() : '—'}
             </TableCell>
             <TableCell className="px-4 py-3">
-              {m.returnedAt
-                ? <Badge variant="success">Returned</Badge>
-                : m.movementType === 'issue' ? <Badge variant="warning">Pending</Badge> : '—'}
+              {m.returnedAt ? (
+                <Badge variant="success">Returned</Badge>
+              ) : m.movementType === 'issue' ? (
+                <Badge variant="warning">Pending</Badge>
+              ) : (
+                '—'
+              )}
             </TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">{new Date(m.createdAt).toLocaleDateString()}</TableCell>
+            <TableCell className="px-4 py-3 text-muted-foreground">
+              {new Date(m.createdAt).toLocaleDateString()}
+            </TableCell>
             <TableCell className="px-4 py-3">
               {m.movementType === 'issue' && !m.returnedAt && (
-                <Button size="sm" variant="outline" onClick={() => returnMutation.mutate(m._id)} disabled={returnMutation.isPending}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => returnMutation.mutate(m._id)}
+                  disabled={returnMutation.isPending}
+                >
                   Return
                 </Button>
               )}
@@ -416,14 +547,28 @@ function RequisitionsTab() {
             <TableCell className="px-4 py-3">{r.requestedQuantity}</TableCell>
             <TableCell className="px-4 py-3 text-muted-foreground">{r.reason}</TableCell>
             <TableCell className="px-4 py-3">
-              <Badge variant={r.status === 'approved' ? 'success' : r.status === 'rejected' ? 'danger' : 'warning'}>
+              <Badge
+                variant={
+                  r.status === 'approved'
+                    ? 'success'
+                    : r.status === 'rejected'
+                      ? 'danger'
+                      : 'warning'
+                }
+              >
                 {r.status}
               </Badge>
             </TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">{r.requestedBy?.email}</TableCell>
+            <TableCell className="px-4 py-3 text-muted-foreground">
+              {r.requestedBy?.email}
+            </TableCell>
             <TableCell className="px-4 py-3">
               {r.status === 'pending' && (
-                <Button size="sm" onClick={() => approveMutation.mutate(r._id)} disabled={approveMutation.isPending}>
+                <Button
+                  size="sm"
+                  onClick={() => approveMutation.mutate(r._id)}
+                  disabled={approveMutation.isPending}
+                >
                   Approve
                 </Button>
               )}
@@ -445,7 +590,9 @@ function LowStockTab() {
 
   const createRequisition = useMutation({
     mutationFn: (itemId) =>
-      api.post('/inventory/requisitions', { itemId, requestedQuantity: 10, reason: 'Low stock' }).then((r) => r.data),
+      api
+        .post('/inventory/requisitions', { itemId, requestedQuantity: 10, reason: 'Low stock' })
+        .then((r) => r.data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inventory-requisitions'] }),
   });
 
@@ -462,10 +609,17 @@ function LowStockTab() {
             <TableCell className="px-4 py-3 font-mono text-xs">{item.sku}</TableCell>
             <TableCell className="px-4 py-3 font-medium">{item.name}</TableCell>
             <TableCell className="px-4 py-3 text-muted-foreground">{item.category}</TableCell>
-            <TableCell className="px-4 py-3 text-destructive font-medium">{item.quantity}</TableCell>
+            <TableCell className="px-4 py-3 text-destructive font-medium">
+              {item.quantity}
+            </TableCell>
             <TableCell className="px-4 py-3 text-muted-foreground">{item.reorderLevel}</TableCell>
             <TableCell className="px-4 py-3">
-              <Button size="sm" variant="outline" onClick={() => createRequisition.mutate(item._id)} disabled={createRequisition.isPending}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => createRequisition.mutate(item._id)}
+                disabled={createRequisition.isPending}
+              >
                 Create Requisition
               </Button>
             </TableCell>

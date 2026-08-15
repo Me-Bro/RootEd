@@ -29,13 +29,12 @@ export function startExpenseEscalationWorker() {
   const worker = new Worker(
     QUEUE_NAME,
     async (job) => {
-      const { expenseId, scheduledAt } = job.data;
+      const { expenseId } = job.data;
 
       const expense = await ExpenseEntry.findById(expenseId).lean();
       if (!expense) return;
       if (expense.status !== 'pending') return;
 
-      const stepIndexAtSchedule = expense.currentApproverIndex;
       const currentStep = expense.approvalChain[expense.currentApproverIndex];
       if (!currentStep) return;
 
@@ -54,7 +53,10 @@ export function startExpenseEscalationWorker() {
         `,
       });
 
-      logger.info({ expenseId, approverId: currentStep.approverId?.toString() }, 'Escalation email sent');
+      logger.info(
+        { expenseId, approverId: currentStep.approverId?.toString() },
+        'Escalation email sent'
+      );
     },
     { connection: redis, concurrency: 5 }
   );

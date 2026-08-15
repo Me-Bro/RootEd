@@ -2,7 +2,6 @@ import { Worker, Queue } from 'bullmq';
 import { redis } from '../config/redis.js';
 import { logger } from '../utils/logger.js';
 import { StockMovement } from '../models/StockMovement.js';
-import { InventoryItem } from '../models/InventoryItem.js';
 import { User } from '../models/User.js';
 import { sendEmail } from '../services/email.service.js';
 import { auditLog } from '../services/audit.service.js';
@@ -26,11 +25,17 @@ export function startInventoryOverdueWorker() {
     async () => {
       const today = new Date();
 
-      const overdueMovements = await StockMovement.find({
-        movementType: 'issue',
-        dueDate: { $lt: today },
-        returnedAt: null,
-      }, null, { _bypassTenantScope: true }).populate('itemId').lean();
+      const overdueMovements = await StockMovement.find(
+        {
+          movementType: 'issue',
+          dueDate: { $lt: today },
+          returnedAt: null,
+        },
+        null,
+        { _bypassTenantScope: true }
+      )
+        .populate('itemId')
+        .lean();
 
       for (const movement of overdueMovements) {
         const item = movement.itemId;
