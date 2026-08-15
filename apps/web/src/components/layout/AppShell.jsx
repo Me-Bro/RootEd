@@ -26,7 +26,7 @@ import {
   FileText,
 } from 'lucide-react';
 
-import { useAuth } from '../../contexts/AuthContext.jsx';
+import { useAuth } from '../../contexts/useAuth.js';
 import { Button } from '../ui/Button.jsx';
 import { Separator } from '../ui/separator.jsx';
 import { ThemeConfiguratorTrigger } from '../ui/ThemeConfigurator.jsx';
@@ -50,12 +50,27 @@ const NAV_GROUPS = [
   {
     label: 'Academic',
     items: [
-      { to: '/academic/years', label: 'Academic Years', icon: CalendarDays },
-      { to: '/academic/students', label: 'Students', icon: Users },
-      { to: '/academic/attendance', label: 'Attendance', icon: ClipboardList },
-      { to: '/academic/grades', label: 'Grades', icon: BookOpen },
-      { to: '/academic/timetable', label: 'Timetable', icon: Grid },
-      { to: '/academic/report-cards', label: 'Report Cards', icon: FileText },
+      {
+        to: '/academic/years',
+        label: 'Academic Years',
+        icon: CalendarDays,
+        permission: 'students:read',
+      },
+      { to: '/academic/students', label: 'Students', icon: Users, permission: 'students:read' },
+      {
+        to: '/academic/attendance',
+        label: 'Attendance',
+        icon: ClipboardList,
+        permission: 'attendance:read',
+      },
+      { to: '/academic/grades', label: 'Grades', icon: BookOpen, permission: 'grades:read' },
+      { to: '/academic/timetable', label: 'Timetable', icon: Grid, permission: 'students:read' },
+      {
+        to: '/academic/report-cards',
+        label: 'Report Cards',
+        icon: FileText,
+        permission: 'grades:read',
+      },
     ],
   },
   {
@@ -75,7 +90,7 @@ const NAV_GROUPS = [
     label: 'Expense',
     items: [
       { to: '/expense', label: 'Expenses', icon: DollarSign, permission: 'expense:read' },
-      { to: '/expense/budgets', label: 'Budgets', icon: PieChart },
+      { to: '/expense/budgets', label: 'Budgets', icon: PieChart, permission: 'expense:read' },
     ],
   },
   {
@@ -206,12 +221,20 @@ export default function AppShell() {
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const isSuperAdmin = user?.systemRole === 'super_admin';
+  const isImpersonating = Boolean(user?.impersonatedTenantId);
   const permissions = user?.permissions ?? [];
-  const hasPermission = (permission) =>
-    !permission || isSuperAdmin || permissions.includes(permission);
+  // Tenant module nav is gated on actual permissions (already tenant_admin-equivalent
+  // while impersonating, per GET /auth/me) — a bare super_admin token grants none.
+  const hasPermission = (permission) => !permission || permissions.includes(permission);
 
-  const navGroups = NAV_GROUPS.filter((g) => !g.superAdminOnly || isSuperAdmin)
-    .filter((g) => !isSuperAdmin || g.label === null)
+  const navGroups = NAV_GROUPS.filter(
+    (g) => !g.superAdminOnly || (isSuperAdmin && !isImpersonating)
+  )
+    // A super_admin with no active impersonation has no tenant context — hide
+    // tenant modules (Academic/Staff/Expense/Fees/Inventory) entirely rather
+    // than showing links that 404 against /tenant/* endpoints. Once impersonating
+    // a tenant, treat them like any tenant_admin and let the permission filter below decide.
+    .filter((g) => !isSuperAdmin || isImpersonating || g.label === null)
     .map((g) => ({ ...g, items: g.items.filter((item) => hasPermission(item.permission)) }))
     .filter((g) => g.items.length > 0);
 
@@ -253,11 +276,26 @@ export default function AppShell() {
       </aside>
 
       <div className="flex flex-1 flex-col min-w-0">
+        {isImpersonating && (
+          <div className="flex items-center justify-between gap-3 bg-amber-500/15 px-6 py-2 text-sm text-amber-800 dark:text-amber-300">
+            <span>
+              Impersonating this tenant as tenant admin — session ends when the token expires.
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={logout}
+              className="border-amber-600 text-amber-700 dark:text-amber-300"
+            >
+              Exit impersonation
+            </Button>
+          </div>
+        )}
         <header className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
           <span className="text-sm text-muted-foreground">{user?.email ?? ''}</span>
           <div className="flex items-center gap-2">
             <ThemeConfiguratorTrigger />
-            {!isSuperAdmin && <NotificationBell />}
+            {(!isSuperAdmin || isImpersonating) && <NotificationBell />}
             <Button variant="ghost" size="sm" onClick={logout} className="gap-1.5">
               <LogOut size={15} />
               Logout

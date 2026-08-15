@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api.js';
+import { buildImpersonateUrl } from '../../lib/impersonation.js';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
@@ -114,6 +115,13 @@ export default function TenantsPage() {
   const archive = useTenantAction('archive');
   const restore = useTenantAction('restore');
 
+  const impersonate = useMutation({
+    mutationFn: (id) => api.post(`/admin/tenants/${id}/impersonate`).then((r) => r.data),
+    onSuccess: ({ accessToken, subdomain }) => {
+      window.location.href = buildImpersonateUrl(subdomain, accessToken);
+    },
+  });
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -160,6 +168,16 @@ export default function TenantsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
+                      {t.status === 'active' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => impersonate.mutate(t._id)}
+                          disabled={impersonate.isPending}
+                        >
+                          Login to tenant
+                        </Button>
+                      )}
                       {t.status === 'active' && (
                         <Button variant="outline" size="sm" onClick={() => suspend.mutate(t._id)}>
                           Suspend

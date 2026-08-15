@@ -1,7 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext.jsx';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../../components/ui/Card.jsx';
+import { useAuth } from '../../contexts/useAuth.js';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+} from '../../components/ui/Card.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 
@@ -40,7 +46,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div role="main" className="relative flex min-h-screen items-center justify-center bg-background px-4 overflow-hidden">
+    <div
+      role="main"
+      className="relative flex min-h-screen items-center justify-center bg-background px-4 overflow-hidden"
+    >
       {/* brand glow backdrop */}
       <div
         aria-hidden="true"

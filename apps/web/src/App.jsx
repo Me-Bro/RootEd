@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
+import { AuthProvider } from './contexts/AuthContext.jsx';
+import { useAuth } from './contexts/useAuth.js';
 import LoginPage from './pages/auth/LoginPage.jsx';
+import ImpersonateCallbackPage from './pages/auth/ImpersonateCallbackPage.jsx';
 import AppShell from './components/layout/AppShell.jsx';
 import DashboardPage from './pages/admin/DashboardPage.jsx';
 import TenantsPage from './pages/admin/TenantsPage.jsx';
@@ -46,8 +48,10 @@ function RequireSystemRole({ roles, children }) {
 function RequirePermission({ permission, children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
-  const allowed =
-    user?.systemRole === 'super_admin' || (user?.permissions ?? []).includes(permission);
+  // Backend already folds an active impersonation session into `permissions`
+  // (see GET /auth/me) — a bare super_admin token with no impersonation claim
+  // gets none, so it must not be special-cased here.
+  const allowed = (user?.permissions ?? []).includes(permission);
   if (!allowed) return <Navigate to="/dashboard" replace />;
   return children;
 }
@@ -56,6 +60,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/impersonate" element={<ImpersonateCallbackPage />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route
         element={
@@ -97,12 +102,54 @@ function AppRoutes() {
             </RequireSystemRole>
           }
         />
-        <Route path="/academic/years" element={<AcademicYearsPage />} />
-        <Route path="/academic/students" element={<StudentsPage />} />
-        <Route path="/academic/attendance" element={<AttendancePage />} />
-        <Route path="/academic/grades" element={<GradesPage />} />
-        <Route path="/academic/timetable" element={<TimetablePage />} />
-        <Route path="/academic/report-cards" element={<ReportCardPage />} />
+        <Route
+          path="/academic/years"
+          element={
+            <RequirePermission permission="students:read">
+              <AcademicYearsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/academic/students"
+          element={
+            <RequirePermission permission="students:read">
+              <StudentsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/academic/attendance"
+          element={
+            <RequirePermission permission="attendance:read">
+              <AttendancePage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/academic/grades"
+          element={
+            <RequirePermission permission="grades:read">
+              <GradesPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/academic/timetable"
+          element={
+            <RequirePermission permission="students:read">
+              <TimetablePage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/academic/report-cards"
+          element={
+            <RequirePermission permission="grades:read">
+              <ReportCardPage />
+            </RequirePermission>
+          }
+        />
         <Route
           path="/staff"
           element={
@@ -135,7 +182,14 @@ function AppRoutes() {
             </RequirePermission>
           }
         />
-        <Route path="/expense/budgets" element={<BudgetsPage />} />
+        <Route
+          path="/expense/budgets"
+          element={
+            <RequirePermission permission="expense:read">
+              <BudgetsPage />
+            </RequirePermission>
+          }
+        />
         <Route
           path="/fee"
           element={
