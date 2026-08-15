@@ -84,6 +84,8 @@ Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts 
 
 **Audit logging:** Mutations enqueue to the BullMQ audit worker, which writes immutable before/after diffs to the `AuditLog` collection asynchronously (not written inline with the request).
 
+**Approval workflows:** `LeaveRequest`, `ExpenseEntry`, and `PurchaseRequisition` each embed their own `approvalChain` array + `currentApproverIndex` rather than using a shared workflow engine (see `docs/adr/004-workflow-engine.txt`) — advancing the chain is a service function called from each module's approve/reject route handler, and BullMQ delayed jobs drive auto-escalation. Sequential approvers only (no parallel steps in v1); the pattern is intentionally duplicated per module, not shared.
+
 **Frontend API client:** `apps/web/src/lib/api.js` defaults `baseURL` to `${window.location.origin}/__api` when `VITE_API_URL` is unset, so requests stay same-origin (subdomain-based tenant resolution needs the real Host header, and the refresh cookie must stay first-party). Both the Vite dev proxy (`vite.config.js`, active only in `--mode test`) and the built web image's own nginx (`apps/web/nginx.conf`) rewrite `/__api/*` → the API, forwarding `Host`. Don't call the API by absolute URL/different hostname from the page — it breaks CORS and cookie handling by design.
 
 ## Key Files
@@ -104,6 +106,7 @@ Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts 
 | `apps/web/src/lib/api.js` | Axios client — same-origin `/__api` base URL logic |
 | `apps/web/playwright.config.js` | E2E project setup — `setup` project builds per-role auth storage state before `e2e`/`axe` projects run; `webServer` auto-starts `vite --mode test` |
 | `packages/shared/src/` | Zod schemas reused across API validation and frontend forms |
+| `docs/adr/` | Architecture decision records — tenancy model, field encryption, in-process workers, approval workflow engine |
 
 ## Environment Setup
 
@@ -129,10 +132,12 @@ Docker Compose (`docker-compose.yml`) brings up: MongoDB 7 (replica set `rs0`, i
 
 ## Tech Stack
 
-**Backend:** Express 4, Mongoose 8, BullMQ 5, ioredis, Argon2id, jsonwebtoken, Zod, Pino, Razorpay, pdfkit, prom-client, csrf-csrf, swagger-ui-express
-**Frontend:** React 19, Vite 8, TailwindCSS 4, Base UI (@base-ui/react), React Query 5, react-hook-form, Axios, i18next
-**Testing:** Jest + Supertest + mongodb-memory-server (API), Playwright + axe-core (web E2E/accessibility), k6 (load)
+**Backend:** Express 4, Mongoose 8, BullMQ 5, ioredis, Argon2id, jsonwebtoken, Zod, Pino, Razorpay, pdfkit, prom-client, csrf-csrf, swagger-ui-express, Sentry
+**Frontend:** React 19, Vite 8, TailwindCSS 4, Base UI (@base-ui/react), React Query 5, react-hook-form, Axios, i18next, Sentry, Storybook
+**Testing:** Jest + Supertest + mongodb-memory-server (API), Playwright + axe-core (web E2E/accessibility), k6 (load), Lighthouse CI
 **Infra:** Docker + Nginx (wildcard subdomain TLS in prod-like mode), MongoDB replica set, Redis, Minio (S3-compatible)
+
+**CI** (`.github/workflows/ci.yml`): matrixed lint+test per app (api/web) against real Mongo/Redis service containers → axe accessibility check → Lighthouse CI → (on `main` only) Docker build/push to GHCR → staging deploy (placeholder step, not wired up).
 
 ## Code Conventions
 
