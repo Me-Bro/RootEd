@@ -104,8 +104,10 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        # Browser talks to API via host port — localhost:3001 is correct
-        VITE_API_URL: http://localhost:3001
+        # Leave empty — frontend uses same-origin /__api, proxied by this
+        # image's own nginx (apps/web/nginx.conf) so resolveTenant() sees
+        # the real subdomain Host header and the refresh cookie stays first-party.
+        VITE_API_URL: ''
     ports:
       - '5173:80'
     depends_on:
