@@ -4,7 +4,7 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'EduFlow API',
+      title: 'RootEd API',
       version: '1.0.0',
       description: 'Multi-tenant school management platform API',
     },

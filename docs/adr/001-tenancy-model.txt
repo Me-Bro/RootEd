@@ -3,7 +3,7 @@ Status: Accepted
 Date: 2026-05-16
 
 Context:
-EduFlow serves multiple schools from one deployment. We need to decide how to isolate tenant data.
+RootEd serves multiple schools from one deployment. We need to decide how to isolate tenant data.
 
 Options considered:
 A. Separate database per tenant — strongest isolation, highest operational cost

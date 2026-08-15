@@ -44,11 +44,11 @@ export function startTrialExpiryWorker() {
             if (user?.email && !user.email.endsWith('@deleted.invalid')) {
               await sendEmail({
                 to: user.email,
-                subject: `Your EduFlow trial for ${tenant.name} has ended`,
+                subject: `Your RootEd trial for ${tenant.name} has ended`,
                 html: `
                   <h2>Your 14-day trial has expired</h2>
                   <p>Hi,</p>
-                  <p>Your free trial for <strong>${tenant.name}</strong> on EduFlow has ended.</p>
+                  <p>Your free trial for <strong>${tenant.name}</strong> on RootEd has ended.</p>
                   <p>To continue using all features, please upgrade your plan.</p>
                   <p><a href="https://app.eduflow.app/billing">Upgrade Now</a></p>
                 `,

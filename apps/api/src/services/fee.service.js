@@ -104,7 +104,7 @@ async function generateReceiptPdf({ payment, student, receiptNumber, amount, pay
 
     doc.fontSize(20).text('Fee Receipt', { align: 'center' });
     doc.moveDown();
-    doc.fontSize(12).text(`School: EduFlow School`, { align: 'center' });
+    doc.fontSize(12).text(`School: RootEd School`, { align: 'center' });
     doc.moveDown(2);
 
     doc.fontSize(11);

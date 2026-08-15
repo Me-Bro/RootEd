@@ -1,4 +1,4 @@
-# E2E Test Plan — EduFlow (Playwright)
+# E2E Test Plan — RootEd (Playwright)
 
 ## Tool
 Playwright — already configured at `apps/web/playwright.config.js`. Extend it.

@@ -1,4 +1,4 @@
-# Theme Migration Plan — EduFlow vs THEME_GUIDE.md
+# Theme Migration Plan — RootEd vs THEME_GUIDE.md
 
 Generated: 2026-05-16
 

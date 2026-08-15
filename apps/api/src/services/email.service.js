@@ -17,7 +17,7 @@ export async function sendEmail({ to, subject, html }) {
 export async function sendPasswordReset(email, resetUrl) {
   await sendEmail({
     to: email,
-    subject: 'Reset your EduFlow password',
+    subject: 'Reset your RootEd password',
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
         <h2>Password Reset</h2>
@@ -32,10 +32,10 @@ export async function sendPasswordReset(email, resetUrl) {
 export async function sendTenantInvite(email, tenantName, inviteUrl) {
   await sendEmail({
     to: email,
-    subject: `You've been invited to ${tenantName} on EduFlow`,
+    subject: `You've been invited to ${tenantName} on RootEd`,
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
-        <h2>Welcome to EduFlow</h2>
+        <h2>Welcome to RootEd</h2>
         <p>You have been invited as the administrator of <strong>${tenantName}</strong>.</p>
         <p>Click the button below to set up your account.</p>
         <a href="${inviteUrl}" style="display:inline-block;padding:12px 24px;background:#3b82f6;color:#fff;border-radius:6px;text-decoration:none;font-weight:600">Accept Invitation</a>
@@ -55,7 +55,7 @@ export async function sendApprovalRequest(email, requesterName, entityType, enti
         <p><strong>${requesterName}</strong> has submitted a ${entityType} that requires your approval.</p>
         <p><strong>Details:</strong> ${entityDescription}</p>
         <a href="${approveUrl}" style="display:inline-block;padding:12px 24px;background:#3b82f6;color:#fff;border-radius:6px;text-decoration:none;font-weight:600">Review &amp; Approve</a>
-        <p style="margin-top:24px;color:#6b7280;font-size:14px">Please log in to EduFlow to take action.</p>
+        <p style="margin-top:24px;color:#6b7280;font-size:14px">Please log in to RootEd to take action.</p>
       </div>
     `,
   });
@@ -71,7 +71,7 @@ export async function sendBudgetAlert(email, category, percentage, cap) {
         <p>The budget for <strong>${category}</strong> has reached <strong>${percentage.toFixed(1)}%</strong> utilization.</p>
         <p>Budget cap: ${cap}</p>
         <p>Please review spending to avoid exceeding the budget limit.</p>
-        <p style="margin-top:24px;color:#6b7280;font-size:14px">Log in to EduFlow to view detailed expense reports.</p>
+        <p style="margin-top:24px;color:#6b7280;font-size:14px">Log in to RootEd to view detailed expense reports.</p>
       </div>
     `,
   });

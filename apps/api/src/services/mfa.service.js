@@ -28,7 +28,7 @@ function decryptSecret(ciphertext) {
 
 export async function generateMfaSecret(user) {
   const secret = authenticator.generateSecret();
-  const otpauthUrl = authenticator.keyuri(user.email, 'EduFlow', secret);
+  const otpauthUrl = authenticator.keyuri(user.email, 'RootEd', secret);
   const qrDataUrl = await qrcode.toDataURL(otpauthUrl);
   return { secret, otpauthUrl, qrDataUrl };
 }

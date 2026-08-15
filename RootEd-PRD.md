@@ -1,5 +1,5 @@
 # Product Requirements Document (PRD)
-## EduFlow — Multi-Tenant School Management Platform
+## RootEd — Multi-Tenant School Management Platform
 
 | Field | Value |
 |---|---|
@@ -13,9 +13,9 @@
 
 ## 1. Executive Summary
 
-EduFlow is a cloud-based, multi-tenant SaaS platform that enables educational institutions to digitally manage their academic operations, staff, finances, and physical assets from a single unified interface. The platform is built on a tenant-isolated architecture, allowing a central Super Admin to onboard and govern multiple schools (tenants), while each school retains autonomy over its own users, data, and workflows through a dedicated Tenant Admin role.
+RootEd is a cloud-based, multi-tenant SaaS platform that enables educational institutions to digitally manage their academic operations, staff, finances, and physical assets from a single unified interface. The platform is built on a tenant-isolated architecture, allowing a central Super Admin to onboard and govern multiple schools (tenants), while each school retains autonomy over its own users, data, and workflows through a dedicated Tenant Admin role.
 
-The platform targets the gap between heavyweight enterprise systems (PowerSchool, Blackbaud) — which are expensive and rigid — and lightweight open-source tools (Fedena, Gibbon) — which lack modern UX, integrated finance modules, and proper multi-tenancy. EduFlow positions itself as a modern, modular, mobile-responsive system priced for small to mid-sized K-12 schools, tutoring centers, and coaching institutes.
+The platform targets the gap between heavyweight enterprise systems (PowerSchool, Blackbaud) — which are expensive and rigid — and lightweight open-source tools (Fedena, Gibbon) — which lack modern UX, integrated finance modules, and proper multi-tenancy. RootEd positions itself as a modern, modular, mobile-responsive system priced for small to mid-sized K-12 schools, tutoring centers, and coaching institutes.
 
 ### 1.1 Vision
 
@@ -37,11 +37,11 @@ Small and mid-sized schools today juggle a fragmented stack: Excel for fees, Wha
 
 The global school management software market was valued at approximately USD 16.5 billion in 2024 and is projected to grow at a CAGR of 18-20% through 2030, driven by post-pandemic digital adoption and government digitization mandates in emerging markets. Existing solutions cluster into three tiers: enterprise (PowerSchool, Infinite Campus, Blackbaud) targeting large districts with six-figure annual contracts; mid-market SaaS (Classter, Schoolytics, Edsby) at USD 3-8 per student per year; and open-source / freemium (Fedena, Gibbon, OpenSIS) which are technically free but require significant self-hosting and customization effort.
 
-EduFlow targets the underserved gap: institutions of 200-3,000 students who need enterprise features (multi-campus, granular roles, integrated finance) at SMB pricing, with the polish of modern SaaS UX.
+RootEd targets the underserved gap: institutions of 200-3,000 students who need enterprise features (multi-campus, granular roles, integrated finance) at SMB pricing, with the polish of modern SaaS UX.
 
 ### 2.3 Differentiators
 
-Three commitments set EduFlow apart. The platform is **modular**, meaning a school can enable only the modules it needs (Academics, Staff, Expenses, Inventory) and pay accordingly rather than buying a monolithic suite. It is **truly multi-tenant**, with logical and physical isolation patterns chosen per-tier so a free-tier school cannot accidentally degrade a paid school's experience. And it is **API-first**, exposing every operation through a documented REST API so schools can integrate with their existing accounting, communication, or LMS tools.
+Three commitments set RootEd apart. The platform is **modular**, meaning a school can enable only the modules it needs (Academics, Staff, Expenses, Inventory) and pay accordingly rather than buying a monolithic suite. It is **truly multi-tenant**, with logical and physical isolation patterns chosen per-tier so a free-tier school cannot accidentally degrade a paid school's experience. And it is **API-first**, exposing every operation through a documented REST API so schools can integrate with their existing accounting, communication, or LMS tools.
 
 ---
 
@@ -49,7 +49,7 @@ Three commitments set EduFlow apart. The platform is **modular**, meaning a scho
 
 ### 3.1 Persona 1 — Super Admin (Platform Operator)
 
-The Super Admin is an internal EduFlow employee responsible for onboarding new schools, provisioning their tenancy, monitoring platform-wide health, and handling escalations. Their key jobs-to-be-done include creating new tenants with a default admin, suspending or archiving tenants for non-payment, viewing aggregated usage analytics across all tenants, managing global feature flags, and reviewing audit logs across the system.
+The Super Admin is an internal RootEd employee responsible for onboarding new schools, provisioning their tenancy, monitoring platform-wide health, and handling escalations. Their key jobs-to-be-done include creating new tenants with a default admin, suspending or archiving tenants for non-payment, viewing aggregated usage analytics across all tenants, managing global feature flags, and reviewing audit logs across the system.
 
 ### 3.2 Persona 2 — Tenant Admin (School Principal / IT Coordinator)
 
@@ -69,7 +69,7 @@ Student and parent portals are explicitly deferred to v2. The MVP focuses on sta
 
 ### 4.1 Tenancy Model
 
-EduFlow adopts a **hybrid multi-tenancy model**. All tenants share a single MongoDB cluster, but data is partitioned using a `tenantId` field on every collection, enforced at the application layer through a mandatory query middleware that automatically scopes every database operation to the authenticated user's tenant. This approach — sometimes called *shared database, separate schemas* via discriminator — is the industry standard for SaaS at this scale, balancing operational simplicity against isolation guarantees.
+RootEd adopts a **hybrid multi-tenancy model**. All tenants share a single MongoDB cluster, but data is partitioned using a `tenantId` field on every collection, enforced at the application layer through a mandatory query middleware that automatically scopes every database operation to the authenticated user's tenant. This approach — sometimes called *shared database, separate schemas* via discriminator — is the industry standard for SaaS at this scale, balancing operational simplicity against isolation guarantees.
 
 For enterprise tier customers (post-MVP), the platform will support a *dedicated database* mode where a tenant's data lives in its own MongoDB database within the cluster, addressed via a tenant-to-connection-string map. This provides stronger isolation for compliance-sensitive customers without requiring a separate deployment.
 
@@ -268,7 +268,7 @@ Adds payroll PDF slips, multi-level approval workflows, asset depreciation, barc
 
 ### 11.3 v1.5 — Target: Q1 2027
 
-Introduces the Parent Portal (read-only), the EduFlow mobile app for teachers (React Native), biometric attendance device integration, and a custom report builder.
+Introduces the Parent Portal (read-only), the RootEd mobile app for teachers (React Native), biometric attendance device integration, and a custom report builder.
 
 ### 11.4 v2.0 — Target: Q2 2027
 
@@ -294,14 +294,14 @@ A regulatory risk worth tracking is the evolving data localization landscape, pa
 
 ## 14. Open Questions
 
-Several decisions remain open at the time of this draft. Should v1 ship with a built-in fee collection module integrated to a payment gateway, or rely on export to existing accounting systems and defer in-product fees to v1.1? Should the platform offer schools a white-label option (their logo, their domain, no EduFlow branding) at the Pro tier or reserve it for Enterprise? Should background workers run as a separate container service from day one, or can they ride inside the API process until usage justifies splitting? Each of these will be resolved before development kickoff with input from design partner schools.
+Several decisions remain open at the time of this draft. Should v1 ship with a built-in fee collection module integrated to a payment gateway, or rely on export to existing accounting systems and defer in-product fees to v1.1? Should the platform offer schools a white-label option (their logo, their domain, no RootEd branding) at the Pro tier or reserve it for Enterprise? Should background workers run as a separate container service from day one, or can they ride inside the API process until usage justifies splitting? Each of these will be resolved before development kickoff with input from design partner schools.
 
 ---
 
 ## 15. Appendix — Glossary
 
 **Tenant**: An isolated unit of the platform owned by one customer school, with its own users, data, and configuration.
-**Super Admin**: Internal EduFlow employee with platform-wide privileges.
+**Super Admin**: Internal RootEd employee with platform-wide privileges.
 **Tenant Admin**: Customer-side primary administrator of one tenant.
 **RBAC**: Role-Based Access Control, the permission model used throughout.
 **JWT**: JSON Web Token, used for stateless authentication.
