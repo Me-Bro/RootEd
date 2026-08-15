@@ -124,7 +124,7 @@ Out of the box, every tenant is seeded with five default role templates: Tenant 
 
 ### 5.3 Tenant Lifecycle
 
-The Super Admin can perform the full lifecycle: **create** a tenant (name, subdomain, plan, default admin email, locale, timezone, currency); **suspend** a tenant (read-only mode, banner shown to all users, no data deletion); **archive** a tenant (data retained for 90 days then purged, login disabled); and **restore** an archived tenant within the retention window. Subdomain routing (`{school-name}.eduflow.app`) is provisioned automatically on creation, with custom domain mapping available on the Pro plan and above.
+The Super Admin can perform the full lifecycle: **create** a tenant (name, subdomain, plan, default admin email, locale, timezone, currency); **suspend** a tenant (read-only mode, banner shown to all users, no data deletion); **archive** a tenant (data retained for 90 days then purged, login disabled); and **restore** an archived tenant within the retention window. Subdomain routing (`{school-name}.rooted.app`) is provisioned automatically on creation, with custom domain mapping available on the Pro plan and above.
 
 ### 5.4 Audit Log
 

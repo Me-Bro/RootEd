@@ -1,5 +1,5 @@
 /**
- * seed-test-data.js — seeds deterministic test data into eduflow_test DB.
+ * seed-test-data.js — seeds deterministic test data into rooted_test DB.
  *
  * Usage:
  *   node --env-file=.env.test src/scripts/seed-test-data.js

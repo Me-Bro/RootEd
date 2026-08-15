@@ -4,13 +4,13 @@ version: '3.9'
 # Usage: docker compose -f docker-compose.yml -f docker-compose.test.yml up -d
 #
 # Changes from base:
-#   - API uses eduflow_test database (isolated from dev data)
+#   - API uses rooted_test database (isolated from dev data)
 #   - web + nginx excluded (Playwright drives Vite dev server locally)
 
 services:
   api:
     environment:
-      MONGODB_URI: mongodb://mongo:27017/eduflow_test?replicaSet=rs0
+      MONGODB_URI: mongodb://mongo:27017/rooted_test?replicaSet=rs0
       APP_DOMAIN: localhost
       NODE_ENV: development
 
