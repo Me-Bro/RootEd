@@ -15,7 +15,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SNAPSHOT_DIR = resolve(__dirname, '.snapshot');
 
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/eduflow_test?replicaSet=rs0';
+const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rooted_test?replicaSet=rs0';
 const DB_NAME = new URL(MONGO_URI.replace('mongodb://', 'http://')).pathname.slice(1).split('?')[0];
 const HOST_PORT = MONGO_URI.replace(/^mongodb:\/\//, '').split('/')[0];
 
@@ -23,10 +23,9 @@ const [, , command] = process.argv;
 
 if (command === 'dump') {
   console.log(`Dumping ${DB_NAME} → ${SNAPSHOT_DIR}`);
-  execSync(
-    `mongodump --host="${HOST_PORT}" --db="${DB_NAME}" --out="${SNAPSHOT_DIR}" --quiet`,
-    { stdio: 'inherit' }
-  );
+  execSync(`mongodump --host="${HOST_PORT}" --db="${DB_NAME}" --out="${SNAPSHOT_DIR}" --quiet`, {
+    stdio: 'inherit',
+  });
   console.log('Snapshot saved.');
 } else if (command === 'restore') {
   console.log(`Restoring ${DB_NAME} from ${SNAPSHOT_DIR}`);

@@ -17,7 +17,7 @@ COPY apps/web ./apps/web
 COPY packages/shared ./packages/shared
 
 ARG VITE_API_URL=http://localhost:3001
-ARG VITE_APP_DOMAIN=eduflow.app
+ARG VITE_APP_DOMAIN=rooted.app
 ARG VITE_SENTRY_DSN=
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_APP_DOMAIN=$VITE_APP_DOMAIN

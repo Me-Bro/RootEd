@@ -6,7 +6,7 @@ export function getTenantKey(tenantId) {
     'sha256',
     Buffer.from(env.MASTER_ENCRYPTION_KEY, 'utf8'),
     Buffer.from(tenantId.toString(), 'utf8'),
-    Buffer.from('eduflow-field-encryption', 'utf8'),
+    Buffer.from('rooted-field-encryption', 'utf8'),
     32
   );
 }
@@ -27,7 +27,10 @@ export function decrypt(encryptedJson, tenantKey) {
   const { iv, ciphertext, tag } = JSON.parse(encryptedJson);
   const decipher = crypto.createDecipheriv('aes-256-gcm', tenantKey, Buffer.from(iv, 'hex'));
   decipher.setAuthTag(Buffer.from(tag, 'hex'));
-  const decrypted = Buffer.concat([decipher.update(Buffer.from(ciphertext, 'hex')), decipher.final()]);
+  const decrypted = Buffer.concat([
+    decipher.update(Buffer.from(ciphertext, 'hex')),
+    decipher.final(),
+  ]);
   return decrypted.toString('utf8');
 }
 

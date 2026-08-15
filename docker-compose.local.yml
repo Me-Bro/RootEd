@@ -12,18 +12,18 @@ version: '3.9'
 services:
   mongo:
     image: mongo:7
-    command: ["--replSet", "rs0", "--bind_ip_all"]
+    command: ['--replSet', 'rs0', '--bind_ip_all']
     ports:
-      - "27017:27017"
+      - '27017:27017'
     volumes:
       - mongo_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - eduflow
+      - rooted
 
   mongo-init:
     image: mongo:7
@@ -34,52 +34,52 @@ services:
       mongosh --host mongo:27017 --eval
       "try { rs.status() } catch(e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongo:27017' }] }) }"
     networks:
-      - eduflow
+      - rooted
 
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 3s
       retries: 5
     networks:
-      - eduflow
+      - rooted
 
   minio:
     image: minio/minio
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - '9000:9000'
+      - '9001:9001'
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
     volumes:
       - minio_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - eduflow
+      - rooted
 
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
     ports:
-      - "3001:3001"
+      - '3001:3001'
     env_file:
       - ./apps/api/.env
     environment:
       # Override localhost URLs — containers talk to each other by service name
-      MONGODB_URI: mongodb://mongo:27017/eduflow?replicaSet=rs0
+      MONGODB_URI: mongodb://mongo:27017/rooted?replicaSet=rs0
       REDIS_URL: redis://redis:6379
       S3_ENDPOINT: http://minio:9000
     depends_on:
@@ -92,12 +92,12 @@ services:
       mongo-init:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3001/health']
       interval: 15s
       timeout: 5s
       retries: 5
     networks:
-      - eduflow
+      - rooted
 
   web:
     build:
@@ -107,12 +107,12 @@ services:
         # Browser talks to API via host port — localhost:3001 is correct
         VITE_API_URL: http://localhost:3001
     ports:
-      - "5173:80"
+      - '5173:80'
     depends_on:
       api:
         condition: service_healthy
     networks:
-      - eduflow
+      - rooted
 
 volumes:
   mongo_data:
@@ -120,5 +120,5 @@ volumes:
   minio_data:
 
 networks:
-  eduflow:
+  rooted:
     driver: bridge

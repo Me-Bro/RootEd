@@ -1,6 +1,6 @@
 /**
  * seed-super-admin.js
- * Usage: node src/scripts/seed-super-admin.js --email=admin@eduflow.app --password=SecurePass123
+ * Usage: node src/scripts/seed-super-admin.js --email=admin@rooted.app --password=SecurePass123
  *
  * Creates the first super admin user.
  * Exits with 0 on success, 1 on error.
@@ -28,8 +28,12 @@ async function run() {
   const resolvedPassword = password || process.env.SEED_SUPER_ADMIN_PASSWORD;
 
   if (!resolvedEmail || !resolvedPassword) {
-    console.error('Usage: node src/scripts/seed-super-admin.js --email=admin@eduflow.app --password=SecurePass123');
-    console.error('Alternatively set SEED_SUPER_ADMIN_EMAIL and SEED_SUPER_ADMIN_PASSWORD env vars.');
+    console.error(
+      'Usage: node src/scripts/seed-super-admin.js --email=admin@rooted.app --password=SecurePass123'
+    );
+    console.error(
+      'Alternatively set SEED_SUPER_ADMIN_EMAIL and SEED_SUPER_ADMIN_PASSWORD env vars.'
+    );
     process.exit(1);
   }
 

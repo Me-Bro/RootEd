@@ -1,5 +1,5 @@
 /**
- * seed-test-data.js — seeds deterministic test data into eduflow_test DB.
+ * seed-test-data.js — seeds deterministic test data into rooted_test DB.
  *
  * Usage:
  *   node --env-file=.env.test src/scripts/seed-test-data.js
@@ -129,28 +129,48 @@ async function run() {
   }
 
   // ── Academic Year ─────────────────────────────────────────────────────────
-  let year = await AcademicYear.findOne({ tenantId, name: '2025-26' }, null, { _bypassTenantScope: true }).lean();
+  let year = await AcademicYear.findOne({ tenantId, name: '2025-26' }, null, {
+    _bypassTenantScope: true,
+  }).lean();
   if (!year) {
-    year = await AcademicYear.create({ tenantId, name: '2025-26', startDate: new Date('2025-04-01'), endDate: new Date('2026-03-31'), isActive: true });
+    year = await AcademicYear.create({
+      tenantId,
+      name: '2025-26',
+      startDate: new Date('2025-04-01'),
+      endDate: new Date('2026-03-31'),
+      isActive: true,
+    });
     year = year.toObject();
   }
 
   // ── Term ──────────────────────────────────────────────────────────────────
-  let term = await Term.findOne({ tenantId, name: 'Term 1' }, null, { _bypassTenantScope: true }).lean();
+  let term = await Term.findOne({ tenantId, name: 'Term 1' }, null, {
+    _bypassTenantScope: true,
+  }).lean();
   if (!term) {
-    term = await Term.create({ tenantId, academicYearId: year._id, name: 'Term 1', startDate: new Date('2025-04-01'), endDate: new Date('2025-09-30') });
+    term = await Term.create({
+      tenantId,
+      academicYearId: year._id,
+      name: 'Term 1',
+      startDate: new Date('2025-04-01'),
+      endDate: new Date('2025-09-30'),
+    });
     term = term.toObject();
   }
 
   // ── Class ─────────────────────────────────────────────────────────────────
-  let cls = await Class.findOne({ tenantId, name: 'Grade 5' }, null, { _bypassTenantScope: true }).lean();
+  let cls = await Class.findOne({ tenantId, name: 'Grade 5' }, null, {
+    _bypassTenantScope: true,
+  }).lean();
   if (!cls) {
     cls = await Class.create({ tenantId, name: 'Grade 5', gradeLevel: 5 });
     cls = cls.toObject();
   }
 
   // ── Section ───────────────────────────────────────────────────────────────
-  let section = await Section.findOne({ tenantId, classId: cls._id, name: 'A' }, null, { _bypassTenantScope: true }).lean();
+  let section = await Section.findOne({ tenantId, classId: cls._id, name: 'A' }, null, {
+    _bypassTenantScope: true,
+  }).lean();
   if (!section) {
     section = await Section.create({ tenantId, classId: cls._id, name: 'A' });
     section = section.toObject();
@@ -164,9 +184,17 @@ async function run() {
   ];
   const subjects = [];
   for (const def of subjectDefs) {
-    let sub = await Subject.findOne({ tenantId, classId: cls._id, code: def.code }, null, { _bypassTenantScope: true }).lean();
+    let sub = await Subject.findOne({ tenantId, classId: cls._id, code: def.code }, null, {
+      _bypassTenantScope: true,
+    }).lean();
     if (!sub) {
-      sub = await Subject.create({ tenantId, classId: cls._id, name: def.name, code: def.code, creditHours: 5 });
+      sub = await Subject.create({
+        tenantId,
+        classId: cls._id,
+        name: def.name,
+        code: def.code,
+        creditHours: 5,
+      });
       sub = sub.toObject();
     }
     subjects.push(sub);
@@ -176,7 +204,9 @@ async function run() {
   const students = [];
   for (let i = 1; i <= 10; i++) {
     const admissionNo = `2025-TEST-${String(i).padStart(3, '0')}`;
-    let student = await Student.findOne({ tenantId, admissionNo }, null, { _bypassTenantScope: true }).lean();
+    let student = await Student.findOne({ tenantId, admissionNo }, null, {
+      _bypassTenantScope: true,
+    }).lean();
     if (!student) {
       student = await Student.create({
         tenantId,
@@ -194,28 +224,58 @@ async function run() {
 
   // ── Staff Members (linked to tenant users) ───────────────────────────────
   const staffData = [
-    { employeeId: 'EMP-TEST-001', userId: users.teacher._id, firstName: 'Alice', lastName: 'Smith', designation: 'Teacher', department: 'Academics' },
-    { employeeId: 'EMP-TEST-002', userId: users.viewer._id, firstName: 'Bob', lastName: 'Jones', designation: 'Accountant', department: 'Finance' },
+    {
+      employeeId: 'EMP-TEST-001',
+      userId: users.teacher._id,
+      firstName: 'Alice',
+      lastName: 'Smith',
+      designation: 'Teacher',
+      department: 'Academics',
+    },
+    {
+      employeeId: 'EMP-TEST-002',
+      userId: users.viewer._id,
+      firstName: 'Bob',
+      lastName: 'Jones',
+      designation: 'Accountant',
+      department: 'Finance',
+    },
   ];
   const staffMembers = [];
   for (const data of staffData) {
-    let staff = await StaffMember.findOne({ tenantId, employeeId: data.employeeId }, null, { _bypassTenantScope: true }).lean();
+    let staff = await StaffMember.findOne({ tenantId, employeeId: data.employeeId }, null, {
+      _bypassTenantScope: true,
+    }).lean();
     if (!staff) {
-      staff = await StaffMember.create({ tenantId, ...data, status: 'active', joiningDate: new Date('2020-06-01') });
+      staff = await StaffMember.create({
+        tenantId,
+        ...data,
+        status: 'active',
+        joiningDate: new Date('2020-06-01'),
+      });
       staff = staff.toObject();
     }
     staffMembers.push(staff);
   }
 
   // ── Leave Type ────────────────────────────────────────────────────────────
-  let leaveType = await LeaveType.findOne({ tenantId, name: 'Annual Leave' }, null, { _bypassTenantScope: true }).lean();
+  let leaveType = await LeaveType.findOne({ tenantId, name: 'Annual Leave' }, null, {
+    _bypassTenantScope: true,
+  }).lean();
   if (!leaveType) {
-    leaveType = await LeaveType.create({ tenantId, name: 'Annual Leave', maxDaysPerYear: 20, isPaid: true });
+    leaveType = await LeaveType.create({
+      tenantId,
+      name: 'Annual Leave',
+      maxDaysPerYear: 20,
+      isPaid: true,
+    });
     leaveType = leaveType.toObject();
   }
 
   // ── Salary Structure ──────────────────────────────────────────────────────
-  let salaryStructure = await SalaryStructure.findOne({ tenantId, name: 'Basic Structure' }, null, { _bypassTenantScope: true }).lean();
+  let salaryStructure = await SalaryStructure.findOne({ tenantId, name: 'Basic Structure' }, null, {
+    _bypassTenantScope: true,
+  }).lean();
   if (!salaryStructure) {
     salaryStructure = await SalaryStructure.create({
       tenantId,
@@ -229,20 +289,27 @@ async function run() {
   }
 
   // ── Cost Center ───────────────────────────────────────────────────────────
-  let costCenter = await CostCenter.findOne({ tenantId, name: 'General' }, null, { _bypassTenantScope: true }).lean();
+  let costCenter = await CostCenter.findOne({ tenantId, name: 'General' }, null, {
+    _bypassTenantScope: true,
+  }).lean();
   if (!costCenter) {
     costCenter = await CostCenter.create({ tenantId, name: 'General', code: 'GEN' });
     costCenter = costCenter.toObject();
   }
 
   // ── Fee Structure ─────────────────────────────────────────────────────────
-  let feeStructure = await FeeStructure.findOne({ tenantId, name: 'Standard Fee' }, null, { _bypassTenantScope: true }).lean();
+  let feeStructure = await FeeStructure.findOne({ tenantId, name: 'Standard Fee' }, null, {
+    _bypassTenantScope: true,
+  }).lean();
   if (!feeStructure) {
     feeStructure = await FeeStructure.create({
       tenantId,
       name: 'Standard Fee',
       academicYearId: year._id,
-      components: [{ label: 'Tuition', amount: 5000 }, { label: 'Activity', amount: 500 }],
+      components: [
+        { label: 'Tuition', amount: 5000 },
+        { label: 'Activity', amount: 500 },
+      ],
     });
     feeStructure = feeStructure.toObject();
   }
@@ -251,11 +318,27 @@ async function run() {
   const inventoryItems = [];
 
   const consumableData = [
-    { sku: 'INV-TEST-001', name: 'Whiteboard Marker', category: 'stationery', quantity: 100, reorderLevel: 20, unitCost: 10 },
-    { sku: 'INV-TEST-003', name: 'Notebook A4', category: 'stationery', quantity: 500, reorderLevel: 50, unitCost: 30 },
+    {
+      sku: 'INV-TEST-001',
+      name: 'Whiteboard Marker',
+      category: 'stationery',
+      quantity: 100,
+      reorderLevel: 20,
+      unitCost: 10,
+    },
+    {
+      sku: 'INV-TEST-003',
+      name: 'Notebook A4',
+      category: 'stationery',
+      quantity: 500,
+      reorderLevel: 50,
+      unitCost: 30,
+    },
   ];
   for (const data of consumableData) {
-    let item = await Consumable.findOne({ tenantId, sku: data.sku }, null, { _bypassTenantScope: true }).lean();
+    let item = await Consumable.findOne({ tenantId, sku: data.sku }, null, {
+      _bypassTenantScope: true,
+    }).lean();
     if (!item) {
       item = await Consumable.create({ tenantId, ...data });
       item = item.toObject();
@@ -263,7 +346,9 @@ async function run() {
     inventoryItems.push(item);
   }
 
-  let projector = await FixedAsset.findOne({ tenantId, sku: 'INV-TEST-002' }, null, { _bypassTenantScope: true }).lean();
+  let projector = await FixedAsset.findOne({ tenantId, sku: 'INV-TEST-002' }, null, {
+    _bypassTenantScope: true,
+  }).lean();
   if (!projector) {
     projector = await FixedAsset.create({
       tenantId,
@@ -282,7 +367,9 @@ async function run() {
 
   // Output seeded IDs as JSON for fixtures to consume
   const result = {
-    users: Object.fromEntries(Object.entries(users).map(([k, u]) => [k, { _id: u._id.toString(), email: u.email }])),
+    users: Object.fromEntries(
+      Object.entries(users).map(([k, u]) => [k, { _id: u._id.toString(), email: u.email }])
+    ),
     tenant: { _id: tenantId.toString(), subdomain: 'testschool' },
     roles: Object.fromEntries(Object.entries(roleByKey).map(([k, r]) => [k, r._id.toString()])),
     academicYear: { _id: year._id.toString() },
@@ -302,8 +389,9 @@ async function run() {
   // Write to disk so Playwright fixtures can read seeded IDs
   const { writeFileSync, mkdirSync, existsSync } = await import('fs');
   const { resolve, dirname } = await import('path');
-  const outPath = process.env.SEED_OUTPUT_PATH
-    || resolve(import.meta.dirname, '../../../web/tests/seed/.test-ids.json');
+  const outPath =
+    process.env.SEED_OUTPUT_PATH ||
+    resolve(import.meta.dirname, '../../../web/tests/seed/.test-ids.json');
   try {
     const dir = dirname(outPath);
     if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
