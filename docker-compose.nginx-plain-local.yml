@@ -1,0 +1,9 @@
+services:
+  nginx:
+    volumes:
+      - ./nginx/nginx.plain-local.conf:/etc/nginx/nginx.conf:ro
+    ports: !override
+      - '80:80'
+  api:
+    environment:
+      APP_DOMAIN: localhost

@@ -1,0 +1,24 @@
+ADR 003 — In-Process BullMQ Workers
+Status: Accepted
+Date: 2026-05-16
+
+Context:
+Background jobs needed for: audit log writes, PDF generation, email dispatch, expense escalation,
+inventory overdue alerts, trial expiry, stock valuation.
+
+Options:
+A. Separate worker container/process
+B. Workers run inside the API process
+
+Decision:
+Chose B (in-process) for MVP. Workers share the Node.js event loop but run concurrently via
+BullMQ's internal thread pool. This avoids separate container orchestration cost.
+
+Trigger to revisit: when any single worker queue depth regularly exceeds 1000 jobs, or API p95
+latency degrades due to worker CPU competition — split the offending worker into a separate
+container at that point.
+
+Consequences:
+- Simpler deployment (one container)
+- Workers compete for CPU with request handling
+- Horizontal API scaling also scales workers (acceptable for v1)

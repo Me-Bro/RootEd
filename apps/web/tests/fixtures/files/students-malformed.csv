@@ -1,0 +1,5 @@
+admissionNo,firstName,lastName,gender
+,MissingAdmission,Test,male
+DUPE-001,Valid,Student,female
+DUPE-001,Duplicate,AdmissionNo,male
+BAD-GENDER-001,Wrong,Gender,unknown_value

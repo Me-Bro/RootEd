@@ -1,0 +1,17 @@
+ADR 004 — Approval Workflow Engine
+Status: Accepted
+Date: 2026-05-16
+
+Context:
+Leave requests, expense entries, and purchase requisitions all need multi-step approval workflows
+with configurable chains, escalation, and audit trails.
+
+Decision:
+Implemented as an embedded array (approvalChain) on each document rather than a separate workflow
+engine. Current approver index tracked as currentApproverIndex. Advancing the chain is a service
+function called by approve/reject route handlers. BullMQ delayed jobs handle auto-escalation.
+
+Consequences:
+- Simple to query (approval state is on the document itself)
+- Workflow logic is duplicated across leave, expense, requisition services — acceptable for v1
+- Cannot support parallel approvers in the same chain step in v1 (sequential only, per PRD)

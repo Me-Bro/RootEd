@@ -1,0 +1,14 @@
+{
+  "name": "@eduflow/shared",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./schemas": "./src/schemas/index.js",
+    "./constants": "./src/constants/index.js"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  }
+}

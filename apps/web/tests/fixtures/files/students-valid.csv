@@ -1,0 +1,6 @@
+admissionNo,firstName,lastName,gender,dateOfBirth,parentName,parentPhone,parentRelation
+2025-IMPORT-001,John,Doe,male,2015-06-15,Jane Doe,9876543210,mother
+2025-IMPORT-002,Mary,Smith,female,2015-09-22,Tom Smith,9876543211,father
+2025-IMPORT-003,Raj,Kumar,male,2015-03-10,Sunita Kumar,9876543212,mother
+2025-IMPORT-004,Priya,Patel,female,2015-11-05,Amit Patel,9876543213,father
+2025-IMPORT-005,Ali,Khan,male,2015-07-18,Fatima Khan,9876543214,mother

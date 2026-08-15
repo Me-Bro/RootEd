@@ -1,0 +1,20 @@
+node_modules
+.pnpm-store
+dist
+build
+.env
+.env.local
+.env.*.local
+coverage
+*.log
+.DS_Store
+Thumbs.db
+
+# Playwright
+apps/web/playwright-report/
+apps/web/test-results/
+apps/web/tests/fixtures/.auth/
+apps/web/tests/seed/.snapshot/
+apps/web/tests/seed/.test-ids.json
+
+.claude/settings.local.json

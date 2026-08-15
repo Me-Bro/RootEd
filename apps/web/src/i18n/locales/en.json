@@ -1,0 +1,41 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "tenants": "Tenants",
+    "audit": "Audit Log",
+    "flags": "Feature Flags",
+    "staff": "Staff",
+    "leaves": "Leave Requests",
+    "salary": "Salary",
+    "academic": "Academic",
+    "students": "Students",
+    "attendance": "Attendance",
+    "grades": "Grades",
+    "fees": "Fees",
+    "feeStructures": "Fee Structures",
+    "inventory": "Inventory",
+    "depreciation": "Depreciation",
+    "expenses": "Expenses",
+    "budgets": "Budgets"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign In",
+    "error": "Invalid credentials"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "loading": "Loading...",
+    "noData": "No data found",
+    "actions": "Actions",
+    "status": "Status",
+    "name": "Name"
+  }
+}

@@ -1,0 +1,21 @@
+ADR 001 — Tenancy Model
+Status: Accepted
+Date: 2026-05-16
+
+Context:
+EduFlow serves multiple schools from one deployment. We need to decide how to isolate tenant data.
+
+Options considered:
+A. Separate database per tenant — strongest isolation, highest operational cost
+B. Shared database, separate collections — simpler, less granular
+C. Shared database, tenantId field on every document — standard SaaS pattern, scalable
+
+Decision:
+Chose C (shared database, tenantId discriminator) with a Mongoose plugin (tenantScopePlugin) that
+enforces tenantId on every query, update, and create. Enterprise customers can opt into dedicated
+databases via connection-string map (post-MVP).
+
+Consequences:
+- All models must apply tenantScopePlugin
+- Every query must include tenantId in filter — enforced at middleware layer
+- Cross-tenant leak tests gate every PR

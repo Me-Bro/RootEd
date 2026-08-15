@@ -1,0 +1,11 @@
+.git
+.gitignore
+.husky
+.prettier*
+*.md
+**/node_modules
+**/.env
+**/dist
+**/coverage
+**/.turbo
+**/.next

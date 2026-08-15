@@ -1,0 +1,9 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+allowBuilds:
+  '@scarf/scarf': false
+  argon2: true
+  mongodb-memory-server: true
+  msgpackr-extract: true
+  msw: false

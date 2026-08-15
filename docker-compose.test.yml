@@ -1,0 +1,23 @@
+version: '3.9'
+
+# Override for E2E test environment.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.test.yml up -d
+#
+# Changes from base:
+#   - API uses eduflow_test database (isolated from dev data)
+#   - web + nginx excluded (Playwright drives Vite dev server locally)
+
+services:
+  api:
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/eduflow_test?replicaSet=rs0
+      APP_DOMAIN: localhost
+      NODE_ENV: development
+
+  # Disable web and nginx — Playwright drives the Vite dev server locally
+  web:
+    profiles:
+      - disabled
+  nginx:
+    profiles:
+      - disabled

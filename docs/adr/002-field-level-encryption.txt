@@ -1,0 +1,17 @@
+ADR 002 — Field-Level Encryption
+Status: Accepted
+Date: 2026-05-16
+
+Context:
+Government IDs, bank account numbers, and salary data require encryption at rest beyond MongoDB
+volume encryption.
+
+Decision:
+AES-256-GCM with per-tenant data encryption keys (DEKs) derived via HKDF-SHA256 from a single
+master key (MASTER_ENCRYPTION_KEY env var, sourced from AWS Secrets Manager / Vault in prod).
+Encrypted values stored as JSON strings: { iv, ciphertext, tag }.
+
+Consequences:
+- Cannot query on encrypted fields (no search by gov ID)
+- Decryption only on explicit read of sensitive fields (staff:write permission required)
+- Key rotation requires re-encrypting all encrypted fields per tenant — runbook needed (post-MVP)

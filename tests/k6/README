@@ -1,0 +1,2 @@
+Run: k6 run tests/k6/api-load.js -e BASE_URL=http://localhost:3001 -e TEST_EMAIL=admin@test.com -e TEST_PASSWORD=Pass123! -e TENANT=demo
+Requires: k6 installed (https://k6.io/docs/get-started/installation/)
