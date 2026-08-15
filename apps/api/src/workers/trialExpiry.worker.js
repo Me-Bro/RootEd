@@ -50,7 +50,7 @@ export function startTrialExpiryWorker() {
                   <p>Hi,</p>
                   <p>Your free trial for <strong>${tenant.name}</strong> on RootEd has ended.</p>
                   <p>To continue using all features, please upgrade your plan.</p>
-                  <p><a href="https://app.eduflow.app/billing">Upgrade Now</a></p>
+                  <p><a href="https://app.rooted.app/billing">Upgrade Now</a></p>
                 `,
               });
             }

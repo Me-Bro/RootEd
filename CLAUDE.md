@@ -45,7 +45,7 @@ pnpm --filter web test:e2e:headed                                         # Same
 pnpm --filter web test:axe                                                # Accessibility spec only
 pnpm --filter web test:e2e:report                                         # Open last HTML report
 
-# Seed the E2E test DB (eduflow_test) — outputs seeded IDs as JSON for Playwright fixtures
+# Seed the E2E test DB (rooted_test) — outputs seeded IDs as JSON for Playwright fixtures
 pnpm --filter api seed:test          # seed (no wipe)
 pnpm --filter api seed:test:clean    # drop all collections, then seed
 # Or from the web package, via the running docker stack's api container:
@@ -56,7 +56,7 @@ pnpm --filter web test:snapshot:dump
 pnpm --filter web test:snapshot:restore
 
 # Bootstrap a super_admin user against whatever MONGODB_URI is active
-node apps/api/src/scripts/seed-super-admin.js --email=admin@eduflow.app --password=SecurePass123
+node apps/api/src/scripts/seed-super-admin.js --email=admin@rooted.app --password=SecurePass123
 ```
 
 ## Architecture
@@ -76,11 +76,11 @@ node apps/api/src/scripts/seed-super-admin.js --email=admin@eduflow.app --passwo
 3. `resolveTenant()` runs once, globally, before all tenant-scoped routers (`/tenant`, `/academic`, `/staff`, `/expense`, `/fee`, `/inventory`, `/billing`) — it strips `.${APP_DOMAIN}` off the request Host header to get the subdomain and loads the active `Tenant` into `req.tenant`
 4. Each tenant router applies `authenticate()` (JWT + blocklist) via `router.use()`, then individual routes apply `requirePermission('module:action')` and Zod `validate(schema)` as needed
 
-Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts must literally end in `.${APP_DOMAIN}` (default `eduflow.app`) or resolution fails with "Tenant not found" — the test env overrides `APP_DOMAIN=localhost` so `testschool.localhost` resolves correctly instead.
+Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts must literally end in `.${APP_DOMAIN}` (default `rooted.app`) or resolution fails with "Tenant not found" — the test env overrides `APP_DOMAIN=localhost` so `testschool.localhost` resolves correctly instead.
 
 **Background workers:** 6 in-process BullMQ workers (Redis-backed), started in `apps/api/src/index.js` alongside the HTTP server (not separate processes): `audit.worker.js`, `reportCard.worker.js`, `expenseEscalation.worker.js`, `inventoryOverdue.worker.js`, `trialExpiry.worker.js`, `stockValuation.worker.js`.
 
-**Field encryption:** AES-256-GCM (`apps/api/src/utils/fieldEncryption.js`) for `StaffMember` PII (government ID, bank account, salary). Per-tenant DEK derived from `MASTER_ENCRYPTION_KEY` via HKDF-SHA256 (salt = tenantId, info = `'eduflow-field-encryption'`). Transparent via Mongoose getters/setters — never decrypt/re-encrypt manually.
+**Field encryption:** AES-256-GCM (`apps/api/src/utils/fieldEncryption.js`) for `StaffMember` PII (government ID, bank account, salary). Per-tenant DEK derived from `MASTER_ENCRYPTION_KEY` via HKDF-SHA256 (salt = tenantId, info = `'rooted-field-encryption'`). Transparent via Mongoose getters/setters — never decrypt/re-encrypt manually.
 
 **Audit logging:** Mutations enqueue to the BullMQ audit worker, which writes immutable before/after diffs to the `AuditLog` collection asynchronously (not written inline with the request).
 
@@ -100,7 +100,7 @@ Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts 
 | `apps/api/src/middleware/requirePermission.js` | RBAC permission check + 60s Redis permission cache |
 | `apps/api/src/models/plugins/tenantScope.js` | Enforces `tenantId` on every tenant-scoped query/write |
 | `apps/api/src/routes/` | 8 routers: auth, admin, tenant, academic, staff, expense, fee, inventory, billing |
-| `apps/api/src/scripts/seed-test-data.js` | Deterministic seed for `eduflow_test` (tenant `testschool`, 4 users, academic/staff/fee/inventory data); `--clean` wipes all collections first |
+| `apps/api/src/scripts/seed-test-data.js` | Deterministic seed for `rooted_test` (tenant `testschool`, 4 users, academic/staff/fee/inventory data); `--clean` wipes all collections first |
 | `apps/api/src/scripts/seed-super-admin.js` | Bootstraps one `systemRole: super_admin` user against whatever `MONGODB_URI` is active |
 | `apps/web/src/App.jsx` | React Router setup |
 | `apps/web/src/lib/api.js` | Axios client — same-origin `/__api` base URL logic |
@@ -117,17 +117,17 @@ Copy `apps/api/.env.example` → `apps/api/.env`. Required vars:
 - `MASTER_ENCRYPTION_KEY` (AES key for field encryption, ≥32 chars)
 - `CSRF_SECRET` (≥32 chars)
 - S3/Minio credentials (`S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`)
-- `APP_DOMAIN` (default `eduflow.app`) — must match the suffix of whatever Host you access the API through, or `resolveTenant()` 404s
+- `APP_DOMAIN` (default `rooted.app`) — must match the suffix of whatever Host you access the API through, or `resolveTenant()` 404s
 
 Web build args (Dockerfile / `.env`): `VITE_API_URL`, `VITE_APP_DOMAIN`, `VITE_SENTRY_DSN`. Leave `VITE_API_URL` unset/empty to use the same-origin `/__api` proxy path described above.
 
 Docker Compose (`docker-compose.yml`) brings up: MongoDB 7 (replica set `rs0`, initialized by a one-shot `mongo-init` service), Redis 7, Minio, API, Web (built static image), Nginx (wildcard-subdomain TLS — requires certs at `nginx/certs/fullchain.pem`/`privkey.pem`, which are **not** included in the repo; use `nginx/nginx.dev.conf` via `docker-compose.dev.yml` for a plain-HTTP local variant instead of generating certs).
 
 ### Test (E2E)
-- `apps/api/.env.test` — separate `eduflow_test` DB, `APP_DOMAIN=localhost` (never share with the dev DB/domain)
+- `apps/api/.env.test` — separate `rooted_test` DB, `APP_DOMAIN=localhost` (never share with the dev DB/domain)
 - `apps/web/.env.test` — sets `VITE_API_URL=http://127.0.0.1:5173/__api` (routes through Vite proxy)
 - Vite proxy (`/__api` → `http://localhost:3001`) only active in `--mode test`; proxy injects `Host: testschool.localhost` so `resolveTenant()` resolves the correct tenant without custom DNS
-- `docker-compose.test.yml` overlay disables web + nginx (Playwright/Vite run locally) and points `api` at `eduflow_test` with `APP_DOMAIN=localhost`
+- `docker-compose.test.yml` overlay disables web + nginx (Playwright/Vite run locally) and points `api` at `rooted_test` with `APP_DOMAIN=localhost`
 - Seeded test users (password `TestPass123!`): `admin@test.local` (super_admin), `tadmin@testschool.local`, `teacher@testschool.local`, `viewer@testschool.local`
 
 ## Tech Stack
