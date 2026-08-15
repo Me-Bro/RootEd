@@ -1,4 +1,4 @@
-# EduFlow — Implementation Todo List
+# RootEd — Implementation Todo List
 
 > **Decisions locked:**
 > - Fee module: v1 (included in Phase 6)

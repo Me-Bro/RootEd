@@ -54,8 +54,8 @@ export default function LoginPage() {
       <div className="relative z-10 flex w-full max-w-sm flex-col items-center gap-6">
         {/* logo */}
         <div className="flex items-center gap-3">
-          <img src="/favicon.svg" alt="EduFlow logo" width={36} height={34} />
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">EduFlow</h1>
+          <img src="/favicon.svg" alt="RootEd logo" width={36} height={34} />
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">RootEd</h1>
         </div>
 
         <Card className="w-full">

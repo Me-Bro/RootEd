@@ -49,7 +49,7 @@ export function startExpenseEscalationWorker() {
           <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
             <h2>Expense Approval Required</h2>
             <p>An expense entry (ID: ${expenseId}) requires your approval.</p>
-            <p>Please log in to EduFlow to review and take action.</p>
+            <p>Please log in to RootEd to review and take action.</p>
           </div>
         `,
       });

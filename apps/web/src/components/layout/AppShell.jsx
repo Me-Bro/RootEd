@@ -223,8 +223,8 @@ export default function AppShell() {
         )}
       >
         <div className="flex items-center gap-3 px-4 py-4 border-b border-border">
-          <img src="/favicon.svg" alt="EduFlow" width={24} height={23} className="shrink-0" />
-          {!collapsed && <span className="text-base font-semibold text-foreground">EduFlow</span>}
+          <img src="/favicon.svg" alt="RootEd" width={24} height={23} className="shrink-0" />
+          {!collapsed && <span className="text-base font-semibold text-foreground">RootEd</span>}
           <button
             onClick={() => setCollapsed((v) => !v)}
             className="ml-auto p-1 rounded hover:bg-muted text-muted-foreground"
