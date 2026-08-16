@@ -44,8 +44,7 @@ services:
     ports:
       - '5173:5173'
     environment:
-      VITE_API_URL: http://localhost:3001
-      VITE_APP_DOMAIN: rooted.app
+      VITE_APP_DOMAIN: localtest.me
     volumes:
       - .:/app
       - web_node_modules:/app/node_modules

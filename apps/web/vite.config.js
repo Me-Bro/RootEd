@@ -8,6 +8,7 @@ export default defineConfig(() => ({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    allowedHosts: ['.localtest.me'],
     // Proxy API calls in dev and test so requests are same-origin (avoids SameSite=Lax
     // cookie blocking) and resolveTenant() sees the correct subdomain via Host override.
     proxy: {
