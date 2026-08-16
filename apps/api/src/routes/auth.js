@@ -182,11 +182,58 @@ router.post('/refresh', async (req, res, next) => {
     if (await isTokenBlocked(token)) throw new AppError('Token revoked', 401);
 
     const payload = verifyRefreshToken(token);
-    const accessToken = signAccessToken({ sub: payload.sub, systemRole: payload.systemRole });
+    const accessToken = signAccessToken({
+      sub: payload.sub,
+      systemRole: payload.systemRole,
+      ...(payload.impersonatedTenantId && { impersonatedTenantId: payload.impersonatedTenantId }),
+    });
 
     res.json({ accessToken });
   } catch {
     next(new AppError('Invalid refresh token', 401));
+  }
+});
+
+/**
+ * @openapi
+ * /auth/impersonation-session:
+ *   post:
+ *     summary: Persist the active impersonation as a refresh cookie on the tenant's own subdomain
+ *     description: >
+ *       Called by the impersonation callback page right after it lands on the tenant subdomain
+ *       with an access token from POST /admin/tenants/:id/impersonate. Without this, the
+ *       impersonation claim only lives in memory and a page reload falls back to the ambient
+ *       refresh cookie (if any), dropping impersonatedTenantId and reverting to the bare
+ *       super_admin view.
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Impersonation refresh cookie set
+ *       403:
+ *         description: No active impersonation session on the current token
+ */
+router.post('/impersonation-session', authenticate, async (req, res, next) => {
+  try {
+    if (req.user.systemRole !== 'super_admin' || !req.user.impersonatedTenantId) {
+      throw new AppError('No active impersonation session', 403);
+    }
+
+    const refreshToken = signRefreshToken({
+      sub: req.user.sub,
+      systemRole: req.user.systemRole,
+      impersonatedTenantId: req.user.impersonatedTenantId,
+    });
+
+    res.cookie('refreshToken', refreshToken, {
+      ...REFRESH_COOKIE_OPTIONS,
+      maxAge: 30 * 60 * 1000,
+    });
+
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
   }
 });
 
