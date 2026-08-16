@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/useAuth.js';
+import api from '../../lib/api.js';
 
 export default function ImpersonateCallbackPage() {
   const { loginWithToken } = useAuth();
@@ -19,6 +20,9 @@ export default function ImpersonateCallbackPage() {
     }
 
     loginWithToken(token)
+      // Best-effort: persists the impersonation as a refresh cookie on this tenant subdomain
+      // so a page reload doesn't drop back to the bare super_admin view (see auth.js).
+      .then(() => api.post('/auth/impersonation-session').catch(() => {}))
       .then(() => {
         window.history.replaceState(null, '', window.location.pathname);
         setStatus('done');
