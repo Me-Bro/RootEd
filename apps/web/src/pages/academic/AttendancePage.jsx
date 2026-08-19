@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
+import { useClassSections } from '../../hooks/useClassSections.js';
 
 const STATUS_OPTIONS = ['present', 'absent', 'late', 'excused'];
 const EMPTY_ARRAY = [];
@@ -21,10 +22,7 @@ export default function AttendancePage() {
   const [attendanceMap, setAttendanceMap] = useState({});
   const [syncedRecords, setSyncedRecords] = useState(EMPTY_ARRAY);
 
-  const { data: sections = EMPTY_ARRAY } = useQuery({
-    queryKey: ['sections'],
-    queryFn: () => api.get('/academic/sections').then((r) => r.data),
-  });
+  const { classes } = useClassSections();
 
   const { data: students = EMPTY_ARRAY } = useQuery({
     queryKey: ['students-list', sectionId],
@@ -103,10 +101,14 @@ export default function AttendancePage() {
             className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           >
             <option value="">— Select section —</option>
-            {sections.map((s) => (
-              <option key={s._id} value={s._id}>
-                {s.name}
-              </option>
+            {classes.map((c) => (
+              <optgroup key={c._id} label={c.name}>
+                {(c.sections || []).map((s) => (
+                  <option key={s._id} value={s._id}>
+                    {s.name}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </div>

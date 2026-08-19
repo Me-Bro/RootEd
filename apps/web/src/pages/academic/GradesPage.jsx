@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
+import { useClassSections } from '../../hooks/useClassSections.js';
 
 const EMPTY_ARRAY = [];
 
@@ -23,10 +24,7 @@ export default function GradesPage() {
   const [scoreMap, setScoreMap] = useState({});
   const [syncedGrades, setSyncedGrades] = useState(EMPTY_ARRAY);
 
-  const { data: sections = EMPTY_ARRAY } = useQuery({
-    queryKey: ['sections'],
-    queryFn: () => api.get('/academic/sections').then((r) => r.data),
-  });
+  const { classes } = useClassSections();
 
   const { data: terms = EMPTY_ARRAY } = useQuery({
     queryKey: ['terms'],
@@ -107,10 +105,14 @@ export default function GradesPage() {
             className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           >
             <option value="">— Select —</option>
-            {sections.map((s) => (
-              <option key={s._id} value={s._id}>
-                {s.name}
-              </option>
+            {classes.map((c) => (
+              <optgroup key={c._id} label={c.name}>
+                {(c.sections || []).map((s) => (
+                  <option key={s._id} value={s._id}>
+                    {s.name}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </div>
