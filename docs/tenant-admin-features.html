@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RootEd — tenant_admin Feature Guide</title>
+<style>
+  :root {
+    --purple: #7c3aed;
+    --purple-light: #ede9fe;
+    --ink: #111827;
+    --gray: #6b7280;
+    --border: #e5e7eb;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --green: #16a34a;
+    --amber: #d97706;
+    --red: #dc2626;
+    --note-bg: #fffbeb; --note-border: #fde68a; --note-text: #92400e;
+    --note-bad-bg: #fef2f2; --note-bad-border: #fecaca; --note-bad-text: #991b1b;
+    --code-bg: #f3f4f6;
+    --shadow: none;
+  }
+  html[data-theme="dark"] {
+    --purple: #a78bfa;
+    --purple-light: #2e2a4d;
+    --ink: #f3f4f6;
+    --gray: #9ca3af;
+    --border: #2d3340;
+    --bg: #0f1115;
+    --surface: #1a1d24;
+    --green: #4ade80;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --note-bg: #2a2410; --note-border: #4d3f10; --note-text: #fcd34d;
+    --note-bad-bg: #2a1414; --note-bad-border: #4d1f1f; --note-bad-text: #fca5a5;
+    --code-bg: #262a33;
+    --shadow: 0 1px 3px rgba(0,0,0,.4);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    display: flex;
+    min-height: 100vh;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  /* Sidebar */
+  nav {
+    width: 260px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 20px 16px;
+    font-weight: 700;
+    font-size: 18px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .brand .bolt { color: var(--purple); font-size: 20px; }
+  .nav-group-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--gray);
+    padding: 12px 20px 6px;
+    text-transform: uppercase;
+  }
+  .nav-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 9px 20px;
+    font-size: 14px;
+    color: var(--ink);
+    cursor: pointer;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .nav-item:hover { background: var(--purple-light); }
+  .nav-item.active { background: var(--purple-light); color: var(--purple); font-weight: 600; border-right: 3px solid var(--purple); }
+  .nav-item .emoji { font-size: 16px; width: 20px; text-align: center; }
+
+  /* Main */
+  main { flex: 1; padding: 32px 48px; max-width: 900px; }
+  .header-banner {
+    background: linear-gradient(135deg, var(--purple) 0%, #4f46e5 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 28px;
+  }
+  .header-banner h1 { margin: 0 0 6px; font-size: 22px; }
+  .header-banner p { margin: 0; opacity: 0.9; font-size: 14px; }
+
+  .module-panel { display: none; }
+  .module-panel.active { display: block; animation: fadein 0.15s ease; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  .module-title { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .module-title .emoji { font-size: 26px; }
+  .module-title h2 { margin: 0; font-size: 24px; }
+  .module-desc { color: var(--gray); font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow);
+  }
+  .card h3 { margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .feature-list { list-style: none; margin: 0; padding: 0; }
+  .feature-list li {
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .feature-list li:last-child { border-bottom: none; }
+  .feature-list li b { color: var(--ink); }
+
+  .perm-tag {
+    display: inline-block;
+    background: var(--purple-light);
+    color: var(--purple);
+    font-family: "SF Mono", Consolas, monospace;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 5px;
+    margin: 2px 4px 2px 0;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .badge.full { background: #dcfce7; color: var(--green); }
+  .badge.bug { background: #fef3c7; color: var(--amber); }
+  .badge.stub { background: #fee2e2; color: var(--red); }
+
+  .note {
+    background: var(--note-bg);
+    border: 1px solid var(--note-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--note-text);
+    margin-top: 14px;
+  }
+  .note.bad { background: var(--note-bad-bg); border-color: var(--note-bad-border); color: var(--note-bad-text); }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .stat-card .num { font-size: 22px; font-weight: 700; color: var(--purple); }
+  .stat-card .label { font-size: 12px; color: var(--gray); }
+
+  code.path { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 12.5px; color: var(--ink); }
+
+  .theme-toggle {
+    position: fixed;
+    top: 18px;
+    right: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--ink);
+    border-radius: 20px;
+    padding: 7px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .theme-toggle:hover { border-color: var(--purple); }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" id="themeToggle" type="button">
+  <span id="themeIcon">🌙</span> <span id="themeLabel">Dark</span>
+</button>
+
+<nav id="sidebar">
+  <div class="brand"><span class="bolt">⚡</span> RootEd — tenant_admin</div>
+
+  <div class="nav-group-label">Overview</div>
+  <button class="nav-item active" data-target="overview"><span class="emoji">🏠</span> What is tenant_admin?</button>
+
+  <div class="nav-group-label">Academic</div>
+  <button class="nav-item" data-target="academic"><span class="emoji">📚</span> Academic</button>
+
+  <div class="nav-group-label">Staff</div>
+  <button class="nav-item" data-target="staff"><span class="emoji">🧑‍💼</span> Staff</button>
+
+  <div class="nav-group-label">Money</div>
+  <button class="nav-item" data-target="expense"><span class="emoji">💸</span> Expense</button>
+  <button class="nav-item" data-target="fee"><span class="emoji">🧾</span> Fee</button>
+  <button class="nav-item" data-target="billing"><span class="emoji">💳</span> Billing</button>
+
+  <div class="nav-group-label">Operations</div>
+  <button class="nav-item" data-target="inventory"><span class="emoji">📦</span> Inventory</button>
+  <button class="nav-item" data-target="roles"><span class="emoji">🔐</span> Roles &amp; Permissions</button>
+  <button class="nav-item" data-target="audit"><span class="emoji">🕵️</span> Audit &amp; Flags</button>
+  <button class="nav-item" data-target="notif"><span class="emoji">🔔</span> Notifications</button>
+</nav>
+
+<main>
+
+  <!-- OVERVIEW -->
+  <section id="overview" class="module-panel active">
+    <div class="header-banner">
+      <h1>tenant_admin — full access, one school</h1>
+      <p>Every permission the app has, scoped to your tenant only. Can't see or touch other schools' data — that's <code style="background:rgba(255,255,255,.2);padding:1px 6px;border-radius:4px">super_admin</code>'s job.</p>
+    </div>
+
+    <div class="summary-grid">
+      <div class="stat-card"><div class="num">14</div><div class="label">permission strings held</div></div>
+      <div class="stat-card"><div class="num">6</div><div class="label">functional modules</div></div>
+      <div class="stat-card"><div class="num">1</div><div class="label">tenant (yours only)</div></div>
+      <div class="stat-card"><div class="num">5</div><div class="label">role templates it outranks</div></div>
+    </div>
+
+    <div class="card">
+      <h3>🔑 The permission bundle</h3>
+      <p style="font-size:14px;color:var(--gray);margin-top:0">Defined once in <code class="path">apps/api/src/models/Role.js</code> — tenant_admin gets literally every entry in the <code class="path">PERMISSIONS</code> list, no filtering:</p>
+      <div>
+        <span class="perm-tag">attendance:read</span><span class="perm-tag">attendance:write</span>
+        <span class="perm-tag">grades:read</span><span class="perm-tag">grades:write</span>
+        <span class="perm-tag">students:read</span><span class="perm-tag">students:write</span>
+        <span class="perm-tag">staff:read</span><span class="perm-tag">staff:write</span>
+        <span class="perm-tag">leave:read</span><span class="perm-tag">leave:write</span><span class="perm-tag">leave:approve</span>
+        <span class="perm-tag">expense:read</span><span class="perm-tag">expense:write</span><span class="perm-tag">expense:approve</span>
+        <span class="perm-tag">fees:read</span><span class="perm-tag">fees:write</span><span class="perm-tag">fees:collect</span>
+        <span class="perm-tag">inventory:read</span><span class="perm-tag">inventory:write</span>
+        <span class="perm-tag">payroll:read</span><span class="perm-tag">payroll:write</span>
+        <span class="perm-tag">roles:read</span><span class="perm-tag">roles:write</span>
+        <span class="perm-tag">audit:read</span>
+        <span class="perm-tag">tenant:admin</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>👥 Where tenant_admin sits</h3>
+      <ul class="feature-list">
+        <li><b>super_admin</b> (system role, above all tenants) → sees every school, can impersonate, suspend, bill</li>
+        <li><b>tenant_admin</b> (you are here) → everything below, but locked to one school</li>
+        <li><b>principal</b> → read-everything + approve leave/expense, no write access to records</li>
+        <li><b>teacher</b> → attendance + grades write, students read-only, own leave requests</li>
+        <li><b>accountant</b> → fees + expense + payroll read/write, nothing academic</li>
+        <li><b>librarian</b> → inventory read/write only</li>
+      </ul>
+      <p style="font-size:13px;color:var(--gray)">Click a module on the left to see exactly what each button/page in that module does.</p>
+    </div>
+  </section>
+
+  <!-- ACADEMIC -->
+  <section id="academic" class="module-panel">
+    <div class="module-title"><span class="emoji">📚</span><h2>Academic</h2><span class="badge full">full access</span></div>
+    <p class="module-desc">Everything about running classes: years, students, attendance, grades, timetable, report cards.</p>
+
+    <div class="card">
+      <h3>📅 Academic Years &amp; Terms</h3>
+      <ul class="feature-list">
+        <li><b>Create/edit academic years</b> — e.g. "2025-26" with start/end dates, mark one active</li>
+        <li><b>Create terms</b> inside a year — e.g. "Term 1" (Apr–Sep) — grades and fee structures are scoped to a term/year</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>🧑‍🎓 Students <span class="perm-tag">students:read/write</span></h3>
+      <ul class="feature-list">
+        <li><b>Add Student</b> — admission no, name, section, DOB, gender, parent contacts</li>
+        <li><b>Import CSV</b> — bulk-add students from a spreadsheet</li>
+        <li><b>Edit / withdraw / graduate</b> a student's status</li>
+        <li>List filterable by section, searchable by admission no / name</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>✅ Attendance <span class="perm-tag">attendance:read/write</span></h3>
+      <ul class="feature-list">
+        <li><b>Mark attendance</b> per section per day — present / absent / late / excused</li>
+        <li>View attendance history for a student or a whole section</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>📝 Grades <span class="perm-tag">grades:read/write</span></h3>
+      <ul class="feature-list">
+        <li><b>Enter scores</b> per student, per subject, per term (0–100, auto letter-grade A–F)</li>
+        <li>View a student's grade history across terms</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>🗓️ Timetable</h3>
+      <ul class="feature-list">
+        <li>Build weekly class/section timetables — subject + teacher + period slot</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>📄 Report Cards</h3>
+      <ul class="feature-list">
+        <li><b>Generate PDF report cards</b> per student per term — built async by the <code class="path">reportCard.worker.js</code> BullMQ worker, not inline (so a large batch doesn't block the request)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- STAFF -->
+  <section id="staff" class="module-panel">
+    <div class="module-title"><span class="emoji">🧑‍💼</span><h2>Staff</h2><span class="badge full">full access</span></div>
+    <p class="module-desc">Staff directory, leave approval chain, salary/payroll.</p>
+
+    <div class="card">
+      <h3>📇 Staff Directory <span class="perm-tag">staff:read/write</span></h3>
+      <ul class="feature-list">
+        <li><b>Add/edit staff profile</b> — designation, department, joining date, qualifications, documents</li>
+        <li><b>Sensitive fields</b> (government ID, bank account) are <b>AES-256-GCM encrypted at rest</b>, per-tenant key — you see them decrypted, they're never stored in plaintext</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>🌴 Leave Requests <span class="perm-tag">leave:read/write</span><span class="perm-tag">leave:approve</span></h3>
+      <ul class="feature-list">
+        <li>Staff submit leave requests; you (or principal) <b>approve/reject</b></li>
+        <li>Each request carries its own <b>approvalChain</b> array — sequential approvers only, no parallel steps</li>
+        <li>Left too long → auto-escalates to next approver via a delayed BullMQ job (<code class="path">expenseEscalation.worker.js</code> pattern, same idea for leave)</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>💰 Salary <span class="perm-tag">payroll:read/write</span></h3>
+      <ul class="feature-list">
+        <li>Define <b>Salary Structures</b> — components like Basic, HRA (fixed amount or % of basic)</li>
+        <li>Generate monthly <b>Salary Slips</b> per staff member — gross/deductions/net pay, PDF export</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- EXPENSE -->
+  <section id="expense" class="module-panel">
+    <div class="module-title"><span class="emoji">💸</span><h2>Expense</h2><span class="badge full">full access</span></div>
+    <p class="module-desc">Track spending against cost centers, with an approval chain before payout.</p>
+    <div class="card">
+      <h3>Expense Entries <span class="perm-tag">expense:read/write</span><span class="perm-tag">expense:approve</span></h3>
+      <ul class="feature-list">
+        <li><b>Submit an expense</b> — title, category, amount, vendor, invoice date, attach receipt, tag a cost center</li>
+        <li><b>Approve/reject/mark paid</b> — same embedded approvalChain pattern as leave</li>
+        <li><b>Cost Centers</b> — group spending (e.g. "Academics", "Facilities") with a budget ceiling</li>
+      </ul>
+      <div class="note">Bug in the permission model: <b>principal</b>'s filter accidentally includes <code>tenant:admin</code>, which routes them into the "admin escalation" bucket instead of the normal approver bucket in <code class="path">expense.service.js</code>. Doesn't affect tenant_admin directly, but worth knowing if you're testing the principal flow.</div>
+    </div>
+  </section>
+
+  <!-- FEE -->
+  <section id="fee" class="module-panel">
+    <div class="module-title"><span class="emoji">🧾</span><h2>Fee</h2><span class="badge full">full access</span><span class="badge bug">known bug</span></div>
+    <p class="module-desc">Fee structures, per-student assignments, payment collection.</p>
+    <div class="card">
+      <h3>Fee Structures &amp; Assignments <span class="perm-tag">fees:read/write</span></h3>
+      <ul class="feature-list">
+        <li><b>Define a Fee Structure</b> — components like Tuition, Activity fee, tied to an academic year</li>
+        <li><b>Assign</b> it to a student → creates a payable amount with a due date, tracks unpaid/partial/paid/waived</li>
+        <li><b>Discounts</b> — apply a reduction with a reason</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Payments <span class="perm-tag">fees:collect</span></h3>
+      <ul class="feature-list">
+        <li><b>Collect a payment</b> — cash/card/UPI/bank transfer/cheque, generates a receipt number + PDF</li>
+        <li>Razorpay integration for online payment + webhook verification</li>
+      </ul>
+      <div class="note bad">⚠️ Known bug (from CLAUDE.md): <code class="path">POST /fee/payments/verify</code> hardcodes <code>amount: 0</code> instead of using the Razorpay-verified charged amount. Don't trust the online-payment verify path for real amounts yet.</div>
+    </div>
+  </section>
+
+  <!-- BILLING -->
+  <section id="billing" class="module-panel">
+    <div class="module-title"><span class="emoji">💳</span><h2>Billing</h2><span class="badge full">your school's subscription</span></div>
+    <p class="module-desc">Your school's own plan/subscription — not to be confused with super_admin's cross-tenant billing screen.</p>
+    <div class="card">
+      <ul class="feature-list">
+        <li>View current plan (e.g. "pro"), status (active/suspended)</li>
+        <li>Payment history for the subscription itself (via Razorpay)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- INVENTORY -->
+  <section id="inventory" class="module-panel">
+    <div class="module-title"><span class="emoji">📦</span><h2>Inventory</h2><span class="badge full">full access</span></div>
+    <p class="module-desc">Two kinds of items tracked differently: consumables (stock count) and fixed assets (depreciation).</p>
+    <div class="card">
+      <h3>Items <span class="perm-tag">inventory:read/write</span></h3>
+      <ul class="feature-list">
+        <li><b>Consumables</b> — quantity + reorder level (markers, notebooks, lab chemicals) — auto-flagged when stock dips below reorder level via <code class="path">inventoryOverdue.worker.js</code></li>
+        <li><b>Fixed Assets</b> — projectors, computers, furniture — tracks purchase date, depreciation method (SLM/WDV), current value, condition</li>
+        <li><b>Stock Movements</b> — log of every quantity change (received, issued, adjusted)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Purchase Requisitions <span class="perm-tag">expense:approve</span></h3>
+      <ul class="feature-list">
+        <li>Staff request more stock of an item → you approve → can link to an actual Expense Entry once purchased</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ROLES -->
+  <section id="roles" class="module-panel">
+    <div class="module-title"><span class="emoji">🔐</span><h2>Roles &amp; Permissions</h2><span class="badge full">full access</span></div>
+    <p class="module-desc">Only tenant_admin (via <code>roles:write</code>) can create custom roles or change who has what.</p>
+    <div class="card">
+      <ul class="feature-list">
+        <li>5 templates pre-seeded per tenant: <b>tenant_admin, principal, teacher, accountant, librarian</b></li>
+        <li>Can create <b>custom roles</b> with any subset of the 14 permission strings</li>
+        <li><b>Assign a role</b> to a staff member's TenantMembership — takes effect within 60s (Redis permission cache TTL)</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- AUDIT -->
+  <section id="audit" class="module-panel">
+    <div class="module-title"><span class="emoji">🕵️</span><h2>Audit &amp; Feature Flags</h2><span class="badge stub">page is a stub</span></div>
+    <p class="module-desc"><code class="path">audit:read</code> permission exists and the backend records everything — the frontend page just isn't built yet.</p>
+    <div class="card">
+      <ul class="feature-list">
+        <li><b>Every mutation</b> (create/update/delete) is queued to <code class="path">audit.worker.js</code>, which writes an immutable before/after diff — async, not inline with the request</li>
+        <li>The <code class="path">/audit</code> and <code class="path">/flags</code> web pages currently show <b>"Coming soon"</b> — data exists in Mongo, no UI to browse it yet</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- NOTIFICATIONS -->
+  <section id="notif" class="module-panel">
+    <div class="module-title"><span class="emoji">🔔</span><h2>Notifications</h2></div>
+    <p class="module-desc">The bell icon in the top bar.</p>
+    <div class="card">
+      <ul class="feature-list">
+        <li>Leave/expense approval requests, fee due reminders, inventory reorder alerts land here</li>
+        <li><b>Not real-time yet</b> — the bell just polls the API every 60 seconds</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  (function () {
+    const root = document.documentElement;
+    const stored = localStorage.getItem('rooted-docs-theme');
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initial = stored || (prefersDark ? 'dark' : 'light');
+    applyTheme(initial);
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(next);
+      localStorage.setItem('rooted-docs-theme', next);
+    });
+
+    function applyTheme(theme) {
+      if (theme === 'dark') {
+        root.setAttribute('data-theme', 'dark');
+        document.getElementById('themeIcon').textContent = '☀️';
+        document.getElementById('themeLabel').textContent = 'Light';
+      } else {
+        root.removeAttribute('data-theme');
+        document.getElementById('themeIcon').textContent = '🌙';
+        document.getElementById('themeLabel').textContent = 'Dark';
+      }
+    }
+  })();
+
+  document.querySelectorAll('.nav-item').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach((b) => b.classList.remove('active'));
+      document.querySelectorAll('.module-panel').forEach((p) => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.target).classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    });
+  });
+</script>
+
+</body>
+</html>
