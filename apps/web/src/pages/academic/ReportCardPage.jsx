@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
+import { useClassSections } from '../../hooks/useClassSections.js';
 
 export default function ReportCardPage() {
   const [sectionId, setSectionId] = useState('');
@@ -11,10 +12,7 @@ export default function ReportCardPage() {
   const [resultUrl, setResultUrl] = useState(null);
   const [pollError, setPollError] = useState('');
 
-  const { data: sections = [] } = useQuery({
-    queryKey: ['sections'],
-    queryFn: () => api.get('/academic/sections').then((r) => r.data),
-  });
+  const { classes } = useClassSections();
 
   const { data: terms = [] } = useQuery({
     queryKey: ['terms'],
@@ -71,7 +69,15 @@ export default function ReportCardPage() {
             className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           >
             <option value="">— Select Section —</option>
-            {sections.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
+            {classes.map((c) => (
+              <optgroup key={c._id} label={c.name}>
+                {(c.sections || []).map((s) => (
+                  <option key={s._id} value={s._id}>
+                    {s.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
           </select>
         </div>
         <div className="flex flex-col gap-1.5">
@@ -82,7 +88,11 @@ export default function ReportCardPage() {
             className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           >
             <option value="">— Select Term —</option>
-            {terms.map((t) => <option key={t._id} value={t._id}>{t.name}</option>)}
+            {terms.map((t) => (
+              <option key={t._id} value={t._id}>
+                {t.name}
+              </option>
+            ))}
           </select>
         </div>
         <Button
@@ -100,12 +110,14 @@ export default function ReportCardPage() {
           </p>
           <p className="text-sm">
             Status:{' '}
-            <span className={[
-              'font-medium',
-              jobState === 'completed' ? 'text-green-600' : '',
-              jobState === 'failed' ? 'text-red-600' : '',
-              jobState === 'active' ? 'text-blue-600' : '',
-            ].join(' ')}>
+            <span
+              className={[
+                'font-medium',
+                jobState === 'completed' ? 'text-green-600' : '',
+                jobState === 'failed' ? 'text-red-600' : '',
+                jobState === 'active' ? 'text-blue-600' : '',
+              ].join(' ')}
+            >
               {jobState ?? 'waiting'}
             </span>
           </p>

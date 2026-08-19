@@ -12,6 +12,7 @@ import {
 } from '../../components/ui/dialog.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
+import { useClassSections } from '../../hooks/useClassSections.js';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const PERIODS = [1, 2, 3, 4, 5, 6, 7, 8];
@@ -144,10 +145,7 @@ export default function TimetablePage() {
     queryFn: () => api.get('/academic/years').then((r) => r.data),
   });
 
-  const { data: sections = [] } = useQuery({
-    queryKey: ['sections'],
-    queryFn: () => api.get('/academic/sections').then((r) => r.data),
-  });
+  const { classes } = useClassSections();
 
   const { data: timetable = [], isLoading } = useQuery({
     queryKey: ['timetable', sectionId, yearId],
@@ -190,10 +188,14 @@ export default function TimetablePage() {
           className="h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <option value="">— Section —</option>
-          {sections.map((s) => (
-            <option key={s._id} value={s._id}>
-              {s.name}
-            </option>
+          {classes.map((c) => (
+            <optgroup key={c._id} label={c.name}>
+              {(c.sections || []).map((s) => (
+                <option key={s._id} value={s._id}>
+                  {s.name}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
       </div>

@@ -5,10 +5,15 @@ import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from '../../components/ui/dialog.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
+import { useClassSections } from '../../hooks/useClassSections.js';
 
 function statusVariant(status) {
   if (status === 'active') return 'success';
@@ -20,7 +25,12 @@ function statusVariant(status) {
 function AddStudentModal({ open, onOpenChange, sections }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
-    admissionNo: '', firstName: '', lastName: '', sectionId: '', dateOfBirth: '', gender: '',
+    admissionNo: '',
+    firstName: '',
+    lastName: '',
+    sectionId: '',
+    dateOfBirth: '',
+    gender: '',
   });
   const [error, setError] = useState('');
 
@@ -29,7 +39,14 @@ function AddStudentModal({ open, onOpenChange, sections }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
       onOpenChange(false);
-      setForm({ admissionNo: '', firstName: '', lastName: '', sectionId: '', dateOfBirth: '', gender: '' });
+      setForm({
+        admissionNo: '',
+        firstName: '',
+        lastName: '',
+        sectionId: '',
+        dateOfBirth: '',
+        gender: '',
+      });
       setError('');
     },
     onError: (err) => setError(err.response?.data?.error || 'Failed to add student'),
@@ -39,7 +56,8 @@ function AddStudentModal({ open, onOpenChange, sections }) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
   }
 
-  const selectCls = 'h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
+  const selectCls =
+    'h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -49,20 +67,42 @@ function AddStudentModal({ open, onOpenChange, sections }) {
         </DialogHeader>
         <form
           id="add-student"
-          onSubmit={(e) => { e.preventDefault(); mutation.mutate(form); }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            mutation.mutate(form);
+          }}
           className="flex flex-col gap-4"
         >
-          <Input label="Admission No" value={form.admissionNo} onChange={update('admissionNo')} required />
-          <Input label="First Name" value={form.firstName} onChange={update('firstName')} required />
+          <Input
+            label="Admission No"
+            value={form.admissionNo}
+            onChange={update('admissionNo')}
+            required
+          />
+          <Input
+            label="First Name"
+            value={form.firstName}
+            onChange={update('firstName')}
+            required
+          />
           <Input label="Last Name" value={form.lastName} onChange={update('lastName')} required />
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium">Section</label>
             <select value={form.sectionId} onChange={update('sectionId')} className={selectCls}>
               <option value="">— Select section —</option>
-              {sections.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
+              {sections.map((s) => (
+                <option key={s._id} value={s._id}>
+                  {s.label}
+                </option>
+              ))}
             </select>
           </div>
-          <Input label="Date of Birth" type="date" value={form.dateOfBirth} onChange={update('dateOfBirth')} />
+          <Input
+            label="Date of Birth"
+            type="date"
+            value={form.dateOfBirth}
+            onChange={update('dateOfBirth')}
+          />
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium">Gender</label>
             <select value={form.gender} onChange={update('gender')} className={selectCls}>
@@ -75,7 +115,9 @@ function AddStudentModal({ open, onOpenChange, sections }) {
           {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button type="submit" form="add-student" disabled={mutation.isPending}>
             {mutation.isPending ? 'Saving…' : 'Add Student'}
           </Button>
@@ -93,13 +135,19 @@ function ImportResultModal({ open, onOpenChange, result }) {
           <DialogTitle>Import Results</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-2">
-          <p className="text-sm text-emerald-600 dark:text-emerald-400">Created: {result?.created}</p>
-          <p className="text-sm text-amber-600 dark:text-amber-400">Skipped (duplicate): {result?.skipped}</p>
+          <p className="text-sm text-emerald-600 dark:text-emerald-400">
+            Created: {result?.created}
+          </p>
+          <p className="text-sm text-amber-600 dark:text-amber-400">
+            Skipped (duplicate): {result?.skipped}
+          </p>
           <p className="text-sm text-destructive">Errors: {result?.errors?.length ?? 0}</p>
           {result?.errors?.length > 0 && (
             <div className="mt-2 max-h-40 overflow-y-auto rounded border border-destructive/30 p-2 text-xs text-destructive">
               {result.errors.map((e, i) => (
-                <p key={i}>{e.reason} — {JSON.stringify(e.row)}</p>
+                <p key={i}>
+                  {e.reason} — {JSON.stringify(e.row)}
+                </p>
               ))}
             </div>
           )}
@@ -120,10 +168,7 @@ export default function StudentsPage() {
   const [importResult, setImportResult] = useState(null);
   const fileRef = useRef(null);
 
-  const { data: sections = [] } = useQuery({
-    queryKey: ['sections'],
-    queryFn: () => api.get('/academic/sections').then((r) => r.data),
-  });
+  const { classes, sections } = useClassSections();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['students', sectionId, page],
@@ -138,9 +183,11 @@ export default function StudentsPage() {
     mutationFn: (file) => {
       const fd = new FormData();
       fd.append('file', file);
-      return api.post('/academic/students/import', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      }).then((r) => r.data);
+      return api
+        .post('/academic/students/import', fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+        .then((r) => r.data);
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
@@ -148,7 +195,7 @@ export default function StudentsPage() {
     },
   });
 
-  const sectionMap = Object.fromEntries(sections.map((s) => [s._id, s.name]));
+  const sectionMap = Object.fromEntries(sections.map((s) => [s._id, s.label]));
 
   return (
     <div className="flex flex-col gap-6">
@@ -156,7 +203,11 @@ export default function StudentsPage() {
         title="Students"
         action={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={importMutation.isPending}>
+            <Button
+              variant="outline"
+              onClick={() => fileRef.current?.click()}
+              disabled={importMutation.isPending}
+            >
               {importMutation.isPending ? 'Importing…' : 'Import CSV'}
             </Button>
             <input
@@ -164,7 +215,10 @@ export default function StudentsPage() {
               type="file"
               accept=".csv"
               className="hidden"
-              onChange={(e) => { if (e.target.files?.[0]) importMutation.mutate(e.target.files[0]); e.target.value = ''; }}
+              onChange={(e) => {
+                if (e.target.files?.[0]) importMutation.mutate(e.target.files[0]);
+                e.target.value = '';
+              }}
             />
             <Button onClick={() => setShowAdd(true)}>Add Student</Button>
           </div>
@@ -174,11 +228,22 @@ export default function StudentsPage() {
       <div className="flex gap-3 items-center">
         <select
           value={sectionId}
-          onChange={(e) => { setSectionId(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setSectionId(e.target.value);
+            setPage(1);
+          }}
           className="h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <option value="">All Sections</option>
-          {sections.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
+          {classes.map((c) => (
+            <optgroup key={c._id} label={c.name}>
+              {(c.sections || []).map((s) => (
+                <option key={s._id} value={s._id}>
+                  {s.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
         </select>
       </div>
 
@@ -193,8 +258,12 @@ export default function StudentsPage() {
         {data?.students?.map((s) => (
           <TableRow key={s._id} className="bg-card">
             <TableCell className="px-4 py-3 font-mono text-xs">{s.admissionNo}</TableCell>
-            <TableCell className="px-4 py-3">{s.firstName} {s.lastName}</TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">{sectionMap[s.sectionId] ?? '—'}</TableCell>
+            <TableCell className="px-4 py-3">
+              {s.firstName} {s.lastName}
+            </TableCell>
+            <TableCell className="px-4 py-3 text-muted-foreground">
+              {sectionMap[s.sectionId] ?? '—'}
+            </TableCell>
             <TableCell className="px-4 py-3">
               <Badge variant={statusVariant(s.status)}>{s.status}</Badge>
             </TableCell>
@@ -204,18 +273,34 @@ export default function StudentsPage() {
 
       {data && data.pages > 1 && (
         <div className="flex gap-2 justify-end">
-          <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+          >
             Previous
           </Button>
-          <span className="text-sm self-center text-muted-foreground">Page {page} of {data.pages}</span>
-          <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={page >= data.pages}>
+          <span className="text-sm self-center text-muted-foreground">
+            Page {page} of {data.pages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={page >= data.pages}
+          >
             Next
           </Button>
         </div>
       )}
 
       <AddStudentModal open={showAdd} onOpenChange={setShowAdd} sections={sections} />
-      <ImportResultModal open={Boolean(importResult)} onOpenChange={(v) => !v && setImportResult(null)} result={importResult} />
+      <ImportResultModal
+        open={Boolean(importResult)}
+        onOpenChange={(v) => !v && setImportResult(null)}
+        result={importResult}
+      />
     </div>
   );
 }
