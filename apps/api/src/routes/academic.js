@@ -2,8 +2,14 @@ import { Router } from 'express';
 import multer from 'multer';
 import { parse } from 'csv-parse/sync';
 import { Queue } from 'bullmq';
+import {
+  markAttendanceSchema,
+  attendanceQuerySchema,
+  attendanceReportQuerySchema,
+} from '@rooted/shared/schemas';
 import { authenticate } from '../middleware/authenticate.js';
 import { requirePermission } from '../middleware/requirePermission.js';
+import { validate } from '../middleware/validate.js';
 import { redis } from '../config/redis.js';
 import { withCache, invalidateCache } from '../utils/cache.js';
 import { AcademicYear } from '../models/AcademicYear.js';
@@ -16,6 +22,10 @@ import { Timetable } from '../models/Timetable.js';
 import { AttendanceRecord } from '../models/AttendanceRecord.js';
 import { Grade } from '../models/Grade.js';
 import { buildStudentFilter } from '../utils/studentFilter.js';
+import { computeAttendanceStats } from '../utils/attendanceStats.js';
+
+const DEFAULTER_THRESHOLD_PCT = 75;
+const DEFAULT_REPORT_RANGE_DAYS = 30;
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -476,53 +486,108 @@ router.delete('/timetable/:id', requirePermission('tenant:admin'), async (req, r
 
 // ── Attendance ────────────────────────────────────────────────────────────────
 
-router.post('/attendance', requirePermission('attendance:write'), async (req, res, next) => {
-  try {
-    const { date, sectionId, subjectId, records } = req.body;
-    const tenantId = req.tenant._id;
-    const markedBy = req.user.sub;
+router.post(
+  '/attendance',
+  requirePermission('attendance:write'),
+  validate(markAttendanceSchema),
+  async (req, res, next) => {
+    try {
+      const { date, sectionId, subjectId, records } = req.body;
+      const tenantId = req.tenant._id;
+      const markedBy = req.user.sub;
+      const normalizedSubjectId = subjectId ?? null;
 
-    const ops = records.map(({ entityId, status, note }) => ({
-      updateOne: {
-        filter: { tenantId, date: new Date(date), entityType: 'student', entityId },
-        update: {
-          $set: {
+      const ops = records.map(({ entityId, status, note }) => ({
+        updateOne: {
+          filter: {
             tenantId,
-            date: new Date(date),
+            date,
             entityType: 'student',
             entityId,
-            sectionId,
-            subjectId,
-            status,
-            markedBy,
-            note,
+            subjectId: normalizedSubjectId,
           },
+          update: {
+            $set: {
+              tenantId,
+              date,
+              entityType: 'student',
+              entityId,
+              sectionId,
+              subjectId: normalizedSubjectId,
+              status,
+              markedBy,
+              note,
+            },
+          },
+          upsert: true,
         },
-        upsert: true,
-      },
-    }));
+      }));
 
-    await AttendanceRecord.bulkWrite(ops);
-    res.json({ saved: ops.length });
+      await AttendanceRecord.bulkWrite(ops);
+      res.json({ saved: ops.length });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get('/attendance', requirePermission('attendance:read'), async (req, res, next) => {
+  try {
+    const query = attendanceQuerySchema.parse(req.query);
+    const filter = { tenantId: req.tenant._id };
+    if (query.sectionId) filter.sectionId = query.sectionId;
+    if (query.entityId) filter.entityId = query.entityId;
+    if (query.subjectId) filter.subjectId = query.subjectId;
+    if (query.date) filter.date = query.date;
+    if (query.from || query.to) {
+      filter.date = {};
+      if (query.from) filter.date.$gte = query.from;
+      if (query.to) filter.date.$lte = query.to;
+    }
+
+    const records = await AttendanceRecord.find(filter).sort({ date: -1 }).lean();
+    res.json(records);
   } catch (err) {
     next(err);
   }
 });
 
-router.get('/attendance', requirePermission('attendance:read'), async (req, res, next) => {
+router.get('/attendance/report', requirePermission('attendance:read'), async (req, res, next) => {
   try {
-    const filter = { tenantId: req.tenant._id };
-    if (req.query.sectionId) filter.sectionId = req.query.sectionId;
-    if (req.query.entityId) filter.entityId = req.query.entityId;
-    if (req.query.date) filter.date = new Date(req.query.date);
-    if (req.query.from || req.query.to) {
-      filter.date = {};
-      if (req.query.from) filter.date.$gte = new Date(req.query.from);
-      if (req.query.to) filter.date.$lte = new Date(req.query.to);
-    }
+    const query = attendanceReportQuerySchema.parse(req.query);
+    const tenantId = req.tenant._id;
+    const to = query.to ?? new Date();
+    const from =
+      query.from ?? new Date(to.getTime() - DEFAULT_REPORT_RANGE_DAYS * 24 * 60 * 60 * 1000);
 
-    const records = await AttendanceRecord.find(filter).sort({ date: -1 }).lean();
-    res.json(records);
+    const recordFilter = {
+      tenantId,
+      sectionId: query.sectionId,
+      entityType: 'student',
+      date: { $gte: from, $lte: to },
+    };
+    if (query.subjectId) recordFilter.subjectId = query.subjectId;
+
+    const [students, records] = await Promise.all([
+      Student.find({ tenantId, sectionId: query.sectionId, status: 'active' })
+        .sort({ lastName: 1, firstName: 1 })
+        .lean(),
+      AttendanceRecord.find(recordFilter).lean(),
+    ]);
+
+    const { students: studentStats, classAveragePct } = computeAttendanceStats(
+      students,
+      records,
+      DEFAULTER_THRESHOLD_PCT
+    );
+
+    res.json({
+      from,
+      to,
+      thresholdPct: DEFAULTER_THRESHOLD_PCT,
+      classAveragePct,
+      students: studentStats,
+    });
   } catch (err) {
     next(err);
   }

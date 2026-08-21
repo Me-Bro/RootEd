@@ -17,7 +17,13 @@ const attendanceRecordSchema = new mongoose.Schema(
 );
 
 attendanceRecordSchema.plugin(tenantScopePlugin);
-attendanceRecordSchema.index({ tenantId: 1, date: 1, entityType: 1, entityId: 1 }, { unique: true });
+// subjectId included so each period/subject gets its own record per day —
+// absent/null subjectId (staff attendance, or no period selected) still
+// collapses to one record per day since null is a single index value.
+attendanceRecordSchema.index(
+  { tenantId: 1, date: 1, entityType: 1, entityId: 1, subjectId: 1 },
+  { unique: true }
+);
 attendanceRecordSchema.index({ tenantId: 1, sectionId: 1, date: 1 });
 
 export const AttendanceRecord = mongoose.model('AttendanceRecord', attendanceRecordSchema);
