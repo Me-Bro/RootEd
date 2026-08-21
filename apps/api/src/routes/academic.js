@@ -15,6 +15,7 @@ import { Student } from '../models/Student.js';
 import { Timetable } from '../models/Timetable.js';
 import { AttendanceRecord } from '../models/AttendanceRecord.js';
 import { Grade } from '../models/Grade.js';
+import { buildStudentFilter } from '../utils/studentFilter.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -277,9 +278,7 @@ router.get('/students', requirePermission('students:read'), async (req, res, nex
   try {
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(100, Number(req.query.limit) || 20);
-    const filter = { tenantId: req.tenant._id };
-    if (req.query.sectionId) filter.sectionId = req.query.sectionId;
-    if (req.query.status) filter.status = req.query.status;
+    const filter = buildStudentFilter(req.tenant._id, req.query);
 
     const [students, total] = await Promise.all([
       Student.find(filter)
