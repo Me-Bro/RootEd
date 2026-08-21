@@ -66,6 +66,11 @@ async function run() {
   await mongoose.connect(env.MONGODB_URI);
   console.error('Connected:', env.MONGODB_URI);
 
+  // AttendanceRecord's unique index gained subjectId (per-period attendance) —
+  // deleteMany below doesn't drop indexes, so keep the test DB's index in sync
+  // with the current schema on every seed run.
+  await AttendanceRecord.syncIndexes();
+
   if (CLEAN) {
     const collections = await mongoose.connection.db.collections();
     await Promise.all(collections.map((c) => c.deleteMany({})));
@@ -392,7 +397,7 @@ async function run() {
       const status =
         student.admissionNo.endsWith('001') && date.getDate() % 5 === 0 ? 'absent' : 'present';
       await AttendanceRecord.findOneAndUpdate(
-        { tenantId, date, entityType: 'student', entityId: student._id },
+        { tenantId, date, entityType: 'student', entityId: student._id, subjectId: null },
         {
           $setOnInsert: {
             tenantId,
@@ -400,6 +405,7 @@ async function run() {
             entityType: 'student',
             entityId: student._id,
             sectionId: section._id,
+            subjectId: null,
             status,
             markedBy: users.teacher._id,
           },
@@ -407,6 +413,59 @@ async function run() {
         { upsert: true, _bypassTenantScope: true }
       );
     }
+  }
+
+  // Second student gets a lower attendance rate (3 of 5 days absent) so the
+  // attendance report page has a real defaulter to show, without touching
+  // student 1's numbers that student-detail.spec.js already asserts against.
+  const lowAttendanceStudent = activeStudents[1];
+  for (const date of attendanceDates.slice(0, 3)) {
+    await AttendanceRecord.findOneAndUpdate(
+      {
+        tenantId,
+        date,
+        entityType: 'student',
+        entityId: lowAttendanceStudent._id,
+        subjectId: null,
+      },
+      { $set: { status: 'absent' } },
+      { _bypassTenantScope: true }
+    );
+  }
+
+  // Per-period attendance: same day, two subjects, distinct outcomes — proves
+  // multiple period-records coexist for one student/date under the new
+  // (date, entity, subjectId) unique index.
+  const lastAttendanceDate = attendanceDates[attendanceDates.length - 1];
+  const periodAttendanceDefs = [
+    { student: activeStudents[0], subject: subjects[0], status: 'present' },
+    { student: activeStudents[0], subject: subjects[1], status: 'absent' },
+    { student: activeStudents[1], subject: subjects[0], status: 'present' },
+    { student: activeStudents[1], subject: subjects[1], status: 'late' },
+  ];
+  for (const def of periodAttendanceDefs) {
+    await AttendanceRecord.findOneAndUpdate(
+      {
+        tenantId,
+        date: lastAttendanceDate,
+        entityType: 'student',
+        entityId: def.student._id,
+        subjectId: def.subject._id,
+      },
+      {
+        $setOnInsert: {
+          tenantId,
+          date: lastAttendanceDate,
+          entityType: 'student',
+          entityId: def.student._id,
+          sectionId: section._id,
+          subjectId: def.subject._id,
+          status: def.status,
+          markedBy: users.teacher._id,
+        },
+      },
+      { upsert: true, _bypassTenantScope: true }
+    );
   }
 
   // ── Fee Assignments + one partial payment ────────────────────────────────

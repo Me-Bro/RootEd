@@ -13,6 +13,7 @@
     "seed:test:clean": "node --env-file=.env.test src/scripts/seed-test-data.js --clean"
   },
   "dependencies": {
+    "@rooted/shared": "workspace:*",
     "@sentry/node": "^10.53.1",
     "argon2": "^0.40.3",
     "bullmq": "^5.8.1",

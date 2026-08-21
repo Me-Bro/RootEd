@@ -63,6 +63,12 @@ const NAV_GROUPS = [
         icon: ClipboardList,
         permission: 'attendance:read',
       },
+      {
+        to: '/academic/attendance/report',
+        label: 'Attendance Report',
+        icon: BarChart2,
+        permission: 'attendance:read',
+      },
       { to: '/academic/grades', label: 'Grades', icon: BookOpen, permission: 'grades:read' },
       { to: '/academic/timetable', label: 'Timetable', icon: Grid, permission: 'students:read' },
       {

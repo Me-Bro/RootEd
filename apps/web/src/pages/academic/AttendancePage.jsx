@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
@@ -19,10 +20,18 @@ export default function AttendancePage() {
   const queryClient = useQueryClient();
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [sectionId, setSectionId] = useState('');
+  const [subjectId, setSubjectId] = useState('');
   const [attendanceMap, setAttendanceMap] = useState({});
   const [syncedRecords, setSyncedRecords] = useState(EMPTY_ARRAY);
 
   const { classes } = useClassSections();
+  const classId = classes.find((c) => (c.sections || []).some((s) => s._id === sectionId))?._id;
+
+  const { data: subjects = EMPTY_ARRAY } = useQuery({
+    queryKey: ['subjects', classId],
+    queryFn: () => api.get(`/academic/subjects?classId=${classId}`).then((r) => r.data),
+    enabled: Boolean(classId),
+  });
 
   const { data: students = EMPTY_ARRAY } = useQuery({
     queryKey: ['students-list', sectionId],
@@ -36,10 +45,15 @@ export default function AttendancePage() {
   });
 
   const { data: existingRecords = EMPTY_ARRAY } = useQuery({
-    queryKey: ['attendance', sectionId, date],
+    queryKey: ['attendance', sectionId, date, subjectId],
     queryFn: () =>
       sectionId && date
-        ? api.get(`/academic/attendance?sectionId=${sectionId}&date=${date}`).then((r) => r.data)
+        ? api
+            .get(
+              `/academic/attendance?sectionId=${sectionId}&date=${date}` +
+                (subjectId ? `&subjectId=${subjectId}` : '')
+            )
+            .then((r) => r.data)
         : Promise.resolve(EMPTY_ARRAY),
     enabled: Boolean(sectionId && date),
   });
@@ -59,16 +73,22 @@ export default function AttendancePage() {
         .post('/academic/attendance', {
           date,
           sectionId,
+          subjectId: subjectId || null,
           records,
         })
         .then((r) => r.data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['attendance', sectionId, date] }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['attendance', sectionId, date, subjectId] }),
   });
 
   function toggleStatus(studentId, current) {
     const idx = STATUS_OPTIONS.indexOf(current);
     const next = STATUS_OPTIONS[(idx + 1) % STATUS_OPTIONS.length];
     setAttendanceMap((m) => ({ ...m, [studentId]: next }));
+  }
+
+  function markAll(status) {
+    setAttendanceMap(() => Object.fromEntries(students.map((s) => [s._id, status])));
   }
 
   function handleSave() {
@@ -81,7 +101,17 @@ export default function AttendancePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Attendance</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Attendance</h1>
+        {sectionId && (
+          <Link
+            to={`/academic/attendance/report?sectionId=${sectionId}`}
+            className="text-sm font-medium text-blue-600 hover:underline"
+          >
+            View Report →
+          </Link>
+        )}
+      </div>
 
       <div className="flex flex-wrap gap-4 items-end">
         <div className="flex flex-col gap-1.5">
@@ -97,7 +127,10 @@ export default function AttendancePage() {
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Section</label>
           <select
             value={sectionId}
-            onChange={(e) => setSectionId(e.target.value)}
+            onChange={(e) => {
+              setSectionId(e.target.value);
+              setSubjectId('');
+            }}
             className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           >
             <option value="">— Select section —</option>
@@ -112,12 +145,40 @@ export default function AttendancePage() {
             ))}
           </select>
         </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Subject (optional)
+          </label>
+          <select
+            value={subjectId}
+            onChange={(e) => setSubjectId(e.target.value)}
+            disabled={!sectionId}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+          >
+            <option value="">— Daily (no subject) —</option>
+            {subjects.map((sub) => (
+              <option key={sub._id} value={sub._id}>
+                {sub.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {sectionId && students.length > 0 && (
         <>
-          <div className="text-xs text-gray-400">
-            Click a status to cycle: present → absent → late → excused
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="text-xs text-gray-400">
+              Click a status to cycle: present → absent → late → excused
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => markAll('present')}>
+                Mark all Present
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => markAll('absent')}>
+                Mark all Absent
+              </Button>
+            </div>
           </div>
           <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
             <table className="w-full text-sm">

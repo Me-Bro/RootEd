@@ -41,7 +41,12 @@ services:
     image: node:22-alpine
     working_dir: /app
     command: sh -c "npm install -g pnpm@11.1.2 && pnpm install --ignore-scripts && pnpm dev:web"
-    ports:
+    # !override: base docker-compose.yml publishes 5173:80 (prod nginx-served
+    # build); Compose concatenates `ports:` across -f files by default, so
+    # without this both rules fight over host port 5173 and binding becomes
+    # flaky/nondeterministic. This replaces the base rule instead of adding
+    # to it.
+    ports: !override
       - '5173:5173'
     environment:
       VITE_APP_DOMAIN: localtest.me
