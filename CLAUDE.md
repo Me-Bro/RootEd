@@ -123,6 +123,10 @@ Web build args (Dockerfile / `.env`): `VITE_API_URL`, `VITE_APP_DOMAIN`, `VITE_S
 
 Docker Compose (`docker-compose.yml`) brings up: MongoDB 7 (replica set `rs0`, initialized by a one-shot `mongo-init` service), Redis 7, Minio, API, Web (built static image), Nginx (wildcard-subdomain TLS — requires certs at `nginx/certs/fullchain.pem`/`privkey.pem`, which are **not** included in the repo; use `nginx/nginx.dev.conf` via `docker-compose.dev.yml` for a plain-HTTP local variant instead of generating certs).
 
+`apps/web/.env.dev` is the known-good template for the `docker-compose.dev.yml` hot-reload workflow: `VITE_API_URL=` (empty — same-origin `/__api`, required for the CSRF double-submit cookie to match) and `VITE_APP_DOMAIN=localtest.me` (public wildcard DNS → `127.0.0.1`, matches `apps/api/.env`'s `APP_DOMAIN`). Copy it to `apps/web/.env` before running that stack — a stale/absolute `VITE_API_URL` in `apps/web/.env` (e.g. pointing at a tenant subdomain:3001 directly) causes `invalid csrf token` errors on every mutating request.
+
+The Vite dev proxy's upstream target and tenant `Host` header (`vite.config.js`) are derived from `API_PROXY_TARGET` (default `http://localhost:3001`) and `VITE_APP_DOMAIN` respectively — `docker-compose.dev.yml` overrides `API_PROXY_TARGET: http://api:3001` for the `web` service, since inside that container `localhost` is the container itself, not the `api` container (`localhost:3001` there 502s).
+
 ### Test (E2E)
 - `apps/api/.env.test` — separate `rooted_test` DB, `APP_DOMAIN=localhost` (never share with the dev DB/domain)
 - `apps/web/.env.test` — sets `VITE_API_URL=http://127.0.0.1:5173/__api` (routes through Vite proxy)
