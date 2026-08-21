@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api.js';
 import { Badge } from '../../components/ui/Badge.jsx';
@@ -166,15 +167,26 @@ export default function StudentsPage() {
   const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
   const [importResult, setImportResult] = useState(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
   const fileRef = useRef(null);
 
   const { classes, sections } = useClassSections();
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['students', sectionId, page],
+    queryKey: ['students', sectionId, search, page],
     queryFn: () => {
       const params = new URLSearchParams({ page });
       if (sectionId) params.set('sectionId', sectionId);
+      if (search) params.set('search', search);
       return api.get(`/academic/students?${params}`).then((r) => r.data);
     },
   });
@@ -226,6 +238,13 @@ export default function StudentsPage() {
       />
 
       <div className="flex gap-3 items-center">
+        <Input
+          label=""
+          placeholder="Search name or admission no…"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          className="max-w-xs"
+        />
         <select
           value={sectionId}
           onChange={(e) => {
@@ -259,7 +278,9 @@ export default function StudentsPage() {
           <TableRow key={s._id} className="bg-card">
             <TableCell className="px-4 py-3 font-mono text-xs">{s.admissionNo}</TableCell>
             <TableCell className="px-4 py-3">
-              {s.firstName} {s.lastName}
+              <Link to={`/academic/students/${s._id}`} className="hover:underline">
+                {s.firstName} {s.lastName}
+              </Link>
             </TableCell>
             <TableCell className="px-4 py-3 text-muted-foreground">
               {sectionMap[s.sectionId] ?? '—'}

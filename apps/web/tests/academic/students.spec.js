@@ -95,6 +95,48 @@ test.describe('Students page', () => {
     await expect(page.getByText(/Errors:|Skipped/).first()).toBeVisible();
   });
 
+  test('search narrows results by admission number', async ({ page }) => {
+    const ids = getTestIds();
+    const admNo = ids.students[0].admissionNo;
+
+    await page.goto('/academic/students');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByPlaceholder('Search name or admission no…').fill(admNo);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByText(admNo)).toBeVisible({ timeout: 8_000 });
+    const rows = page.locator('table tbody tr');
+    await expect(rows).toHaveCount(1, { timeout: 8_000 });
+  });
+
+  test('search narrows results by name', async ({ page }) => {
+    await page.goto('/academic/students');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByPlaceholder('Search name or admission no…').fill('Student1');
+    await page.waitForLoadState('networkidle');
+
+    const rows = page.locator('table tbody tr');
+    await expect(rows.first()).toBeVisible({ timeout: 8_000 });
+    await expect(page.getByText('Student1 Test')).toBeVisible();
+  });
+
+  test('clicking a student name navigates to the detail page', async ({ page }) => {
+    const ids = getTestIds();
+    const admNo = ids.students[0].admissionNo;
+
+    await page.goto('/academic/students');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByPlaceholder('Search name or admission no…').fill(admNo);
+    await page.waitForLoadState('networkidle');
+
+    await page.getByRole('link', { name: 'Student1 Test' }).click();
+    await page.waitForURL(/\/academic\/students\/[a-f0-9]+$/, { timeout: 10_000 });
+    await expect(page.getByRole('heading', { name: 'Student1 Test' })).toBeVisible();
+  });
+
   test('section filter narrows results', async ({ page }) => {
     await page.goto('/academic/students');
     await page.waitForLoadState('networkidle');

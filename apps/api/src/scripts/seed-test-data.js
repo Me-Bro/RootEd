@@ -30,6 +30,9 @@ import { SalaryStructure } from '../models/SalaryStructure.js';
 import { CostCenter } from '../models/CostCenter.js';
 import { FeeStructure } from '../models/FeeStructure.js';
 import { Consumable, FixedAsset } from '../models/InventoryItem.js';
+import { AttendanceRecord } from '../models/AttendanceRecord.js';
+import { FeeAssignment } from '../models/FeeAssignment.js';
+import { FeePayment } from '../models/FeePayment.js';
 import { hashPassword } from '../services/auth.service.js';
 
 const CLEAN = process.argv.includes('--clean');
@@ -217,11 +220,38 @@ async function run() {
         sectionId: section._id,
         gender: i % 2 === 0 ? 'female' : 'male',
         status: 'active',
+        parentContacts:
+          i === 1 ? [{ name: 'Parent One', phone: '9000000001', relation: 'father' }] : [],
       });
       student = student.toObject();
     }
     students.push(student);
   }
+
+  // Extra students covering non-active statuses, for status-change/profile e2e coverage.
+  const extraStudentDefs = [
+    { admissionNo: '2025-TEST-011', firstName: 'Student11', status: 'withdrawn', gender: 'male' },
+    { admissionNo: '2025-TEST-012', firstName: 'Student12', status: 'graduated', gender: 'female' },
+  ];
+  for (const def of extraStudentDefs) {
+    let student = await Student.findOne({ tenantId, admissionNo: def.admissionNo }, null, {
+      _bypassTenantScope: true,
+    }).lean();
+    if (!student) {
+      student = await Student.create({
+        tenantId,
+        admissionNo: def.admissionNo,
+        firstName: def.firstName,
+        lastName: 'Test',
+        sectionId: section._id,
+        gender: def.gender,
+        status: def.status,
+      });
+      student = student.toObject();
+    }
+    students.push(student);
+  }
+  const activeStudents = students.filter((s) => s.status === 'active');
 
   // ── Grades ────────────────────────────────────────────────────────────────
   function scoreToLetter(score) {
@@ -351,6 +381,83 @@ async function run() {
     feeStructure = feeStructure.toObject();
   }
 
+  // ── Attendance (last 5 days, active students only) ───────────────────────
+  const attendanceDates = Array.from({ length: 5 }, (_, i) => {
+    const d = new Date('2025-06-02');
+    d.setDate(d.getDate() + i);
+    return d;
+  });
+  for (const date of attendanceDates) {
+    for (const student of activeStudents) {
+      const status =
+        student.admissionNo.endsWith('001') && date.getDate() % 5 === 0 ? 'absent' : 'present';
+      await AttendanceRecord.findOneAndUpdate(
+        { tenantId, date, entityType: 'student', entityId: student._id },
+        {
+          $setOnInsert: {
+            tenantId,
+            date,
+            entityType: 'student',
+            entityId: student._id,
+            sectionId: section._id,
+            status,
+            markedBy: users.teacher._id,
+          },
+        },
+        { upsert: true, _bypassTenantScope: true }
+      );
+    }
+  }
+
+  // ── Fee Assignments + one partial payment ────────────────────────────────
+  const feeTotalAmount = feeStructure.components.reduce((sum, c) => sum + c.amount, 0);
+  const feeAssignments = [];
+  for (const student of activeStudents) {
+    let assignment = await FeeAssignment.findOne(
+      { tenantId, studentId: student._id, feeStructureId: feeStructure._id },
+      null,
+      { _bypassTenantScope: true }
+    ).lean();
+    if (!assignment) {
+      assignment = await FeeAssignment.create({
+        tenantId,
+        studentId: student._id,
+        feeStructureId: feeStructure._id,
+        academicYearId: year._id,
+        totalAmount: feeTotalAmount,
+        dueDate: new Date('2025-09-30'),
+      });
+      assignment = assignment.toObject();
+    }
+    feeAssignments.push(assignment);
+  }
+
+  const firstAssignment = feeAssignments[0];
+  if (firstAssignment) {
+    const existingPayment = await FeePayment.findOne(
+      { tenantId, assignmentId: firstAssignment._id },
+      null,
+      { _bypassTenantScope: true }
+    ).lean();
+    if (!existingPayment) {
+      const partialAmount = Math.round(feeTotalAmount / 2);
+      await FeePayment.create({
+        tenantId,
+        assignmentId: firstAssignment._id,
+        studentId: firstAssignment.studentId,
+        amount: partialAmount,
+        paymentMethod: 'cash',
+        receiptNumber: 'RCP-TEST-00001',
+        collectedBy: users.tenant_admin._id,
+      });
+      await FeeAssignment.updateOne(
+        { _id: firstAssignment._id, tenantId },
+        { $set: { status: 'partial' } },
+        { _bypassTenantScope: true }
+      );
+    }
+  }
+
   // ── Inventory Items ───────────────────────────────────────────────────────
   const inventoryItems = [];
 
@@ -414,7 +521,16 @@ async function run() {
     class: { _id: cls._id.toString() },
     section: { _id: section._id.toString() },
     subjects: subjects.map((s) => ({ _id: s._id.toString(), name: s.name })),
-    students: students.map((s) => ({ _id: s._id.toString(), admissionNo: s.admissionNo })),
+    students: students.map((s) => ({
+      _id: s._id.toString(),
+      admissionNo: s.admissionNo,
+      status: s.status,
+    })),
+    feeAssignments: feeAssignments.map((a) => ({
+      _id: a._id.toString(),
+      studentId: a.studentId.toString(),
+      totalAmount: a.totalAmount,
+    })),
     grades: grades.map((g) => ({
       _id: g._id.toString(),
       studentId: g.studentId.toString(),
