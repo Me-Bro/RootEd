@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, Bell, CheckCircle2 } from 'lucide-react';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
@@ -83,6 +84,7 @@ function Chip({ children, ...props }) {
 }
 
 export default function ReportCardPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const canGenerate = (user?.permissions ?? []).includes('grades:publish');
   const [searchParams] = useSearchParams();
@@ -148,7 +150,8 @@ export default function ReportCardPage() {
       setResumedJob(false);
       persistResumableJob(sectionId, termId, data.jobId);
     },
-    onError: (err) => setPollError(err.response?.data?.error || 'Failed to start generation'),
+    onError: (err) =>
+      setPollError(err.response?.data?.error || t('academic.reportCards.startFailed')),
   });
 
   // Adjust job-tracking state when the picked section/term changes, following React's
@@ -190,7 +193,7 @@ export default function ReportCardPage() {
         queryClient.invalidateQueries({ queryKey: ['report-card-history', sectionId, termId] });
       }
       if (data.state === 'failed') {
-        setPollError('Report card generation failed');
+        setPollError(t('academic.reportCards.generationFailedShort'));
         clearResumableJob(sectionId, termId);
         queryClient.invalidateQueries({ queryKey: ['report-card-history', sectionId, termId] });
       }
@@ -201,12 +204,12 @@ export default function ReportCardPage() {
         clearResumableJob(sectionId, termId);
         setJobId(null);
         setJobState(null);
-        setPollError('That generation job could no longer be found — please generate again.');
+        setPollError(t('academic.reportCards.jobNotFound'));
         return;
       }
-      setPollError('Failed to check job status');
+      setPollError(t('academic.reportCards.checkStatusFailed'));
     }
-  }, [jobId, sectionId, termId, queryClient]);
+  }, [jobId, sectionId, termId, queryClient, t]);
 
   // Ref indirection so the interval/visibility handlers below always call the latest
   // checkStatus without needing it in their effect's dependency array. Refs must only
@@ -261,7 +264,7 @@ export default function ReportCardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold">Report Cards</h1>
+        <h1 className="text-2xl font-semibold">{t('academic.reportCards.title')}</h1>
         {currentSection && currentTerm && (
           <p className="text-sm text-muted-foreground">
             {currentSection.className} - {currentSection.name} · {currentTerm.name}
@@ -275,7 +278,7 @@ export default function ReportCardPage() {
             <Chip>
               {currentSection
                 ? `${currentSection.className}-${currentSection.name}`
-                : 'Select section'}
+                : t('academic.grades.selectSection')}
             </Chip>
             <DropdownMenuContent align="start">
               {classes.map((c) => (
@@ -292,11 +295,11 @@ export default function ReportCardPage() {
           </DropdownMenu>
 
           <DropdownMenu>
-            <Chip>{currentTerm ? currentTerm.name : 'Select term'}</Chip>
+            <Chip>{currentTerm ? currentTerm.name : t('academic.reportCards.selectTerm')}</Chip>
             <DropdownMenuContent align="start">
-              {terms.map((t) => (
-                <DropdownMenuItem key={t._id} onClick={() => setTermId(t._id)}>
-                  {t.name}
+              {terms.map((term) => (
+                <DropdownMenuItem key={term._id} onClick={() => setTermId(term._id)}>
+                  {term.name}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -309,18 +312,19 @@ export default function ReportCardPage() {
             disabled={!sectionId || !termId || generateMutation.isPending || isGenerating}
           >
             {generateMutation.isPending
-              ? 'Starting…'
+              ? t('academic.reportCards.starting')
               : isGenerating
-                ? 'Generating…'
-                : 'Generate Report Cards'}
+                ? t('academic.reportCards.generating')
+                : t('academic.reportCards.generateButton')}
           </Button>
         )}
       </div>
 
       {!canGenerate && (
         <p className="text-sm text-muted-foreground">
-          You don&apos;t have permission to generate report cards. Ask an admin for the{' '}
-          <code className="font-mono text-xs">grades:publish</code> permission.
+          {t('academic.reportCards.noPermission')}{' '}
+          <code className="font-mono text-xs">grades:publish</code>{' '}
+          {t('academic.reportCards.noPermissionSuffix')}
         </p>
       )}
 
@@ -330,32 +334,31 @@ export default function ReportCardPage() {
             <div className="flex flex-col items-center gap-4">
               <ProgressRing completed={progress?.completed ?? 0} total={progress?.total ?? 0} />
               <div>
-                <p className="text-sm font-semibold">Building PDFs…</p>
-                <p className="mt-1 font-mono text-xs text-muted-foreground">Job ID: {jobId}</p>
+                <p className="text-sm font-semibold">{t('academic.reportCards.buildingPdfs')}</p>
+                <p className="mt-1 font-mono text-xs text-muted-foreground">
+                  {t('academic.reportCards.jobIdLabel', { jobId })}
+                </p>
               </div>
 
               {resumedJob && (
                 <p className="text-xs text-muted-foreground">
-                  Picked this generation back up — it kept running while this device was away.
+                  {t('academic.reportCards.resumedNotice')}
                 </p>
               )}
               {reusedJob && (
                 <p className="text-xs text-muted-foreground">
-                  A generation for this section/term was already in progress — reusing it.
+                  {t('academic.reportCards.reusedNotice')}
                 </p>
               )}
 
               <div className="flex items-start gap-2 rounded-lg bg-muted px-3 py-2.5 text-left text-xs text-muted-foreground">
                 <Bell size={14} className="mt-0.5 shrink-0" />
-                <span>
-                  You can leave this screen — we&apos;ll keep generating in the background and show
-                  the result here (or in the history below) when it&apos;s ready.
-                </span>
+                <span>{t('academic.reportCards.leaveScreenNotice')}</span>
               </div>
 
               {pollTimedOut && (
                 <p className="text-sm text-amber-600 dark:text-amber-400">
-                  Taking longer than expected — check back here or the history below shortly.
+                  {t('academic.reportCards.timedOutNotice')}
                 </p>
               )}
             </div>
@@ -366,22 +369,20 @@ export default function ReportCardPage() {
               <div className="grid h-[110px] w-[110px] place-items-center rounded-full bg-green-100 dark:bg-green-900/30">
                 <CheckCircle2 size={40} className="text-green-600 dark:text-green-400" />
               </div>
-              <p className="text-sm font-semibold">Report cards ready</p>
+              <p className="text-sm font-semibold">{t('academic.reportCards.readyTitle')}</p>
               <a
                 href={resultUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
               >
-                Download Report Cards PDF
+                {t('academic.reportCards.downloadPdf')}
               </a>
             </div>
           )}
 
           {jobState === 'failed' && (
-            <p className="text-sm text-destructive">
-              Report card generation failed — see history below.
-            </p>
+            <p className="text-sm text-destructive">{t('academic.reportCards.generationFailed')}</p>
           )}
 
           {pollError && <p className="text-sm text-destructive">{pollError}</p>}
@@ -390,21 +391,29 @@ export default function ReportCardPage() {
 
       {sectionId && termId && (
         <div className="flex flex-col gap-2">
-          <h2 className="text-lg font-medium">History</h2>
+          <h2 className="text-lg font-medium">{t('academic.reportCards.historyTitle')}</h2>
           {historyQuery.isLoading && (
-            <p className="text-sm text-muted-foreground">Loading history…</p>
+            <p className="text-sm text-muted-foreground">
+              {t('academic.reportCards.loadingHistory')}
+            </p>
           )}
           {historyQuery.data?.length === 0 && (
-            <EmptyState title="No report cards generated yet for this scope." />
+            <EmptyState title={t('academic.reportCards.noHistoryEmpty')} />
           )}
           {historyQuery.data?.length > 0 && (
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full text-sm">
                 <thead className="bg-muted text-left">
                   <tr>
-                    <th className="px-4 py-3 font-medium text-muted-foreground">Generated</th>
-                    <th className="px-4 py-3 font-medium text-muted-foreground">Status</th>
-                    <th className="px-4 py-3 font-medium text-muted-foreground">Download</th>
+                    <th className="px-4 py-3 font-medium text-muted-foreground">
+                      {t('academic.reportCards.columnGenerated')}
+                    </th>
+                    <th className="px-4 py-3 font-medium text-muted-foreground">
+                      {t('common.status')}
+                    </th>
+                    <th className="px-4 py-3 font-medium text-muted-foreground">
+                      {t('academic.reportCards.download')}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -422,7 +431,7 @@ export default function ReportCardPage() {
                             rel="noopener noreferrer"
                             className="text-primary hover:underline"
                           >
-                            Download
+                            {t('academic.reportCards.download')}
                           </a>
                         ) : (
                           '—'

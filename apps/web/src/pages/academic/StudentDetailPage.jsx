@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Badge } from '../../components/ui/Badge.jsx';
@@ -29,14 +30,15 @@ function statusVariant(status) {
 
 const STATUS_TRANSITIONS = {
   active: [
-    { to: 'graduated', label: 'Mark Graduated' },
-    { to: 'withdrawn', label: 'Mark Withdrawn' },
+    { to: 'graduated', labelKey: 'academic.studentDetail.markGraduated' },
+    { to: 'withdrawn', labelKey: 'academic.studentDetail.markWithdrawn' },
   ],
-  graduated: [{ to: 'active', label: 'Reactivate' }],
-  withdrawn: [{ to: 'active', label: 'Reactivate' }],
+  graduated: [{ to: 'active', labelKey: 'academic.studentDetail.reactivate' }],
+  withdrawn: [{ to: 'active', labelKey: 'academic.studentDetail.reactivate' }],
 };
 
 function EditStudentModal({ open, onOpenChange, student, sections }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
     firstName: student.firstName,
@@ -64,7 +66,8 @@ function EditStudentModal({ open, onOpenChange, student, sections }) {
       onOpenChange(false);
       setError('');
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to update student'),
+    onError: (err) =>
+      setError(err.response?.data?.error || t('academic.studentDetail.updateFailed')),
   });
 
   function update(field) {
@@ -99,7 +102,7 @@ function EditStudentModal({ open, onOpenChange, student, sections }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Student</DialogTitle>
+          <DialogTitle>{t('academic.studentDetail.editModalTitle')}</DialogTitle>
         </DialogHeader>
         <form
           id="edit-student"
@@ -110,16 +113,21 @@ function EditStudentModal({ open, onOpenChange, student, sections }) {
           className="flex flex-col gap-4"
         >
           <Input
-            label="First Name"
+            label={t('academic.students.firstName')}
             value={form.firstName}
             onChange={update('firstName')}
             required
           />
-          <Input label="Last Name" value={form.lastName} onChange={update('lastName')} required />
+          <Input
+            label={t('academic.students.lastName')}
+            value={form.lastName}
+            onChange={update('lastName')}
+            required
+          />
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Section</label>
+            <label className="text-sm font-medium">{t('academic.students.section')}</label>
             <select value={form.sectionId} onChange={update('sectionId')} className={selectCls}>
-              <option value="">— Select section —</option>
+              <option value="">{t('academic.students.selectSection')}</option>
               {sections.map((s) => (
                 <option key={s._id} value={s._id}>
                   {s.label}
@@ -128,34 +136,44 @@ function EditStudentModal({ open, onOpenChange, student, sections }) {
             </select>
           </div>
           <Input
-            label="Date of Birth"
+            label={t('academic.students.dateOfBirth')}
             type="date"
             value={form.dateOfBirth}
             onChange={update('dateOfBirth')}
           />
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Gender</label>
+            <label className="text-sm font-medium">{t('academic.students.gender')}</label>
             <select value={form.gender} onChange={update('gender')} className={selectCls}>
-              <option value="">— Select —</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
+              <option value="">{t('academic.students.selectPlaceholder')}</option>
+              <option value="male">{t('academic.students.male')}</option>
+              <option value="female">{t('academic.students.female')}</option>
+              <option value="other">{t('academic.students.other')}</option>
             </select>
           </div>
 
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">Parent / Guardian Contacts</label>
+              <label className="text-sm font-medium">
+                {t('academic.studentDetail.parentGuardianContacts')}
+              </label>
               <Button type="button" variant="outline" size="sm" onClick={addContact}>
-                Add Contact
+                {t('academic.studentDetail.addContact')}
               </Button>
             </div>
             {form.parentContacts.map((c, i) => (
               <div key={i} className="flex flex-col gap-2 rounded-lg border border-border p-3">
-                <Input label="Name" value={c.name} onChange={updateContact(i, 'name')} />
-                <Input label="Phone" value={c.phone} onChange={updateContact(i, 'phone')} />
                 <Input
-                  label="Relation"
+                  label={t('common.name')}
+                  value={c.name}
+                  onChange={updateContact(i, 'name')}
+                />
+                <Input
+                  label={t('academic.studentDetail.phone')}
+                  value={c.phone}
+                  onChange={updateContact(i, 'phone')}
+                />
+                <Input
+                  label={t('academic.studentDetail.relation')}
                   value={c.relation}
                   onChange={updateContact(i, 'relation')}
                 />
@@ -166,7 +184,7 @@ function EditStudentModal({ open, onOpenChange, student, sections }) {
                   onClick={() => removeContact(i)}
                   className="self-end text-destructive"
                 >
-                  Remove
+                  {t('academic.studentDetail.remove')}
                 </Button>
               </div>
             ))}
@@ -176,10 +194,10 @@ function EditStudentModal({ open, onOpenChange, student, sections }) {
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="submit" form="edit-student" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Saving…' : 'Save Changes'}
+            {mutation.isPending ? t('common.saving') : t('academic.studentDetail.saveChanges')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -187,7 +205,8 @@ function EditStudentModal({ open, onOpenChange, student, sections }) {
   );
 }
 
-function StatusChangeDialog({ open, onOpenChange, studentId, targetStatus, label }) {
+function StatusChangeDialog({ open, onOpenChange, studentId, targetStatus, labelKey }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
 
@@ -200,25 +219,26 @@ function StatusChangeDialog({ open, onOpenChange, studentId, targetStatus, label
       onOpenChange(false);
       setError('');
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to update status'),
+    onError: (err) =>
+      setError(err.response?.data?.error || t('academic.studentDetail.updateStatusFailed')),
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>{label}?</DialogTitle>
+          <DialogTitle>{t(labelKey)}?</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          This changes the student&apos;s status to <strong>{targetStatus}</strong>.
+          {t('academic.studentDetail.statusChangeDescription')} <strong>{targetStatus}</strong>.
         </p>
         {error && <p className="text-sm text-destructive">{error}</p>}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
-            {mutation.isPending ? 'Saving…' : 'Confirm'}
+            {mutation.isPending ? t('common.saving') : t('common.confirm')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -227,12 +247,18 @@ function StatusChangeDialog({ open, onOpenChange, studentId, targetStatus, label
 }
 
 function AttendanceSummary({ studentId }) {
+  const { t } = useTranslation();
   const { data: records = [], isLoading } = useQuery({
     queryKey: ['student-attendance', studentId],
     queryFn: () => api.get(`/academic/attendance?entityId=${studentId}`).then((r) => r.data),
   });
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading attendance…</p>;
+  if (isLoading)
+    return (
+      <p className="text-sm text-muted-foreground">
+        {t('academic.studentDetail.loadingAttendance')}
+      </p>
+    );
 
   const total = records.length;
   const present = records.filter((r) => r.status === 'present' || r.status === 'late').length;
@@ -241,7 +267,9 @@ function AttendanceSummary({ studentId }) {
   return (
     <div className="flex flex-col gap-3">
       <p className="text-sm">
-        {pct === null ? 'No attendance records yet.' : `${pct}% present (${present}/${total} days)`}
+        {pct === null
+          ? t('academic.studentDetail.noAttendanceRecords')
+          : t('academic.studentDetail.presentDaysSummary', { pct, present, total })}
       </p>
       {records.slice(0, 5).map((r) => (
         <div key={r._id} className="flex justify-between text-sm text-muted-foreground">
@@ -254,16 +282,30 @@ function AttendanceSummary({ studentId }) {
 }
 
 function GradesSummary({ studentId }) {
+  const { t } = useTranslation();
   const { data: grades = [], isLoading } = useQuery({
     queryKey: ['student-grades', studentId],
     queryFn: () => api.get(`/academic/grades?studentId=${studentId}`).then((r) => r.data),
   });
 
-  if (isLoading) return <p className="text-sm text-muted-foreground">Loading grades…</p>;
-  if (grades.length === 0) return <p className="text-sm text-muted-foreground">No grades yet.</p>;
+  if (isLoading)
+    return (
+      <p className="text-sm text-muted-foreground">{t('academic.studentDetail.loadingGrades')}</p>
+    );
+  if (grades.length === 0)
+    return (
+      <p className="text-sm text-muted-foreground">{t('academic.studentDetail.noGradesYet')}</p>
+    );
 
   return (
-    <DataTable headers={['Subject', 'Assessment', 'Score', 'Grade']}>
+    <DataTable
+      headers={[
+        t('common.subject'),
+        t('academic.studentDetail.columnAssessment'),
+        t('academic.studentDetail.columnScore'),
+        t('academic.studentDetail.columnGrade'),
+      ]}
+    >
       {grades.map((g) => (
         <TableRow key={g._id}>
           <TableCell className="px-4 py-2">{g.subjectId?.name ?? '—'}</TableCell>
@@ -277,6 +319,7 @@ function GradesSummary({ studentId }) {
 }
 
 function FeeSummary({ studentId }) {
+  const { t } = useTranslation();
   const { data: assignments = [], isLoading: loadingAssignments } = useQuery({
     queryKey: ['student-fee-assignments', studentId],
     queryFn: () => api.get(`/fee/assignments?studentId=${studentId}`).then((r) => r.data),
@@ -287,7 +330,9 @@ function FeeSummary({ studentId }) {
   });
 
   if (loadingAssignments || loadingPayments)
-    return <p className="text-sm text-muted-foreground">Loading fees…</p>;
+    return (
+      <p className="text-sm text-muted-foreground">{t('academic.studentDetail.loadingFees')}</p>
+    );
 
   const totalDue = assignments.reduce((sum, a) => sum + a.totalAmount - (a.discountAmount || 0), 0);
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
@@ -295,16 +340,17 @@ function FeeSummary({ studentId }) {
 
   return (
     <div className="flex flex-col gap-1 text-sm">
-      <p>Total due: {totalDue}</p>
-      <p>Total paid: {totalPaid}</p>
+      <p>{t('academic.studentDetail.totalDue', { amount: totalDue })}</p>
+      <p>{t('academic.studentDetail.totalPaid', { amount: totalPaid })}</p>
       <p className={balance > 0 ? 'text-destructive font-medium' : 'text-emerald-600'}>
-        Balance: {balance}
+        {t('academic.studentDetail.balance', { amount: balance })}
       </p>
     </div>
   );
 }
 
 export default function StudentDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const { user } = useAuth();
   const permissions = user?.permissions ?? [];
@@ -324,8 +370,10 @@ export default function StudentDetailPage() {
   const sectionMap = Object.fromEntries(sections.map((s) => [s._id, s.label]));
   const canWrite = permissions.includes('students:write');
 
-  if (isLoading) return <p className="text-muted-foreground">Loading student…</p>;
-  if (error || !student) return <p className="text-destructive">Failed to load student</p>;
+  if (isLoading)
+    return <p className="text-muted-foreground">{t('academic.studentDetail.loadingStudent')}</p>;
+  if (error || !student)
+    return <p className="text-destructive">{t('academic.studentDetail.loadFailed')}</p>;
 
   const transitions = STATUS_TRANSITIONS[student.status] ?? [];
 
@@ -337,9 +385,9 @@ export default function StudentDetailPage() {
         action={
           <div className="flex gap-2">
             <Link to="/academic/students">
-              <Button variant="outline">Back to list</Button>
+              <Button variant="outline">{t('academic.studentDetail.backToList')}</Button>
             </Link>
-            {canWrite && <Button onClick={() => setShowEdit(true)}>Edit</Button>}
+            {canWrite && <Button onClick={() => setShowEdit(true)}>{t('common.edit')}</Button>}
           </div>
         }
       />
@@ -347,19 +395,28 @@ export default function StudentDetailPage() {
       <div className="flex flex-wrap items-center gap-3">
         <Badge variant={statusVariant(student.status)}>{student.status}</Badge>
         <span className="text-sm text-muted-foreground">
-          Section: {sectionMap[student.sectionId] ?? '—'}
+          {t('academic.studentDetail.sectionLabel', {
+            section: sectionMap[student.sectionId] ?? '—',
+          })}
         </span>
         {canWrite &&
-          transitions.map((t) => (
-            <Button key={t.to} variant="outline" size="sm" onClick={() => setStatusTarget(t)}>
-              {t.label}
+          transitions.map((transition) => (
+            <Button
+              key={transition.to}
+              variant="outline"
+              size="sm"
+              onClick={() => setStatusTarget(transition)}
+            >
+              {t(transition.labelKey)}
             </Button>
           ))}
       </div>
 
       {student.parentContacts?.length > 0 && (
         <div className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold">Parent / Guardian Contacts</h2>
+          <h2 className="text-sm font-semibold">
+            {t('academic.studentDetail.parentGuardianContacts')}
+          </h2>
           {student.parentContacts.map((c, i) => (
             <p key={i} className="text-sm text-muted-foreground">
               {c.name} — {c.phone} ({c.relation})
@@ -371,19 +428,25 @@ export default function StudentDetailPage() {
       <div className="grid gap-6 sm:grid-cols-2">
         {permissions.includes('attendance:read') && (
           <div className="rounded-lg border border-border p-4">
-            <h2 className="mb-3 text-sm font-semibold">Attendance</h2>
+            <h2 className="mb-3 text-sm font-semibold">
+              {t('academic.studentDetail.attendanceHeading')}
+            </h2>
             <AttendanceSummary studentId={id} />
           </div>
         )}
         {permissions.includes('grades:read') && (
           <div className="rounded-lg border border-border p-4">
-            <h2 className="mb-3 text-sm font-semibold">Grades</h2>
+            <h2 className="mb-3 text-sm font-semibold">
+              {t('academic.studentDetail.gradesHeading')}
+            </h2>
             <GradesSummary studentId={id} />
           </div>
         )}
         {permissions.includes('fees:read') && (
           <div className="rounded-lg border border-border p-4">
-            <h2 className="mb-3 text-sm font-semibold">Fees</h2>
+            <h2 className="mb-3 text-sm font-semibold">
+              {t('academic.studentDetail.feesHeading')}
+            </h2>
             <FeeSummary studentId={id} />
           </div>
         )}
@@ -403,7 +466,7 @@ export default function StudentDetailPage() {
           onOpenChange={(v) => !v && setStatusTarget(null)}
           studentId={id}
           targetStatus={statusTarget.to}
-          label={statusTarget.label}
+          labelKey={statusTarget.labelKey}
         />
       )}
     </div>

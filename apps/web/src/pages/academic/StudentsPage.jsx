@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { ArrowRight } from 'lucide-react';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
@@ -22,6 +23,7 @@ import RosterInfiniteList from '../../components/students/RosterInfiniteList.jsx
 const LAST_SECTION_KEY = 'students:lastSectionId';
 
 function AddStudentModal({ open, onOpenChange, sections }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
     admissionNo: '',
@@ -48,7 +50,7 @@ function AddStudentModal({ open, onOpenChange, sections }) {
       });
       setError('');
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to add student'),
+    onError: (err) => setError(err.response?.data?.error || t('academic.students.addFailed')),
   });
 
   function update(field) {
@@ -62,7 +64,7 @@ function AddStudentModal({ open, onOpenChange, sections }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Student</DialogTitle>
+          <DialogTitle>{t('academic.students.addStudent')}</DialogTitle>
         </DialogHeader>
         <form
           id="add-student"
@@ -73,22 +75,27 @@ function AddStudentModal({ open, onOpenChange, sections }) {
           className="flex flex-col gap-4"
         >
           <Input
-            label="Admission No"
+            label={t('academic.students.admissionNo')}
             value={form.admissionNo}
             onChange={update('admissionNo')}
             required
           />
           <Input
-            label="First Name"
+            label={t('academic.students.firstName')}
             value={form.firstName}
             onChange={update('firstName')}
             required
           />
-          <Input label="Last Name" value={form.lastName} onChange={update('lastName')} required />
+          <Input
+            label={t('academic.students.lastName')}
+            value={form.lastName}
+            onChange={update('lastName')}
+            required
+          />
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Section</label>
+            <label className="text-sm font-medium">{t('academic.students.section')}</label>
             <select value={form.sectionId} onChange={update('sectionId')} className={selectCls}>
-              <option value="">— Select section —</option>
+              <option value="">{t('academic.students.selectSection')}</option>
               {sections.map((s) => (
                 <option key={s._id} value={s._id}>
                   {s.label}
@@ -97,28 +104,28 @@ function AddStudentModal({ open, onOpenChange, sections }) {
             </select>
           </div>
           <Input
-            label="Date of Birth"
+            label={t('academic.students.dateOfBirth')}
             type="date"
             value={form.dateOfBirth}
             onChange={update('dateOfBirth')}
           />
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Gender</label>
+            <label className="text-sm font-medium">{t('academic.students.gender')}</label>
             <select value={form.gender} onChange={update('gender')} className={selectCls}>
-              <option value="">— Select —</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
+              <option value="">{t('academic.students.selectPlaceholder')}</option>
+              <option value="male">{t('academic.students.male')}</option>
+              <option value="female">{t('academic.students.female')}</option>
+              <option value="other">{t('academic.students.other')}</option>
             </select>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="submit" form="add-student" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Saving…' : 'Add Student'}
+            {mutation.isPending ? t('common.saving') : t('academic.students.addStudent')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -127,20 +134,23 @@ function AddStudentModal({ open, onOpenChange, sections }) {
 }
 
 function ImportResultModal({ open, onOpenChange, result }) {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Import Results</DialogTitle>
+          <DialogTitle>{t('academic.students.importResultsTitle')}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-2">
           <p className="text-sm text-emerald-600 dark:text-emerald-400">
-            Created: {result?.created}
+            {t('academic.students.createdCount', { count: result?.created ?? 0 })}
           </p>
           <p className="text-sm text-amber-600 dark:text-amber-400">
-            Skipped (duplicate): {result?.skipped}
+            {t('academic.students.skippedDuplicateCount', { count: result?.skipped ?? 0 })}
           </p>
-          <p className="text-sm text-destructive">Errors: {result?.errors?.length ?? 0}</p>
+          <p className="text-sm text-destructive">
+            {t('academic.students.errorsCount', { count: result?.errors?.length ?? 0 })}
+          </p>
           {result?.errors?.length > 0 && (
             <div className="mt-2 max-h-40 overflow-y-auto rounded border border-destructive/30 p-2 text-xs text-destructive">
               {result.errors.map((e, i) => (
@@ -152,7 +162,7 @@ function ImportResultModal({ open, onOpenChange, result }) {
           )}
         </div>
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>Close</Button>
+          <Button onClick={() => onOpenChange(false)}>{t('common.close')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -160,6 +170,7 @@ function ImportResultModal({ open, onOpenChange, result }) {
 }
 
 export default function StudentsPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const [showAdd, setShowAdd] = useState(false);
@@ -255,8 +266,8 @@ export default function StudentsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Students"
-        description="Pick a class, or search for a student directly."
+        title={t('academic.students.title')}
+        description={t('academic.students.description')}
         action={
           <div className="flex gap-2">
             <Button
@@ -264,7 +275,9 @@ export default function StudentsPage() {
               onClick={() => fileRef.current?.click()}
               disabled={importMutation.isPending}
             >
-              {importMutation.isPending ? 'Importing…' : 'Import CSV'}
+              {importMutation.isPending
+                ? t('academic.students.importing')
+                : t('academic.students.importCsv')}
             </Button>
             <input
               ref={fileRef}
@@ -276,7 +289,7 @@ export default function StudentsPage() {
                 e.target.value = '';
               }}
             />
-            <Button onClick={() => setShowAdd(true)}>Add Student</Button>
+            <Button onClick={() => setShowAdd(true)}>{t('academic.students.addStudent')}</Button>
           </div>
         }
       />
@@ -294,7 +307,9 @@ export default function StudentsPage() {
               className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5 text-left transition-colors hover:bg-muted"
             >
               <div>
-                <p className="text-xs font-medium text-muted-foreground">Recently used</p>
+                <p className="text-xs font-medium text-muted-foreground">
+                  {t('academic.students.recentlyUsed')}
+                </p>
                 <p className="text-sm font-medium">{lastUsedSection.label}</p>
               </div>
               <ArrowRight size={16} className="shrink-0 text-muted-foreground" />

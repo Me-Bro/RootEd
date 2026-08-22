@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown } from 'lucide-react';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
@@ -51,6 +52,7 @@ function downloadCsv(report) {
 }
 
 export default function AttendanceReportPage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [sectionId, setSectionId] = useState(searchParams.get('sectionId') || '');
   const [subjectId, setSubjectId] = useState(searchParams.get('subjectId') || '');
@@ -107,14 +109,14 @@ export default function AttendanceReportPage() {
 
   return (
     <div className="flex flex-col gap-4 pb-4">
-      <h1 className="text-2xl font-semibold">Attendance Report</h1>
+      <h1 className="text-2xl font-semibold">{t('academic.attendanceReport.title')}</h1>
 
       <div className="flex flex-wrap items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium">
             {currentSection
               ? `${currentSection.className} - ${currentSection.name}`
-              : 'Select section'}
+              : t('academic.attendanceReport.selectSection')}
             <ChevronDown size={14} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
@@ -142,11 +144,13 @@ export default function AttendanceReportPage() {
             disabled={!sectionId}
             className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium disabled:opacity-50"
           >
-            {currentSubject ? currentSubject.name : 'All subjects'}
+            {currentSubject ? currentSubject.name : t('academic.attendanceReport.allSubjects')}
             <ChevronDown size={14} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={() => setSubjectId('')}>All subjects</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setSubjectId('')}>
+              {t('academic.attendanceReport.allSubjects')}
+            </DropdownMenuItem>
             {subjects.map((sub) => (
               <DropdownMenuItem key={sub._id} onClick={() => setSubjectId(sub._id)}>
                 {sub.name}
@@ -157,7 +161,7 @@ export default function AttendanceReportPage() {
 
         <div className="flex items-center gap-1.5 rounded-full border border-border bg-card px-2 py-1">
           <label className="sr-only" htmlFor="attendance-report-from">
-            From
+            {t('academic.attendanceReport.from')}
           </label>
           <input
             id="attendance-report-from"
@@ -166,9 +170,11 @@ export default function AttendanceReportPage() {
             onChange={(e) => setFrom(e.target.value)}
             className="w-[124px] border-none bg-transparent text-xs outline-none"
           />
-          <span className="text-xs text-muted-foreground">to</span>
+          <span className="text-xs text-muted-foreground">
+            {t('academic.attendanceReport.toConnector')}
+          </span>
           <label className="sr-only" htmlFor="attendance-report-to">
-            To
+            {t('academic.attendanceReport.to')}
           </label>
           <input
             id="attendance-report-to"
@@ -180,21 +186,27 @@ export default function AttendanceReportPage() {
         </div>
       </div>
 
-      {!sectionId && <EmptyState title="Select a section to view the report" />}
+      {!sectionId && <EmptyState title={t('academic.attendanceReport.selectSectionEmpty')} />}
 
-      {sectionId && isLoading && <p className="text-sm text-muted-foreground">Loading report…</p>}
+      {sectionId && isLoading && (
+        <p className="text-sm text-muted-foreground">
+          {t('academic.attendanceReport.loadingReport')}
+        </p>
+      )}
 
       {sectionId && isError && (
         <div className="flex items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          <span>Failed to load attendance report.</span>
+          <span>{t('academic.attendanceReport.loadFailed')}</span>
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-            {isFetching ? 'Retrying…' : 'Retry'}
+            {isFetching
+              ? t('academic.attendanceReport.retrying')
+              : t('academic.attendanceReport.retry')}
           </Button>
         </div>
       )}
 
       {report && report.students.length === 0 && (
-        <EmptyState title="No active students in this section" />
+        <EmptyState title={t('academic.attendanceReport.noActiveStudents')} />
       )}
 
       {report && report.students.length > 0 && (
@@ -214,7 +226,7 @@ export default function AttendanceReportPage() {
           <div className="sticky bottom-0 z-10 -mx-6 flex gap-2 border-t border-border bg-card p-3">
             <ShareSummaryCard report={report} />
             <Button variant="outline" onClick={() => downloadCsv(report)}>
-              Export CSV
+              {t('academic.attendanceReport.exportCsv')}
             </Button>
           </div>
         </>

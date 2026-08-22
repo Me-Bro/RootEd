@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { cn } from '../../lib/utils.js';
 import { Button } from '../../components/ui/Button.jsx';
@@ -31,6 +32,7 @@ function defaultActiveDay() {
 }
 
 function EntryModal({ open, onOpenChange, sectionId, yearId, day, period, entry }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const isEdit = Boolean(entry);
   const [form, setForm] = useState(() =>
@@ -91,16 +93,24 @@ function EntryModal({ open, onOpenChange, sectionId, yearId, day, period, entry 
       resetAndClose();
     },
     onError: (err) => {
-      setError(err.response?.data?.error || `Failed to ${isEdit ? 'update' : 'add'} entry`);
+      setError(
+        err.response?.data?.error ||
+          t(isEdit ? 'academic.timetable.updateEntryFailed' : 'academic.timetable.addEntryFailed')
+      );
     },
   });
+
+  const dayLabel = t(`common.weekdays.${day?.toLowerCase()}`);
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && resetAndClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? 'Edit Entry' : 'Add Entry'} — {day}, Period {period}
+            {t(isEdit ? 'academic.timetable.editEntryTitle' : 'academic.timetable.addEntryTitle', {
+              day: dayLabel,
+              period,
+            })}
           </DialogTitle>
         </DialogHeader>
         <form
@@ -112,10 +122,10 @@ function EntryModal({ open, onOpenChange, sectionId, yearId, day, period, entry 
           className="flex flex-col gap-4"
         >
           <SelectField
-            label="Teacher"
+            label={t('academic.timetable.teacher')}
             value={form.teacherId}
             onValueChange={(v) => setForm((f) => ({ ...f, teacherId: v }))}
-            placeholder="— Select Teacher —"
+            placeholder={t('academic.timetable.selectTeacherPlaceholder')}
           >
             {staff.map((s) => (
               <SelectItem key={s._id} value={s.userId}>
@@ -124,10 +134,10 @@ function EntryModal({ open, onOpenChange, sectionId, yearId, day, period, entry 
             ))}
           </SelectField>
           <SelectField
-            label="Subject"
+            label={t('common.subject')}
             value={form.subjectId}
             onValueChange={(v) => setForm((f) => ({ ...f, subjectId: v }))}
-            placeholder="— Select Subject —"
+            placeholder={t('academic.timetable.selectSubjectPlaceholder')}
           >
             {subjects.map((s) => (
               <SelectItem key={s._id} value={s._id}>
@@ -137,14 +147,14 @@ function EntryModal({ open, onOpenChange, sectionId, yearId, day, period, entry 
           </SelectField>
           <div className="flex gap-3">
             <Input
-              label="Start Time"
+              label={t('academic.timetable.startTime')}
               type="time"
               value={form.startTime}
               onChange={update('startTime')}
               required
             />
             <Input
-              label="End Time"
+              label={t('academic.timetable.endTime')}
               type="time"
               value={form.endTime}
               onChange={update('endTime')}
@@ -152,20 +162,24 @@ function EntryModal({ open, onOpenChange, sectionId, yearId, day, period, entry 
             />
           </div>
           <Input
-            label="Room (optional)"
+            label={t('academic.timetable.roomOptional')}
             type="text"
             value={form.room}
             onChange={update('room')}
-            placeholder="e.g. Room 204"
+            placeholder={t('academic.timetable.roomPlaceholder')}
           />
           {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={resetAndClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="submit" form="timetable-entry-form" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Saving…' : isEdit ? 'Save' : 'Add'}
+            {mutation.isPending
+              ? t('common.saving')
+              : isEdit
+                ? t('common.save')
+                : t('academic.timetable.add')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -174,6 +188,7 @@ function EntryModal({ open, onOpenChange, sectionId, yearId, day, period, entry 
 }
 
 function CopyModal({ open, onOpenChange, sectionId, yearId, years }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [fromYearId, setFromYearId] = useState('');
   const [result, setResult] = useState(null);
@@ -202,14 +217,14 @@ function CopyModal({ open, onOpenChange, sectionId, yearId, years }) {
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Copy Timetable From Another Year</DialogTitle>
+          <DialogTitle>{t('academic.timetable.copyModalTitle')}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <SelectField
-            label="Source Academic Year"
+            label={t('academic.timetable.sourceAcademicYear')}
             value={fromYearId}
             onValueChange={setFromYearId}
-            placeholder="— Select Year —"
+            placeholder={t('academic.timetable.selectYearPlaceholder')}
           >
             {years
               .filter((y) => y._id !== yearId)
@@ -221,16 +236,19 @@ function CopyModal({ open, onOpenChange, sectionId, yearId, years }) {
           </SelectField>
           {result && (
             <p className="text-sm text-muted-foreground">
-              Copied {result.copied}, skipped {result.skipped} (already existed).
+              {t('academic.timetable.copyResult', {
+                copied: result.copied,
+                skipped: result.skipped,
+              })}
             </p>
           )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Close
+            {t('common.close')}
           </Button>
           <Button onClick={() => mutation.mutate()} disabled={!fromYearId || mutation.isPending}>
-            {mutation.isPending ? 'Copying…' : 'Copy'}
+            {mutation.isPending ? t('academic.timetable.copying') : t('academic.timetable.copy')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -239,6 +257,7 @@ function CopyModal({ open, onOpenChange, sectionId, yearId, years }) {
 }
 
 export default function TimetablePage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const isAdmin = (user?.permissions ?? []).includes('tenant:admin');
@@ -305,18 +324,20 @@ export default function TimetablePage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <PageHeader title="Timetable" />
+        <PageHeader title={t('academic.timetable.title')} />
         {sectionId && yearId && isAdmin && (
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => setCopyOpen(true)}>
-              Copy from another year
+              {t('academic.timetable.copyFromAnotherYear')}
             </Button>
             <Button
               variant={published ? 'outline' : 'default'}
               onClick={() => publishMutation.mutate(published ? 'unpublish' : 'publish')}
               disabled={publishMutation.isPending}
             >
-              {published ? 'Unpublish' : 'Publish'}
+              {published
+                ? t('academic.timetable.unpublishAction')
+                : t('academic.timetable.publishAction')}
             </Button>
           </div>
         )}
@@ -328,7 +349,7 @@ export default function TimetablePage() {
           onChange={(e) => setYearId(e.target.value)}
           className="h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          <option value="">— Academic Year —</option>
+          <option value="">{t('academic.timetable.academicYearPlaceholder')}</option>
           {years.map((y) => (
             <option key={y._id} value={y._id}>
               {y.name}
@@ -340,7 +361,7 @@ export default function TimetablePage() {
           onChange={(e) => setSectionId(e.target.value)}
           className="h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          <option value="">— Section —</option>
+          <option value="">{t('academic.timetable.sectionPlaceholder')}</option>
           {classes.map((c) => (
             <optgroup key={c._id} label={c.name}>
               {(c.sections || []).map((s) => (
@@ -353,14 +374,16 @@ export default function TimetablePage() {
         </select>
         {sectionId && yearId && (
           <Badge variant={published ? 'success' : 'warning'}>
-            {published ? 'Published' : 'Draft'}
+            {published
+              ? t('academic.timetable.publishedStatus')
+              : t('academic.timetable.draftStatus')}
           </Badge>
         )}
       </div>
 
       {(!sectionId || !yearId) && (
         <p className="text-muted-foreground text-sm">
-          Select an academic year and section to view the timetable.
+          {t('academic.timetable.selectYearSectionPrompt')}
         </p>
       )}
 
@@ -371,7 +394,7 @@ export default function TimetablePage() {
           <div className="flex flex-col gap-3 md:hidden">
             <div
               role="tablist"
-              aria-label="Day of week"
+              aria-label={t('academic.timetable.dayOfWeekLabel')}
               className="grid grid-cols-5 gap-1 rounded-lg bg-muted p-1"
             >
               {DAYS.map((day, idx) => {
@@ -391,13 +414,13 @@ export default function TimetablePage() {
                         : 'text-muted-foreground hover:text-foreground'
                     )}
                   >
-                    {day.slice(0, 3)}
+                    {t(`common.weekdays.${day.toLowerCase()}`).slice(0, 3)}
                   </button>
                 );
               })}
             </div>
             {isLoading ? (
-              <p className="text-sm text-muted-foreground">Loading…</p>
+              <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
             ) : (
               <DaySlotList slots={daySlots} activeDay={activeDay} isNowFn={isNowFn} />
             )}
@@ -409,11 +432,11 @@ export default function TimetablePage() {
               <thead className="bg-muted/50">
                 <tr>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground w-16">
-                    Period
+                    {t('academic.timetable.period')}
                   </th>
                   {DAYS.map((d) => (
                     <th key={d} className="px-4 py-3 text-left font-medium text-muted-foreground">
-                      {d}
+                      {t(`common.weekdays.${d.toLowerCase()}`)}
                     </th>
                   ))}
                 </tr>
@@ -422,7 +445,7 @@ export default function TimetablePage() {
                 {isLoading ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
-                      Loading…
+                      {t('common.loading')}
                     </td>
                   </tr>
                 ) : (
@@ -439,7 +462,7 @@ export default function TimetablePage() {
                                   type="button"
                                   onClick={() => setEntryCell({ day, period, entry })}
                                   className="text-left"
-                                  title="Edit"
+                                  title={t('common.edit')}
                                 >
                                   <p className="font-medium text-xs">
                                     {entry.subjectId?.name || '—'}
@@ -455,7 +478,7 @@ export default function TimetablePage() {
                                 <button
                                   onClick={() => removeMutation.mutate(entry._id)}
                                   className="text-destructive/70 hover:text-destructive text-xs shrink-0"
-                                  title="Remove"
+                                  title={t('academic.studentDetail.remove')}
                                 >
                                   ✕
                                 </button>
@@ -465,7 +488,7 @@ export default function TimetablePage() {
                                 onClick={() => setEntryCell({ day, period })}
                                 className="text-primary/70 hover:text-primary text-xs font-medium"
                               >
-                                + Add
+                                {t('academic.timetable.addShort')}
                               </button>
                             )}
                           </td>
