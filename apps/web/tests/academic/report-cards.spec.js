@@ -43,7 +43,8 @@ test.describe('Report Cards page', () => {
 
     await page.getByRole('button', { name: 'Select section' }).click();
     const firstOption = page.getByRole('menuitem').first();
-    const label = (await firstOption.textContent()).trim();
+    // Menu item reads "Grade 5 - A"; the chip trigger collapses it to "Grade 5-A".
+    const label = (await firstOption.textContent()).trim().replace(' - ', '-');
     await firstOption.click();
 
     await expect(page.getByRole('button', { name: label })).toBeVisible();
@@ -181,7 +182,11 @@ test.describe('Report Cards page — mocked job polling', () => {
     await page.waitForLoadState('networkidle');
     await page.getByRole('button', { name: 'Generate Report Cards' }).click();
 
-    await expect(page.getByText(/Report card generation failed/)).toBeVisible();
+    // The banner text is a superset of a history-row status ("...failed" alone),
+    // which also matches the loose regex — match the full banner copy exactly.
+    await expect(
+      page.getByText('Report card generation failed — see history below.')
+    ).toBeVisible();
 
     const stored = await page.evaluate(
       ({ sectionId, termId }) =>

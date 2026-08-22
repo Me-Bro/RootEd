@@ -85,7 +85,7 @@ test.describe('Attendance page', () => {
 
     await page.getByRole('button', { name: 'UNDO' }).click();
     await expect(page.getByRole('button', { name: /^Unmarked ·/ })).toHaveText(
-      `Unmarked · ${unmarkedBefore - 1}`
+      `Unmarked · ${unmarkedBefore}`
     );
     // Still untouched after undo.
     await expect(rows.first().getByRole('button', { name: 'Mark absent' })).toHaveAttribute(

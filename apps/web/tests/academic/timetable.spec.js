@@ -157,9 +157,17 @@ test.describe('Timetable page', () => {
     await expect(page.getByRole('tablist', { name: 'Day of week' })).toBeVisible();
 
     await page.getByRole('tab', { name: 'Tue' }).click();
-    await expect(page.getByText('Science')).toBeVisible();
-    await expect(page.getByText('Alice Smith')).toBeVisible();
-    await expect(page.getByText('09:00')).toBeVisible();
+    // The desktop grid stays in the DOM (hidden md:block) at this viewport, so a
+    // bare getByText also matches its cells — scope to the visible mobile list.
+    // Alice Smith also teaches a later period the same day, so scope to period 1
+    // specifically rather than matching "Alice Smith" against the whole list.
+    const firstPeriod = page
+      .getByLabel('Periods for the selected day')
+      .getByRole('listitem')
+      .first();
+    await expect(firstPeriod.getByText('Science')).toBeVisible();
+    await expect(firstPeriod.getByText('Alice Smith')).toBeVisible();
+    await expect(firstPeriod.getByText('09:00')).toBeVisible();
   });
 
   test('shows an empty state for a day with no periods scheduled', async ({ page }) => {
@@ -181,8 +189,10 @@ test.describe('Timetable page', () => {
     await page.waitForLoadState('networkidle');
 
     await expect(page.getByRole('tab', { name: 'Mon' })).toHaveAttribute('aria-selected', 'true');
-    await expect(page.getByText('Mathematics')).toBeVisible();
-    await expect(page.getByText('now', { exact: true })).toBeVisible();
+    // Scope past the hidden-but-still-in-DOM desktop grid, same as the test above.
+    const dayList = page.getByLabel('Periods for the selected day');
+    await expect(dayList.getByText('Mathematics')).toBeVisible();
+    await expect(dayList.getByText('now', { exact: true })).toBeVisible();
   });
 });
 
