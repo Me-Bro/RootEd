@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
@@ -18,9 +18,10 @@ const statusColors = {
 
 export default function AttendancePage() {
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [sectionId, setSectionId] = useState('');
-  const [subjectId, setSubjectId] = useState('');
+  const [sectionId, setSectionId] = useState(() => searchParams.get('sectionId') || '');
+  const [subjectId, setSubjectId] = useState(() => searchParams.get('subjectId') || '');
   const [attendanceMap, setAttendanceMap] = useState({});
   const [syncedRecords, setSyncedRecords] = useState(EMPTY_ARRAY);
 
