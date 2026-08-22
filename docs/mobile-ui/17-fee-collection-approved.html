@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fee Collection — 2 mockups + approved spec · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page wide">
+  <p class="crumbs"><a href="index.html">← All modules</a> · Fee · <code>FeesPage.jsx</code></p>
+
+  <div class="approved-band">
+    <span class="seal">✅ APPROVED FOR BUILD</span>
+    <span class="txt">Module 16 of 18, lightweight process: understand the real desktop screen → exactly <b>2 mobile mockups</b> (simple, then smart) → approve one → write the full build spec.</span>
+  </div>
+
+  <h1 class="page-title">Fee Collection — mobile mock</h1>
+  <p class="page-sub">Real data: 985 fee assignments — 571 paid, 254 partial, 160 unpaid — ₹1.98Cr outstanding across 414 students.</p>
+
+  <div class="statrow" style="max-width:900px">
+    <div class="s"><div class="n">2</div><div class="l">Mockups made</div></div>
+    <div class="s hot"><div class="n">1</div><div class="l">Approved</div></div>
+    
+  </div>
+
+  <div class="toc">
+    <a href="#current"><b>0</b> · What the desktop does today</a>
+    <a href="#mocks"><b>1</b> · The 2 mockups</a>
+    <a href="#wiring"><b>2</b> · API contracts</a>
+    <a href="#state"><b>3</b> · State &amp; logic</a>
+    <a href="#components"><b>4</b> · File &amp; component plan</a>
+    <a href="#edge"><b>5</b> · Errors, empty, a11y</a>
+    <a href="#dod"><b>6</b> · Definition of done</a>
+    <a href="#signoff"><b>7</b> · Sign-off</a>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:34px" id="current">0 · What the desktop does today <span style="color:#6e7a8a;font-size:13px;font-weight:400">— read from the real code, not assumed</span></h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Behaviour</th><th>Where it lives</th></tr></thead>
+      <tbody>
+        <tr><td>Assignments / Payments / Defaulters tabs, Assignments loads first by default</td><td>FeesPage.jsx</td></tr>
+        <tr><td>Collect Payment modal supports cash and Razorpay online payment</td><td>same file</td></tr>
+        <tr><td><code>GET /fee/defaulters</code> is unpaginated — 414 rows in one response</td><td>confirmed, already flagged in the plan</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="mocks">1 · The 2 mockups</h2>
+
+  <div class="rail">
+    <div class="variant">
+      <div class="variant-head">
+        <span class="statechip" style="background:#3a4152;color:#e2e7ee">MOCK 1 · SIMPLE</span>
+        <div class="variant-title">Mirrors the desktop, exactly</div>
+        <p class="variant-for">Assignments / Payments / Defaulters tabs, each an 8-column table. Same 3 tabs, same fields.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Fee Collection</h2></div></div>
+            <div class="seg" style="margin-top:10px"><div class="on">Assignments</div><div>Payments</div><div>Defaulters</div></div>
+          </div>
+          <div class="body">
+            <div class="searchbar">🔍 <span class="muted">Search student…</span></div>
+            <div class="list">
+              <div class="li"><div class="grow"><div class="nm">Kartik Dutta</div><div class="meta">₹40,500 due</div></div><span class="badge bad">unpaid</span></div>
+              <div class="li" style="padding-top:0"><div class="btn sm" style="width:100%">Collect</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant" style="position:relative">
+      <div class="variant-head">
+        <span class="statechip">MOCK 2 · SMART <span style="margin-left:6px">✅ APPROVED</span></span>
+        <div class="variant-title">Defaulters lead, worst-overdue first</div>
+        <p class="variant-for">This module's real job is chasing 160 unpaid + 254 partial assignments — Defaulters should be the landing tab, not the third one, and it should sort by days overdue so the longest-outstanding cases surface first. Same pattern already approved for the Attendance Report follow-up queue, applied to money instead of attendance.</p>
+      </div>
+      <div class="phone">
+        <div class="redline-dot" style="left:60px;top:170px">1</div>
+        <div class="redline-dot" style="left:200px;top:290px">2</div>
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="grow"><h2>Fee Collection</h2><p class="sub">414 outstanding · ₹1.98Cr</p></div></div>
+            <div class="seg" style="margin-top:10px"><div class="on">Defaulters</div><div>Assignments</div><div>Payments</div></div>
+          </div>
+          <div class="body">
+            <div class="list">
+              <div class="li"><div class="avatar r">KD</div><div class="grow"><div class="nm">Kartik Dutta</div><div class="meta">₹40,500 · 130 days overdue</div></div><span class="chip soft">Collect</span></div>
+              <div class="li"><div class="avatar a">CS</div><div class="grow"><div class="nm">Chetan Shetty</div><div class="meta">₹20,250 · 45 days overdue</div></div><span class="chip soft">Collect</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div style="max-width:280px;padding-top:52px">
+      <ol class="speclist">
+        <li><b>Defaulters is the first tab</b> — this is the module's real job, not the exception view.</li>
+        <li><b>Sorted by days overdue,</b> descending — worst cases first, matching the existing <code>daysOverdue</code> field already returned by the API.</li>
+      </ol>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="border-color:#2f5c4a;background:#12211b">
+    <b>Why Mock 2 is approved:</b> ₹1.98Cr is outstanding right now (160 unpaid + 254 partial). Burying that behind two other tabs is a real cost; reordering tabs and sorting by <code>daysOverdue</code> (already computed server-side in <code>GET /fee/defaulters</code>) is a zero-backend-change fix.
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="wiring">2 · API contracts <span style="color:#6e7a8a;font-size:13px;font-weight:400">— every one of these already exists</span></h2>
+  <div class="codeblock"><span class="k">GET</span> /fee/defaulters?yearId=<span class="s">{{y}}</span>
+<span class="c1">// unchanged response — client sorts by daysOverdue descending, tab reordered to load first</span>
+<span class="c1">// NOTE: this endpoint is unpaginated — 414 rows / ~430KB at current scale (flagged in the plan).</span>
+<span class="c1">// This spec doesn't fix pagination; it's listed here so nobody assumes it's already solved.</span></div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="state">3 · State &amp; logic</h2>
+  <div class="codeblock"><span class="k">const</span> sorted = [...defaulters].sort((a, b) => b.daysOverdue - a.daysOverdue);</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="components">4 · File &amp; component plan</h2>
+  <div class="rail" style="gap:16px">
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Files</div></div>
+      <div class="codeblock filetree" style="width:100%;box-sizing:border-box"><span class="mod">M</span> apps/web/src/pages/fee/FeesPage.jsx <span class="c1">— reorder tabs, add sort</span></div>
+    </div>
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Component contracts</div></div>
+      <div class="card" style="width:100%">
+        <div class="kv"><span class="k">Reuse as-is</span><span class="v">existing <code>CollectPaymentModal</code>, <code>DataTable</code> row pattern</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="edge">5 · Errors, empty states, accessibility</h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Situation</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td><b>414-row response is slow on a poor connection</b></td><td>known limitation, not fixed here — flagged for a future pagination pass on <code>/fee/defaulters</code></td></tr>
+        <tr><td><b>0 defaulters</b></td><td>a genuinely happy empty state — "Nothing outstanding" replaces the list</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="dod">6 · Definition of done</h2>
+  <div class="painbox" style="max-width:900px">
+    <ul class="checklist">
+      <li>Defaulters is the default/first tab, not the third</li>
+      <li>Defaulter list sorts by days overdue, worst first</li>
+      <li>Collect Payment flow (cash/online) unchanged from desktop</li>
+      <li>Pagination gap on /fee/defaulters is explicitly noted as out of scope, not silently ignored</li>
+    </ul>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="signoff">7 · Sign-off</h2>
+  <div class="painbox" style="max-width:900px">
+    <div class="signoff">
+      <div class="field"><div class="l">Approved by</div><div class="v"></div></div>
+      <div class="field"><div class="l">Date</div><div class="v"></div></div>
+      <div class="field"><div class="l">Spec version</div><div class="v">v1.0 · 22 Aug 2026</div></div>
+      <div class="field"><div class="l">Module</div><div class="v">Fee · 16 of 18</div></div>
+    </div>
+  </div>
+
+</div>
+<nav class="reviewnav" title="← → move between screens · I gallery">
+  <a class="rn-btn" href="16-fee-structures-approved.html" data-nav="prev">‹ <span class="rn-lbl">Fee Structures</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">APPROVED</span><span class="rn-title">Fee Collection · 16 of 18</span></a>
+  <a class="rn-btn" href="18-inventory-approved.html" data-nav="next"><span class="rn-lbl">Inventory</span> ›</a>
+  <span class="rn-keys">← →  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

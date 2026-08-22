@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Timetable — 5 mobile concepts · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page">
+  <p class="crumbs"><a href="index.html">← All screens</a> · Academic · <code>TimetablePage.jsx</code></p>
+  <h1 class="page-title">7 · Timetable Builder</h1>
+  <p class="page-sub">The worst screen on a phone today, and the one with the hardest constraints: three unique indexes (section, teacher, room per day+period) mean a wrong tap is a server error, not a warning.</p>
+
+  <div class="painbox">
+    <b>Pain today:</b> an 8 × 5 <code>&lt;table&gt;</code> (40 cells) inside <code>overflow-x-auto</code> — at 390&nbsp;px you see about 1.6 days, so editing means horizontal scroll-hunting. Each cell opens a 5-field modal (teacher, subject, start, end, room), and conflicts only surface as a <b>409 after submit</b>, discarding what you typed. Publish/unpublish and "copy from another year" hide in the desktop header.
+  </div>
+
+  <input type="checkbox" id="fit" class="vis-hidden">
+  <div class="zoombar"><label for="fit">▣ Fit all five on one screen (toggle)</label> · real data: Grade 5-A, 1600 seeded slots, 30 of 40 sections published</div>
+
+  <div class="rail">
+
+    <!-- V1 -->
+    <div class="variant" id="v1">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 1</span>
+        <div class="variant-title">Day-at-a-time column <span class="rec">SHIP as viewer</span></div>
+        <p class="variant-for"><b>Optimises:</b> readability at 390&nbsp;px. Day chips instead of columns, periods stacked vertically, full subject and teacher names visible. Zero horizontal scroll.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Grade 5-A</h2><p class="sub">2026-27 · Room R-5A</p></div><span class="badge ok">Published</span></div>
+            <div class="seg" style="margin-top:10px"><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div class="on">Fri</div></div>
+          </div>
+          <div class="body">
+            <div class="slot"><div class="time">08:00<br>08:45</div><div class="grow"><div class="subj">Computer Science</div><div class="who">Bhavesh Shetty · R-5A</div></div><span class="tiny muted">P1</span></div>
+            <div class="slot"><div class="time">08:45<br>09:30</div><div class="grow"><div class="subj">Physical Education</div><div class="who">Kashvi Bhatia · Ground</div></div><span class="tiny muted">P2</span></div>
+            <div class="tiny muted" style="text-align:center;margin:-4px 0">— short break 09:30–09:45 —</div>
+            <div class="slot"><div class="time">09:45<br>10:30</div><div class="grow"><div class="subj">Art &amp; Craft</div><div class="who">Ansh Kulkarni · R-5A</div></div><span class="tiny muted">P3</span></div>
+            <div class="slot now"><div class="time">10:30<br>11:15</div><div class="grow"><div class="subj">Mathematics</div><div class="who">Mitali Sinha · R-5A</div></div><span class="badge ok">now</span></div>
+            <div class="slot"><div class="time">11:15<br>12:00</div><div class="grow"><div class="subj">English</div><div class="who">Ekansh Reddy · R-5A</div></div><span class="tiny muted">P5</span></div>
+            <div class="tiny muted" style="text-align:center;margin:-4px 0">— lunch 12:00–12:45 —</div>
+            <div class="slot"><div class="time">12:45<br>13:30</div><div class="grow"><div class="subj">Science</div><div class="who">Shivam Sharma · Lab 1</div></div><span class="tiny muted">P6</span></div>
+            <div class="slot"><div class="time">13:30<br>14:15</div><div class="grow"><div class="subj">Social Studies</div><div class="who">Ganesh Singh · R-5A</div></div><span class="tiny muted">P7</span></div>
+            <div class="slot empty">＋ Period 8 · 14:15–15:00 free</div>
+          </div>
+          <div class="stickybar"><div class="row" style="gap:8px"><div class="btn sec grow">Copy day ▾</div><div class="btn grow">Edit timetable</div></div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V2 -->
+    <div class="variant" id="v2">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 2</span>
+        <div class="variant-title">Time-rail agenda with drag</div>
+        <p class="variant-for"><b>Optimises:</b> spatial editing. Blocks sit on a real clock rail and can be dragged; a conflict shows as a red block <em>while</em> you drag, so the 409 never happens.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Edit · Friday</h2><p class="sub">Grade 5-A · dragging Science</p></div><div class="iconbtn">↺</div></div>
+          </div>
+          <div class="body" style="padding-left:8px">
+            <div style="display:flex;gap:8px">
+              <div class="stack" style="flex:0 0 42px;gap:0;font-size:10px;color:var(--ink-4);font-family:var(--mono);padding-top:2px">
+                <div style="height:52px">08:00</div><div style="height:52px">09:00</div><div style="height:52px">10:00</div><div style="height:52px">11:00</div><div style="height:52px">12:00</div><div style="height:52px">13:00</div><div style="height:52px">14:00</div>
+              </div>
+              <div class="grow stack" style="gap:4px">
+                <div class="slot" style="height:48px;padding:6px 10px"><div class="grow"><div class="subj" style="font-size:13px">Computer Science</div><div class="who">Bhavesh Shetty</div></div></div>
+                <div class="slot" style="height:48px;padding:6px 10px"><div class="grow"><div class="subj" style="font-size:13px">Physical Education</div><div class="who">Kashvi Bhatia</div></div></div>
+                <div class="slot" style="height:44px;padding:6px 10px;background:var(--surface-2);border-style:dashed"><div class="grow"><div class="who">Break</div></div></div>
+                <div class="slot clash" style="height:48px;padding:6px 10px"><div class="grow"><div class="subj" style="font-size:13px">Science ⤒</div><div class="who">Shivam Sharma busy with 7-B</div></div></div>
+                <div class="slot" style="height:48px;padding:6px 10px;opacity:.5"><div class="grow"><div class="subj" style="font-size:13px">Mathematics</div><div class="who">Mitali Sinha</div></div></div>
+                <div class="slot" style="height:48px;padding:6px 10px"><div class="grow"><div class="subj" style="font-size:13px">English</div><div class="who">Ekansh Reddy</div></div></div>
+                <div class="slot empty" style="height:44px">drop here · free</div>
+              </div>
+            </div>
+            <div class="banner bad">✕<div><b>Conflict:</b> Shivam Sharma teaches Grade 7-B at 10:30. Choose another slot, or swap with Priya Bhat (free).</div></div>
+            <div class="row" style="gap:8px"><div class="btn sec sm grow">Swap teacher</div><div class="btn sec sm grow">Undo drag</div></div>
+          </div>
+          <div class="stickybar"><div class="btn" style="background:var(--ink-4)">Save (fix 1 conflict)</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V3 -->
+    <div class="variant" id="v3">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 3</span>
+        <div class="variant-title">Palette stamping</div>
+        <p class="variant-for"><b>Optimises:</b> building from scratch. Pick a subject+teacher chip once, then tap slots to stamp it — including "every Monday P1". Turns 40 modals into one selection and 40 taps.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">✕</div><div class="grow"><h2 style="font-size:17px">Build · Grade 5-A</h2><p class="sub">28 of 40 slots filled</p></div><div class="iconbtn">↺</div></div>
+            <div class="bar" style="margin-top:10px"><span class="g" style="width:70%"></span></div>
+          </div>
+          <div class="body">
+            <div class="grid-week">
+              <div class="h"></div><div class="h">M</div><div class="h">T</div><div class="h">W</div><div class="h">T</div><div class="h">F</div>
+              <div class="h">1</div><div class="c">CS</div><div class="c">PE</div><div class="c">ART</div><div class="c">MAT</div><div class="c">CS</div>
+              <div class="h">2</div><div class="c">MAT</div><div class="c">ENG</div><div class="c">SCI</div><div class="c">SST</div><div class="c">PE</div>
+              <div class="h">3</div><div class="c">ENG</div><div class="c">SCI</div><div class="c">HIN</div><div class="c">CS</div><div class="c">ART</div>
+              <div class="h">4</div><div class="c">SCI</div><div class="c">MAT</div><div class="c">ENG</div><div class="c free">+</div><div class="c now">MAT</div>
+              <div class="h">5</div><div class="c">SST</div><div class="c">HIN</div><div class="c free">+</div><div class="c">ENG</div><div class="c">ENG</div>
+              <div class="h">6</div><div class="c">HIN</div><div class="c">ART</div><div class="c">MAT</div><div class="c">SCI</div><div class="c">SCI</div>
+              <div class="h">7</div><div class="c free">+</div><div class="c">CS</div><div class="c">SST</div><div class="c">HIN</div><div class="c">SST</div>
+              <div class="h">8</div><div class="c free">+</div><div class="c free">+</div><div class="c">PE</div><div class="c free">+</div><div class="c free">+</div>
+            </div>
+            <div class="banner ok">✓<div>Stamping <b>Mathematics · Mitali Sinha</b>. Tap any free cell; she is free in 6 of the 12.</div></div>
+            <div class="card tight">
+              <div class="between"><span class="small">Repeat</span><div class="row" style="gap:6px"><span class="chip">Once</span><span class="chip on">Every Mon</span><span class="chip">All week</span></div></div>
+            </div>
+            <div class="card tight">
+              <div class="card-title">Still to fill · 12 slots</div>
+              <div class="row" style="gap:6px;flex-wrap:wrap"><span class="chip">Mon P7</span><span class="chip">Mon P8</span><span class="chip">Tue P8</span><span class="chip">Wed P5</span><span class="chip">Thu P4</span><span class="chip">+7</span></div>
+              <div class="tiny muted" style="margin-top:8px">Each stamp checks the teacher, room and section indexes before it lands — no 409s.</div>
+            </div>
+          </div>
+          <div class="sheet" style="padding:10px 14px 20px">
+            <div class="grab"></div>
+            <p class="sectionlabel" style="margin-top:0">Subject palette</p>
+            <div class="chiprow"><div class="chip on">MAT · Mitali S.</div><div class="chip">ENG · Ekansh R.</div><div class="chip">SCI · Shivam S.</div><div class="chip">HIN · Sarthak G.</div></div>
+            <div class="chiprow" style="margin-top:6px"><div class="chip">SST · Ganesh S.</div><div class="chip">CS · Bhavesh S.</div><div class="chip">PE · Kashvi B.</div><div class="chip">ART · Ansh K.</div></div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V4 -->
+    <div class="variant" id="v4">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 4</span>
+        <div class="variant-title">Template &amp; copy-first <span class="rec">SHIP as builder</span></div>
+        <p class="variant-for"><b>Optimises:</b> the actual 80% case. <code>POST /timetable/copy</code> already exists — surface it as the primary path: copy last year, review a diff, fix exceptions, publish.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">New timetable</h2><p class="sub">Grade 5-A · 2026-27</p></div></div>
+            <div class="wizdots" style="margin-top:12px"><i></i><i class="on"></i><i></i></div>
+          </div>
+          <div class="body">
+            <p class="sectionlabel">Start from</p>
+            <div class="list">
+              <div class="li" style="background:var(--accent-soft)"><div class="avatar sm" style="background:var(--accent);color:#fff">✓</div><div class="grow"><div class="nm">Grade 5-A · 2025-26</div><div class="tiny muted">40 slots · last year's plan</div></div></div>
+              <div class="li"><div class="avatar sm">⌗</div><div class="grow"><div class="nm">Grade 5-B · 2026-27</div><div class="tiny muted">40 slots · sibling section</div></div></div>
+              <div class="li"><div class="avatar sm">＋</div><div class="grow"><div class="nm">Blank</div><div class="tiny muted">Build all 40 slots by hand</div></div></div>
+            </div>
+            <p class="sectionlabel">What will change</p>
+            <div class="card tight">
+              <div class="kv"><span class="k">Slots copied</span><span class="v">40</span></div>
+              <div class="kv"><span class="k">Teacher no longer here</span><span class="v" style="color:var(--absent)">3</span></div>
+              <div class="kv"><span class="k">Room reassigned</span><span class="v" style="color:var(--late)">8</span></div>
+              <div class="kv"><span class="k">Conflicts detected</span><span class="v" style="color:var(--absent)">2</span></div>
+            </div>
+            <div class="list">
+              <div class="li"><div class="avatar sm r">!</div><div class="grow"><div class="nm">Mon P3 · Hindi</div><div class="tiny muted">Lalit Thakur left — needs a teacher</div></div><span class="chip">Fix</span></div>
+              <div class="li"><div class="avatar sm r">!</div><div class="grow"><div class="nm">Wed P6 · Science</div><div class="tiny muted">Shivam Sharma double-booked with 7-B</div></div><span class="chip">Fix</span></div>
+              <div class="li"><div class="avatar sm a">↻</div><div class="grow"><div class="nm">8 slots</div><div class="tiny muted">Room R-5A → Lab 1 for Science</div></div><span class="chip soft">OK</span></div>
+            </div>
+            <div class="banner info">ⓘ<div>Nothing is published until you finish. Students and parents see the old plan meanwhile.</div></div>
+          </div>
+          <div class="stickybar"><div class="row" style="gap:8px"><div class="btn sec grow">Fix 2 later</div><div class="btn grow">Fix now ›</div></div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V5 -->
+    <div class="variant" id="v5">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 5</span>
+        <div class="variant-title">Teacher-load view <span class="rec">SHIP as pre-check</span></div>
+        <p class="variant-for"><b>Optimises:</b> preventing conflicts instead of reporting them. Flip the axis to per-teacher free/busy, and over-loaded staff become obvious before anyone is double-booked.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="grow"><h2 style="font-size:17px">Teacher load</h2><p class="sub">Friday · 64 teachers · 2026-27</p></div><div class="iconbtn">⚙</div></div>
+            <div class="chiprow" style="margin-top:10px"><div class="chip on">Maths dept</div><div class="chip">Science</div><div class="chip">English</div><div class="chip">Overloaded · 3</div></div>
+          </div>
+          <div class="body">
+            <div class="card tight">
+              <div class="between"><span class="small" style="font-weight:600">Mitali Sinha</span><span class="badge bad">7 of 8 periods</span></div>
+              <div class="grid-week" style="grid-template-columns:repeat(8,1fr);margin-top:8px">
+                <div class="c">5A</div><div class="c">7B</div><div class="c">9C</div><div class="c now">5A</div><div class="c">6D</div><div class="c">8A</div><div class="c">10B</div><div class="c free">—</div>
+              </div>
+              <div class="tiny muted" style="margin-top:6px">Only P8 free · above the 6-period fair-load target</div>
+            </div>
+            <div class="card tight">
+              <div class="between"><span class="small" style="font-weight:600">Priya Bhat</span><span class="badge ok">3 of 8 periods</span></div>
+              <div class="grid-week" style="grid-template-columns:repeat(8,1fr);margin-top:8px">
+                <div class="c free">—</div><div class="c">4A</div><div class="c free">—</div><div class="c free">—</div><div class="c">4B</div><div class="c free">—</div><div class="c">4C</div><div class="c free">—</div>
+              </div>
+              <div class="btn sec sm" style="margin-top:10px">Move a Grade 5-A period to Priya</div>
+            </div>
+            <div class="card tight">
+              <div class="between"><span class="small" style="font-weight:600">Ganesh Singh</span><span class="badge warn">6 of 8 periods</span></div>
+              <div class="grid-week" style="grid-template-columns:repeat(8,1fr);margin-top:8px">
+                <div class="c">3B</div><div class="c">5A</div><div class="c free">—</div><div class="c">8C</div><div class="c">9A</div><div class="c">2D</div><div class="c">5A</div><div class="c free">—</div>
+              </div>
+            </div>
+            <div class="banner warn">!<div><b>3 teachers above target</b>, 11 below. Balancing now avoids conflicts when Grade 5-A's 12 empty slots get filled.</div></div>
+          </div>
+          <div class="stickybar"><div class="btn sec">Suggest a balanced plan</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="margin-top:8px">
+    <b>Recommendation:</b> <b>V1</b> replaces the grid as the everyday viewer (published/draft badge included), <b>V4</b> becomes the builder because copy-then-fix matches how timetables are really made, and <b>V5</b> runs as the pre-check that stops the 409s. V3's stamping is the right "blank school" tool; V2's drag is the most expensive to build and the least reliable on touch — park it.
+  </div>
+</div>
+
+<nav class="reviewnav" title="← → move between screens · F fit all five · I gallery">
+  <a class="rn-btn" href="06-grade-report.html" data-nav="prev">‹ <span class="rn-lbl">Grade Report</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index">
+    <span class="rn-count">7 / 10</span>
+    <span class="rn-title">Timetable Builder</span>
+  </a>
+  <div class="rn-dots"><a class="rn-dot" href="01-students.html" title="1. Students"></a><a class="rn-dot" href="02-student-detail.html" title="2. Student 360"></a><a class="rn-dot" href="03-attendance.html" title="3. Mark Attendance"></a><a class="rn-dot" href="04-attendance-report.html" title="4. Attendance Report"></a><a class="rn-dot" href="05-grades.html" title="5. Enter Marks"></a><a class="rn-dot" href="06-grade-report.html" title="6. Grade Report"></a><a class="rn-dot on" href="07-timetable.html" title="7. Timetable Builder"></a><a class="rn-dot" href="08-my-schedule.html" title="8. My Schedule"></a><a class="rn-dot" href="09-report-cards.html" title="9. Report Cards"></a><a class="rn-dot" href="10-academic-years.html" title="10. Years & Terms"></a></div>
+  <a class="rn-btn" href="08-my-schedule.html" data-nav="next"><span class="rn-lbl">My Schedule</span> ›</a>
+  <span class="rn-keys">← →  ·  F fit  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

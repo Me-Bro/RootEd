@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mark Attendance — APPROVED final spec · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page wide">
+  <p class="crumbs"><a href="index.html">← All screens</a> · Academic · <code>AttendancePage.jsx</code> · <a href="03-attendance.html">7 concepts</a> · <a href="03-attendance-flow.html">7 workflows</a></p>
+
+  <div class="approved-band">
+    <span class="seal">✅ APPROVED FOR BUILD</span>
+    <span class="txt">This is the design to implement — not another option. Built as <b>concept 7</b> (the plain class list) <b>+ filter/sort</b> (table stakes, not a variant — rule 1) <b>+ two small smart accelerators</b> that stay optional. Below: the screen and its states, then a full engineering appendix — real API contracts, state shape, the file plan, error/a11y states and a testing plan — so a second developer can build this without a single follow-up question.</span>
+  </div>
+
+  <h1 class="page-title">Mark Attendance — final design</h1>
+  <p class="page-sub">Mock 8. Starts from <a href="03-attendance.html#v7" style="color:#9fd3bf">concept 7's simple list</a> — two buttons a row, nothing to learn, every child explicitly marked — and adds exactly what a real class list needs: search, filter, sort, and a bulk shortcut that never overrides a decision the teacher already made.</p>
+
+  <div class="statrow" style="max-width:1100px">
+    <div class="s hot"><div class="n">7 → 8</div><div class="l">Built from concept</div></div>
+    <div class="s"><div class="n">2</div><div class="l">Smart accelerators</div></div>
+    <div class="s"><div class="n">0</div><div class="l">New API endpoints</div></div>
+    <div class="s"><div class="n">3 → 2</div><div class="l">Network calls (fewer than today)</div></div>
+    <div class="s"><div class="n">4</div><div class="l">States specified</div></div>
+    <div class="s"><div class="n">7</div><div class="l">New files, all &lt;100 lines</div></div>
+    <div class="s"><div class="n">1</div><div class="l">File modified</div></div>
+  </div>
+
+  <div class="toc">
+    <a href="#hero"><b>1</b> · The screen</a>
+    <a href="#states"><b>2</b> · Other states</a>
+    <a href="#spec"><b>3</b> · Interaction spec</a>
+    <a href="#wiring"><b>4</b> · API contracts</a>
+    <a href="#state"><b>5</b> · State &amp; logic</a>
+    <a href="#components"><b>6</b> · File &amp; component plan</a>
+    <a href="#edge"><b>7</b> · Errors, empty, a11y</a>
+    <a href="#testing"><b>8</b> · Testing plan</a>
+    <a href="#dod"><b>9</b> · Definition of done</a>
+    <a href="#signoff"><b>10</b> · Sign-off</a>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:34px" id="hero">1 · The screen <span style="color:#6e7a8a;font-size:13px;font-weight:400">— real data: Grade 5-A, Friday 21 Aug 2026, mid-roll</span></h2>
+
+  <div class="rail" style="align-items:flex-start;gap:56px">
+    <div class="variant" style="position:relative">
+      <div class="variant-head" style="max-width:390px">
+        <span class="statechip">DEFAULT STATE</span>
+        <div class="variant-title" style="margin-top:2px">Sort: Name (A–Z) · Filter: All · 14 of 21 marked</div>
+        <p class="variant-for">This is what opens every time — same order the API already returns (<code>lastName, firstName</code>), no filter applied, no assumption about who's here. The nine numbered points on the right are the spec; hover none of it needs explaining twice.</p>
+      </div>
+
+      <div class="phone">
+        <div class="redline-dot" style="left:200px;top:100px">1</div>
+        <div class="redline-dot" style="left:60px;top:158px">2</div>
+        <div class="redline-dot" style="left:340px;top:158px">3</div>
+        <div class="redline-dot" style="left:340px;top:196px">4</div>
+        <div class="redline-dot" style="left:200px;top:240px">5</div>
+        <div class="redline-dot" style="left:200px;top:400px">6</div>
+        <div class="redline-dot" style="left:363px;top:400px">7</div>
+        <div class="statusbar"><span>8:05</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row">
+              <div class="iconbtn plain">‹</div>
+              <div class="grow"><h2>Attendance</h2><p class="sub">Fri 21 August 2026</p></div>
+            </div>
+            <div class="row" style="margin-top:10px;gap:8px">
+              <div class="chip on" style="padding:9px 14px">Grade 5-A ▾</div>
+              <span class="tiny muted">21 students</span>
+            </div>
+            <div class="searchbar" style="margin-top:10px">🔍 <span class="muted">Search name or admission no.</span></div>
+            <div class="row" style="margin-top:9px;gap:6px;justify-content:space-between">
+              <div class="chiprow" style="flex:1 1 auto"><div class="chip on">All · 21</div><div class="chip">Unmarked · 7</div><div class="chip">At-risk · 2</div></div>
+              <div class="chip soft" style="flex:0 0 auto;white-space:nowrap">↕ Name ▾</div>
+            </div>
+          </div>
+          <div class="body">
+            <div class="card tight">
+              <div class="between"><span class="small" style="font-weight:600">Marked 14 of 21</span><div class="row" style="gap:6px"><span class="badge ok">12 P</span><span class="badge bad">1 A</span><span class="badge warn">1 L</span></div></div>
+              <div class="bar thick" style="margin-top:9px"><span class="g" style="width:67%"></span></div>
+            </div>
+            <div class="list">
+              <div class="li" style="padding:9px 12px"><div class="avatar sm">AN</div><div class="grow"><div class="nm">Avni Naidu</div><div class="meta">…/0425 · 100%</div></div><div class="pillgroup" style="flex:0 0 140px"><div class="pill p on" style="padding:8px 0">P</div><div class="pill a" style="padding:8px 0">A</div></div><span class="tiny muted">⋯</span></div>
+              <div class="li" style="padding:9px 12px"><div class="avatar sm">AR</div><div class="grow"><div class="nm">Ananya Roy</div><div class="meta">…/0424 · 100%</div></div><div class="pillgroup" style="flex:0 0 140px"><div class="pill p on" style="padding:8px 0">P</div><div class="pill a" style="padding:8px 0">A</div></div><span class="tiny muted">⋯</span></div>
+              <div class="li" style="padding:9px 12px"><div class="avatar sm">BD</div><div class="grow"><div class="nm">Bhuvan D'Souza</div><div class="meta">…/0401 · 100%</div></div><div class="pillgroup" style="flex:0 0 140px"><div class="pill p on" style="padding:8px 0">P</div><div class="pill a" style="padding:8px 0">A</div></div><span class="tiny muted">⋯</span></div>
+              <div class="li" style="padding:9px 12px"><div class="avatar sm">CC</div><div class="grow"><div class="nm">Chetan Chatterjee</div><div class="meta">…/0414 · 100%</div></div><div class="pillgroup" style="flex:0 0 140px"><div class="pill p on" style="padding:8px 0">P</div><div class="pill a" style="padding:8px 0">A</div></div><span class="tiny muted">⋯</span></div>
+              <div class="li" style="padding:9px 12px;background:var(--absent-bg)"><div class="avatar sm r">CS</div><div class="grow"><div class="nm">Chetan Shetty</div><div class="meta">…/0418 · <span style="color:var(--absent);font-weight:650">75%</span></div></div><div class="pillgroup" style="flex:0 0 140px"><div class="pill p" style="padding:8px 0">P</div><div class="pill a on" style="padding:8px 0">A</div></div><span class="tiny muted">⋯</span></div>
+              <div class="li" style="padding:9px 12px"><div class="avatar sm">DG</div><div class="grow"><div class="nm">Deepak Gowda</div><div class="meta">…/0404 · 85%</div></div><div class="pillgroup" style="flex:0 0 140px"><div class="pill p on" style="padding:8px 0">P</div><div class="pill a" style="padding:8px 0">A</div></div><span class="tiny muted">⋯</span></div>
+              <div class="li" style="padding:9px 12px;background:var(--surface-2)"><div class="avatar sm">DG</div><div class="grow"><div class="nm">Divya Ghosh</div><div class="meta">…/0421 · 100%</div></div><div class="pillgroup" style="flex:0 0 140px"><div class="pill p" style="padding:8px 0">P</div><div class="pill a" style="padding:8px 0">A</div></div><span class="tiny muted">⋯</span></div>
+              <div class="li" style="padding:9px 12px"><div class="avatar sm">ES</div><div class="grow"><div class="nm">Eshan Shekhawat</div><div class="meta">…/0415 · 95%</div></div><div class="pillgroup" style="flex:0 0 140px"><div class="pill p on" style="padding:8px 0">P</div><div class="pill a" style="padding:8px 0">A</div></div><span class="tiny muted">⋯</span></div>
+              <div class="li" style="padding:9px 12px;background:var(--late-bg)"><div class="avatar sm a">HM</div><div class="grow"><div class="nm">Heena Malhotra</div><div class="meta">…/0411 · 100% · late 08:22</div></div><div class="pillgroup" style="flex:0 0 140px"><div class="pill l on" style="padding:8px 0">L</div><div class="pill a" style="padding:8px 0">A</div></div><span class="tiny muted">⋯</span></div>
+              <div class="li" style="padding:9px 12px;background:var(--surface-2)"><div class="avatar sm">HP</div><div class="grow"><div class="nm">Hemant Pereira</div><div class="meta">…/0417 · 90%</div></div><div class="pillgroup" style="flex:0 0 140px"><div class="pill p" style="padding:8px 0">P</div><div class="pill a" style="padding:8px 0">A</div></div><span class="tiny muted">⋯</span></div>
+            </div>
+          </div>
+          <div class="stickybar">
+            <div class="row" style="gap:8px"><div class="btn sec" style="flex:0 0 150px">⚡ Mark rest present</div><div class="btn" style="flex:1 1 0;background:var(--ink-4)">Save · 14 of 21</div></div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div style="max-width:340px;padding-top:52px">
+      <ol class="speclist">
+        <li><b>Class + date bar.</b> Tapping the chip opens the teacher's own classes (reuses the existing <code>useClassSections</code> pattern) — never a 40-option native <code>&lt;select&gt;</code>. Date defaults to today; no picker unless they explicitly want a past date.</li>
+        <li><b>Search.</b> Matches name or admission number, case-insensitive, filters the list live as they type. Client-side — sections top out around 25–40 students.</li>
+        <li><b>Filter chips.</b> <code>All</code> / <code>Unmarked</code> / <code>At-risk (&lt;75%)</code>, single-select, each with a live count. This is table stakes per rule 1 — not a design idea, an expected control.</li>
+        <li><b>Sort.</b> <code>Name (A–Z)</code> default (matches today's API order) · <code>Admission no.</code> · <code>Attendance % (low→high)</code> — the one genuinely "smart" sort, for triage.</li>
+        <li><b>Progress card.</b> "Marked X of Y" plus a status breakdown, recomputed on every tap. No spinner, ever — a count.</li>
+        <li><b>Row.</b> Avatar initials, name, admission no., attendance % (turns red under 75%). Present/Absent are direct one-tap buttons — never a cycle.</li>
+        <li><b>⋯ overflow.</b> Late, Excused, and a note field live in a small sheet off the row, so the two-button main path never gets cluttered by four statuses.</li>
+        <li><b>Mark rest present.</b> The one bulk action. It only touches rows still unmarked — Chetan Shetty (Absent) and Heena Malhotra (Late) are untouched because a human already decided those. 5-second undo toast.</li>
+        <li><b>Save.</b> Disabled-looking until everyone has a status; tapping it early opens the same guard sheet as concept 7 (list of who's left, quick P/A buttons) rather than failing silently.</li>
+      </ol>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="states">2 · Other states <span style="color:#6e7a8a;font-size:13px;font-weight:400">— same screen, three moments that matter</span></h2>
+  <div class="rail">
+
+    <div class="variant">
+      <div class="variant-head">
+        <span class="statechip">SMART TRIAGE</span>
+        <div class="variant-title">At-risk filter + attendance-% sort</div>
+        <p class="variant-for">Both smart accelerators used together — this is the one non-obvious behaviour worth demoing. Filter <code>At-risk</code> plus sort <code>Attendance % (low→high)</code> puts the two weakest students first, in their exact real order.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>8:06</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Attendance</h2><p class="sub">Grade 5-A · Fri 21 Aug</p></div></div>
+            <div class="searchbar" style="margin-top:10px">🔍 <span class="muted">Search name or admission no.</span></div>
+            <div class="row" style="margin-top:9px;gap:6px;justify-content:space-between">
+              <div class="chiprow" style="flex:1 1 auto"><div class="chip">All · 21</div><div class="chip">Unmarked · 7</div><div class="chip on">At-risk · 2</div></div>
+              <div class="chip soft" style="flex:0 0 auto;white-space:nowrap">↕ Att. % ▾</div>
+            </div>
+          </div>
+          <div class="body">
+            <div class="banner warn">!<div><b>2 students below 75%</b> — sorted to the top so you see them first, not at the bottom of an alphabetical scroll.</div></div>
+            <div class="list">
+              <div class="li" style="padding:10px 12px"><div class="avatar r">KD</div><div class="grow"><div class="nm">Kartik Dutta</div><div class="meta">…/0402 · <span style="color:var(--absent);font-weight:650">60%</span> · marked present today</div></div><div class="pillgroup" style="flex:0 0 140px"><div class="pill p on" style="padding:8px 0">P</div><div class="pill a" style="padding:8px 0">A</div></div><span class="tiny muted">⋯</span></div>
+              <div class="li" style="padding:10px 12px;background:var(--absent-bg)"><div class="avatar r">CS</div><div class="grow"><div class="nm">Chetan Shetty</div><div class="meta">…/0418 · <span style="color:var(--absent);font-weight:650">75%</span> · 2nd day absent</div></div><div class="pillgroup" style="flex:0 0 140px"><div class="pill p" style="padding:8px 0">P</div><div class="pill a on" style="padding:8px 0">A</div></div><span class="tiny muted">⋯</span></div>
+            </div>
+            <div class="tiny muted" style="text-align:center;margin-top:6px">Threshold is 75% — same number the Attendance Report uses.</div>
+          </div>
+          <div class="stickybar"><div class="btn sec">Clear filter</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="variant-head">
+        <span class="statechip">BULK ACTION</span>
+        <div class="variant-title">"Mark rest present" — with undo</div>
+        <p class="variant-for">One tap sets the 7 remaining blanks to Present. It never touches a row the teacher already set — Chetan (Absent) and Heena (Late) stay exactly as they were. Five seconds to undo the whole bulk action before it's final.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>8:06</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Attendance</h2><p class="sub">Grade 5-A · Fri 21 Aug</p></div></div>
+          </div>
+          <div class="body">
+            <div class="card tight">
+              <div class="between"><span class="small" style="font-weight:600">Marked 21 of 21</span><div class="row" style="gap:6px"><span class="badge ok">19 P</span><span class="badge bad">1 A</span><span class="badge warn">1 L</span></div></div>
+              <div class="bar thick" style="margin-top:9px"><span class="g" style="width:100%"></span></div>
+            </div>
+            <div class="banner ok">✓<div><b>7 students</b> set to Present. Chetan Shetty and Heena Malhotra were left exactly as you marked them.</div></div>
+            <div class="list">
+              <div class="li" style="padding:9px 12px"><div class="avatar sm g">HP</div><div class="grow"><div class="nm">Hemant Pereira</div><div class="meta">…/0417 · 90%</div></div><span class="badge ok">✓ just set</span></div>
+              <div class="li" style="padding:9px 12px"><div class="avatar sm g">IS</div><div class="grow"><div class="nm">Inaya Siddiqui</div><div class="meta">…/0407 · 100%</div></div><span class="badge ok">✓ just set</span></div>
+              <div class="li" style="padding:9px 12px;background:var(--absent-bg)"><div class="avatar sm r">CS</div><div class="grow"><div class="nm">Chetan Shetty</div><div class="meta">…/0418 · 75%</div></div><span class="badge bad">unchanged · Absent</span></div>
+              <div class="li" style="padding:9px 12px;background:var(--late-bg)"><div class="avatar sm a">HM</div><div class="grow"><div class="nm">Heena Malhotra</div><div class="meta">…/0411 · late 08:22</div></div><span class="badge warn">unchanged · Late</span></div>
+            </div>
+          </div>
+          <div class="toast"><span><b>7 students</b> marked present</span><span style="font-weight:650">UNDO · 4s</span></div>
+          <div class="stickybar"><div class="btn">Save · 21 of 21</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="variant-head">
+        <span class="statechip">GUARDED SAVE</span>
+        <div class="variant-title">Saving early never fails silently</div>
+        <p class="variant-for">If Save is tapped while rows are still blank, nothing is lost and nothing is assumed — a sheet lists exactly who's left, with the same one-tap buttons, right there.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>8:05</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Attendance</h2><p class="sub">Grade 5-A · 14 of 21 marked</p></div></div></div>
+          <div class="body">
+            <div class="list" style="opacity:.45">
+              <div class="li" style="padding:9px 12px"><div class="avatar sm">AN</div><div class="grow"><div class="nm">Avni Naidu</div></div><span class="badge ok">✓</span></div>
+              <div class="li" style="padding:9px 12px"><div class="avatar sm">AR</div><div class="grow"><div class="nm">Ananya Roy</div></div><span class="badge ok">✓</span></div>
+            </div>
+          </div>
+          <div class="scrim"></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <div class="row"><span style="font-weight:650;font-size:15px">7 students still unmarked</span></div>
+            <p class="tiny muted" style="margin:4px 0 10px">Nothing is assumed for these — choose Present or Absent, or mark the rest present in one tap.</p>
+            <div class="list plain" style="max-height:210px;overflow:auto">
+              <div class="li" style="padding:8px 0"><div class="avatar sm">MM</div><div class="grow"><div class="nm">Manisha Mehta</div></div><div class="pillgroup" style="flex:0 0 110px"><div class="pill p" style="padding:7px 0">P</div><div class="pill a" style="padding:7px 0">A</div></div></div>
+              <div class="li" style="padding:8px 0"><div class="avatar sm">NC</div><div class="grow"><div class="nm">Neha Chopra</div></div><div class="pillgroup" style="flex:0 0 110px"><div class="pill p" style="padding:7px 0">P</div><div class="pill a" style="padding:7px 0">A</div></div></div>
+              <div class="li" style="padding:8px 0"><div class="avatar sm">NN</div><div class="grow"><div class="nm">Nakul Nair</div></div><div class="pillgroup" style="flex:0 0 110px"><div class="pill p" style="padding:7px 0">P</div><div class="pill a" style="padding:7px 0">A</div></div></div>
+            </div>
+            <div class="btn accent" style="margin-top:12px">⚡ Mark all 7 present</div>
+            <div class="btn sec" style="margin-top:8px">Keep marking manually</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="spec">3 · Interaction spec — precise rules</h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Control</th><th>Behaviour</th><th>Edge case</th></tr></thead>
+      <tbody>
+        <tr><td><b>Search</b></td><td>Matches <code>firstName</code>, <code>lastName</code> or <code>admissionNo</code>, case-insensitive substring, debounced ~150 ms</td><td>No matches → empty state: "No student matches '…'"</td></tr>
+        <tr><td><b>Filter: Unmarked</b></td><td>Rows with no status yet this session</td><td>Empty when everyone's marked — chip shows <code>· 0</code> and disables itself</td></tr>
+        <tr><td><b>Filter: At-risk</b></td><td>Attendance % (last 20 school days) &lt; 75 — same threshold as the Attendance Report</td><td>Combines with search; does not combine with Unmarked (mutually exclusive)</td></tr>
+        <tr><td><b>Sort: Attendance %</b></td><td>Ascending — lowest attendance first, ties broken by name</td><td>Students with zero attendance history (new admissions) sort last, not first, with a "no history" tag instead of a false 0%</td></tr>
+        <tr><td><b>Present / Absent buttons</b></td><td>Direct set, one tap, no cycling. Tapping the already-active button is a no-op</td><td>Switching Present ↔ Absent after Late/Excused was set via ⋯ clears the ⋯ state cleanly</td></tr>
+        <tr><td><b>⋯ (Late / Excused)</b></td><td>Opens a small sheet: status pills + optional note + time (defaults to now)</td><td>Closing without picking a status leaves the row exactly as it was — no accidental Present</td></tr>
+        <tr><td><b>Mark rest present</b></td><td>Bulk-sets only rows with <i>no</i> status. Rows already Present/Absent/Late/Excused are never touched</td><td>Disabled (not hidden) when 0 rows are unmarked, so its absence is never a mystery</td></tr>
+        <tr><td><b>Undo</b></td><td>5-second toast reverts the entire bulk action as one unit, not row by row</td><td>A manual tap on any row during the undo window cancels the toast for that row only</td></tr>
+        <tr><td><b>Save</b></td><td>Enabled once every row has a status; writes all statuses in one request</td><td>Tapped early → guard sheet (state 4), never a failed/blocked button with no explanation</td></tr>
+        <tr><td><b>2nd-consecutive-absence flag</b></td><td>Inline banner on the row/guard sheet when a student is absent today <i>and</i> was absent the previous school day — reuses the logic already shown in workflow 1, step 3</td><td>Only checks the immediately preceding school day, not a rolling window, to keep the rule explainable</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="wiring">4 · API contracts <span style="color:#6e7a8a;font-size:13px;font-weight:400">— every one of these already exists and ships today</span></h2>
+
+  <div class="notebox"><b>Finding while speccing this:</b> the existing <code>AttendancePage.jsx</code> calls <code>GET /academic/students</code> to build the roster. That endpoint doesn't return attendance history, so today there is no per-student % anywhere on this screen. <code>GET /academic/attendance/report</code> (already built for the Attendance Report page) returns the roster <b>and</b> the % <b>and</b> the defaulter flag in one response — so this redesign needs <b>one fewer network call</b> than the code it replaces, not one more.</div>
+
+  <div class="subhead">1. Load the roster + attendance % <span class="tag">replaces the GET /academic/students call</span></div>
+  <div class="codeblock"><span class="k">GET</span> /academic/attendance/report?sectionId=<span class="s">{sectionId}</span>
+<span class="c1">// no from/to → server defaults to the last 30 calendar days, same window</span>
+<span class="c1">// the Attendance Report page already shows. Do not compute dates client-side.</span>
+
+<span class="c1">// 200 response — apps/api/src/routes/academic.js, computeAttendanceStats()</span>
+{
+  <span class="s">"from"</span>: <span class="s">"2026-07-22T00:00:00.000Z"</span>,
+  <span class="s">"to"</span>: <span class="s">"2026-08-21T00:00:00.000Z"</span>,
+  <span class="s">"thresholdPct"</span>: <span class="k">75</span>,          <span class="c1">// use THIS, never hardcode 75 client-side</span>
+  <span class="s">"classAveragePct"</span>: <span class="k">94</span>,
+  <span class="s">"students"</span>: [
+    { <span class="s">"studentId"</span>: <span class="s">"…0402"</span>, <span class="s">"firstName"</span>: <span class="s">"Kartik"</span>, <span class="s">"lastName"</span>: <span class="s">"Dutta"</span>,
+      <span class="s">"admissionNo"</span>: <span class="s">"GPS/2026/0402"</span>, <span class="s">"presentCount"</span>: <span class="k">12</span>, <span class="s">"totalCount"</span>: <span class="k">20</span>,
+      <span class="s">"pct"</span>: <span class="k">60</span>, <span class="s">"isDefaulter"</span>: <span class="k">true</span> },
+    …
+  ]
+}</div>
+  <div class="notebox"><b>Use directly, don't recompute:</b> <code>pct</code> drives the row badge and the "Attendance %" sort key. <code>isDefaulter</code> <i>is</i> the "At-risk" filter — it's already computed server-side with the same threshold the Attendance Report uses, so the two screens can never disagree about who's at risk.</div>
+
+  <div class="subhead">2. Load today's marked statuses</div>
+  <div class="codeblock"><span class="k">GET</span> /academic/attendance?sectionId=<span class="s">{sectionId}</span>&date=<span class="s">{today}</span>
+
+<span class="c1">// 200 response — array of AttendanceRecord, subjectId is null for the daily roll</span>
+[
+  { <span class="s">"entityId"</span>: <span class="s">"…0418"</span>, <span class="s">"status"</span>: <span class="s">"absent"</span>, <span class="s">"subjectId"</span>: <span class="k">null</span>, <span class="s">"markedBy"</span>: <span class="s">"…"</span> },
+  { <span class="s">"entityId"</span>: <span class="s">"…0411"</span>, <span class="s">"status"</span>: <span class="s">"late"</span>,   <span class="s">"subjectId"</span>: <span class="k">null</span>, <span class="s">"note"</span>: <span class="s">"08:22"</span> }
+]</div>
+  <div class="notebox">Merge into the roster by <code>studentId === entityId</code>. A student with no matching record is <b>unmarked</b> — never assume present.</div>
+
+  <div class="subhead">3. Second-consecutive-absence check <span class="tag">reuses call #2 for one more date</span></div>
+  <div class="codeblock"><span class="k">GET</span> /academic/attendance?sectionId=<span class="s">{sectionId}</span>&date=<span class="s">{previousSchoolDay}</span>
+
+<span class="c1">// previousSchoolDay = yesterday, rolled back over Sat/Sun (same rule the seed</span>
+<span class="c1">// script uses for schoolDays()). Fire in parallel with call #2, not sequentially.</span></div>
+  <div class="notebox">Flag = today's status is <code>absent</code> <b>and</b> that student's record for <code>previousSchoolDay</code> is also <code>absent</code>. No new endpoint, no new field on <code>AttendanceRecord</code>.</div>
+
+  <div class="subhead">4. Save <span class="tag">unchanged from today's code</span></div>
+  <div class="codeblock"><span class="k">POST</span> /academic/attendance
+{
+  <span class="s">"date"</span>: <span class="s">"2026-08-21"</span>,
+  <span class="s">"sectionId"</span>: <span class="s">"…"</span>,
+  <span class="s">"subjectId"</span>: <span class="k">null</span>,
+  <span class="s">"records"</span>: [
+    { <span class="s">"entityId"</span>: <span class="s">"…0418"</span>, <span class="s">"status"</span>: <span class="s">"absent"</span> },
+    { <span class="s">"entityId"</span>: <span class="s">"…0411"</span>, <span class="s">"status"</span>: <span class="s">"late"</span>, <span class="s">"note"</span>: <span class="s">"08:22"</span> }
+    <span class="c1">// … one entry per row that has a status</span>
+  ]
+}
+<span class="c1">// 200 → { "saved": 21 }   — validated by markAttendanceSchema, upsert per (tenantId,date,entityId,subjectId)</span></div>
+  <div class="notebox">Upsert means <b>Save is safe to tap more than once</b> — resubmitting the same records overwrites, it never duplicates. Permission: <code>attendance:write</code>, identical to today.</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="state">5 · State &amp; logic <span style="color:#6e7a8a;font-size:13px;font-weight:400">— what lives in the component, and the four functions that matter</span></h2>
+
+  <div class="subhead">Local state shape</div>
+  <div class="codeblock"><span class="k">const</span> [searchQuery, setSearchQuery] = useState(<span class="s">''</span>);
+<span class="k">const</span> [filter, setFilter]           = useState(<span class="s">'all'</span>);       <span class="c1">// 'all' | 'unmarked' | 'atRisk'</span>
+<span class="k">const</span> [sortBy, setSortBy]           = useState(<span class="s">'name'</span>);      <span class="c1">// 'name' | 'admissionNo' | 'attendancePct'</span>
+<span class="k">const</span> [statusMap, setStatusMap]     = useState({});         <span class="c1">// { [studentId]: { status, note? } }</span>
+<span class="k">const</span> [guardOpen, setGuardOpen]     = useState(<span class="k">false</span>);
+<span class="k">const</span> [bulkUndo, setBulkUndo]       = useState(<span class="k">null</span>);       <span class="c1">// { studentIds: string[] } | null, cleared after 5s</span></div>
+  <div class="notebox warn"><b>Persist <code>statusMap</code> to <code>sessionStorage</code></b> keyed by <code>attendance:{sectionId}:{date}</code>, written on every change. Save is a manual tap in this spec, not autosave — without this, backgrounding the app or an accidental back-swipe mid-roll silently loses everything typed so far. Read it back on mount before falling back to the empty object. This is the one piece of local persistence in scope; it is not an offline write queue.</div>
+
+  <div class="subhead">Derived (memoized, recompute on every dependency change)</div>
+  <div class="codeblock"><span class="k">const</span> rows = roster.map(s => ({ ...s, current: statusMap[s.studentId] }));
+
+<span class="k">const</span> filtered = rows
+  .filter(r => matches(r, searchQuery))              <span class="c1">// name or admissionNo, case-insensitive substring</span>
+  .filter(r => filter === <span class="s">'all'</span>      ? <span class="k">true</span>
+             : filter === <span class="s">'unmarked'</span> ? !r.current
+             :                        r.isDefaulter);  <span class="c1">// 'atRisk' — straight from the report response</span>
+
+<span class="k">const</span> sorted = [...filtered].sort(bySortBy[sortBy]);
+<span class="c1">// bySortBy.attendancePct: nulls (no history) sort LAST, not first — never read as a false 0%</span>
+
+<span class="k">const</span> counts   = countBy(rows, r => r.current?.status ?? <span class="s">'unmarked'</span>);
+<span class="k">const</span> canSave  = rows.length > <span class="k">0</span> && rows.every(r => r.current);</div>
+
+  <div class="subhead">Four functions worth writing carefully</div>
+  <div class="codeblock"><span class="k">function</span> setStatus(studentId, status, extra) {
+  setStatusMap(prev => ({ ...prev, [studentId]: { status, ...extra } }));
+}
+
+<span class="k">function</span> markRestPresent() {
+  <span class="k">const</span> unmarkedIds = rows.filter(r => !r.current).map(r => r.studentId);
+  <span class="k">if</span> (unmarkedIds.length === <span class="k">0</span>) <span class="k">return</span>;                 <span class="c1">// button stays visible but disabled — never hidden</span>
+  setStatusMap(prev => ({
+    ...prev,
+    ...Object.fromEntries(unmarkedIds.map(id => [id, { status: <span class="s">'present'</span> }])),
+  }));
+  setBulkUndo({ studentIds: unmarkedIds });           <span class="c1">// toast reads this; auto-clears after 5s</span>
+}
+
+<span class="k">function</span> undoBulk() {
+  <span class="k">if</span> (!bulkUndo) <span class="k">return</span>;
+  setStatusMap(prev => {
+    <span class="k">const</span> next = { ...prev };
+    bulkUndo.studentIds.forEach(id => <span class="k">delete</span> next[id]);   <span class="c1">// removes only the bulk-set rows,</span>
+    <span class="k">return</span> next;                                    <span class="c1">// a manual edit during the 5s window is untouched</span>
+  });
+  setBulkUndo(<span class="k">null</span>);
+}
+
+<span class="k">function</span> handleSaveTap() {
+  <span class="k">if</span> (!canSave) { setGuardOpen(<span class="k">true</span>); <span class="k">return</span>; }      <span class="c1">// never a disabled button with no explanation</span>
+  saveMutation.mutate(buildPayload());
+}</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="components">6 · File &amp; component plan</h2>
+  <div class="rail" style="gap:16px">
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Files</div></div>
+      <div class="codeblock filetree" style="width:100%;box-sizing:border-box"><span class="mod">M</span> apps/web/src/pages/academic/AttendancePage.jsx <span class="c1">— rewrite body, keep the file</span>
+<span class="new">A</span> apps/web/src/components/attendance/SearchField.jsx
+<span class="new">A</span> apps/web/src/components/attendance/FilterChips.jsx
+<span class="new">A</span> apps/web/src/components/attendance/SortMenu.jsx
+<span class="new">A</span> apps/web/src/components/attendance/StatusPills.jsx
+<span class="new">A</span> apps/web/src/components/attendance/UnmarkedGuardSheet.jsx
+<span class="new">A</span> apps/web/src/components/attendance/BulkUndoToast.jsx
+<span class="new">A</span> apps/web/src/hooks/useAttendanceRoster.js <span class="c1">— the state + derived logic above</span></div>
+      <div class="notebox" style="margin-top:12px"><b>Nothing moves</b> — same route, same permission, same page component name. A dev opening a PR against this spec touches one existing file and adds seven small new ones.</div>
+    </div>
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Component contracts</div></div>
+      <div class="card" style="width:100%">
+        <div class="kv"><span class="k">SearchField</span><span class="v"><code>{ value, onChange }</code> — controlled, no internal debounce state (debounce lives in the hook)</span></div>
+        <div class="kv"><span class="k">FilterChips</span><span class="v"><code>{ value, onChange, counts }</code> — <code>counts</code> is <code>{ all, unmarked, atRisk }</code>, the numbers on each chip</span></div>
+        <div class="kv"><span class="k">SortMenu</span><span class="v"><code>{ value, onChange }</code> — fixed 3-item list, not a generic sort framework</span></div>
+        <div class="kv"><span class="k">StatusPills</span><span class="v"><code>{ status, onSet, onOpenMore }</code> — renders Present/Absent; <code>onOpenMore</code> opens the ⋯ sheet</span></div>
+        <div class="kv"><span class="k">UnmarkedGuardSheet</span><span class="v"><code>{ open, unmarkedRows, onSet, onMarkAllPresent, onClose }</code></span></div>
+        <div class="kv"><span class="k">BulkUndoToast</span><span class="v"><code>{ count, onUndo, onExpire }</code> — self-clears after 5000ms via <code>setTimeout</code></span></div>
+        <div class="kv"><span class="k">Reuse as-is</span><span class="v"><code>Button</code>, <code>Badge</code> (variant="destructive"/"success" for the row % pill), <code>Input</code>, <code>useClassSections</code></span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="edge">7 · Errors, empty states, accessibility</h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Situation</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td><b>Report call fails</b></td><td>Roster still loads from the merge fallback (records only); banner "Attendance % unavailable — retry", the % column and sort-by-% option disable gracefully. Marking is never blocked by this.</td></tr>
+        <tr><td><b>Save fails (network/409)</b></td><td><code>statusMap</code> is untouched — nothing clears. Inline error banner + Retry button reuses the same payload.</td></tr>
+        <tr><td><b>Empty section (0 students)</b></td><td>Reuse <code>EmptyState.jsx</code>: "No active students in this section." No search bar, no Save button.</td></tr>
+        <tr><td><b>Search has no matches</b></td><td>"No student matches '{query}'" inline in the list area; filter chips and counts stay based on the <i>unfiltered</i> roster, not zero.</td></tr>
+        <tr><td><b>Present/Absent buttons</b></td><td>Native <code>&lt;button&gt;</code> pair per row, <code>aria-pressed</code> on the active one — full keyboard operability for free, no custom radiogroup needed.</td></tr>
+        <tr><td><b>Bulk undo toast</b></td><td><code>role="status" aria-live="polite"</code> so a screen reader announces "7 students marked present" without the user needing to find the toast visually.</td></tr>
+        <tr><td><b>Guard sheet opens</b></td><td>Focus moves to the sheet's first row on open; <kbd>Esc</kbd> closes it back to manual marking — it never saves on close.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="testing">8 · Testing plan</h2>
+  <div style="max-width:1080px" class="notebox">
+    <b>Unit (Jest)</b> — the four functions in §5 are pure enough to test without rendering: <code>markRestPresent</code> only touches unmarked ids, <code>undoBulk</code> restores exactly those ids and no others, the attendance-% sort puts null-history students last, the second-consecutive-absence check reads two dates correctly across a weekend boundary.<br><br>
+    <b>E2E (Playwright)</b> — extend the existing academic/attendance spec: (1) mark a full class via individual taps → Save enabled only at 100%; (2) tap "Mark rest present" with 2 rows pre-set → those 2 stay unchanged, toast shows the other count, Undo restores exactly the bulk-set rows; (3) tap Save early → guard sheet lists the right names → mark all → Save succeeds; (4) filter "At-risk" + sort "Attendance %" → order matches the seeded fixture's known percentages (this repo's Playwright fixtures already seed deterministic data, so exact ordering is assertable).
+  </div>
+
+
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="dod">9 · Definition of done</h2>
+  <div class="painbox" style="max-width:900px">
+    <ul class="checklist">
+      <li>Search filters by name or admission no., debounced, case-insensitive, with a "no matches" state</li>
+      <li>Filter chips — <code>All</code> / <code>Unmarked</code> / <code>At-risk (&lt;75%)</code> — each shows a live count</li>
+      <li>Sort — <code>Name (A–Z)</code> default, <code>Admission no.</code>, <code>Attendance % (low→high)</code></li>
+      <li>Progress card updates on every tap: "Marked X of Y" + P/A/L/E counts + bar, no spinners</li>
+      <li>Present / Absent are one direct tap each — no cycling through four states</li>
+      <li>Late and Excused live behind <b>⋯</b> and never appear as default buttons on the row</li>
+      <li><b>Mark rest present</b> only affects rows with no status yet; 5-second undo for the whole action</li>
+      <li>Save is guarded, not blocked — early save opens the "who's left" sheet, never fails silently</li>
+      <li>2nd-consecutive-absence banner appears using the same rule as the workflow storyboard</li>
+      <li>Zero new API endpoints; filter/sort/search are client-side only — roster + % load from <code>GET /academic/attendance/report</code> (§4.1), not <code>GET /academic/students</code></li>
+      <li><code>statusMap</code> persists to <code>sessionStorage</code> per section/date so backgrounding the tab mid-roll doesn't lose progress (§5)</li>
+      <li>7 new components under <code>components/attendance/</code> match the contracts in §6; <code>AttendancePage.jsx</code> is rewritten, not replaced</li>
+      <li>Error, empty and no-match states match §7; Present/Absent buttons are keyboard-operable with <code>aria-pressed</code></li>
+      <li>Unit tests cover the four functions in §5; Playwright covers the four scenarios in §8</li>
+      <li>Verified against the real Grade 5-A / Friday 21 Aug scenario used throughout this spec</li>
+    </ul>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="signoff">10 · Sign-off</h2>
+  <div class="painbox" style="max-width:900px">
+    <p style="margin:0 0 4px;font-size:13px;color:#b6bec9">Once approved here, this page is the source of truth for implementation — not the 7 exploratory concepts, not the workflow storyboards. If a build detail is ambiguous, it's a bug in this spec; fix the spec, then the code.</p>
+    <div class="signoff">
+      <div class="field"><div class="l">Approved by</div><div class="v"></div></div>
+      <div class="field"><div class="l">Date</div><div class="v"></div></div>
+      <div class="field"><div class="l">Spec version</div><div class="v">v1.0 · 22 Aug 2026</div></div>
+      <div class="field"><div class="l">Supersedes</div><div class="v">Concept 7 (still kept for reference)</div></div>
+    </div>
+  </div>
+
+</div>
+<nav class="reviewnav" title="← → move between screens · F fit all · I gallery">
+  <a class="rn-btn" href="03-attendance.html" data-nav="prev">‹ <span class="rn-lbl">7 concepts</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">APPROVED</span><span class="rn-title">Attendance · final spec</span></a>
+  <a class="rn-btn" href="03-attendance-flow.html" data-nav="next"><span class="rn-lbl">7 workflows</span> ›</a>
+  <span class="rn-keys">← →  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

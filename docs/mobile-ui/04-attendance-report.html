@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Attendance report — 5 mobile concepts · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page">
+  <p class="crumbs"><a href="index.html">← All screens</a> · Academic · <code>AttendanceReportPage.jsx</code></p>
+  <h1 class="page-title">4 · Attendance Report</h1>
+  <p class="page-sub">Not a report — a <em>call list</em>. The only reason anyone opens this on a phone is to find out who needs a parent conversation today, and then have it.</p>
+
+  <div class="painbox">
+    <b>Pain today:</b> four filters (section / subject / from / to) sit above a five-column table whose two most important cells — <code>%</code> and the <code>Defaulter</code> badge — are the first to clip at 390&nbsp;px. The output is a CSV download, which on a phone is a dead end. The 75% threshold and class average are buried in a text line.
+  </div>
+
+  <input type="checkbox" id="fit" class="vis-hidden">
+  <div class="zoombar"><label for="fit">▣ Fit all five on one screen (toggle)</label> · real data: school average 94%, 31 students below 75%</div>
+
+  <div class="rail">
+
+    <!-- V1 -->
+    <div class="variant" id="v1">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 1</span>
+        <div class="variant-title">Traffic-light roster <span class="rec">SHIP</span></div>
+        <p class="variant-for"><b>Optimises:</b> triage. Worst first, one bar per child, threshold drawn as a line you can see. No horizontal scroll, no badge to clip.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Attendance</h2><p class="sub">Whole school · last 20 school days</p></div><div class="iconbtn">⚙</div></div>
+            <div class="chiprow" style="margin-top:10px"><div class="chip soft">All classes ▾</div><div class="chip">Last 20 days ▾</div><div class="chip">All subjects ▾</div></div>
+          </div>
+          <div class="body">
+            <div class="card tight">
+              <div class="row" style="gap:14px">
+                <div class="ring" style="--p:94%"><div><div style="font-size:19px;font-weight:700">94%</div><div class="tiny muted">average</div></div></div>
+                <div class="grow stack" style="gap:6px">
+                  <div class="between"><span class="small muted">Below 75%</span><span class="badge bad">31</span></div>
+                  <div class="between"><span class="small muted">75–90%</span><span class="badge warn">147</span></div>
+                  <div class="between"><span class="small muted">Above 90%</span><span class="badge ok">784</span></div>
+                  <div class="tiny muted">Threshold 75% · 962 active students</div>
+                </div>
+              </div>
+            </div>
+            <p class="sectionlabel">Needs a call · lowest first</p>
+            <div class="list">
+              <div class="li"><div class="avatar r">MC</div><div class="grow"><div class="nm">Manoj Chettiar</div><div class="tiny muted">Grade 10-C · 10/20 days</div><div class="bar" style="margin-top:5px"><span class="r" style="width:50%"></span></div></div><span style="font-weight:700;color:var(--absent)">50%</span></div>
+              <div class="li"><div class="avatar r">FH</div><div class="grow"><div class="nm">Falguni Hegde</div><div class="tiny muted">Grade 8-B · 10/20 days</div><div class="bar" style="margin-top:5px"><span class="r" style="width:50%"></span></div></div><span style="font-weight:700;color:var(--absent)">50%</span></div>
+              <div class="li"><div class="avatar r">GS</div><div class="grow"><div class="nm">Ganga Shekhawat</div><div class="tiny muted">Grade 8-C · 11/20 days</div><div class="bar" style="margin-top:5px"><span class="r" style="width:55%"></span></div></div><span style="font-weight:700;color:var(--absent)">55%</span></div>
+              <div class="li"><div class="avatar r">KC</div><div class="grow"><div class="nm">Kritika Chatterjee</div><div class="tiny muted">Grade 10-D · 11/20 days</div><div class="bar" style="margin-top:5px"><span class="r" style="width:55%"></span></div></div><span style="font-weight:700;color:var(--absent)">55%</span></div>
+              <div class="li"><div class="avatar r">ON</div><div class="grow"><div class="nm">Ojaswi Naidu</div><div class="tiny muted">Grade 10-D · 12/20 days</div><div class="bar" style="margin-top:5px"><span class="r" style="width:60%"></span></div></div><span style="font-weight:700;color:var(--absent)">60%</span></div>
+              <div class="li"><div class="avatar r">SP</div><div class="grow"><div class="nm">Sunil Paul</div><div class="tiny muted">Grade 2-C · 12/20 days</div><div class="bar" style="margin-top:5px"><span class="r" style="width:60%"></span></div></div><span style="font-weight:700;color:var(--absent)">60%</span></div>
+              <div class="li"><div class="avatar a">RS</div><div class="grow"><div class="nm">Rahul Siddiqui</div><div class="tiny muted">Grade 2-D · 13/20 days</div><div class="bar" style="margin-top:5px"><span class="a" style="width:65%"></span></div></div><span style="font-weight:700;color:var(--late)">65%</span></div>
+            </div>
+          </div>
+          <div class="stickybar"><div class="row" style="gap:8px"><div class="btn sec grow">Share list</div><div class="btn grow">Start call round</div></div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V2 -->
+    <div class="variant" id="v2">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 2</span>
+        <div class="variant-title">Per-student month heatmap</div>
+        <p class="variant-for"><b>Optimises:</b> pattern, not total. A 60% child who misses every Monday is a transport problem; one who missed a solid week was ill. The dot grid shows which, in one glance.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Ganga Shekhawat</h2><p class="sub">Grade 8-C · 55% · 3 of 31 defaulters</p></div><div class="iconbtn">›</div></div>
+          </div>
+          <div class="body">
+            <div class="card tight">
+              <div class="between"><span class="card-title" style="margin:0">August 2026</span><span class="badge bad">9 absent</span></div>
+              <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:10px;font-size:9.5px;color:var(--ink-4);text-align:center;font-weight:700">
+                <div>M</div><div>T</div><div>W</div><div>T</div><div>F</div>
+              </div>
+              <div class="heat" style="grid-template-columns:repeat(5,1fr);margin-top:5px">
+                <i class="a"></i><i></i><i></i><i></i><i></i>
+                <i class="a"></i><i></i><i class="l"></i><i></i><i class="a"></i>
+                <i class="a"></i><i></i><i></i><i class="e"></i><i></i>
+                <i class="a"></i><i class="a"></i><i></i><i></i><i class="a"></i>
+              </div>
+              <div class="row" style="gap:10px;margin-top:10px;flex-wrap:wrap"><span class="badge ok">■ Present</span><span class="badge bad">■ Absent</span><span class="badge warn">■ Late</span><span class="badge info">■ Excused</span></div>
+            </div>
+            <div class="banner warn">!<div><b>Every Monday absent</b> in August (4 of 4). Worth asking about transport before escalating.</div></div>
+            <div class="card tight">
+              <div class="card-title">By subject period</div>
+              <div class="stack" style="gap:8px">
+                <div class="row"><span class="small grow">Mathematics · P4</span><div class="bar grow" style="max-width:96px"><span class="r" style="width:52%"></span></div><span class="small">52%</span></div>
+                <div class="row"><span class="small grow">Science · P6</span><div class="bar grow" style="max-width:96px"><span class="a" style="width:68%"></span></div><span class="small">68%</span></div>
+                <div class="row"><span class="small grow">English · P5</span><div class="bar grow" style="max-width:96px"><span class="g" style="width:88%"></span></div><span class="small">88%</span></div>
+              </div>
+            </div>
+            <div class="row" style="gap:8px"><div class="chip">‹ Falguni Hegde</div><div class="grow"></div><div class="chip">Kritika C. ›</div></div>
+          </div>
+          <div class="stickybar"><div class="btn">☎ Call Uday Shekhawat (father)</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V3 -->
+    <div class="variant" id="v3">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 3</span>
+        <div class="variant-title">Cohort tabs</div>
+        <p class="variant-for"><b>Optimises:</b> understanding a class's shape before drilling in. Counts live on the tabs, so the answer is often visible without opening anything.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="grow"><h2>Attendance</h2><p class="sub">Grade 8 · all sections · 20 days</p></div><div class="iconbtn">⇩</div></div>
+            <div class="seg" style="margin-top:10px"><div class="on">&lt;75%<br><span class="tiny">3</span></div><div>75–90%<br><span class="tiny">14</span></div><div>&gt;90%<br><span class="tiny">83</span></div></div>
+          </div>
+          <div class="body">
+            <div class="card tight">
+              <div class="between"><span class="small">Grade 8 average</span><span style="font-weight:700">92%</span></div>
+              <div class="bar thick" style="margin-top:8px;position:relative">
+                <span class="g" style="width:92%"></span>
+                <i style="position:absolute;left:75%;top:-3px;bottom:-3px;width:2px;background:var(--absent)"></i>
+              </div>
+              <div class="tiny muted" style="margin-top:6px">Red line = 75% board threshold</div>
+            </div>
+            <p class="sectionlabel">Below threshold · 3 students</p>
+            <div class="list">
+              <div class="li"><div class="avatar r">FH</div><div class="grow"><div class="nm">Falguni Hegde</div><div class="tiny muted">8-B · 10/20</div></div><span class="badge bad">50%</span></div>
+              <div class="li"><div class="avatar r">GS</div><div class="grow"><div class="nm">Ganga Shekhawat</div><div class="tiny muted">8-C · 11/20</div></div><span class="badge bad">55%</span></div>
+              <div class="li"><div class="avatar r">AB</div><div class="grow"><div class="nm">Aarav Barua</div><div class="tiny muted">8-C · 14/20</div></div><span class="badge bad">70%</span></div>
+            </div>
+            <p class="sectionlabel">By section</p>
+            <div class="list">
+              <div class="li"><div class="grow"><div class="nm">Grade 8-A</div><div class="bar" style="margin-top:6px"><span class="g" style="width:96%"></span></div></div><span class="small" style="font-weight:650">96%</span></div>
+              <div class="li"><div class="grow"><div class="nm">Grade 8-B</div><div class="bar" style="margin-top:6px"><span class="g" style="width:92%"></span></div></div><span class="small" style="font-weight:650">92%</span></div>
+              <div class="li"><div class="grow"><div class="nm">Grade 8-C</div><div class="bar" style="margin-top:6px"><span class="a" style="width:89%"></span></div></div><span class="small" style="font-weight:650">89%</span></div>
+              <div class="li"><div class="grow"><div class="nm">Grade 8-D</div><div class="bar" style="margin-top:6px"><span class="g" style="width:93%"></span></div></div><span class="small" style="font-weight:650">93%</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V4 -->
+    <div class="variant" id="v4">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 4</span>
+        <div class="variant-title">Follow-up queue <span class="rec">SHIP</span></div>
+        <p class="variant-for"><b>Optimises:</b> closing the loop. Each defaulter is a task with a state — not called, called, reached, escalated — so two staff don't call the same parent and nobody is forgotten.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="grow"><h2>Call round</h2><p class="sub">31 defaulters · 12 handled today</p></div><div class="iconbtn">⋯</div></div>
+            <div class="bar" style="margin-top:10px"><span class="g" style="width:39%"></span></div>
+          </div>
+          <div class="body">
+            <div class="card">
+              <div class="between"><span class="badge bad">50% · lowest</span><span class="tiny muted">1 of 19 left</span></div>
+              <div class="row" style="margin-top:10px"><div class="avatar lg r">MC</div><div class="grow"><div style="font-size:17px;font-weight:660">Manoj Chettiar</div><div class="small muted">Grade 10-C · 10 of 20 days</div><div class="tiny muted" style="margin-top:3px">Guardian: Sarika Chettiar (mother) · +91 97100 96412</div></div></div>
+              <div class="banner warn" style="margin-top:12px">!<div>Board eligibility at risk — needs 75% before 15 Jan.</div></div>
+              <div class="row" style="gap:8px;margin-top:12px"><div class="btn accent grow">☎ Call</div><div class="btn sec grow">✆ WhatsApp</div></div>
+              <div class="row" style="gap:8px;margin-top:8px"><div class="btn sec sm grow">Reached</div><div class="btn sec sm grow">No answer</div><div class="btn sec sm grow">Escalate</div></div>
+            </div>
+            <p class="sectionlabel">Handled today</p>
+            <div class="list">
+              <div class="li"><div class="avatar g">FH</div><div class="grow"><div class="nm">Falguni Hegde</div><div class="tiny muted">Reached 09:12 · "shifting house, back Monday"</div></div><span class="badge ok">✓</span></div>
+              <div class="li"><div class="avatar a">KC</div><div class="grow"><div class="nm">Kritika Chatterjee</div><div class="tiny muted">No answer · retry after 16:00</div></div><span class="badge warn">↻</span></div>
+              <div class="li"><div class="avatar b">SP</div><div class="grow"><div class="nm">Sunil Paul</div><div class="tiny muted">Escalated to Vice Principal</div></div><span class="badge info">↑</span></div>
+            </div>
+          </div>
+          <div class="stickybar"><div class="btn sec">Skip to next ›</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V5 -->
+    <div class="variant" id="v5">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 5</span>
+        <div class="variant-title">Share-ready summary</div>
+        <p class="variant-for"><b>Optimises:</b> the principal's WhatsApp group, which is where this data actually goes. Replaces a CSV nobody can open on a phone with an image + PDF.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Weekly attendance</h2><p class="sub">17–21 Aug 2026 · shareable</p></div><div class="iconbtn">⇩</div></div></div>
+          <div class="body">
+            <div class="card" style="border-width:2px">
+              <div class="between"><div><div style="font-weight:680;font-size:16px">Greenwood Public School</div><div class="tiny muted">Attendance · week 17–21 Aug</div></div><div class="ring" style="--p:94%;width:64px;height:64px"><div><div style="font-size:14px;font-weight:700">94%</div></div></div></div>
+              <div style="height:1px;background:var(--line);margin:12px 0"></div>
+              <div class="stat3">
+                <div class="stat g"><div class="n">784</div><div class="l">Above 90%</div></div>
+                <div class="stat a"><div class="n">147</div><div class="l">75–90%</div></div>
+                <div class="stat r"><div class="n">31</div><div class="l">Below 75%</div></div>
+              </div>
+              <p class="sectionlabel">Sections needing attention</p>
+              <div class="stack" style="gap:7px">
+                <div class="row"><span class="small grow">Grade 1-D</span><div class="bar grow" style="max-width:100px"><span class="a" style="width:90%"></span></div><span class="small">90% · 4 def.</span></div>
+                <div class="row"><span class="small grow">Grade 8-B</span><div class="bar grow" style="max-width:100px"><span class="a" style="width:92%"></span></div><span class="small">92% · 3 def.</span></div>
+                <div class="row"><span class="small grow">Grade 10-D</span><div class="bar grow" style="max-width:100px"><span class="a" style="width:91%"></span></div><span class="small">91% · 3 def.</span></div>
+              </div>
+              <div style="height:1px;background:var(--line);margin:12px 0"></div>
+              <div class="tiny muted">Generated 21 Aug 09:41 · Dinesh Kurup</div>
+            </div>
+            <div class="card tight">
+              <div class="between"><span class="small">Include student names</span><span class="badge ok">On</span></div>
+              <div class="between" style="margin-top:8px"><span class="small">Attach full CSV</span><span class="badge">Off</span></div>
+            </div>
+          </div>
+          <div class="stickybar"><div class="row" style="gap:8px"><div class="btn sec grow">Save PDF</div><div class="btn accent grow">Share image</div></div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="margin-top:8px">
+    <b>Recommendation:</b> <b>V1</b> as the screen and <b>V4</b> as its primary action ("Start call round"). That turns a report into work that finishes. V2 belongs on the student drill-down, and V5 replaces the CSV export button outright.
+  </div>
+</div>
+
+<nav class="reviewnav" title="← → move between screens · F fit all five · I gallery">
+  <a class="rn-btn" href="03-attendance.html" data-nav="prev">‹ <span class="rn-lbl">Mark Attendance</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index">
+    <span class="rn-count">4 / 10</span>
+    <span class="rn-title">Attendance Report</span>
+  </a>
+  <div class="rn-dots"><a class="rn-dot" href="01-students.html" title="1. Students"></a><a class="rn-dot" href="02-student-detail.html" title="2. Student 360"></a><a class="rn-dot" href="03-attendance.html" title="3. Mark Attendance"></a><a class="rn-dot on" href="04-attendance-report.html" title="4. Attendance Report"></a><a class="rn-dot" href="05-grades.html" title="5. Enter Marks"></a><a class="rn-dot" href="06-grade-report.html" title="6. Grade Report"></a><a class="rn-dot" href="07-timetable.html" title="7. Timetable Builder"></a><a class="rn-dot" href="08-my-schedule.html" title="8. My Schedule"></a><a class="rn-dot" href="09-report-cards.html" title="9. Report Cards"></a><a class="rn-dot" href="10-academic-years.html" title="10. Years & Terms"></a></div>
+  <a class="rn-btn" href="05-grades.html" data-nav="next"><span class="rn-lbl">Enter Marks</span> ›</a>
+  <span class="rn-keys">← →  ·  F fit  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

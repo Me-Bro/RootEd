@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Enter marks — 5 mobile concepts · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page">
+  <p class="crumbs"><a href="index.html">← All screens</a> · Academic · <code>GradesPage.jsx</code></p>
+  <h1 class="page-title">5 · Enter Marks</h1>
+  <p class="page-sub">Twenty-five numbers, typed at 10 pm on a sofa, from a paper mark sheet. Accuracy matters more than speed — but speed is what makes teachers do it in the app instead of on paper.</p>
+
+  <div class="painbox">
+    <b>Pain today:</b> <b>four</b> selects (section / term / subject / assessment) gate the table, and the term list is fetched without <code>?yearId</code> — with three academic years seeded it renders <b>"Term 1, Term 2, Term 1, Term 2, Term 1, Term 2"</b>. Then 25 <code>&lt;input type=number&gt;</code> cells: the OS keyboard covers ~45% of the screen, every field needs tap → type → dismiss, and the <code>locked</code> banner scrolls off the top so people type into disabled fields. One Save at the bottom.
+  </div>
+
+  <input type="checkbox" id="fit" class="vis-hidden">
+  <div class="zoombar"><label for="fit">▣ Fit all five on one screen (toggle)</label> · real data: Grade 5-A Mathematics, Term 1 final, class avg 69</div>
+
+  <div class="rail">
+
+    <!-- V1 -->
+    <div class="variant" id="v1">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 1</span>
+        <div class="variant-title">Keypad focus mode <span class="rec">SHIP as toggle</span></div>
+        <p class="variant-for"><b>Optimises:</b> accuracy with one thumb. One student fills the screen, a custom keypad replaces the OS keyboard, entry auto-advances, and the letter grade appears as you type.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">✕</div><div class="grow"><h2 style="font-size:17px">Maths · Term 1 final</h2><p class="sub">Grade 5-A · 12 of 21 entered</p></div><div class="iconbtn">☰</div></div>
+            <div class="bar" style="margin-top:10px"><span style="width:57%"></span></div>
+          </div>
+          <div class="body" style="padding-bottom:12px">
+            <div class="card" style="text-align:center;padding:18px 16px">
+              <div class="avatar lg" style="margin:0 auto 10px">HM</div>
+              <div style="font-size:20px;font-weight:680">Heena Malhotra</div>
+              <div class="tiny muted">GPS/2026/0411 · Roll 11</div>
+              <div class="row" style="justify-content:center;align-items:baseline;gap:10px;margin-top:14px">
+                <div style="font-size:52px;font-weight:700;letter-spacing:-.03em;line-height:1">81</div>
+                <div class="stack" style="gap:2px;align-items:flex-start">
+                  <span class="badge ok" style="font-size:13px;padding:4px 10px">B</span>
+                  <span class="tiny muted">out of 100</span>
+                </div>
+              </div>
+              <div class="row" style="justify-content:center;gap:6px;margin-top:12px">
+                <span class="badge">Prev term 78</span><span class="badge ok">▲ +3</span><span class="badge">Class avg 69</span>
+              </div>
+            </div>
+            <div class="keypad">
+              <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+              <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+              <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+              <div class="key soft">AB</div><div class="key">0</div><div class="key soft">⌫</div>
+              <div class="key soft">‹ Back</div><div class="key dark wide">Save &amp; next ›</div>
+            </div>
+            <div class="tiny muted" style="text-align:center">AB = absent for this assessment · auto-saves each entry</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V2 -->
+    <div class="variant" id="v2">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 2</span>
+        <div class="variant-title">Inline list + docked keypad <span class="rec">SHIP as default</span></div>
+        <p class="variant-for"><b>Optimises:</b> context plus speed. The roster stays visible so you can follow the paper sheet, but the OS keyboard never appears — a docked keypad drives the highlighted row and jumps to the next.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Enter marks</h2><p class="sub">Grade 5-A · Maths · Term 1 final</p></div><div class="iconbtn">⇩</div></div>
+            <div class="chiprow" style="margin-top:10px"><div class="chip soft">Term 1 · 2026-27</div><div class="chip">Final ▾</div><div class="chip">Max 100</div></div>
+          </div>
+          <div class="body" style="padding-bottom:6px">
+            <div class="banner ok">✓<div><b>Auto-saving</b> · 12 of 21 entered · avg so far 71</div></div>
+            <div class="list">
+              <div class="li"><div class="avatar sm g">RB</div><div class="grow"><div class="nm">Rohit Banerjee</div></div><span class="badge ok">B</span><span style="font-weight:700;width:32px;text-align:right">74</span></div>
+              <div class="li"><div class="avatar sm g">CC</div><div class="grow"><div class="nm">Chetan Chatterjee</div></div><span class="badge">C</span><span style="font-weight:700;width:32px;text-align:right">70</span></div>
+              <div class="li"><div class="avatar sm a">NC</div><div class="grow"><div class="nm">Neha Chopra</div></div><span class="badge warn">D</span><span style="font-weight:700;width:32px;text-align:right">62</span></div>
+              <div class="li" style="background:var(--accent-soft);border-left:3px solid var(--accent)"><div class="avatar sm">BD</div><div class="grow"><div class="nm">Bhuvan D'Souza</div><div class="tiny muted">typing…</div></div><span class="badge ok">B</span><span style="font-weight:700;width:42px;text-align:right;font-size:19px">8<span style="opacity:.4">_</span></span></div>
+              <div class="li"><div class="avatar sm">KD</div><div class="grow"><div class="nm">Kartik Dutta</div></div><span class="tiny muted">—</span><span class="tiny muted" style="width:32px;text-align:right">··</span></div>
+              <div class="li"><div class="avatar sm">DG</div><div class="grow"><div class="nm">Divya Ghosh</div></div><span class="tiny muted">—</span><span class="tiny muted" style="width:32px;text-align:right">··</span></div>
+            </div>
+          </div>
+          <div class="sheet" style="padding:8px 12px 18px">
+            <div class="between" style="margin-bottom:8px"><span class="tiny muted">Bhuvan D'Souza · 4 of 21</span><div class="row" style="gap:6px"><span class="chip">‹</span><span class="chip">›</span></div></div>
+            <div class="keypad" style="gap:6px">
+              <div class="key" style="height:44px">1</div><div class="key" style="height:44px">2</div><div class="key" style="height:44px">3</div>
+              <div class="key" style="height:44px">4</div><div class="key" style="height:44px">5</div><div class="key" style="height:44px">6</div>
+              <div class="key" style="height:44px">7</div><div class="key" style="height:44px">8</div><div class="key" style="height:44px">9</div>
+              <div class="key soft" style="height:44px">AB</div><div class="key" style="height:44px">0</div><div class="key soft" style="height:44px">⌫</div>
+            </div>
+            <div class="btn dark" style="margin-top:8px;height:44px;background:var(--ink);color:#fff;border-radius:12px">Next student ›</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V3 -->
+    <div class="variant" id="v3">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 3</span>
+        <div class="variant-title">Grade band tap / slider</div>
+        <p class="variant-for"><b>Optimises:</b> rubric subjects — PE, Art, Computer practicals — where a band is the real judgement and an exact number is false precision. Tap the band, nudge if you want.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Art &amp; Craft</h2><p class="sub">Grade 5-A · Term 1 · rubric mode</p></div><div class="iconbtn">⚙</div></div>
+          </div>
+          <div class="body">
+            <div class="card tight">
+              <div class="row"><div class="avatar">MV</div><div class="grow"><div class="nm" style="font-weight:600">Myra Verma</div><div class="tiny muted">GPS/2026/0405</div></div><span class="badge ok" style="font-size:14px;padding:5px 12px">A · 92</span></div>
+              <div class="pillgroup" style="margin-top:12px">
+                <div class="pill p on">A<br><span class="tiny">90+</span></div>
+                <div class="pill">B<br><span class="tiny">80s</span></div>
+                <div class="pill">C<br><span class="tiny">70s</span></div>
+                <div class="pill">D<br><span class="tiny">60s</span></div>
+                <div class="pill">F<br><span class="tiny">&lt;60</span></div>
+              </div>
+              <div class="row" style="gap:10px;margin-top:12px;align-items:center">
+                <span class="tiny muted">90</span>
+                <div class="bar thick grow" style="position:relative"><span class="g" style="width:22%"></span><i style="position:absolute;left:20%;top:-5px;width:22px;height:22px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);box-shadow:0 2px 6px rgba(0,0,0,.15)"></i></div>
+                <span class="tiny muted">100</span>
+              </div>
+            </div>
+            <div class="list">
+              <div class="li"><div class="avatar sm">HM</div><div class="grow"><div class="nm">Heena Malhotra</div></div><div class="pillgroup" style="flex:0 0 150px"><div class="pill" style="padding:6px 0">A</div><div class="pill p on" style="padding:6px 0">B</div><div class="pill" style="padding:6px 0">C</div></div></div>
+              <div class="li"><div class="avatar sm">PS</div><div class="grow"><div class="nm">Pihu Sheikh</div></div><div class="pillgroup" style="flex:0 0 150px"><div class="pill p on" style="padding:6px 0">A</div><div class="pill" style="padding:6px 0">B</div><div class="pill" style="padding:6px 0">C</div></div></div>
+              <div class="li"><div class="avatar sm">AR</div><div class="grow"><div class="nm">Ananya Roy</div></div><div class="pillgroup" style="flex:0 0 150px"><div class="pill" style="padding:6px 0">A</div><div class="pill p on" style="padding:6px 0">B</div><div class="pill" style="padding:6px 0">C</div></div></div>
+              <div class="li"><div class="avatar sm">VS</div><div class="grow"><div class="nm">Veer Sandhu</div></div><div class="pillgroup" style="flex:0 0 150px"><div class="pill" style="padding:6px 0">A</div><div class="pill" style="padding:6px 0">B</div><div class="pill p on" style="padding:6px 0">C</div></div></div>
+            </div>
+            <div class="tiny muted" style="text-align:center">Band tap writes the mid-point score; drag to fine-tune</div>
+          </div>
+          <div class="stickybar"><div class="btn">Save 21 marks</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V4 -->
+    <div class="variant" id="v4">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 4</span>
+        <div class="variant-title">Mark-sheet capture</div>
+        <p class="variant-for"><b>Optimises:</b> the paper reality. Photograph the mark sheet, review what was read with confidence flags, fix the doubtful ones. Falls back to the existing CSV import path.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Review import</h2><p class="sub">Photo · Grade 5-A Maths final</p></div><div class="iconbtn">⟳</div></div></div>
+          <div class="body">
+            <div class="card tight" style="background:var(--surface-3);text-align:center;padding:22px">
+              <div style="font-size:26px">🗒</div>
+              <div class="small" style="font-weight:600;margin-top:6px">mark-sheet-5A-maths.jpg</div>
+              <div class="tiny muted">21 rows read · 18 high confidence</div>
+            </div>
+            <div class="banner warn">!<div><b>3 rows need a look</b> — handwriting was unclear. Everything else is ready to save.</div></div>
+            <p class="sectionlabel">Check these</p>
+            <div class="list">
+              <div class="li" style="background:var(--late-bg)"><div class="avatar sm a">KD</div><div class="grow"><div class="nm">Kartik Dutta</div><div class="tiny muted">read "6O" — did you mean 60?</div></div><span class="chip on">60</span></div>
+              <div class="li" style="background:var(--late-bg)"><div class="avatar sm a">VS</div><div class="grow"><div class="nm">Veer Sandhu</div><div class="tiny muted">read "5g" — 59?</div></div><span class="chip on">59</span></div>
+              <div class="li" style="background:var(--late-bg)"><div class="avatar sm a">IS</div><div class="grow"><div class="nm">Inaya Siddiqui</div><div class="tiny muted">blank in photo</div></div><span class="chip">enter</span></div>
+            </div>
+            <p class="sectionlabel">Read cleanly · 18</p>
+            <div class="list">
+              <div class="li"><div class="avatar sm g">HM</div><div class="grow"><div class="nm">Heena Malhotra</div></div><span class="badge ok">81</span></div>
+              <div class="li"><div class="avatar sm g">PS</div><div class="grow"><div class="nm">Pihu Sheikh</div></div><span class="badge ok">80</span></div>
+              <div class="li"><div class="avatar sm g">AR</div><div class="grow"><div class="nm">Ananya Roy</div></div><span class="badge ok">79</span></div>
+            </div>
+          </div>
+          <div class="stickybar"><div class="row" style="gap:8px"><div class="btn sec grow">Upload CSV instead</div><div class="btn grow">Save 21</div></div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V5 -->
+    <div class="variant" id="v5">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 5</span>
+        <div class="variant-title">Baseline + outliers</div>
+        <p class="variant-for"><b>Optimises:</b> a distribution, not 25 isolated numbers. Set the class baseline, nudge the students who differ, watch the curve update — and see the effect on pass rate before saving.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Class baseline</h2><p class="sub">Grade 5-A · Maths · Term 1 final</p></div><div class="iconbtn">?</div></div>
+          </div>
+          <div class="body">
+            <div class="card tight">
+              <div class="between"><span class="card-title" style="margin:0">Distribution preview</span><span class="badge">avg 69</span></div>
+              <div class="vbars" style="margin-top:10px">
+                <div><div class="col g" style="height:18%"></div><div class="lbl">A · 2</div></div>
+                <div><div class="col g" style="height:38%"></div><div class="lbl">B · 5</div></div>
+                <div><div class="col" style="height:62%"></div><div class="lbl">C · 8</div></div>
+                <div><div class="col a" style="height:38%"></div><div class="lbl">D · 5</div></div>
+                <div><div class="col r" style="height:12%"></div><div class="lbl">F · 1</div></div>
+              </div>
+              <div class="between" style="margin-top:10px"><span class="tiny muted">Pass rate (≥40)</span><span class="small" style="font-weight:650">100%</span></div>
+            </div>
+            <div class="card tight">
+              <div class="between"><span class="small">Baseline for everyone</span><div class="row" style="gap:8px"><span class="chip">−</span><span style="font-weight:700;font-size:18px">70</span><span class="chip">+</span></div></div>
+              <div class="tiny muted" style="margin-top:6px">Applies to the 9 students you haven't adjusted</div>
+            </div>
+            <p class="sectionlabel">Adjusted · 12</p>
+            <div class="list">
+              <div class="li"><div class="avatar sm g">HM</div><div class="grow"><div class="nm">Heena Malhotra</div></div><span class="badge ok">+11</span><span style="font-weight:700;width:30px;text-align:right">81</span></div>
+              <div class="li"><div class="avatar sm g">PS</div><div class="grow"><div class="nm">Pihu Sheikh</div></div><span class="badge ok">+10</span><span style="font-weight:700;width:30px;text-align:right">80</span></div>
+              <div class="li"><div class="avatar sm a">NC</div><div class="grow"><div class="nm">Neha Chopra</div></div><span class="badge warn">−8</span><span style="font-weight:700;width:30px;text-align:right">62</span></div>
+              <div class="li"><div class="avatar sm a">VS</div><div class="grow"><div class="nm">Veer Sandhu</div></div><span class="badge warn">−11</span><span style="font-weight:700;width:30px;text-align:right">59</span></div>
+            </div>
+            <div class="banner info">ⓘ<div>Locked assessments can't be edited. This one is <b>open</b> until the principal publishes Term 1.</div></div>
+          </div>
+          <div class="stickybar"><div class="btn">Save · 21 marks</div><div class="hint">Nothing is written until you save this screen</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="margin-top:8px">
+    <b>Recommendation:</b> ship <b>V2 as the default</b> (roster visible, docked keypad, autosave) with a one-tap switch into <b>V1</b> for tired-eyes entry, and keep the lock state as a <em>persistent sticky banner</em> rather than a scroll-away one. Route rubric subjects (PE, Art) to <b>V3</b>. V4 is the highest-value follow-up because paper mark sheets are the real competitor. Also fix the term dropdown here: pass <code>?yearId</code> so it stops listing six identical terms.
+  </div>
+</div>
+
+<nav class="reviewnav" title="← → move between screens · F fit all five · I gallery">
+  <a class="rn-btn" href="04-attendance-report.html" data-nav="prev">‹ <span class="rn-lbl">Attendance Report</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index">
+    <span class="rn-count">5 / 10</span>
+    <span class="rn-title">Enter Marks</span>
+  </a>
+  <div class="rn-dots"><a class="rn-dot" href="01-students.html" title="1. Students"></a><a class="rn-dot" href="02-student-detail.html" title="2. Student 360"></a><a class="rn-dot" href="03-attendance.html" title="3. Mark Attendance"></a><a class="rn-dot" href="04-attendance-report.html" title="4. Attendance Report"></a><a class="rn-dot on" href="05-grades.html" title="5. Enter Marks"></a><a class="rn-dot" href="06-grade-report.html" title="6. Grade Report"></a><a class="rn-dot" href="07-timetable.html" title="7. Timetable Builder"></a><a class="rn-dot" href="08-my-schedule.html" title="8. My Schedule"></a><a class="rn-dot" href="09-report-cards.html" title="9. Report Cards"></a><a class="rn-dot" href="10-academic-years.html" title="10. Years & Terms"></a></div>
+  <a class="rn-btn" href="06-grade-report.html" data-nav="next"><span class="rn-lbl">Grade Report</span> ›</a>
+  <span class="rn-keys">← →  ·  F fit  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,1996 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Attendance — full workflows for all 5 concepts · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page wide">
+  <p class="crumbs"><a href="index.html">← All screens</a> · <a href="03-attendance.html">Screen 3 · Mark Attendance</a> · full workflows</p>
+  <div class="approved-band"><span class="seal">✅ APPROVED FOR BUILD</span><span class="txt">The final design — not one of these seven journeys — is <a href="03-attendance-approved.html" style="color:#f0d9a0;font-weight:650">on its own page →</a>. These flows are the research behind it.</span></div>
+  <h1 class="page-title">Mark Attendance — the whole journey, seven ways</h1>
+  <p class="page-sub">The same real morning, seven times over — six on a phone, one on a desktop. <b>Friday 21 August 2026, Grade 5-A, 21 students.</b> What actually happened that day in the database: 19 present, <b>Chetan Shetty absent</b> (second day running), <b>Heena Malhotra late</b>. Each row below is one concept played out end to end — every tap, every screen the teacher sees, the failure cases, and what happens after they hit submit. <b>Flow 6</b> switches to the office desktop: the same records, a keyboard, and all 40 sections at once.</p>
+
+  <div class="painbox">
+    <b>Cast (all real records):</b> <b>Krishna Rathore</b> — admin officer, works the desktop console · <b>Dinesh Kurup</b> — Science teacher, class teacher of Grade 5-A, marks the 08:05 daily roll · <b>Mitali Sinha</b> — Mathematics, teaches 5-A period 4 (10:30–11:15, R-5A) and 8 periods that Friday · <b>Chetan Shetty</b> GPS/2026/0418, 75% attendance, guardian Girish Shetty +91 97100 37947 · <b>Heena Malhotra</b> GPS/2026/0411, 100%, guardian Madhuri Malhotra · <b>Kartik Dutta</b> GPS/2026/0402, 60% — the chronic case.
+  </div>
+
+  <div class="toc">
+    <a href="#f1"><b>Flow 1</b> · Default-present</a>
+    <a href="#f2"><b>Flow 2</b> · Swipe roll call</a>
+    <a href="#f3"><b>Flow 3</b> · Class tiles</a>
+    <a href="#f4"><b>Flow 4</b> · Absent-only</a>
+    <a href="#f5"><b>Flow 5</b> · Period-aware</a>
+    <a href="#f6"><b>Flow 6</b> · Desktop console</a>
+    <a href="#f7"><b>Flow 7</b> · Simple list ★</a>
+    <a href="#cmp">Side-by-side verdict</a>
+  </div>
+
+  <input type="checkbox" id="fit" class="vis-hidden">
+  <div class="zoombar"><label for="fit">▣ Fit a whole flow on one screen (toggle · or press F)</label> · scroll each row sideways to walk the steps · ← → jumps pages</div>
+
+  <!-- ══════════════════════════ FLOW 1 ══════════════════════════ -->
+  <section class="flowsec" id="f1">
+    <span class="variant-num">FLOW 1 · VARIANT 1</span>
+    <h2>Default-present, tap the exceptions</h2>
+    <p class="lead">Dinesh walks in at 08:04, phone in one hand, register nowhere. The app has already assumed the normal case — <b>everyone present</b> — so his job is to correct two children, not enter twenty-one. He never sees a dropdown.</p>
+    <div class="flowmeta">
+      <div class="m"><div class="k">Who</div><div class="v">Dinesh Kurup<br><b>class teacher</b></div></div>
+      <div class="m"><div class="k">Entry point</div><div class="v">Amber card on Today<br><b>1 tap in</b></div></div>
+      <div class="m hot"><div class="k">Taps to finish</div><div class="v"><b>5 taps</b><br>vs 26–100 today</div></div>
+      <div class="m"><div class="k">Wall clock</div><div class="v"><b>48 seconds</b><br>08:04 → 08:06</div></div>
+      <div class="m"><div class="k">Offline</div><div class="v">Queued locally,<br><b>synced at 10:41</b></div></div>
+      <div class="m"><div class="k">Mistake recovery</div><div class="v">Undo toast,<br>5 s window</div></div>
+      <div class="m"><div class="k">Fails when</div><div class="v">A section is genuinely half-absent (exam day)</div></div>
+    </div>
+
+    <div class="rail step-chain">
+
+      <!-- step 1 -->
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:04:12</p>
+          <span class="variant-num">STEP 1 · ENTRY</span>
+          <div class="variant-title">The app asks, he doesn't hunt</div>
+          <p class="step-does"><b>He does:</b> taps the amber card. <i>No date picker, no 40-option section list.</i></p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:04</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="avatar" style="background:var(--accent-soft);color:var(--accent-ink)">DK</div><div class="grow"><h2 style="font-size:17px">Good morning, Dinesh</h2><p class="sub">Friday 21 August · assembly ends 08:05</p></div><div class="iconbtn">🔔</div></div>
+            </div>
+            <div class="body">
+              <div class="card" style="border-color:#ecd79a;background:var(--late-bg)">
+                <div class="between"><span class="badge warn">● Due now</span><span class="tiny" style="font-weight:650;color:#6b4a06">Daily roll</span></div>
+                <div style="font-size:20px;font-weight:680;margin-top:8px;letter-spacing:-.02em">Grade 5-A · 21 students</div>
+                <div class="small" style="color:#6b4a06;margin-top:2px">Your class · not marked today</div>
+                <div class="btn" style="margin-top:14px;background:#6b4a06">Take the roll<div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 1</div></div></div>
+              </div>
+              <p class="sectionlabel">Also today</p>
+              <div class="stack">
+                <div class="slot"><div class="time">09:45<br>10:30</div><div class="grow"><div class="subj">Science · 5-A</div><div class="who">R-5A · yours</div></div><span class="tiny muted">P3</span></div>
+                <div class="slot"><div class="time">11:15<br>12:00</div><div class="grow"><div class="subj">Science · 8-B</div><div class="who">Lab 1</div></div><span class="tiny muted">P5</span></div>
+              </div>
+              <div class="card tight"><div class="between"><span class="small muted">Yesterday's roll</span><span class="badge">18 P · 2 A · 1 L</span></div></div>
+            </div>
+            <div class="tabbar"><div class="on"><span class="ic">◧</span>Today</div><div><span class="ic">☑</span>Attendance</div><div><span class="ic">✎</span>Marks</div><div><span class="ic">⌗</span>Classes</div><div><span class="ic">☰</span>More</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <!-- step 2 -->
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:04:15</p>
+          <span class="variant-num">STEP 2 · PRE-FILLED</span>
+          <div class="variant-title">All 21 already marked present</div>
+          <p class="step-does"><b>System does:</b> assumes the normal day and says so. <i>Nothing is written yet — the counter reads 21 / 0 / 0.</i></p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:04</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Attendance</h2><p class="sub">Grade 5-A · Fri 21 Aug · Daily roll</p></div><div class="iconbtn">⇄</div></div>
+            </div>
+            <div class="body">
+              <div class="card tight">
+                <div class="between"><div class="row" style="gap:6px"><span class="badge ok">21 present</span><span class="badge">0 absent</span><span class="badge">0 late</span></div><span class="tiny muted">21/21</span></div>
+                <div class="bar thick" style="margin-top:9px"><span class="g" style="width:100%"></span></div>
+              </div>
+              <div class="banner ok">✓<div><b>Everyone starts present.</b> Tap only the children who aren't here — then submit.</div></div>
+              <div class="list">
+                <div class="li"><div class="avatar g">RB</div><div class="grow"><div class="nm">Rohit Banerjee</div><div class="meta">GPS/2026/0406</div></div><span class="badge ok">✓</span></div>
+                <div class="li"><div class="avatar g">CC</div><div class="grow"><div class="nm">Chetan Chatterjee</div><div class="meta">GPS/2026/0414</div></div><span class="badge ok">✓</span></div>
+                <div class="li"><div class="avatar g">NC</div><div class="grow"><div class="nm">Neha Chopra</div><div class="meta">GPS/2026/0413</div></div><span class="badge ok">✓</span></div>
+                <div class="li"><div class="avatar g">BD</div><div class="grow"><div class="nm">Bhuvan D'Souza</div><div class="meta">GPS/2026/0401</div></div><span class="badge ok">✓</span></div>
+                <div class="li"><div class="avatar g">KD</div><div class="grow"><div class="nm">Kartik Dutta</div><div class="meta">GPS/2026/0402 · 60% this month</div></div><span class="badge ok">✓</span></div>
+                <div class="li"><div class="avatar g">DG</div><div class="grow"><div class="nm">Divya Ghosh</div><div class="meta">GPS/2026/0421</div></div><span class="badge ok">✓</span></div>
+                <div class="li"><div class="avatar g">DG</div><div class="grow"><div class="nm">Deepak Gowda</div><div class="meta">GPS/2026/0404</div></div><span class="badge ok">✓</span></div>
+                <div class="li"><div class="avatar g">HM</div><div class="grow"><div class="nm">Heena Malhotra</div><div class="meta">GPS/2026/0411</div></div><span class="badge ok">✓</span></div>
+              </div>
+            </div>
+            <div class="stickybar"><div class="btn">Submit roll · 21 students</div><div class="hint">Saved on this phone — syncs the moment you're online</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <!-- step 3 -->
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:05:02</p>
+          <span class="variant-num">STEP 3 · THE EXCEPTION</span>
+          <div class="variant-title">Chetan's seat is empty</div>
+          <p class="step-does"><b>He does:</b> taps Chetan's row. <b>System:</b> opens four direct statuses — <i>no cycling</i> — and warns this is day two.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:05</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Attendance</h2><p class="sub">Grade 5-A · Fri 21 Aug · Daily roll</p></div><div class="iconbtn">⇄</div></div>
+            </div>
+            <div class="body">
+              <div class="card tight">
+                <div class="between"><div class="row" style="gap:6px"><span class="badge ok">21 present</span><span class="badge">0 absent</span><span class="badge">0 late</span></div><span class="tiny muted">21/21</span></div>
+                <div class="bar thick" style="margin-top:9px"><span class="g" style="width:100%"></span></div>
+              </div>
+              <div class="list">
+                <div class="li"><div class="avatar g">ES</div><div class="grow"><div class="nm">Eshan Shekhawat</div><div class="meta">GPS/2026/0415</div></div><span class="badge ok">✓</span></div>
+                <div class="li pressed"><div class="avatar" style="background:var(--surface-3)">CS</div><div class="grow"><div class="nm">Chetan Shetty</div><div class="meta">GPS/2026/0418 · 75% · absent yesterday</div></div><div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 2 · row</div></div></div>
+                <div class="li" style="padding-top:0;padding-bottom:12px">
+                  <div class="pillgroup grow">
+                    <div class="pill p on">Present</div><div class="pill a">Absent<div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 3</div></div></div><div class="pill l">Late</div><div class="pill e">Excused</div>
+                  </div>
+                </div>
+                <div class="li"><div class="avatar g">IS</div><div class="grow"><div class="nm">Inaya Siddiqui</div><div class="meta">GPS/2026/0407</div></div><span class="badge ok">✓</span></div>
+                <div class="li"><div class="avatar g">MV</div><div class="grow"><div class="nm">Myra Verma</div><div class="meta">GPS/2026/0405</div></div><span class="badge ok">✓</span></div>
+              </div>
+              <div class="banner warn">!<div>Chetan was also absent <b>Thursday</b>. Two in a row triggers a guardian message after you submit.</div></div>
+            </div>
+            <div class="stickybar"><div class="btn">Submit roll · 21 students</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <!-- step 4 -->
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:05:04</p>
+          <span class="variant-num">STEP 4 · ONE TAP = ONE STATUS</span>
+          <div class="variant-title">Absent, with an undo</div>
+          <p class="step-does"><b>System does:</b> counts move to 20/1/0 and the toast offers an undo for five seconds. <i>Today the same change costs 4 taps of cycling.</i></p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:05</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Attendance</h2><p class="sub">Grade 5-A · Fri 21 Aug · Daily roll</p></div><div class="iconbtn">⇄</div></div>
+            </div>
+            <div class="body">
+              <div class="card tight">
+                <div class="between"><div class="row" style="gap:6px"><span class="badge ok">20 present</span><span class="badge bad">1 absent</span><span class="badge">0 late</span></div><span class="tiny muted">21/21</span></div>
+                <div class="bar thick" style="margin-top:9px"><span class="g" style="width:95%"></span></div>
+              </div>
+              <p class="sectionlabel">Needs attention · 1</p>
+              <div class="list">
+                <div class="li"><div class="avatar r">CS</div><div class="grow"><div class="nm">Chetan Shetty</div><div class="meta">GPS/2026/0418 · 2nd day</div></div><span class="badge bad">Absent</span></div>
+              </div>
+              <p class="sectionlabel">Present · 20</p>
+              <div class="list">
+                <div class="li"><div class="avatar g">RB</div><div class="grow"><div class="nm">Rohit Banerjee</div><div class="meta">GPS/2026/0406</div></div><span class="badge ok">✓</span></div>
+                <div class="li"><div class="avatar g">CC</div><div class="grow"><div class="nm">Chetan Chatterjee</div><div class="meta">GPS/2026/0414</div></div><span class="badge ok">✓</span></div>
+                <div class="li"><div class="avatar g">NC</div><div class="grow"><div class="nm">Neha Chopra</div><div class="meta">GPS/2026/0413</div></div><span class="badge ok">✓</span></div>
+                <div class="li"><div class="avatar g">BD</div><div class="grow"><div class="nm">Bhuvan D'Souza</div><div class="meta">GPS/2026/0401</div></div><span class="badge ok">✓</span></div>
+              </div>
+            </div>
+            <div class="toast"><span><b>Chetan Shetty</b> marked absent</span><span style="font-weight:650">UNDO</span></div>
+            <div class="stickybar"><div class="btn">Submit roll · 21 students</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <!-- step 5 -->
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:05:41 · no signal</p>
+          <span class="variant-num">STEP 5 · LATE ARRIVAL, OFFLINE</span>
+          <div class="variant-title">Heena walks in at 08:22</div>
+          <p class="step-does"><b>He does:</b> taps her row → <i>Late</i> (taps 4 and 5). <b>System:</b> Wi-Fi is dead in the block, so writes queue instead of failing.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:22</span><span class="dots">✕ ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Attendance</h2><p class="sub">Grade 5-A · Fri 21 Aug · Daily roll</p></div><div class="iconbtn">⇄</div></div>
+            </div>
+            <div class="body">
+              <div class="card tight">
+                <div class="between"><div class="row" style="gap:6px"><span class="badge ok">19 present</span><span class="badge bad">1 absent</span><span class="badge warn">1 late</span></div><span class="tiny muted">21/21</span></div>
+                <div class="bar thick" style="margin-top:9px"><span class="g" style="width:90%"></span><span class="a" style="width:5%;margin-top:-12px;margin-left:90%"></span></div>
+              </div>
+              <div class="banner info">⇅<div><b>2 changes waiting to sync.</b> Nothing is lost — they'll go up when you're back on Wi-Fi.</div></div>
+              <p class="sectionlabel">Needs attention · 2</p>
+              <div class="list">
+                <div class="li"><div class="avatar r">CS</div><div class="grow"><div class="nm">Chetan Shetty</div><div class="meta">2nd day absent</div></div><span class="badge bad">Absent</span></div>
+                <div class="li"><div class="avatar a">HM</div><div class="grow"><div class="nm">Heena Malhotra</div><div class="meta">arrived 08:22 · 100% att.</div></div><span class="badge warn">Late</span></div>
+              </div>
+              <p class="sectionlabel">Present · 19</p>
+              <div class="list">
+                <div class="li"><div class="avatar g">RB</div><div class="grow"><div class="nm">Rohit Banerjee</div></div><span class="badge ok">✓</span></div>
+                <div class="li"><div class="avatar g">CC</div><div class="grow"><div class="nm">Chetan Chatterjee</div></div><span class="badge ok">✓</span></div>
+                <div class="li"><div class="avatar g">NC</div><div class="grow"><div class="nm">Neha Chopra</div></div><span class="badge ok">✓</span></div>
+              </div>
+            </div>
+            <div class="stickybar"><div class="btn">Submit roll · 19 P · 1 A · 1 L<div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 6</div></div></div><div class="hint">Offline — will send automatically</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <!-- step 6 -->
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:22 → synced 10:41</p>
+          <span class="variant-num">STEP 6 · DONE, AND WHAT FOLLOWS</span>
+          <div class="variant-title">Submitted, then the follow-up</div>
+          <p class="step-does"><b>System does:</b> confirms, syncs when signal returns, and turns the second absence into one decision — message the guardian or not.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>10:41</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">✕</div><div class="grow"><h2 style="font-size:17px">Roll submitted</h2><p class="sub">Grade 5-A · Fri 21 Aug · 08:22</p></div></div></div>
+            <div class="body">
+              <div class="card" style="text-align:center;padding:20px 16px">
+                <div class="ring" style="--p:90%;margin:0 auto"><div><div style="font-size:22px;font-weight:700">90%</div><div class="tiny muted">present</div></div></div>
+                <div class="stat3" style="margin-top:16px">
+                  <div class="stat g"><div class="n">19</div><div class="l">Present</div></div>
+                  <div class="stat r"><div class="n">1</div><div class="l">Absent</div></div>
+                  <div class="stat a"><div class="n">1</div><div class="l">Late</div></div>
+                </div>
+                <div class="banner ok" style="margin-top:14px;text-align:left">⇅<div><b>Synced 10:41</b> — 2 queued changes uploaded when you reached the staff room.</div></div>
+              </div>
+              <div class="card tight" style="border-color:#f2bcbc">
+                <div class="between"><span class="small" style="font-weight:650">Chetan Shetty · 2nd day absent</span><span class="badge bad">75%</span></div>
+                <div class="tiny muted" style="margin-top:6px">Girish Shetty (father) · +91 97100 37947 — no message sent yet this week.</div>
+                <div class="row" style="gap:8px;margin-top:10px"><div class="btn accent sm grow">✆ Send absence note</div><div class="btn sec sm" style="flex:0 0 82px">Skip</div></div>
+              </div>
+              <div class="card tight">
+                <div class="between"><span class="small">Heena's late arrival</span><span class="badge warn">1st this month</span></div>
+                <div class="tiny muted" style="margin-top:6px">No action suggested — a single late is noise, not a pattern.</div>
+              </div>
+              <div class="card tight"><div class="between"><span class="small muted">Next roll</span><span class="chip soft">P3 Science 5-A · 09:45</span></div></div>
+            </div>
+            <div class="stickybar"><div class="btn sec">Back to Today</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+    </div>
+    <div class="painbox" style="margin-top:6px"><b>Read the row:</b> 6 screens, but only <b>6 taps</b> — one to enter, two per exception, one to submit. The teacher never picks a date, a section or a subject, never types, and never loses data to a dead Wi-Fi. Today the same morning is 3 pickers + up to 12 status taps + a save that can silently fail.</div>
+  </section>
+
+  <!-- ══════════════════════════ FLOW 2 ══════════════════════════ -->
+  <section class="flowsec" id="f2">
+    <span class="variant-num">FLOW 2 · VARIANT 2</span>
+    <h2>Swipe deck — the spoken roll call</h2>
+    <p class="lead">Some schools require names to be called aloud. Here the phone becomes the register: one child per card, four directions for four statuses, eyes up at the class instead of down at a list. It is the fastest way to <b>touch every name</b> — and the slowest way to fix a mistake.</p>
+    <div class="flowmeta">
+      <div class="m"><div class="k">Who</div><div class="v">Dinesh Kurup<br><b>class teacher</b></div></div>
+      <div class="m"><div class="k">Entry point</div><div class="v">"Roll call" mode<br><b>2 taps in</b></div></div>
+      <div class="m hot"><div class="k">Interactions</div><div class="v"><b>21 swipes</b> + 2 taps<br>one per child</div></div>
+      <div class="m"><div class="k">Wall clock</div><div class="v"><b>48 seconds</b><br>~2.3 s per name</div></div>
+      <div class="m"><div class="k">Offline</div><div class="v">Whole deck held<br>locally until submit</div></div>
+      <div class="m"><div class="k">Mistake recovery</div><div class="v">Shake to undo,<br><b>or re-open the list</b></div></div>
+      <div class="m"><div class="k">Fails when</div><div class="v">You're interrupted mid-deck, or need to correct child #3 at #17</div></div>
+    </div>
+
+    <div class="rail step-chain">
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:04:20</p>
+          <span class="variant-num">STEP 1 · SET THE MODE</span>
+          <div class="variant-title">"Call 21 names"</div>
+          <p class="step-does"><b>He does:</b> starts roll-call mode. <b>System:</b> orders the deck by roll number so it matches the register he was trained on.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:04</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Roll call</h2><p class="sub">Grade 5-A · Fri 21 Aug</p></div><div class="iconbtn">⚙</div></div></div>
+            <div class="body">
+              <div class="card" style="text-align:center;padding:22px 16px">
+                <div class="big" style="font-size:40px">21</div>
+                <div class="small muted">names to call</div>
+                <div class="btn accent" style="margin-top:16px">Start roll call<div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 1</div></div></div>
+                <div class="tiny muted" style="margin-top:10px">Swipe right = present · left = absent<br>up = late · down = excused</div>
+              </div>
+              <div class="card tight">
+                <div class="between"><span class="small">Order</span><div class="row" style="gap:6px"><span class="chip on">Roll no.</span><span class="chip">A–Z</span></div></div>
+                <div class="between" style="margin-top:10px"><span class="small">Read names aloud</span><span class="badge ok">On</span></div>
+                <div class="between" style="margin-top:10px"><span class="small">Vibrate on each swipe</span><span class="badge ok">On</span></div>
+              </div>
+              <div class="banner info">ⓘ<div>Yesterday you called 21 names in <b>51 seconds</b>. Nothing is saved until the last card.</div></div>
+            </div>
+            <div class="homebar"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:04:26</p>
+          <span class="variant-num">STEP 2 · SWIPE RIGHT</span>
+          <div class="variant-title">"Rohit Banerjee?" — "Present, sir"</div>
+          <p class="step-does"><b>He does:</b> swipes right without looking down. <b>System:</b> tints green, says PRESENT, advances. <i>1 of 21.</i></p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:04</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="iconbtn plain">✕</div><div class="grow"><h2>Roll call</h2><p class="sub">1 of 21 · Grade 5-A</p></div><div class="iconbtn">☰</div></div>
+              <div class="bar" style="margin-top:10px"><span class="g" style="width:5%"></span></div>
+            </div>
+            <div class="tint g"></div>
+            <div class="watermark g">PRESENT</div>
+            <div class="body" style="justify-content:center;gap:18px">
+              <div style="position:relative">
+                <div class="swipecard behind"></div>
+                <div class="swipecard" style="transform:rotate(3deg) translateX(26px);border-color:#b6e0c2">
+                  <div class="avatar lg g" style="margin:0 auto 12px">RB</div>
+                  <div style="font-size:23px;font-weight:680;letter-spacing:-.02em">Rohit Banerjee</div>
+                  <div class="small muted" style="margin-top:4px">GPS/2026/0406 · Roll 1</div>
+                  <div class="row" style="justify-content:center;gap:6px;margin-top:12px"><span class="badge">95% last 20 days</span></div>
+                  <div style="margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:8px"><div class="pill l" style="flex:none">↑ Late</div><div class="pill e" style="flex:none">↓ Excused</div></div>
+                </div>
+              </div>
+              <div class="row" style="gap:10px"><div class="btn danger grow" style="height:56px;opacity:.35">← Absent</div><div class="btn accent grow" style="height:56px">Present →</div></div>
+            </div>
+            <div class="gesture right" style="right:24px;bottom:368px"><div class="ring2"></div><div class="tag">SWIPE →</div></div>
+            <div class="homebar"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:04:38</p>
+          <span class="variant-num">STEP 3 · SWIPE LEFT</span>
+          <div class="variant-title">Card 5 — no answer</div>
+          <p class="step-does"><b>He does:</b> swipes left. <b>System:</b> flags that Chetan was absent yesterday too, right on the card, before the swipe lands.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:04</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="iconbtn plain">✕</div><div class="grow"><h2>Roll call</h2><p class="sub">5 of 21 · Grade 5-A</p></div><div class="iconbtn">☰</div></div>
+              <div class="bar" style="margin-top:10px"><span class="g" style="width:24%"></span></div>
+            </div>
+            <div class="tint r"></div>
+            <div class="watermark r">ABSENT</div>
+            <div class="body" style="justify-content:center;gap:18px">
+              <div style="position:relative">
+                <div class="swipecard behind"></div>
+                <div class="swipecard" style="transform:rotate(-4deg) translateX(-30px);border-color:#f2bcbc">
+                  <div class="avatar lg r" style="margin:0 auto 12px">CS</div>
+                  <div style="font-size:23px;font-weight:680;letter-spacing:-.02em">Chetan Shetty</div>
+                  <div class="small muted" style="margin-top:4px">GPS/2026/0418 · Roll 5</div>
+                  <div class="row" style="justify-content:center;gap:6px;margin-top:12px"><span class="badge bad">75% · absent Thu</span></div>
+                  <div style="margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:8px"><div class="pill l" style="flex:none">↑ Late</div><div class="pill e" style="flex:none">↓ Excused</div></div>
+                </div>
+              </div>
+              <div class="row" style="gap:10px"><div class="btn danger grow" style="height:56px">← Absent</div><div class="btn accent grow" style="height:56px;opacity:.35">Present →</div></div>
+            </div>
+            <div class="gesture" style="left:24px;bottom:368px"><div class="ring2"></div><div class="tag">← SWIPE</div></div>
+            <div class="homebar"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:04:57</p>
+          <span class="variant-num">STEP 4 · SWIPE UP</span>
+          <div class="variant-title">Heena walks in mid-deck</div>
+          <p class="step-does"><b>He does:</b> swipes up on her card. <b>System:</b> logs LATE with the real clock time — no typing, no separate screen.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:22</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="iconbtn plain">✕</div><div class="grow"><h2>Roll call</h2><p class="sub">8 of 21 · Grade 5-A</p></div><div class="iconbtn">☰</div></div>
+              <div class="bar" style="margin-top:10px"><span class="g" style="width:38%"></span></div>
+            </div>
+            <div class="tint a"></div>
+            <div class="watermark a">LATE</div>
+            <div class="body" style="justify-content:center;gap:18px">
+              <div style="position:relative">
+                <div class="swipecard behind"></div>
+                <div class="swipecard" style="transform:translateY(-22px);border-color:#ecd79a">
+                  <div class="avatar lg a" style="margin:0 auto 12px">HM</div>
+                  <div style="font-size:23px;font-weight:680;letter-spacing:-.02em">Heena Malhotra</div>
+                  <div class="small muted" style="margin-top:4px">GPS/2026/0411 · Roll 8</div>
+                  <div class="row" style="justify-content:center;gap:6px;margin-top:12px"><span class="badge ok">100% attendance</span><span class="badge warn">08:22</span></div>
+                  <div style="margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:8px"><div class="pill l on" style="flex:none">↑ Late</div><div class="pill e" style="flex:none">↓ Excused</div></div>
+                </div>
+              </div>
+              <div class="row" style="gap:10px"><div class="btn danger grow" style="height:56px;opacity:.35">← Absent</div><div class="btn accent grow" style="height:56px;opacity:.35">Present →</div></div>
+            </div>
+            <div class="gesture" style="left:166px;bottom:322px"><div class="ring2"></div><div class="tag">SWIPE ↑</div></div>
+            <div class="homebar"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:05:12</p>
+          <span class="variant-num">STEP 5 · THE MISTAKE</span>
+          <div class="variant-title">Wrong swipe on card 9</div>
+          <p class="step-does"><b>He does:</b> shakes the phone. <b>System:</b> pulls the card back with the wrong status shown struck through. <i>This is the flow's weak spot — recovery costs attention.</i></p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:05</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="iconbtn plain">✕</div><div class="grow"><h2>Roll call</h2><p class="sub">9 of 21 · undo applied</p></div><div class="iconbtn">☰</div></div>
+              <div class="bar" style="margin-top:10px"><span class="g" style="width:43%"></span></div>
+            </div>
+            <div class="body" style="justify-content:center;gap:16px">
+              <div class="banner warn">↺<div><b>Undid Rishi Malhotra</b> — was marked absent by mistake. Swipe again.</div></div>
+              <div style="position:relative">
+                <div class="swipecard behind"></div>
+                <div class="swipecard">
+                  <div class="avatar lg" style="margin:0 auto 12px">RM</div>
+                  <div style="font-size:23px;font-weight:680;letter-spacing:-.02em">Rishi Malhotra</div>
+                  <div class="small muted" style="margin-top:4px">GPS/2026/0419 · Roll 9</div>
+                  <div class="row" style="justify-content:center;gap:6px;margin-top:12px"><span class="badge" style="text-decoration:line-through">Absent</span><span class="badge ok">100% attendance</span></div>
+                  <div style="margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:8px"><div class="pill l" style="flex:none">↑ Late</div><div class="pill e" style="flex:none">↓ Excused</div></div>
+                </div>
+              </div>
+              <div class="row" style="gap:10px"><div class="btn danger grow" style="height:56px">← Absent</div><div class="btn accent grow" style="height:56px">Present →</div></div>
+              <div class="tiny muted" style="text-align:center">Shake to undo · or tap ☰ to open the list and fix any card</div>
+            </div>
+            <div class="homebar"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:05:14</p>
+          <span class="variant-num">STEP 6 · FINISH &amp; SUBMIT</span>
+          <div class="variant-title">21 called, review before it's written</div>
+          <p class="step-does"><b>He does:</b> reviews the two exceptions, taps submit. <b>System:</b> writes all 21 records in one request; nothing was saved until now.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:05</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Roll call complete</h2><p class="sub">21 of 21 names · 48 seconds</p></div></div></div>
+            <div class="body">
+              <div class="stat3">
+                <div class="stat g"><div class="n">19</div><div class="l">Present</div></div>
+                <div class="stat r"><div class="n">1</div><div class="l">Absent</div></div>
+                <div class="stat a"><div class="n">1</div><div class="l">Late</div></div>
+              </div>
+              <p class="sectionlabel">Exceptions to confirm</p>
+              <div class="list">
+                <div class="li"><div class="avatar r">CS</div><div class="grow"><div class="nm">Chetan Shetty</div><div class="tiny muted">Absent · 2nd day · 75%</div></div><span class="chip">change</span></div>
+                <div class="li"><div class="avatar a">HM</div><div class="grow"><div class="nm">Heena Malhotra</div><div class="tiny muted">Late · arrived 08:22</div></div><span class="chip">change</span></div>
+              </div>
+              <div class="card tight">
+                <div class="between"><span class="small muted">Corrections made mid-deck</span><span class="badge">1</span></div>
+                <div class="tiny muted" style="margin-top:6px">Rishi Malhotra: absent → present (undone at 08:05)</div>
+              </div>
+              <div class="banner ok">✓<div>All 19 remaining children were called and answered present.</div></div>
+            </div>
+            <div class="stickybar"><div class="btn">Submit 21 records<div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 2</div></div></div><div class="hint">One request · works offline, queues if needed</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+    </div>
+    <div class="painbox" style="margin-top:6px"><b>Read the row:</b> the deck guarantees every child is <i>consciously</i> marked — good for schools with an audit or safeguarding requirement. Cost: 21 deliberate gestures instead of 2, and a mistake on card 3 is only reachable through the list at card 17. Ship it as an <b>option</b>, not the default.</div>
+  </section>
+
+  <!-- ══════════════════════════ FLOW 3 ══════════════════════════ -->
+  <section class="flowsec" id="f3">
+    <span class="variant-num">FLOW 3 · VARIANT 3</span>
+    <h2>Whole-class tiles</h2>
+    <p class="lead">The entire class on one screen, so the teacher can compare the <b>room</b> to the <b>screen</b> — the check that actually catches errors. Tap = absent, hold = the other statuses. Highest information density of the five; the long-press is the thing that needs teaching.</p>
+    <div class="flowmeta">
+      <div class="m"><div class="k">Who</div><div class="v">Dinesh Kurup<br><b>class teacher</b></div></div>
+      <div class="m"><div class="k">Entry point</div><div class="v">Attendance tab<br><b>1 tap in</b></div></div>
+      <div class="m hot"><div class="k">Taps to finish</div><div class="v"><b>4 taps</b><br>+1 long-press</div></div>
+      <div class="m"><div class="k">Wall clock</div><div class="v"><b>35 seconds</b><br>fastest of the five</div></div>
+      <div class="m"><div class="k">Offline</div><div class="v">Local state until<br>submit</div></div>
+      <div class="m"><div class="k">Mistake recovery</div><div class="v">Tap again to flip<br><b>zero-cost</b></div></div>
+      <div class="m"><div class="k">Fails when</div><div class="v">Sections above ~35 students — tiles get thumb-sized</div></div>
+    </div>
+
+    <div class="rail step-chain">
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:04:18</p>
+          <span class="variant-num">STEP 1 · THE WHOLE CLASS</span>
+          <div class="variant-title">21 faces, one screen</div>
+          <p class="step-does"><b>System does:</b> everyone green by default, counts at the top, legend at the bottom. <i>No scrolling to see the class.</i></p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:04</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="grow"><h2>Grade 5-A</h2><p class="sub">Fri 21 Aug · daily roll</p></div><div class="iconbtn">⚙</div></div>
+              <div class="chiprow" style="margin-top:10px"><div class="chip on">Daily</div><div class="chip">P3 · Science</div><div class="chip">P4 · Maths</div></div>
+            </div>
+            <div class="body">
+              <div class="stat3">
+                <div class="stat g"><div class="n">21</div><div class="l">Present</div></div>
+                <div class="stat"><div class="n">0</div><div class="l">Absent</div></div>
+                <div class="stat"><div class="n">0</div><div class="l">Late</div></div>
+              </div>
+              <div class="card">
+                <div class="tiles">
+                  <div class="tile">RB</div><div class="tile">CC</div><div class="tile">NC</div><div class="tile">BD</div><div class="tile">KD</div>
+                  <div class="tile">DG</div><div class="tile">DG</div><div class="tile">HM</div><div class="tile">RM</div><div class="tile">MM</div>
+                  <div class="tile">AN</div><div class="tile">NN</div><div class="tile">HP</div><div class="tile">SP</div><div class="tile">AR</div>
+                  <div class="tile">VS</div><div class="tile">PS</div><div class="tile">ES</div><div class="tile">CS</div><div class="tile">IS</div>
+                  <div class="tile">MV</div><div class="tile n">—</div><div class="tile n">—</div><div class="tile n">—</div><div class="tile n">—</div>
+                </div>
+                <div class="row" style="gap:12px;margin-top:12px;flex-wrap:wrap"><span class="badge ok">■ Present</span><span class="badge bad">■ Absent</span><span class="badge warn">■ Late</span><span class="badge info">■ Excused</span></div>
+              </div>
+              <div class="banner ok">✓<div><b>Tap a face</b> to mark absent · <b>hold</b> for late, excused or a note.</div></div>
+            </div>
+            <div class="stickybar"><div class="row" style="gap:8px"><div class="btn sec" style="flex:0 0 118px">All present</div><div class="btn grow">Submit</div></div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:05:01</p>
+          <span class="variant-num">STEP 2 · ONE TAP</span>
+          <div class="variant-title">Chetan's tile goes red</div>
+          <p class="step-does"><b>He does:</b> taps CS. <b>System:</b> flips instantly, counts move, and a note appears because it's the second day.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:05</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="grow"><h2>Grade 5-A</h2><p class="sub">Fri 21 Aug · daily roll</p></div><div class="iconbtn">⚙</div></div>
+              <div class="chiprow" style="margin-top:10px"><div class="chip on">Daily</div><div class="chip">P3 · Science</div><div class="chip">P4 · Maths</div></div>
+            </div>
+            <div class="body">
+              <div class="stat3">
+                <div class="stat g"><div class="n">20</div><div class="l">Present</div></div>
+                <div class="stat r"><div class="n">1</div><div class="l">Absent</div></div>
+                <div class="stat"><div class="n">0</div><div class="l">Late</div></div>
+              </div>
+              <div class="card">
+                <div class="tiles">
+                  <div class="tile">RB</div><div class="tile">CC</div><div class="tile">NC</div><div class="tile">BD</div><div class="tile">KD</div>
+                  <div class="tile">DG</div><div class="tile">DG</div><div class="tile">HM</div><div class="tile">RM</div><div class="tile">MM</div>
+                  <div class="tile">AN</div><div class="tile">NN</div><div class="tile">HP</div><div class="tile">SP</div><div class="tile">AR</div>
+                  <div class="tile">VS</div><div class="tile">PS</div><div class="tile">ES</div><div class="tile a" style="outline:3px solid var(--absent);outline-offset:2px">CS<div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 2</div></div></div><div class="tile">IS</div>
+                  <div class="tile">MV</div><div class="tile n">—</div><div class="tile n">—</div><div class="tile n">—</div><div class="tile n">—</div>
+                </div>
+                <div class="row" style="gap:12px;margin-top:12px;flex-wrap:wrap"><span class="badge ok">■ Present</span><span class="badge bad">■ Absent</span><span class="badge warn">■ Late</span><span class="badge info">■ Excused</span></div>
+              </div>
+              <div class="banner info">ⓘ<div><b>Chetan Shetty</b> — absent two days running, 5 of the last 20. A note goes to Girish Shetty after you submit.</div></div>
+            </div>
+            <div class="stickybar"><div class="row" style="gap:8px"><div class="btn sec" style="flex:0 0 118px">All present</div><div class="btn grow">Submit</div></div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:22:06</p>
+          <span class="variant-num">STEP 3 · LONG-PRESS</span>
+          <div class="variant-title">Heena is late, not absent</div>
+          <p class="step-does"><b>He does:</b> holds her tile. <b>System:</b> a sheet with all four statuses, the clock time pre-filled, and an optional note.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:22</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="grow"><h2>Grade 5-A</h2><p class="sub">Fri 21 Aug · daily roll</p></div><div class="iconbtn">⚙</div></div>
+            </div>
+            <div class="body">
+              <div class="stat3">
+                <div class="stat g"><div class="n">20</div><div class="l">Present</div></div>
+                <div class="stat r"><div class="n">1</div><div class="l">Absent</div></div>
+                <div class="stat"><div class="n">0</div><div class="l">Late</div></div>
+              </div>
+              <div class="card">
+                <div class="tiles">
+                  <div class="tile">RB</div><div class="tile">CC</div><div class="tile">NC</div><div class="tile">BD</div><div class="tile">KD</div>
+                  <div class="tile">DG</div><div class="tile">DG</div><div class="tile" style="outline:3px solid var(--late);outline-offset:2px">HM<div class="gesture on-el"><div class="ring2"></div><div class="tag">HOLD</div></div></div><div class="tile">RM</div><div class="tile">MM</div>
+                  <div class="tile">AN</div><div class="tile">NN</div><div class="tile">HP</div><div class="tile">SP</div><div class="tile">AR</div>
+                  <div class="tile">VS</div><div class="tile">PS</div><div class="tile">ES</div><div class="tile a">CS</div><div class="tile">IS</div>
+                  <div class="tile">MV</div><div class="tile n">—</div><div class="tile n">—</div><div class="tile n">—</div><div class="tile n">—</div>
+                </div>
+              </div>
+            </div>
+            <div class="scrim"></div>
+            <div class="sheet">
+              <div class="grab"></div>
+              <div class="row"><div class="avatar a">HM</div><div class="grow"><div class="nm" style="font-weight:650">Heena Malhotra</div><div class="tiny muted">GPS/2026/0411 · Roll 8 · 100% attendance</div></div></div>
+              <p class="sectionlabel">Status</p>
+              <div class="pillgroup"><div class="pill p">Present</div><div class="pill a">Absent</div><div class="pill l on">Late</div><div class="pill e">Excused</div></div>
+              <p class="sectionlabel">Arrived at</p>
+              <div class="row" style="gap:6px"><span class="chip on">08:22 (now)</span><span class="chip">08:15</span><span class="chip">Other…</span></div>
+              <p class="sectionlabel">Note (optional)</p>
+              <div class="row" style="gap:6px;flex-wrap:wrap"><span class="chip">School bus late</span><span class="chip on">Traffic</span><span class="chip">Medical</span></div>
+              <div class="btn" style="margin-top:14px">Mark late · 08:22</div>
+            </div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:22:20</p>
+          <span class="variant-num">STEP 4 · THE HEAD COUNT</span>
+          <div class="variant-title">Screen vs room — the real check</div>
+          <p class="step-does"><b>He does:</b> counts heads, compares to "19 present". <b>System:</b> shows yesterday's exceptions so a pattern is impossible to miss.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:22</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="grow"><h2>Grade 5-A</h2><p class="sub">Fri 21 Aug · ready to submit</p></div><div class="iconbtn">⚙</div></div>
+            </div>
+            <div class="body">
+              <div class="card tight" style="border-color:var(--accent)">
+                <div class="between"><span class="small" style="font-weight:650">Count the heads</span><span class="badge ok">screen says 19</span></div>
+                <div class="tiny muted" style="margin-top:6px">19 present · 1 absent · 1 late = 21 on the roll. If your count differs, tap a face to fix it.</div>
+              </div>
+              <div class="card">
+                <div class="tiles">
+                  <div class="tile">RB</div><div class="tile">CC</div><div class="tile">NC</div><div class="tile">BD</div><div class="tile">KD</div>
+                  <div class="tile">DG</div><div class="tile">DG</div><div class="tile l">HM</div><div class="tile">RM</div><div class="tile">MM</div>
+                  <div class="tile">AN</div><div class="tile">NN</div><div class="tile">HP</div><div class="tile">SP</div><div class="tile">AR</div>
+                  <div class="tile">VS</div><div class="tile">PS</div><div class="tile">ES</div><div class="tile a">CS</div><div class="tile">IS</div>
+                  <div class="tile">MV</div><div class="tile n">—</div><div class="tile n">—</div><div class="tile n">—</div><div class="tile n">—</div>
+                </div>
+              </div>
+              <div class="card tight">
+                <div class="between"><span class="small">Yesterday · Thu 20 Aug</span><span class="badge">18 P · 2 A · 1 L</span></div>
+                <div class="stack" style="gap:6px;margin-top:9px">
+                  <div class="row"><div class="avatar sm r">CS</div><span class="small grow">Chetan Shetty</span><span class="badge bad">absent</span></div>
+                  <div class="row"><div class="avatar sm r">KD</div><span class="small grow">Kartik Dutta</span><span class="badge bad">absent</span></div>
+                  <div class="row"><div class="avatar sm a">VS</div><span class="small grow">Veer Sandhu</span><span class="badge warn">late</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="stickybar"><div class="row" style="gap:8px"><div class="btn sec" style="flex:0 0 100px">Reset</div><div class="btn grow">Submit · 21</div></div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:22:31</p>
+          <span class="variant-num">STEP 5 · SUBMITTED</span>
+          <div class="variant-title">Written, with one thing to decide</div>
+          <p class="step-does"><b>System does:</b> confirms the 21 records and surfaces the only judgement call — message Chetan's father or not.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:22</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">✕</div><div class="grow"><h2 style="font-size:17px">Roll submitted</h2><p class="sub">Grade 5-A · 08:22 · 35 seconds</p></div></div></div>
+            <div class="body">
+              <div class="card" style="text-align:center;padding:18px 16px">
+                <div class="row" style="justify-content:center;gap:8px">
+                  <span class="badge ok" style="font-size:13px;padding:5px 12px">19 present</span>
+                  <span class="badge bad" style="font-size:13px;padding:5px 12px">1 absent</span>
+                  <span class="badge warn" style="font-size:13px;padding:5px 12px">1 late</span>
+                </div>
+                <div class="tiny muted" style="margin-top:10px">21 records written · marked by you, timestamped 08:22</div>
+              </div>
+              <div class="card tight" style="border-color:#f2bcbc">
+                <div class="between"><span class="small" style="font-weight:650">Chetan Shetty · day 2</span><span class="badge bad">75%</span></div>
+                <div class="tiny muted" style="margin-top:6px">Girish Shetty · +91 97100 37947</div>
+                <div class="row" style="gap:8px;margin-top:10px"><div class="btn accent sm grow">✆ Send note</div><div class="btn sec sm" style="flex:0 0 74px">Skip</div></div>
+              </div>
+              <div class="card tight">
+                <div class="between"><span class="small">Heena · late 08:22</span><span class="badge warn">traffic</span></div>
+                <div class="tiny muted" style="margin-top:6px">Logged with your note. No message — first late this month.</div>
+              </div>
+              <div class="banner info">ⓘ<div>Period attendance for <b>P4 Maths</b> is Mitali Sinha's to take. She'll see your roll as the starting point.</div></div>
+            </div>
+            <div class="stickybar"><div class="btn sec">Back to Today</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:23 · elsewhere</p>
+          <span class="variant-num">STEP 6 · WHAT OTHERS SEE</span>
+          <div class="variant-title">The roll becomes everyone's context</div>
+          <p class="step-does"><b>System does:</b> one roll feeds the front desk, the principal's defaulter list and the guardian's message — nobody re-enters anything.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:23</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar"><div class="appbar-row"><div class="grow"><h2 style="font-size:17px">Downstream</h2><p class="sub">One submit · four consumers</p></div></div></div>
+            <div class="body">
+              <div class="card tight">
+                <div class="between"><span class="small" style="font-weight:650">Front desk</span><span class="badge">08:23</span></div>
+                <div class="tiny muted" style="margin-top:6px">"Chetan Shetty absent" — visible the moment a parent calls the office.</div>
+              </div>
+              <div class="card tight">
+                <div class="between"><span class="small" style="font-weight:650">Guardian message</span><span class="badge ok">sent</span></div>
+                <div class="card flat" style="margin-top:8px;background:var(--present-bg);border:0;padding:10px 12px">
+                  <div class="tiny" style="color:#14532d;line-height:1.5">Greenwood Public School: Chetan (Grade 5-A) was marked <b>absent</b> today, 21 Aug. This is the second day. Please reply or call the office. — D. Kurup</div>
+                </div>
+              </div>
+              <div class="card tight">
+                <div class="between"><span class="small" style="font-weight:650">Principal's dashboard</span><span class="badge warn">31 below 75%</span></div>
+                <div class="tiny muted" style="margin-top:6px">Chetan moves to 75% exactly — one more absence and he enters the defaulter list.</div>
+                <div class="bar" style="margin-top:8px;position:relative"><span class="a" style="width:75%"></span><i style="position:absolute;left:75%;top:-3px;bottom:-3px;width:2px;background:var(--absent)"></i></div>
+              </div>
+              <div class="card tight">
+                <div class="between"><span class="small" style="font-weight:650">Report card</span><span class="badge">Term 1</span></div>
+                <div class="tiny muted" style="margin-top:6px">Attendance line updates automatically — 20 school days, 15 present for Chetan.</div>
+              </div>
+              <div class="banner ok">✓<div>Every one of these was <b>re-typed by hand</b> in the paper process. The 35-second roll replaces all four.</div></div>
+            </div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+    </div>
+    <div class="painbox" style="margin-top:6px"><b>Read the row:</b> fastest and most verifiable — the class fits on one screen, so the teacher can check the screen against the room, which is the only error check that actually works. Cost: long-press is invisible until taught, and it degrades above ~35 students per section (our largest is 25).</div>
+  </section>
+
+  <!-- ══════════════════════════ FLOW 4 ══════════════════════════ -->
+  <section class="flowsec" id="f4">
+    <span class="variant-num">FLOW 4 · VARIANT 4</span>
+    <h2>Absent-only entry</h2>
+    <p class="lead">On roughly four school days in five, <b>nobody is missing</b>. This flow asks one question and accepts one answer — and only makes you work on the days that are actually exceptional. Two taps on a full-attendance day; six on a day like this one.</p>
+    <div class="flowmeta">
+      <div class="m"><div class="k">Who</div><div class="v">Dinesh Kurup<br><b>class teacher</b></div></div>
+      <div class="m"><div class="k">Entry point</div><div class="v">One question<br><b>1 tap in</b></div></div>
+      <div class="m hot"><div class="k">Taps to finish</div><div class="v"><b>2 taps</b> normal day<br>6 with 2 exceptions</div></div>
+      <div class="m"><div class="k">Wall clock</div><div class="v"><b>8 s</b> normal day<br>55 s today</div></div>
+      <div class="m"><div class="k">Offline</div><div class="v">Queued, same as<br>the others</div></div>
+      <div class="m"><div class="k">Mistake recovery</div><div class="v">Undo strip after<br>submit</div></div>
+      <div class="m"><div class="k">Fails when</div><div class="v">A teacher taps "all present" reflexively — needs a spot-check policy</div></div>
+    </div>
+
+    <div class="rail step-chain">
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:04:16</p>
+          <span class="variant-num">STEP 1 · ONE QUESTION</span>
+          <div class="variant-title">"All 21 present?"</div>
+          <p class="step-does"><b>System does:</b> asks the only thing that matters, with yesterday's shape underneath as context.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:04</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Today's roll</h2><p class="sub">Grade 5-A · Fri 21 Aug</p></div></div></div>
+            <div class="body">
+              <div class="card" style="text-align:center;padding:24px 16px">
+                <div class="big" style="font-size:38px">21</div>
+                <div class="small muted" style="margin-top:2px">students on the roll</div>
+                <div class="btn accent" style="margin-top:18px">✓ &nbsp;All 21 present<div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 1</div></div></div>
+                <div class="btn sec" style="margin-top:8px">Someone is missing…</div>
+              </div>
+              <div class="card tight">
+                <div class="between"><span class="small muted">Yesterday</span><span class="badge">18 P · 2 A · 1 L</span></div>
+                <div class="tiny muted" style="margin-top:6px">Chetan Shetty and Kartik Dutta were absent · Veer Sandhu late</div>
+              </div>
+              <div class="banner info">ⓘ<div>On <b>16 of the last 20</b> days this class was fully present. That's why this is one tap.</div></div>
+            </div>
+            <div class="homebar"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">the normal day</p>
+          <span class="variant-num">STEP 2 · HAPPY PATH</span>
+          <div class="variant-title">Done in 8 seconds</div>
+          <p class="step-does"><b>On a full-attendance day the flow ends here:</b> tap → written → 5-second undo. <i>2 taps total, no list ever rendered.</i></p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:04</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">✕</div><div class="grow"><h2 style="font-size:17px">Roll submitted</h2><p class="sub">Grade 5-A · 08:04</p></div></div></div>
+            <div class="body" style="justify-content:center;gap:16px">
+              <div class="card" style="text-align:center;padding:28px 18px">
+                <div class="ring" style="--p:100%;margin:0 auto;width:112px;height:112px"><div><div style="font-size:28px;font-weight:700">21</div><div class="tiny muted">all present</div></div></div>
+                <div style="font-size:17px;font-weight:650;margin-top:14px">Full attendance</div>
+                <div class="tiny muted" style="margin-top:4px">21 records written · 8 seconds · 2 taps</div>
+              </div>
+              <div class="banner ok">✓<div>Marked by you at 08:04. Nothing else needed today.</div></div>
+              <div class="card tight"><div class="between"><span class="small muted">Changed your mind?</span><span class="chip soft">Undo · 4 s</span></div></div>
+              <div class="tiny muted" style="text-align:center">Next: P3 Science 5-A at 09:45</div>
+            </div>
+            <div class="stickybar"><div class="btn sec">Back to Today</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:05:02</p>
+          <span class="variant-num">STEP 3 · TODAY IS DIFFERENT</span>
+          <div class="variant-title">Type two letters, not twenty-one rows</div>
+          <p class="step-does"><b>He does:</b> taps "Someone is missing", types <i>sh</i>. <b>System:</b> three real matches — this is why search beats scrolling.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:05</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Who is missing?</h2><p class="sub">Grade 5-A · 21 on the roll</p></div></div></div>
+            <div class="body">
+              <div class="searchbar">🔍 <span>sh</span><span style="color:var(--ink-4)">|</span></div>
+              <p class="sectionlabel">3 matches</p>
+              <div class="list">
+                <div class="li"><div class="avatar sm">PS</div><div class="grow"><div class="nm">Pihu <b>Sh</b>eikh</div><div class="meta">GPS/2026/0410 · 90%</div></div><span class="badge">tap</span></div>
+                <div class="li"><div class="avatar sm">ES</div><div class="grow"><div class="nm">Eshan <b>Sh</b>ekhawat</div><div class="meta">GPS/2026/0415 · 95%</div></div><span class="badge">tap</span></div>
+                <div class="li pressed"><div class="avatar sm r">CS</div><div class="grow"><div class="nm">Chetan <b>Sh</b>etty</div><div class="meta">GPS/2026/0418 · 75% · absent Thu</div></div><span class="badge bad">tap</span><div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 3</div></div></div>
+              </div>
+              <p class="sectionlabel">Likely, from history</p>
+              <div class="list">
+                <div class="li"><div class="avatar sm r">CS</div><div class="grow"><div class="nm">Chetan Shetty</div><div class="tiny muted">absent 5 of last 20</div></div><span class="chip soft">add</span></div>
+                <div class="li"><div class="avatar sm a">KD</div><div class="grow"><div class="nm">Kartik Dutta</div><div class="tiny muted">absent 8 of last 20</div></div><span class="chip soft">add</span></div>
+              </div>
+            </div>
+            <div class="sheet" style="padding:8px 12px 16px">
+              <div class="keypad" style="grid-template-columns:repeat(10,1fr);gap:4px">
+                <div class="key soft" style="height:36px;font-size:13px">q</div><div class="key soft" style="height:36px;font-size:13px">w</div><div class="key soft" style="height:36px;font-size:13px">e</div><div class="key soft" style="height:36px;font-size:13px">r</div><div class="key soft" style="height:36px;font-size:13px">t</div><div class="key soft" style="height:36px;font-size:13px">y</div><div class="key soft" style="height:36px;font-size:13px">u</div><div class="key soft" style="height:36px;font-size:13px">i</div><div class="key soft" style="height:36px;font-size:13px">o</div><div class="key soft" style="height:36px;font-size:13px">p</div>
+              </div>
+            </div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:05:11</p>
+          <span class="variant-num">STEP 4 · REASON, IN CHIPS</span>
+          <div class="variant-title">Chetan added, reason tapped</div>
+          <p class="step-does"><b>He does:</b> taps a reason chip. <b>System:</b> shows the day-2 warning inline, so the escalation decision happens while he's still here.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:05</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Exceptions</h2><p class="sub">Grade 5-A · 1 absent so far</p></div></div></div>
+            <div class="body">
+              <p class="sectionlabel">Absent · 1</p>
+              <div class="card tight">
+                <div class="row"><div class="avatar r">CS</div><div class="grow"><div class="nm" style="font-weight:600">Chetan Shetty</div><div class="tiny muted">GPS/2026/0418 · 75% attendance</div></div><span class="chip">✕</span></div>
+                <div class="banner warn" style="margin-top:10px">!<div>Absent <b>Thursday too</b>. A note to Girish Shetty will be offered at submit.</div></div>
+                <p class="sectionlabel">Reason</p>
+                <div class="row" style="gap:6px;flex-wrap:wrap"><span class="chip">Sick</span><span class="chip on">Unreported<div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 4</div></div></span><span class="chip">Family</span><span class="chip">Travel</span></div>
+              </div>
+              <p class="sectionlabel">Add another</p>
+              <div class="row" style="gap:6px;flex-wrap:wrap">
+                <span class="chip soft">＋ Absent</span><span class="chip">＋ Late</span><span class="chip">＋ Excused</span>
+              </div>
+              <div class="banner info">ⓘ<div>Everyone you don't add stays <b>present</b> — never silently absent.</div></div>
+            </div>
+            <div class="stickybar"><div class="btn">Continue · 20 present, 1 absent</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:22:14</p>
+          <span class="variant-num">STEP 5 · LATE, ADDED THE SAME WAY</span>
+          <div class="variant-title">Heena joins the late list</div>
+          <p class="step-does"><b>He does:</b> taps <i>+ Late</i>, then her name from recents. <b>System:</b> stamps 08:22 automatically.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:22</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Exceptions</h2><p class="sub">Grade 5-A · 2 exceptions</p></div></div></div>
+            <div class="body">
+              <p class="sectionlabel">Absent · 1</p>
+              <div class="list">
+                <div class="li"><div class="avatar r">CS</div><div class="grow"><div class="nm">Chetan Shetty</div><div class="tiny muted">Unreported · day 2</div></div><span class="chip">✕</span></div>
+              </div>
+              <p class="sectionlabel">Late · 1</p>
+              <div class="list">
+                <div class="li"><div class="avatar a">HM</div><div class="grow"><div class="nm">Heena Malhotra</div><div class="tiny muted">Arrived 08:22 · traffic</div></div><span class="chip">✕</span></div>
+              </div>
+              <div class="card tight">
+                <div class="between"><span class="small" style="font-weight:650">Everyone else</span><span class="badge ok">19 present</span></div>
+                <div class="tiny muted" style="margin-top:6px">Rohit, Chetan C., Neha, Bhuvan, Kartik, Divya, Deepak, Rishi, Manisha, Avni, Nakul, Hemant, Sunita, Ananya, Veer, Pihu, Eshan, Inaya, Myra</div>
+              </div>
+              <div class="row" style="gap:6px;flex-wrap:wrap"><span class="chip">＋ Absent</span><span class="chip">＋ Late</span><span class="chip">＋ Excused</span></div>
+            </div>
+            <div class="stickybar"><div class="btn">Submit · 19 present, 1 absent, 1 late<div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 6</div></div></div><div class="hint">Anything untouched stays present</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:22:19</p>
+          <span class="variant-num">STEP 6 · SUBMITTED + MESSAGE</span>
+          <div class="variant-title">One screen closes the loop</div>
+          <p class="step-does"><b>System does:</b> writes 21 records, drafts the guardian message with the school's wording, and lets him send without leaving.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:22</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">✕</div><div class="grow"><h2 style="font-size:17px">Roll submitted</h2><p class="sub">Grade 5-A · 08:22 · 55 s</p></div></div></div>
+            <div class="body">
+              <div class="stat3">
+                <div class="stat g"><div class="n">19</div><div class="l">Present</div></div>
+                <div class="stat r"><div class="n">1</div><div class="l">Absent</div></div>
+                <div class="stat a"><div class="n">1</div><div class="l">Late</div></div>
+              </div>
+              <div class="card tight" style="border-color:#f2bcbc">
+                <div class="between"><span class="small" style="font-weight:650">Message ready</span><span class="badge bad">day 2</span></div>
+                <div class="card flat" style="margin-top:8px;background:var(--surface-2);border:0;padding:10px 12px">
+                  <div class="tiny" style="line-height:1.55">To <b>Girish Shetty</b> · +91 97100 37947<br><br>"Chetan (Grade 5-A) was absent today, 21 Aug — the second day. Please call the office if he is unwell. — D. Kurup, class teacher"</div>
+                </div>
+                <div class="row" style="gap:8px;margin-top:10px"><div class="btn accent sm grow">✆ Send now</div><div class="btn sec sm" style="flex:0 0 84px">Edit</div></div>
+              </div>
+              <div class="card tight">
+                <div class="between"><span class="small muted">Reasons captured</span><span class="badge">2 of 2</span></div>
+                <div class="tiny muted" style="margin-top:6px">Unreported (Chetan) · Traffic (Heena) — both feed the monthly pattern report.</div>
+              </div>
+              <div class="banner ok">✓<div>Undo available for <b>5 minutes</b>, then the roll locks for editing by teachers.</div></div>
+            </div>
+            <div class="stickybar"><div class="btn sec">Back to Today</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+    </div>
+    <div class="painbox" style="margin-top:6px"><b>Read the row:</b> the cheapest normal day of the five — 2 taps, 8 seconds, no list rendered at all. The risk is honest: "all present" is one reflex tap, so it needs a policy guard (spot checks, or a nudge when a class reports 100% every day for a fortnight).</div>
+  </section>
+
+  <!-- ══════════════════════════ FLOW 5 ══════════════════════════ -->
+  <section class="flowsec" id="f5">
+    <span class="variant-num">FLOW 5 · VARIANT 5</span>
+    <h2>Period-aware entry — the subject teacher's day</h2>
+    <p class="lead">This is the flow that deletes the setup tax entirely. <b>Mitali Sinha</b> teaches Mathematics for eight straight periods that Friday — 5-D, 5-C, 5-B, <b>5-A</b>, 6-D, 6-C, 6-B, 6-A. The 1600-slot timetable already knows all of it, so date, section and subject are never asked. She marks eight rolls in a day and never touches a picker.</p>
+    <div class="flowmeta">
+      <div class="m"><div class="k">Who</div><div class="v">Mitali Sinha<br><b>subject teacher</b></div></div>
+      <div class="m hot"><div class="k">Setup taps</div><div class="v"><b>0</b><br>context from timetable</div></div>
+      <div class="m"><div class="k">Taps per period</div><div class="v"><b>3</b><br>enter · fix · submit</div></div>
+      <div class="m"><div class="k">Across the day</div><div class="v">8 periods<br><b>~24 taps total</b></div></div>
+      <div class="m"><div class="k">Chaining</div><div class="v">Bell notification →<br>next roster</div></div>
+      <div class="m"><div class="k">Smart default</div><div class="v">Carries the 08:05<br>daily roll forward</div></div>
+      <div class="m"><div class="k">Fails when</div><div class="v">Substitutions — a cover teacher isn't in the timetable, needs the manual fallback</div></div>
+    </div>
+
+    <div class="rail step-chain">
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">10:28 · bell in 2 min</p>
+          <span class="variant-num">STEP 1 · ZERO SETUP</span>
+          <div class="variant-title">The app already knows where she is</div>
+          <p class="step-does"><b>System does:</b> reads the timetable and the clock. <i>No year, section, subject or date picker anywhere in this flow.</i></p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>10:28</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="avatar" style="background:var(--accent-soft);color:var(--accent-ink)">MS</div><div class="grow"><h2 style="font-size:17px">Mitali Sinha</h2><p class="sub">Friday 21 Aug · 5 classes left</p></div><div class="iconbtn">🔔</div></div>
+            </div>
+            <div class="body">
+              <div class="card" style="border-color:var(--accent);background:var(--accent-soft)">
+                <div class="between"><span class="badge warn">Starts in 2 min</span><span class="tiny" style="font-weight:650;color:var(--accent-ink)">Period 4</span></div>
+                <div style="font-size:21px;font-weight:680;margin-top:8px;letter-spacing:-.02em">Mathematics · Grade 5-A</div>
+                <div class="small" style="color:var(--accent-ink);margin-top:2px">R-5A · 10:30–11:15 · 21 students</div>
+                <div class="btn accent" style="margin-top:14px">Mark attendance for this period<div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 1</div></div></div>
+              </div>
+              <div class="banner warn">!<div><b>Period 3 · Grade 5-B</b> — roll not marked. 3 taps to fix.</div></div>
+              <p class="sectionlabel">Done today</p>
+              <div class="stack">
+                <div class="slot" style="opacity:.6"><div class="time">08:00</div><div class="grow"><div class="subj">5-D Maths</div><div class="who">25 marked · 1 absent</div></div><span class="badge ok">✓</span></div>
+                <div class="slot" style="opacity:.6"><div class="time">08:45</div><div class="grow"><div class="subj">5-C Maths</div><div class="who">25 marked · all present</div></div><span class="badge ok">✓</span></div>
+                <div class="slot"><div class="time">09:45</div><div class="grow"><div class="subj">5-B Maths</div><div class="who">not marked</div></div><span class="badge bad">!</span></div>
+              </div>
+              <p class="sectionlabel">Still to come</p>
+              <div class="stack">
+                <div class="slot"><div class="time">11:15</div><div class="grow"><div class="subj">6-D Maths</div><div class="who">R-6D · 25 students</div></div><span class="tiny muted">P5</span></div>
+                <div class="slot"><div class="time">12:45</div><div class="grow"><div class="subj">6-C Maths</div><div class="who">R-6C · 24 students</div></div><span class="tiny muted">P6</span></div>
+              </div>
+            </div>
+            <div class="tabbar"><div class="on"><span class="ic">◧</span>Today</div><div><span class="ic">☑</span>Attendance</div><div><span class="ic">✎</span>Marks</div><div><span class="ic">⌗</span>Classes</div><div><span class="ic">☰</span>More</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">10:31:04</p>
+          <span class="variant-num">STEP 2 · IT REMEMBERS THE MORNING</span>
+          <div class="variant-title">Two suggestions from the 08:05 roll</div>
+          <p class="step-does"><b>System does:</b> Dinesh already marked Chetan absent and Heena late at 08:05 — so it offers to carry both forward instead of asking her to rediscover them.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>10:31</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">P4 · Maths · 5-A</h2><p class="sub">Fri 21 Aug · 10:30–11:15 · R-5A</p></div><div class="iconbtn">⇄</div></div>
+            </div>
+            <div class="body">
+              <div class="card tight" style="border-color:var(--accent)">
+                <div class="between"><span class="small" style="font-weight:650">From the daily roll · 08:05</span><span class="badge">by D. Kurup</span></div>
+                <div class="stack" style="gap:9px;margin-top:10px">
+                  <div class="row"><div class="avatar sm r">CS</div><div class="grow"><div class="nm" style="font-size:13.5px">Chetan Shetty</div><div class="tiny muted">absent this morning</div></div><span class="chip on">Keep absent</span></div>
+                  <div class="row"><div class="avatar sm a">HM</div><div class="grow"><div class="nm" style="font-size:13.5px">Heena Malhotra</div><div class="tiny muted">late 08:22 — in class now?</div></div><span class="chip on">Present</span></div>
+                </div>
+                <div class="btn accent sm" style="margin-top:12px">Apply both &amp; open roster<div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 2</div></div></div>
+              </div>
+              <div class="banner info">ⓘ<div>Period attendance is stored separately from the daily roll, so both stay on the record.</div></div>
+              <div class="card tight">
+                <div class="between"><span class="small muted">Everyone else</span><span class="badge ok">19 present</span></div>
+              </div>
+            </div>
+            <div class="stickybar"><div class="btn sec">Skip suggestions</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">10:31:22</p>
+          <span class="variant-num">STEP 3 · THE PERIOD'S OWN TRUTH</span>
+          <div class="variant-title">One child left for the match</div>
+          <p class="step-does"><b>She does:</b> marks Nakul excused — he's at the inter-school match. <i>Period attendance is not a copy of the morning; this is the value of per-period records.</i></p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>10:31</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">P4 · Maths · 5-A</h2><p class="sub">19 present · 1 absent · 1 excused</p></div><div class="iconbtn">⇄</div></div>
+            </div>
+            <div class="body">
+              <div class="card tight">
+                <div class="between"><div class="row" style="gap:6px"><span class="badge ok">19</span><span class="badge bad">1</span><span class="badge info">1</span></div><span class="tiny muted">21/21</span></div>
+                <div class="bar thick" style="margin-top:9px"><span class="g" style="width:90%"></span></div>
+              </div>
+              <p class="sectionlabel">Not in this period · 2</p>
+              <div class="list">
+                <div class="li"><div class="avatar r">CS</div><div class="grow"><div class="nm">Chetan Shetty</div><div class="tiny muted">carried from 08:05 roll</div></div><span class="badge bad">Absent</span></div>
+                <div class="li"><div class="avatar b">NN</div><div class="grow"><div class="nm">Nakul Nair</div><div class="tiny muted">inter-school match · excused</div></div><span class="badge info">Excused</span></div>
+              </div>
+              <p class="sectionlabel">In class · 19</p>
+              <div class="list">
+                <div class="li"><div class="avatar g">HM</div><div class="grow"><div class="nm">Heena Malhotra</div><div class="tiny muted">arrived 08:22 · present now</div></div><span class="badge ok">✓</span></div>
+                <div class="li"><div class="avatar g">RB</div><div class="grow"><div class="nm">Rohit Banerjee</div></div><span class="badge ok">✓</span></div>
+                <div class="li"><div class="avatar g">MV</div><div class="grow"><div class="nm">Myra Verma</div></div><span class="badge ok">✓</span></div>
+              </div>
+            </div>
+            <div class="stickybar"><div class="btn">Submit P4 · 21 records<div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 3</div></div></div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">10:32:40</p>
+          <span class="variant-num">STEP 4 · HANDS OFF UNTIL THE BELL</span>
+          <div class="variant-title">Submitted, next period queued</div>
+          <p class="step-does"><b>System does:</b> confirms, then offers the only thing she'd otherwise forget — a nudge at 11:15 for 6-D.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>10:32</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">✕</div><div class="grow"><h2 style="font-size:17px">P4 submitted</h2><p class="sub">Maths · 5-A · 88 seconds</p></div></div></div>
+            <div class="body">
+              <div class="card" style="text-align:center;padding:18px 16px">
+                <div class="row" style="justify-content:center;gap:8px">
+                  <span class="badge ok" style="font-size:13px;padding:5px 12px">19 present</span>
+                  <span class="badge bad" style="font-size:13px;padding:5px 12px">1 absent</span>
+                  <span class="badge info" style="font-size:13px;padding:5px 12px">1 excused</span>
+                </div>
+                <div class="tiny muted" style="margin-top:10px">4 of 8 periods marked today</div>
+                <div class="bar" style="margin-top:10px"><span class="g" style="width:50%"></span></div>
+              </div>
+              <div class="card tight" style="border-color:var(--accent)">
+                <div class="between"><span class="small" style="font-weight:650">Next · P5 6-D at 11:15</span><span class="badge ok">On</span></div>
+                <div class="tiny muted" style="margin-top:6px">Remind me when the bell rings — opens 6-D's roster directly.</div>
+              </div>
+              <div class="card tight" style="border-color:#f2bcbc">
+                <div class="between"><span class="small" style="font-weight:650">Still owed</span><span class="badge bad">1</span></div>
+                <div class="tiny muted" style="margin-top:6px">P3 · Grade 5-B · 09:45 — mark it retroactively before end of day.</div>
+                <div class="btn sec sm" style="margin-top:10px">Mark 5-B now (3 taps)</div>
+              </div>
+              <div class="banner ok">✓<div>Nakul's excused record links to the sports-meet note, so his attendance percentage isn't damaged.</div></div>
+            </div>
+            <div class="stickybar"><div class="btn sec">Back to Today</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">11:15:00 · lock screen</p>
+          <span class="variant-num">STEP 5 · THE CHAIN</span>
+          <div class="variant-title">The bell, then the roster</div>
+          <p class="step-does"><b>She does:</b> taps the notification. <b>System:</b> opens 6-D pre-filled — setup taps for the second period of the chain: <b>zero again</b>.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>11:15</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen" style="background:#111318">
+            <div class="body" style="padding-top:26px;gap:14px">
+              <div class="tiny" style="color:#8b93a1;text-align:center">Friday 21 August · 11:15</div>
+              <div class="card" style="background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.14);color:#f2f4f7">
+                <div class="between"><span class="tiny" style="color:#9fe3c6;font-weight:700">ROOTED · NOW</span><span class="tiny" style="color:#8b93a1">11:15</span></div>
+                <div style="font-size:16px;font-weight:660;margin-top:6px">Period 5 · 6-D Mathematics</div>
+                <div class="tiny" style="color:#9aa3b0;margin-top:3px">R-6D · 25 students · tap to take the roll</div>
+              </div>
+              <div class="tiny" style="color:#5f6875;text-align:center">— tap —</div>
+              <div class="card" style="background:var(--surface);color:var(--ink);border:0;padding:0;overflow:hidden">
+                <div class="appbar" style="border-radius:0">
+                  <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:16px">P5 · Maths · 6-D</h2><p class="sub">11:15–12:00 · R-6D</p></div></div>
+                </div>
+                <div style="padding:12px 13px;display:flex;flex-direction:column;gap:10px">
+                  <div class="card tight" style="border-radius:12px">
+                    <div class="between"><div class="row" style="gap:6px"><span class="badge ok">25 present</span><span class="badge">0 absent</span></div><span class="tiny muted">25/25</span></div>
+                    <div class="bar thick" style="margin-top:9px"><span class="g" style="width:100%"></span></div>
+                  </div>
+                  <div class="banner ok" style="margin:0">✓<div>Everyone starts present — tap only the exceptions.</div></div>
+                  <div class="list">
+                    <div class="li"><div class="avatar sm g">AB</div><div class="grow"><div class="nm">Aarav Barua</div></div><span class="badge ok">✓</span></div>
+                    <div class="li"><div class="avatar sm g">FP</div><div class="grow"><div class="nm">Falguni Pandey</div></div><span class="badge ok">✓</span></div>
+                    <div class="li"><div class="avatar sm g">MS</div><div class="grow"><div class="nm">Mishka Saikia</div></div><span class="badge ok">✓</span></div>
+                  </div>
+                  <div class="btn" style="height:42px">Submit P5 · 25 students</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">15:05 · end of day</p>
+          <span class="variant-num">STEP 6 · HER WHOLE FRIDAY</span>
+          <div class="variant-title">8 periods, 8 rolls, nothing missed</div>
+          <p class="step-does"><b>System does:</b> closes the day with the honest scoreboard — and the class teacher gets the period-level picture for his own class without asking anyone.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>15:05</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar"><div class="appbar-row"><div class="grow"><h2 style="font-size:17px">Friday, wrapped</h2><p class="sub">Mitali Sinha · 8 periods</p></div><div class="iconbtn">⇩</div></div></div>
+            <div class="body">
+              <div class="stat3">
+                <div class="stat g"><div class="n">8/8</div><div class="l">Rolls taken</div></div>
+                <div class="stat"><div class="n">193</div><div class="l">Students</div></div>
+                <div class="stat a"><div class="n">7</div><div class="l">Exceptions</div></div>
+              </div>
+              <div class="card tight">
+                <div class="card-title">Period by period</div>
+                <div class="stack" style="gap:7px">
+                  <div class="row"><span class="tiny muted" style="width:34px">P1</span><span class="small grow">5-D</span><div class="bar grow" style="max-width:74px"><span class="g" style="width:96%"></span></div><span class="tiny muted">24/25</span></div>
+                  <div class="row"><span class="tiny muted" style="width:34px">P2</span><span class="small grow">5-C</span><div class="bar grow" style="max-width:74px"><span class="g" style="width:100%"></span></div><span class="tiny muted">25/25</span></div>
+                  <div class="row"><span class="tiny muted" style="width:34px">P3</span><span class="small grow">5-B <span class="badge warn">late entry</span></span><div class="bar grow" style="max-width:74px"><span class="g" style="width:96%"></span></div><span class="tiny muted">22/23</span></div>
+                  <div class="row"><span class="tiny muted" style="width:34px">P4</span><span class="small grow">5-A</span><div class="bar grow" style="max-width:74px"><span class="a" style="width:90%"></span></div><span class="tiny muted">19/21</span></div>
+                  <div class="row"><span class="tiny muted" style="width:34px">P5</span><span class="small grow">6-D</span><div class="bar grow" style="max-width:74px"><span class="g" style="width:100%"></span></div><span class="tiny muted">25/25</span></div>
+                  <div class="row"><span class="tiny muted" style="width:34px">P6</span><span class="small grow">6-C</span><div class="bar grow" style="max-width:74px"><span class="g" style="width:96%"></span></div><span class="tiny muted">23/24</span></div>
+                  <div class="row"><span class="tiny muted" style="width:34px">P7</span><span class="small grow">6-B</span><div class="bar grow" style="max-width:74px"><span class="g" style="width:100%"></span></div><span class="tiny muted">24/24</span></div>
+                  <div class="row"><span class="tiny muted" style="width:34px">P8</span><span class="small grow">6-A</span><div class="bar grow" style="max-width:74px"><span class="g" style="width:96%"></span></div><span class="tiny muted">23/24</span></div>
+                </div>
+              </div>
+              <div class="card tight">
+                <div class="between"><span class="small" style="font-weight:650">Dinesh Kurup's digest</span><span class="badge">5-A</span></div>
+                <div class="tiny muted" style="margin-top:6px">"Chetan Shetty absent all day. Nakul Nair excused P4 (match). Heena Malhotra late 08:22, present from P4." — assembled from period records, typed by nobody.</div>
+              </div>
+              <div class="banner ok">✓<div><b>0 setup taps all day.</b> 8 rolls, ~24 taps total — the current build would have cost about 88 just to reach the rosters.</div></div>
+            </div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+    </div>
+    <div class="painbox" style="margin-top:6px"><b>Read the row:</b> this is the one that changes the economics. Because the timetable is already populated (1600 real slots), the app can lead the teacher through her day instead of interrogating her eight times. Its single weakness is substitution — a cover teacher isn't in the timetable, so the manual "pick a class" fallback must stay one tap away.</div>
+  </section>
+
+  <!-- ══════════════════════════ FLOW 6 ══════════════════════════ -->
+  <section class="flowsec" id="f6">
+    <span class="variant-num">FLOW 6 · VARIANT 6 · DESKTOP</span>
+    <h2>The office console — desktop, then the same state on a phone</h2>
+    <p class="lead">The five flows above are the teacher's. This one is <b>Krishna Rathore</b>'s — the admin officer, on the office desktop at 09:05, whose job is not marking one class but making sure <b>all 40</b> get marked. Desktop earns its width here: a 40-section board, keyboard entry, and a chase list no phone can hold. Same records, same audit trail, same components — one breakpoint apart.</p>
+    <div class="flowmeta">
+      <div class="m"><div class="k">Who</div><div class="v">Krishna Rathore<br><b>admin officer</b></div></div>
+      <div class="m"><div class="k">Entry point</div><div class="v">Board, today implied<br><b>0 setup clicks</b></div></div>
+      <div class="m hot"><div class="k">Per section</div><div class="v"><b>4 keystrokes</b><br>+ 1 click to open</div></div>
+      <div class="m"><div class="k">Whole school</div><div class="v">40 sections visible<br><b>in one glance</b></div></div>
+      <div class="m"><div class="k">Bulk power</div><div class="v">Notify 5 teachers<br>in <b>one click</b></div></div>
+      <div class="m"><div class="k">Audit</div><div class="v">"marked by admin on<br>behalf of teacher"</div></div>
+      <div class="m"><div class="k">Fails when</div><div class="v">Used as the teacher's primary tool — they're not at a desk at 08:05</div></div>
+    </div>
+
+    <div class="rail step-chain desk-chain">
+
+      <!-- D1 -->
+      <div class="variant wide2">
+        <div class="variant-head">
+          <p class="step-time">09:05 · office</p>
+          <span class="variant-num">STEP 1 · THE BOARD</span>
+          <div class="variant-title">40 sections, six still missing</div>
+          <p class="step-does"><b>System does:</b> opens on today with no pickers. Amber = not marked yet. <i>On a phone this needs six scrolls; here it is one glance.</i></p>
+        </div>
+        <div class="desk">
+            <div class="desk-chrome"><i></i><i></i><i></i><div class="urlpill">🔒 testschool.rooted.app/academic/attendance</div></div>
+            <div class="desk-app">
+              <aside class="desk-nav">
+                <div class="brand"><span style="width:16px;height:16px;background:var(--accent);border-radius:5px;display:inline-block"></span>RootEd</div>
+                <div class="grp">Academic</div>
+                <div class="item">▦ Dashboard</div>
+                <div class="item on">☑ Attendance<span class="n">6</span></div>
+                <div class="item">◫ Students</div>
+                <div class="item">✎ Marks</div>
+                <div class="item">⌗ Timetable</div>
+                <div class="item">▤ Report cards</div>
+                <div class="grp">Staff</div>
+                <div class="item">◍ Directory</div>
+                <div class="item">⊘ Leave</div>
+                <div class="grp">Fees</div>
+                <div class="item">₹ Collection</div>
+              </aside>
+              <div class="desk-main">
+                <div class="desk-head">
+                  <div class="grow"><h3>Attendance · Friday 21 August 2026</h3><div class="sub">Term 1 · 2026-27 · 962 students on the roll</div></div>
+                  <span class="badge warn">6 pending</span><span class="badge ok">34 marked</span>
+                  <div class="btn sm" style="padding:0 14px;opacity:.4">Save · ⌘S</div>
+                </div>
+                <div class="desk-content">
+                  <div class="board"><div class="cell">1-A</div><div class="cell">1-B</div><div class="cell">1-C</div><div class="cell">1-D</div><div class="cell">2-A</div><div class="cell">2-B</div><div class="cell">2-C</div><div class="cell pend">2-D</div><div class="cell">3-A</div><div class="cell">3-B</div><div class="cell">3-C</div><div class="cell">3-D</div><div class="cell">4-A</div><div class="cell">4-B</div><div class="cell pend">4-C</div><div class="cell">4-D</div><div class="cell">5-A</div><div class="cell">5-B</div><div class="cell">5-C</div><div class="cell">5-D</div><div class="cell">6-A</div><div class="cell">6-B</div><div class="cell pend">6-C</div><div class="cell">6-D</div><div class="cell">7-A</div><div class="cell">7-B</div><div class="cell">7-C</div><div class="cell">7-D</div><div class="cell">8-A</div><div class="cell pend">8-B</div><div class="cell">8-C</div><div class="cell">8-D</div><div class="cell">9-A</div><div class="cell">9-B</div><div class="cell pend">9-C</div><div class="cell">9-D</div><div class="cell">10-A</div><div class="cell">10-B</div><div class="cell pend">10-C</div><div class="cell">10-D</div></div>
+                  <div class="desk-split two">
+                    <div class="desk-col">
+                      <div class="between"><span class="card-title" style="margin:0">Today at 09:05</span><span class="tiny muted">auto-refreshes</span></div>
+                      <div class="stat3">
+                        <div class="stat g"><div class="n">34</div><div class="l">Sections marked</div></div>
+                        <div class="stat a"><div class="n">6</div><div class="l">Pending</div></div>
+                        <div class="stat"><div class="n">823</div><div class="l">Students recorded</div></div>
+                      </div>
+                      <div class="bar thick"><span class="g" style="width:85%"></span></div>
+                      <div class="banner info">ⓘ<div>First bell was 08:00. Six class teachers haven't submitted — <b>two of them are on leave today</b>, so the office marks on their behalf.</div></div>
+                      <div class="card-title" style="margin:6px 0 0">Marked in the last 15 minutes</div>
+                      <table class="dtable">
+                        <thead><tr><th>Section</th><th>Teacher</th><th>Result</th><th>At</th></tr></thead>
+                        <tbody>
+                          <tr><td class="nm2">Grade 5-A</td><td>Dinesh Kurup</td><td><span class="badge ok">19 P</span> <span class="badge bad">1 A</span> <span class="badge warn">1 L</span></td><td class="mono">08:22</td></tr>
+                          <tr><td class="nm2">Grade 7-D</td><td>Kunal Bose</td><td><span class="badge ok">25 P</span></td><td class="mono">08:58</td></tr>
+                          <tr><td class="nm2">Grade 3-A</td><td>Prisha Jha</td><td><span class="badge ok">23 P</span> <span class="badge bad">2 A</span></td><td class="mono">09:01</td></tr>
+                          <tr><td class="nm2">Grade 1-D</td><td>Ekta Naidu</td><td><span class="badge ok">21 P</span> <span class="badge bad">4 A</span></td><td class="mono">09:03</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="desk-col">
+                      <div class="card-title" style="margin:0">Pending · 6</div>
+                      <div class="list plain" style="overflow:auto">
+                        <div class="li" style="padding:8px 6px;min-height:0;background:var(--accent-soft)"><div class="grow"><div class="nm" style="font-size:13px">Grade 8-B</div><div class="tiny muted">Gauri Desai · on leave</div></div><div class="gesture on-el"><div class="ring2"></div><div class="tag">CLICK 1</div></div></div>
+                        <div class="li" style="padding:8px 6px;min-height:0"><div class="grow"><div class="nm" style="font-size:13px">Grade 2-D</div><div class="tiny muted">Nitya Barua · on leave</div></div><span class="tiny muted">›</span></div>
+                        <div class="li" style="padding:8px 6px;min-height:0"><div class="grow"><div class="nm" style="font-size:13px">Grade 4-C</div><div class="tiny muted">Ojas Kamath</div></div><span class="tiny muted">›</span></div>
+                        <div class="li" style="padding:8px 6px;min-height:0"><div class="grow"><div class="nm" style="font-size:13px">Grade 6-C</div><div class="tiny muted">Lipi Ghosh</div></div><span class="tiny muted">›</span></div>
+                        <div class="li" style="padding:8px 6px;min-height:0"><div class="grow"><div class="nm" style="font-size:13px">Grade 9-C</div><div class="tiny muted">Tarun Bhat</div></div><span class="tiny muted">›</span></div>
+                        <div class="li" style="padding:8px 6px;min-height:0"><div class="grow"><div class="nm" style="font-size:13px">Grade 10-C</div><div class="tiny muted">Uma Sarkar</div></div><span class="tiny muted">›</span></div>
+                      </div>
+                      <div class="btn sec sm">Remind the other 4 teachers</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="desk-kbd"><span><kbd>J</kbd><kbd>K</kbd> move</span><span><kbd>↵</kbd> open section</span><span><kbd>/</kbd> search</span><span class="grow"></span><span class="muted">Nothing unsaved</span></div>
+              </div>
+            </div>
+          </div>
+      </div>
+
+      <!-- D2 -->
+      <div class="variant wide2">
+        <div class="variant-head">
+          <p class="step-time">09:06:10</p>
+          <span class="variant-num">STEP 2 · THREE PANES</span>
+          <div class="variant-title">Roster, context and the queue at once</div>
+          <p class="step-does"><b>System does:</b> opens 8-B pre-filled all-present, keeps the queue on the left and puts the section's three at-risk children on the right — <i>the phone can only show one of these at a time</i>.</p>
+        </div>
+        <div class="desk">
+            <div class="desk-chrome"><i></i><i></i><i></i><div class="urlpill">🔒 testschool.rooted.app/academic/attendance</div></div>
+            <div class="desk-app">
+              <aside class="desk-nav">
+                <div class="brand"><span style="width:16px;height:16px;background:var(--accent);border-radius:5px;display:inline-block"></span>RootEd</div>
+                <div class="grp">Academic</div>
+                <div class="item">▦ Dashboard</div>
+                <div class="item on">☑ Attendance<span class="n">6</span></div>
+                <div class="item">◫ Students</div>
+                <div class="item">✎ Marks</div>
+                <div class="item">⌗ Timetable</div>
+                <div class="item">▤ Report cards</div>
+                <div class="grp">Staff</div>
+                <div class="item">◍ Directory</div>
+                <div class="item">⊘ Leave</div>
+                <div class="grp">Fees</div>
+                <div class="item">₹ Collection</div>
+              </aside>
+              <div class="desk-main">
+                <div class="desk-head">
+                  <div class="grow"><h3>Grade 8-B · daily roll</h3><div class="sub">Fri 21 Aug · class teacher Gauri Desai (on leave) · R-8B · 25 students</div></div>
+                  <span class="badge ok">25 present</span>
+                  <div class="btn sm" style="padding:0 14px;opacity:.4">Save · ⌘S</div>
+                </div>
+                <div class="desk-content">
+                  <div class="board"><div class="cell">1-A</div><div class="cell">1-B</div><div class="cell">1-C</div><div class="cell">1-D</div><div class="cell">2-A</div><div class="cell">2-B</div><div class="cell">2-C</div><div class="cell pend">2-D</div><div class="cell">3-A</div><div class="cell">3-B</div><div class="cell">3-C</div><div class="cell">3-D</div><div class="cell">4-A</div><div class="cell">4-B</div><div class="cell pend">4-C</div><div class="cell">4-D</div><div class="cell">5-A</div><div class="cell">5-B</div><div class="cell">5-C</div><div class="cell">5-D</div><div class="cell">6-A</div><div class="cell">6-B</div><div class="cell pend">6-C</div><div class="cell">6-D</div><div class="cell">7-A</div><div class="cell">7-B</div><div class="cell">7-C</div><div class="cell">7-D</div><div class="cell">8-A</div><div class="cell pend sel">8-B</div><div class="cell">8-C</div><div class="cell">8-D</div><div class="cell">9-A</div><div class="cell">9-B</div><div class="cell pend">9-C</div><div class="cell">9-D</div><div class="cell">10-A</div><div class="cell">10-B</div><div class="cell pend">10-C</div><div class="cell">10-D</div></div>
+                  <div class="desk-split">
+                    <div class="desk-col">
+                      <div class="between"><span class="card-title" style="margin:0">Pending · 6</span><span class="chip">Notify all</span></div>
+                      <div class="list plain" style="overflow:auto">
+                        <div class="li" style="padding:8px 6px;min-height:0;background:var(--accent-soft)"><div class="grow"><div class="nm" style="font-size:13px">Grade 8-B</div><div class="tiny muted">open · 25 students</div></div><span class="badge warn">now</span></div>
+                        <div class="li" style="padding:8px 6px;min-height:0"><div class="grow"><div class="nm" style="font-size:13px">Grade 2-D</div><div class="tiny muted">Nitya Barua</div></div><span class="tiny muted">›</span></div>
+                        <div class="li" style="padding:8px 6px;min-height:0"><div class="grow"><div class="nm" style="font-size:13px">Grade 4-C</div><div class="tiny muted">Ojas Kamath</div></div><span class="tiny muted">›</span></div>
+                        <div class="li" style="padding:8px 6px;min-height:0"><div class="grow"><div class="nm" style="font-size:13px">Grade 6-C</div><div class="tiny muted">Lipi Ghosh</div></div><span class="tiny muted">›</span></div>
+                        <div class="li" style="padding:8px 6px;min-height:0"><div class="grow"><div class="nm" style="font-size:13px">Grade 9-C</div><div class="tiny muted">Tarun Bhat</div></div><span class="tiny muted">›</span></div>
+                        <div class="li" style="padding:8px 6px;min-height:0"><div class="grow"><div class="nm" style="font-size:13px">Grade 10-C</div><div class="tiny muted">Uma Sarkar</div></div><span class="tiny muted">›</span></div>
+                      </div>
+                      <div class="banner warn" style="font-size:11.5px">!<div>Marking for a teacher on leave is logged as <b>on behalf of</b>, not as her entry.</div></div>
+                    </div>
+                    <div class="desk-col pad0">
+                      <div style="padding:11px 12px 8px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)">
+                        <div class="grow"><div style="font-weight:650">Everyone starts present</div><div class="tiny muted">Change only the exceptions · <kbd>↓</kbd> then <kbd>A</kbd>/<kbd>L</kbd>/<kbd>E</kbd></div></div>
+                        <span class="badge ok">25 present</span>
+                      </div>
+                      <div style="overflow:auto;padding:0 4px 4px"><table class="dtable">
+                        <thead><tr><th style="width:26px"></th><th>Student</th><th style="width:74px">Admission</th><th style="width:52px">Att.</th><th style="width:126px">Status</th></tr></thead>
+                        <tbody><tr class="sel"><td class="mono">1</td><td class="nm2">Reyansh Ahuja</td><td class="mono">…/0730</td><td><span class="badge bad">65%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">2</td><td class="nm2">Myra Chatterjee</td><td class="mono">…/0750</td><td><span class="muted">95%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">3</td><td class="nm2">Kamna Choudhury</td><td class="mono">…/0747</td><td><span class="muted">100%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">4</td><td class="nm2">Yash D'Souza</td><td class="mono">…/0741</td><td><span class="muted">100%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">5</td><td class="nm2">Kashvi Desai</td><td class="mono">…/0729</td><td><span class="muted">100%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">6</td><td class="nm2">Yashika Deshpande</td><td class="mono">…/0733</td><td><span class="muted">90%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">7</td><td class="nm2">Arjun Gupta</td><td class="mono">…/0732</td><td><span class="muted">100%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">8</td><td class="nm2">Falguni Hegde</td><td class="mono">…/0728</td><td><span class="badge bad">50%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">9</td><td class="nm2">Inaya Malhotra</td><td class="mono">…/0743</td><td><span class="muted">100%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">10</td><td class="nm2">Deepak Mehta</td><td class="mono">…/0727</td><td><span class="muted">100%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr></tbody>
+                      </table></div>
+                    </div>
+                    <div class="desk-col">
+                      <div class="card-title" style="margin:0">Section context</div>
+                      <div class="kv"><span class="k">Section average</span><span class="v">92%</span></div>
+                      <div class="kv"><span class="k">Below 75%</span><span class="v" style="color:var(--absent)">3 of 25</span></div>
+                      <div class="kv"><span class="k">Yesterday</span><span class="v">24 P · 1 A</span></div>
+                      <div style="height:1px;background:var(--line)"></div>
+                      <div class="card-title" style="margin:0">Watch list</div>
+                      <div class="stack" style="gap:6px">
+                        <div class="row"><div class="avatar sm r">FH</div><div class="grow"><span class="small">Falguni Hegde</span><div class="tiny muted">10 of 20 days</div></div><span class="badge bad">50%</span></div>
+                        <div class="row"><div class="avatar sm r">RA</div><div class="grow"><span class="small">Reyansh Ahuja</span><div class="tiny muted">13 of 20 days</div></div><span class="badge bad">65%</span></div>
+                        <div class="row"><div class="avatar sm a">BS</div><div class="grow"><span class="small">Bhavna Siddiqui</span><div class="tiny muted">14 of 20 days</div></div><span class="badge warn">70%</span></div>
+                      </div>
+                      <div class="banner warn" style="font-size:11.5px">!<div>Worst section in Grade 8 — flagged for the principal's Monday review.</div></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="desk-kbd"><span><kbd>P</kbd><kbd>A</kbd><kbd>L</kbd><kbd>E</kbd> set status</span><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>⌘S</kbd> save</span><span class="grow"></span><span class="muted">Nothing unsaved</span></div>
+              </div>
+            </div>
+          </div>
+      </div>
+
+      <!-- D3 -->
+      <div class="variant wide2">
+        <div class="variant-head">
+          <p class="step-time">09:07:02</p>
+          <span class="variant-num">STEP 3 · KEYBOARD ONLY</span>
+          <div class="variant-title">Ten downs and an L</div>
+          <p class="step-does"><b>She does:</b> holds <kbd>↓</kbd> to row 11, presses <kbd>L</kbd>. <b>System:</b> Jayant is late, one change pending. <i>No mouse, no scrolling, no dropdown.</i></p>
+        </div>
+        <div class="desk">
+            <div class="desk-chrome"><i></i><i></i><i></i><div class="urlpill">🔒 testschool.rooted.app/academic/attendance</div></div>
+            <div class="desk-app">
+              <aside class="desk-nav">
+                <div class="brand"><span style="width:16px;height:16px;background:var(--accent);border-radius:5px;display:inline-block"></span>RootEd</div>
+                <div class="grp">Academic</div>
+                <div class="item">▦ Dashboard</div>
+                <div class="item on">☑ Attendance<span class="n">6</span></div>
+                <div class="item">◫ Students</div>
+                <div class="item">✎ Marks</div>
+                <div class="item">⌗ Timetable</div>
+                <div class="item">▤ Report cards</div>
+                <div class="grp">Staff</div>
+                <div class="item">◍ Directory</div>
+                <div class="item">⊘ Leave</div>
+                <div class="grp">Fees</div>
+                <div class="item">₹ Collection</div>
+              </aside>
+              <div class="desk-main">
+                <div class="desk-head">
+                  <div class="grow"><h3>Grade 8-B · daily roll</h3><div class="sub">Row 11 of 25 selected · keyboard entry</div></div>
+                  <span class="badge ok">24 present</span><span class="badge warn">1 late</span>
+                  <div class="btn sm" style="padding:0 14px">Save · ⌘S</div>
+                </div>
+                <div class="desk-content">
+                  <div class="board"><div class="cell">1-A</div><div class="cell">1-B</div><div class="cell">1-C</div><div class="cell">1-D</div><div class="cell">2-A</div><div class="cell">2-B</div><div class="cell">2-C</div><div class="cell pend">2-D</div><div class="cell">3-A</div><div class="cell">3-B</div><div class="cell">3-C</div><div class="cell">3-D</div><div class="cell">4-A</div><div class="cell">4-B</div><div class="cell pend">4-C</div><div class="cell">4-D</div><div class="cell">5-A</div><div class="cell">5-B</div><div class="cell">5-C</div><div class="cell">5-D</div><div class="cell">6-A</div><div class="cell">6-B</div><div class="cell pend">6-C</div><div class="cell">6-D</div><div class="cell">7-A</div><div class="cell">7-B</div><div class="cell">7-C</div><div class="cell">7-D</div><div class="cell">8-A</div><div class="cell pend sel">8-B</div><div class="cell">8-C</div><div class="cell">8-D</div><div class="cell">9-A</div><div class="cell">9-B</div><div class="cell pend">9-C</div><div class="cell">9-D</div><div class="cell">10-A</div><div class="cell">10-B</div><div class="cell pend">10-C</div><div class="cell">10-D</div></div>
+                  <div class="desk-split">
+                    <div class="desk-col">
+                      <div class="card-title" style="margin:0">Keyboard map</div>
+                      <div class="stack" style="gap:7px">
+                        <div class="between"><span class="small"><kbd>P</kbd> present</span><span class="tiny muted">default</span></div>
+                        <div class="between"><span class="small"><kbd>A</kbd> absent</span><span class="tiny muted">1 keystroke</span></div>
+                        <div class="between"><span class="small"><kbd>L</kbd> late</span><span class="badge warn">just used</span></div>
+                        <div class="between"><span class="small"><kbd>E</kbd> excused</span><span class="tiny muted">asks for a reason</span></div>
+                        <div class="between"><span class="small"><kbd>⇧</kbd><kbd>A</kbd> all absent</span><span class="tiny muted">exam days</span></div>
+                        <div class="between"><span class="small"><kbd>⌘Z</kbd> undo</span><span class="tiny muted">unlimited</span></div>
+                        <div class="between"><span class="small"><kbd>⌘S</kbd> save</span><span class="tiny muted">then jumps to next</span></div>
+                      </div>
+                      <div class="banner ok" style="font-size:11.5px">✓<div>A full class of 25 costs <b>4 keystrokes</b> when one child is late: <kbd>↓</kbd>×10, <kbd>L</kbd>, <kbd>⌘S</kbd>.</div></div>
+                    </div>
+                    <div class="desk-col pad0">
+                      <div style="padding:11px 12px 8px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)">
+                        <div class="grow"><div style="font-weight:650">Grade 8-B</div><div class="tiny muted">Jayant Prasad selected · press <kbd>P</kbd> <kbd>A</kbd> <kbd>L</kbd> <kbd>E</kbd></div></div>
+                        <span class="badge warn">1 change</span>
+                      </div>
+                      <div style="overflow:auto;padding:0 4px 4px"><table class="dtable">
+                        <thead><tr><th style="width:26px"></th><th>Student</th><th style="width:74px">Admission</th><th style="width:52px">Att.</th><th style="width:126px">Status</th></tr></thead>
+                        <tbody><tr><td class="mono">1</td><td class="nm2">Reyansh Ahuja</td><td class="mono">…/0730</td><td><span class="badge bad">65%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">2</td><td class="nm2">Myra Chatterjee</td><td class="mono">…/0750</td><td><span class="muted">95%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">3</td><td class="nm2">Kamna Choudhury</td><td class="mono">…/0747</td><td><span class="muted">100%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">4</td><td class="nm2">Yash D'Souza</td><td class="mono">…/0741</td><td><span class="muted">100%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">5</td><td class="nm2">Kashvi Desai</td><td class="mono">…/0729</td><td><span class="muted">100%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">6</td><td class="nm2">Yashika Deshpande</td><td class="mono">…/0733</td><td><span class="muted">90%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">7</td><td class="nm2">Arjun Gupta</td><td class="mono">…/0732</td><td><span class="muted">100%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">8</td><td class="nm2">Falguni Hegde</td><td class="mono">…/0728</td><td><span class="badge bad">50%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">9</td><td class="nm2">Inaya Malhotra</td><td class="mono">…/0743</td><td><span class="muted">100%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr><td class="mono">10</td><td class="nm2">Deepak Mehta</td><td class="mono">…/0727</td><td><span class="muted">100%</span></td><td><div class="statecell"><span class="on p">P</span><span>A</span><span>L</span><span>E</span></div></td></tr><tr class="sel"><td class="mono">11</td><td class="nm2">Jayant Prasad</td><td class="mono">…/0749</td><td class="muted">100%</td><td><div class="statecell"><span>P</span><span>A</span><span class="on l">L</span><span>E</span></div></td></tr></tbody>
+                      </table></div>
+                    </div>
+                    <div class="desk-col">
+                      <div class="card-title" style="margin:0">Jayant Prasad</div>
+                      <div class="row"><div class="avatar a">JP</div><div class="grow"><div class="tiny muted">GPS/2026/0749 · Roll 11</div><div class="tiny muted">Guardian: Tanvi Prasad</div></div></div>
+                      <div class="kv"><span class="k">Attendance</span><span class="v">100% (20/20)</span></div>
+                      <div class="kv"><span class="k">Late arrivals</span><span class="v">1 this month</span></div>
+                      <div class="kv"><span class="k">Arrival time</span><span class="v">08:41</span></div>
+                      <div class="row" style="gap:6px"><div class="btn sec sm grow">☎ Call</div><div class="btn sec sm grow">Note</div></div>
+                      <div class="banner info" style="font-size:11.5px">ⓘ<div>A first late in a month raises nothing. The third in a fortnight opens a guardian task automatically.</div></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="desk-kbd"><span><kbd>P</kbd><kbd>A</kbd><kbd>L</kbd><kbd>E</kbd> set status</span><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>⌘S</kbd> save</span><span class="grow"></span><span style="color:var(--late);font-weight:650">1 unsaved change</span></div>
+              </div>
+            </div>
+          </div>
+      </div>
+
+      <!-- D4 -->
+      <div class="variant wide2">
+        <div class="variant-head">
+          <p class="step-time">09:07:09</p>
+          <span class="variant-num">STEP 4 · SAVE, THEN NEXT</span>
+          <div class="variant-title">⌘S writes 25 records and moves on</div>
+          <p class="step-does"><b>She does:</b> <kbd>⌘S</kbd>. <b>System:</b> board turns green, audit line records "on behalf of Gauri Desai", and focus jumps to the next pending section — <i>2-D opens without a click</i>.</p>
+        </div>
+        <div class="desk">
+            <div class="desk-chrome"><i></i><i></i><i></i><div class="urlpill">🔒 testschool.rooted.app/academic/attendance</div></div>
+            <div class="desk-app">
+              <aside class="desk-nav">
+                <div class="brand"><span style="width:16px;height:16px;background:var(--accent);border-radius:5px;display:inline-block"></span>RootEd</div>
+                <div class="grp">Academic</div>
+                <div class="item">▦ Dashboard</div>
+                <div class="item on">☑ Attendance<span class="n">5</span></div>
+                <div class="item">◫ Students</div>
+                <div class="item">✎ Marks</div>
+                <div class="item">⌗ Timetable</div>
+                <div class="item">▤ Report cards</div>
+                <div class="grp">Staff</div>
+                <div class="item">◍ Directory</div>
+                <div class="item">⊘ Leave</div>
+                <div class="grp">Fees</div>
+                <div class="item">₹ Collection</div>
+              </aside>
+              <div class="desk-main">
+                <div class="desk-head">
+                  <div class="grow"><h3>Attendance · Friday 21 August 2026</h3><div class="sub">Grade 8-B saved · 35 of 40 sections marked</div></div>
+                  <span class="badge warn">5 pending</span><span class="badge ok">35 marked</span>
+                  <div class="btn sm" style="padding:0 14px;opacity:.4">Saved</div>
+                </div>
+                <div class="desk-content">
+                  <div class="board"><div class="cell">1-A</div><div class="cell">1-B</div><div class="cell">1-C</div><div class="cell">1-D</div><div class="cell">2-A</div><div class="cell">2-B</div><div class="cell">2-C</div><div class="cell pend">2-D</div><div class="cell">3-A</div><div class="cell">3-B</div><div class="cell">3-C</div><div class="cell">3-D</div><div class="cell">4-A</div><div class="cell">4-B</div><div class="cell pend">4-C</div><div class="cell">4-D</div><div class="cell">5-A</div><div class="cell">5-B</div><div class="cell">5-C</div><div class="cell">5-D</div><div class="cell">6-A</div><div class="cell">6-B</div><div class="cell pend">6-C</div><div class="cell">6-D</div><div class="cell">7-A</div><div class="cell">7-B</div><div class="cell">7-C</div><div class="cell">7-D</div><div class="cell">8-A</div><div class="cell sel">8-B</div><div class="cell">8-C</div><div class="cell">8-D</div><div class="cell">9-A</div><div class="cell">9-B</div><div class="cell pend">9-C</div><div class="cell">9-D</div><div class="cell">10-A</div><div class="cell">10-B</div><div class="cell pend">10-C</div><div class="cell">10-D</div></div>
+                  <div class="desk-split two">
+                    <div class="desk-col">
+                      <div class="banner ok">✓<div><b>Grade 8-B saved</b> · 24 present, 1 late · 25 records written at 09:07.</div></div>
+                      <div class="card-title" style="margin:6px 0 0">Audit trail</div>
+                      <table class="dtable">
+                        <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Note</th></tr></thead>
+                        <tbody>
+                          <tr><td class="mono">09:07</td><td class="nm2">Krishna Rathore</td><td>attendance.save</td><td class="muted">Grade 8-B · on behalf of Gauri Desai (on leave)</td></tr>
+                          <tr><td class="mono">08:22</td><td class="nm2">Dinesh Kurup</td><td>attendance.save</td><td class="muted">Grade 5-A · own class</td></tr>
+                          <tr><td class="mono">09:03</td><td class="nm2">Ekta Naidu</td><td>attendance.save</td><td class="muted">Grade 1-D · own class</td></tr>
+                        </tbody>
+                      </table>
+                      <div class="banner info" style="font-size:11.5px">ⓘ<div>Every write goes through the same audit worker as the mobile app — one record of truth, whoever typed it.</div></div>
+                    </div>
+                    <div class="desk-col">
+                      <div class="card-title" style="margin:0">Up next · Grade 2-D</div>
+                      <div class="kv"><span class="k">Class teacher</span><span class="v">Nitya Barua</span></div>
+                      <div class="kv"><span class="k">Status</span><span class="v" style="color:var(--late)">On leave today</span></div>
+                      <div class="kv"><span class="k">Students</span><span class="v">25</span></div>
+                      <div class="kv"><span class="k">Yesterday</span><span class="v">23 P · 2 A</span></div>
+                      <div class="btn sm">Open 2-D · ↵</div>
+                      <div style="height:1px;background:var(--line)"></div>
+                      <div class="card-title" style="margin:0">Pace</div>
+                      <div class="between"><span class="small muted">Sections done</span><span class="small" style="font-weight:650">35 / 40</span></div>
+                      <div class="bar thick"><span class="g" style="width:88%"></span></div>
+                      <div class="tiny muted">At 4 keystrokes each, the last five take about 90 seconds.</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="desk-kbd"><span><kbd>↵</kbd> open next</span><span><kbd>J</kbd><kbd>K</kbd> move</span><span class="grow"></span><span class="muted">All changes saved · 09:07</span></div>
+              </div>
+            </div>
+          </div>
+      </div>
+
+      <!-- D5 -->
+      <div class="variant wide2">
+        <div class="variant-head">
+          <p class="step-time">09:10:30</p>
+          <span class="variant-num">STEP 5 · THE CHASE</span>
+          <div class="variant-title">One click, three teachers nudged</div>
+          <p class="step-does"><b>She does:</b> selects the three sections whose teachers are <i>present</i> and clicks Remind — they should mark their own class. <b>System:</b> in-app + SMS, and it tracks who responded.</p>
+        </div>
+        <div class="desk">
+            <div class="desk-chrome"><i></i><i></i><i></i><div class="urlpill">🔒 testschool.rooted.app/academic/attendance</div></div>
+            <div class="desk-app">
+              <aside class="desk-nav">
+                <div class="brand"><span style="width:16px;height:16px;background:var(--accent);border-radius:5px;display:inline-block"></span>RootEd</div>
+                <div class="grp">Academic</div>
+                <div class="item">▦ Dashboard</div>
+                <div class="item on">☑ Attendance<span class="n">3</span></div>
+                <div class="item">◫ Students</div>
+                <div class="item">✎ Marks</div>
+                <div class="item">⌗ Timetable</div>
+                <div class="item">▤ Report cards</div>
+                <div class="grp">Staff</div>
+                <div class="item">◍ Directory</div>
+                <div class="item">⊘ Leave</div>
+                <div class="grp">Fees</div>
+                <div class="item">₹ Collection</div>
+              </aside>
+              <div class="desk-main">
+                <div class="desk-head">
+                  <div class="grow"><h3>Chase · unmarked sections</h3><div class="sub">09:10 · 3 teachers on site, 2 on leave (office marks those)</div></div>
+                  <span class="badge warn">3 pending</span><span class="badge ok">37 marked</span>
+                  <div class="btn sm" style="padding:0 14px">Remind selected</div>
+                </div>
+                <div class="desk-content">
+                  <div class="desk-split two">
+                    <div class="desk-col pad0">
+                      <div style="padding:11px 12px 8px;border-bottom:1px solid var(--line)"><div style="font-weight:650">Not marked · 3 sections · 71 students</div><div class="tiny muted">Selected rows get an in-app nudge and an SMS. Escalates to the vice principal at 10:00.</div></div>
+                      <div style="overflow:auto;padding:0 4px 4px"><table class="dtable">
+                        <thead><tr><th style="width:26px"></th><th>Section</th><th>Class teacher</th><th style="width:88px">On site</th><th style="width:96px">Last marked</th><th style="width:120px">Action</th></tr></thead>
+                        <tbody>
+                          <tr class="sel"><td>☑</td><td class="nm2">Grade 4-C</td><td>Ojas Kamath</td><td><span class="badge ok">yes</span></td><td class="mono">yesterday</td><td><span class="chip">Remind</span></td></tr>
+                          <tr class="sel"><td>☑</td><td class="nm2">Grade 6-C</td><td>Lipi Ghosh</td><td><span class="badge ok">yes</span></td><td class="mono">yesterday</td><td><span class="chip">Remind</span></td></tr>
+                          <tr class="sel"><td>☑</td><td class="nm2">Grade 9-C</td><td>Tarun Bhat</td><td><span class="badge ok">yes</span></td><td class="mono">yesterday</td><td><span class="chip">Remind</span></td></tr>
+                          <tr class="warn"><td>—</td><td class="nm2">Grade 2-D</td><td>Nitya Barua</td><td><span class="badge bad">on leave</span></td><td class="mono">Wed</td><td><span class="chip soft">Mark for her</span></td></tr>
+                          <tr class="warn"><td>—</td><td class="nm2">Grade 10-C</td><td>Uma Sarkar</td><td><span class="badge bad">on leave</span></td><td class="mono">Wed</td><td><span class="chip soft">Mark for her</span></td></tr>
+                        </tbody>
+                      </table></div>
+                      <div style="padding:10px 12px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center">
+                        <span class="tiny muted grow">3 selected · nudge goes out immediately</span>
+                        <div class="btn sm" style="padding:0 16px">Remind 3 teachers</div>
+                      </div>
+                    </div>
+                    <div class="desk-col">
+                      <div class="card-title" style="margin:0">Nudge template</div>
+                      <div class="card flat" style="background:var(--surface-2);border:0;padding:10px 12px">
+                        <div class="tiny" style="line-height:1.55">"Attendance for <b>Grade 4-C</b> hasn't been submitted today. Open RootEd → Today → Take the roll. It takes about 30 seconds. — Office"</div>
+                      </div>
+                      <div class="kv"><span class="k">Channels</span><span class="v">In-app + SMS</span></div>
+                      <div class="kv"><span class="k">Escalates at</span><span class="v">10:00 → V. Principal</span></div>
+                      <div style="height:1px;background:var(--line)"></div>
+                      <div class="card-title" style="margin:0">This week's pattern</div>
+                      <div class="stack" style="gap:6px">
+                        <div class="row"><span class="small grow">Grade 9-C · Tarun Bhat</span><span class="badge bad">4 late days</span></div>
+                        <div class="row"><span class="small grow">Grade 6-C · Lipi Ghosh</span><span class="badge warn">2 late days</span></div>
+                        <div class="row"><span class="small grow">Grade 4-C · Ojas Kamath</span><span class="badge">1 late day</span></div>
+                      </div>
+                      <div class="banner warn" style="font-size:11.5px">!<div>Grade 9-C is late four days out of five — a process problem, not a reminder problem.</div></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="desk-kbd"><span><kbd>space</kbd> select</span><span><kbd>⇧↓</kbd> range</span><span><kbd>R</kbd> remind</span><span class="grow"></span><span class="muted">3 selected</span></div>
+              </div>
+            </div>
+          </div>
+      </div>
+
+      <!-- D6 -->
+      <div class="variant wide2">
+        <div class="variant-head">
+          <p class="step-time">15:05 · end of day</p>
+          <span class="variant-num">STEP 6 · SAME STATE, BOTH WIDTHS</span>
+          <div class="variant-title">40 of 40 — and the phone shows it too</div>
+          <p class="step-does"><b>System does:</b> closes the day with the real numbers from the database — <b>871 present · 51 absent · 27 late · 13 excused</b> — and the phone renders the identical summary from the same components. One product, one breakpoint.</p>
+        </div>
+        <div class="pair">
+          <div>
+            <span class="pairlbl">Desktop · 1240 px</span>
+            <div class="desk">
+            <div class="desk-chrome"><i></i><i></i><i></i><div class="urlpill">🔒 testschool.rooted.app/academic/attendance</div></div>
+            <div class="desk-app">
+              <aside class="desk-nav">
+                <div class="brand"><span style="width:16px;height:16px;background:var(--accent);border-radius:5px;display:inline-block"></span>RootEd</div>
+                <div class="grp">Academic</div>
+                <div class="item">▦ Dashboard</div>
+                <div class="item on">☑ Attendance</div>
+                <div class="item">◫ Students</div>
+                <div class="item">✎ Marks</div>
+                <div class="item">⌗ Timetable</div>
+                <div class="item">▤ Report cards</div>
+                <div class="grp">Staff</div>
+                <div class="item">◍ Directory</div>
+                <div class="item">⊘ Leave</div>
+                <div class="grp">Fees</div>
+                <div class="item">₹ Collection</div>
+              </aside>
+              <div class="desk-main">
+                <div class="desk-head">
+                  <div class="grow"><h3>Attendance · day complete</h3><div class="sub">Friday 21 August 2026 · 40 of 40 sections · 962 students</div></div>
+                  <span class="badge ok">100% submitted</span>
+                  <div class="btn sm" style="padding:0 14px">Export · ⌘E</div>
+                </div>
+                <div class="desk-content">
+                  <div class="board"><div class="cell">1-A</div><div class="cell">1-B</div><div class="cell">1-C</div><div class="cell">1-D</div><div class="cell">2-A</div><div class="cell">2-B</div><div class="cell">2-C</div><div class="cell">2-D</div><div class="cell">3-A</div><div class="cell">3-B</div><div class="cell">3-C</div><div class="cell">3-D</div><div class="cell">4-A</div><div class="cell">4-B</div><div class="cell">4-C</div><div class="cell">4-D</div><div class="cell">5-A</div><div class="cell">5-B</div><div class="cell">5-C</div><div class="cell">5-D</div><div class="cell">6-A</div><div class="cell">6-B</div><div class="cell">6-C</div><div class="cell">6-D</div><div class="cell">7-A</div><div class="cell">7-B</div><div class="cell">7-C</div><div class="cell">7-D</div><div class="cell">8-A</div><div class="cell">8-B</div><div class="cell">8-C</div><div class="cell">8-D</div><div class="cell">9-A</div><div class="cell">9-B</div><div class="cell">9-C</div><div class="cell">9-D</div><div class="cell">10-A</div><div class="cell">10-B</div><div class="cell">10-C</div><div class="cell">10-D</div></div>
+                  <div class="desk-split two">
+                    <div class="desk-col">
+                      <div class="between"><span class="card-title" style="margin:0">School-wide today</span><span class="badge ok">90.5% present</span></div>
+                      <div class="row" style="gap:16px">
+                        <div class="ring" style="--p:90.5%"><div><div style="font-size:19px;font-weight:700">90.5%</div><div class="tiny muted">present</div></div></div>
+                        <div class="grow stack" style="gap:5px">
+                          <div class="between"><span class="small muted">Present</span><span class="small" style="font-weight:650">871</span></div>
+                          <div class="between"><span class="small muted">Absent</span><span class="small" style="font-weight:650;color:var(--absent)">51</span></div>
+                          <div class="between"><span class="small muted">Late</span><span class="small" style="font-weight:650;color:var(--late)">27</span></div>
+                          <div class="between"><span class="small muted">Excused</span><span class="small" style="font-weight:650;color:var(--excused)">13</span></div>
+                          <div class="between"><span class="small muted">Records written</span><span class="small" style="font-weight:650">962</span></div>
+                        </div>
+                      </div>
+                      <div style="height:1px;background:var(--line)"></div>
+                      <div class="card-title" style="margin:0">Who marked what</div>
+                      <table class="dtable">
+                        <thead><tr><th>Source</th><th>Sections</th><th>Share</th></tr></thead>
+                        <tbody>
+                          <tr><td class="nm2">Class teacher, on their phone</td><td>33</td><td><div class="bar" style="width:110px"><span class="g" style="width:83%"></span></div></td></tr>
+                          <tr><td class="nm2">Subject teacher, per period</td><td>5</td><td><div class="bar" style="width:110px"><span class="g" style="width:13%"></span></div></td></tr>
+                          <tr><td class="nm2">Office console, on behalf</td><td>2</td><td><div class="bar" style="width:110px"><span class="a" style="width:5%"></span></div></td></tr>
+                        </tbody>
+                      </table>
+                      <div class="banner ok" style="font-size:11.5px">✓<div>Nothing was entered twice, and the two on-behalf entries are labelled as such on the record.</div></div>
+                    </div>
+                    <div class="desk-col">
+                      <div class="card-title" style="margin:0">Needs a call · below 75%</div>
+                      <div class="list plain" style="overflow:auto">
+                        <div class="li" style="padding:7px 6px;min-height:0"><div class="avatar sm r">MC</div><div class="grow"><div class="nm" style="font-size:12.5px">Manoj Chettiar</div><div class="tiny muted">10-C · 50%</div></div><span class="chip">Call</span></div>
+                        <div class="li" style="padding:7px 6px;min-height:0"><div class="avatar sm r">FH</div><div class="grow"><div class="nm" style="font-size:12.5px">Falguni Hegde</div><div class="tiny muted">8-B · 50%</div></div><span class="chip">Call</span></div>
+                        <div class="li" style="padding:7px 6px;min-height:0"><div class="avatar sm r">GS</div><div class="grow"><div class="nm" style="font-size:12.5px">Ganga Shekhawat</div><div class="tiny muted">8-C · 55%</div></div><span class="chip">Call</span></div>
+                        <div class="li" style="padding:7px 6px;min-height:0"><div class="avatar sm r">KC</div><div class="grow"><div class="nm" style="font-size:12.5px">Kritika Chatterjee</div><div class="tiny muted">10-D · 55%</div></div><span class="chip">Call</span></div>
+                        <div class="li" style="padding:7px 6px;min-height:0"><div class="avatar sm r">CS</div><div class="grow"><div class="nm" style="font-size:12.5px">Chetan Shetty</div><div class="tiny muted">5-A · 75% · 2nd day</div></div><span class="chip soft">Sent</span></div>
+                      </div>
+                      <div class="between"><span class="tiny muted">31 students below threshold</span><span class="chip">Open queue</span></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="desk-kbd"><span><kbd>⌘E</kbd> export</span><span><kbd>⌘P</kbd> print</span><span class="grow"></span><span class="muted">Day closed · 40/40</span></div>
+              </div>
+            </div>
+          </div>
+          </div>
+          <div>
+            <span class="pairlbl">Same summary · 390 px</span>
+            <div class="phone">
+              <div class="statusbar"><span>15:05</span><span class="dots">●●● ⏶ ▮</span></div>
+              <div class="screen">
+                <div class="appbar"><div class="appbar-row"><div class="grow"><h2 style="font-size:17px">Attendance today</h2><p class="sub">Fri 21 Aug · 40 of 40 sections</p></div><div class="iconbtn">⇩</div></div></div>
+                <div class="body">
+                  <div class="card" style="text-align:center;padding:16px">
+                    <div class="ring" style="--p:90.5%;margin:0 auto"><div><div style="font-size:20px;font-weight:700">90.5%</div><div class="tiny muted">present</div></div></div>
+                    <div class="stat3" style="margin-top:14px">
+                      <div class="stat g"><div class="n">871</div><div class="l">Present</div></div>
+                      <div class="stat r"><div class="n">51</div><div class="l">Absent</div></div>
+                      <div class="stat a"><div class="n">27</div><div class="l">Late</div></div>
+                    </div>
+                  </div>
+                  <div class="banner ok">✓<div><b>All 40 sections submitted.</b> 2 marked by the office on behalf of teachers on leave.</div></div>
+                  <p class="sectionlabel">Needs a call · below 75%</p>
+                  <div class="list">
+                    <div class="li"><div class="avatar r">MC</div><div class="grow"><div class="nm">Manoj Chettiar</div><div class="meta">10-C · 50%</div></div><span class="badge bad">Call</span></div>
+                    <div class="li"><div class="avatar r">FH</div><div class="grow"><div class="nm">Falguni Hegde</div><div class="meta">8-B · 50%</div></div><span class="badge bad">Call</span></div>
+                    <div class="li"><div class="avatar r">GS</div><div class="grow"><div class="nm">Ganga Shekhawat</div><div class="meta">8-C · 55%</div></div><span class="badge bad">Call</span></div>
+                    <div class="li"><div class="avatar a">CS</div><div class="grow"><div class="nm">Chetan Shetty</div><div class="meta">5-A · 75% · note sent</div></div><span class="badge ok">✓</span></div>
+                  </div>
+                  <div class="card tight"><div class="between"><span class="small muted">31 students below threshold</span><span class="chip soft">Open queue</span></div></div>
+                </div>
+                <div class="stickybar"><div class="btn sec">Share day summary</div></div>
+              </div>
+              <div class="homebar"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="painbox" style="margin-top:6px"><b>Read the row:</b> desktop is not "the same screen, bigger" — it is a different job. The teacher's job is one class; the office's job is 40, and that job is genuinely easier with a keyboard, three panes and a board. What matters is that both write the <b>same records through the same API</b>, with the on-behalf case labelled, so nobody has to reconcile two systems later.</div>
+  </section>
+
+  <!-- ══════════════════════════ FLOW 7 ══════════════════════════ -->
+  <section class="flowsec" id="f7">
+    <span class="variant-num">FLOW 7 · VARIANT 7 · THE BASELINE</span>
+    <h2>Simple list — Present / Absent, and nothing to learn</h2>
+    <p class="lead">The boring one, played out honestly. Pick the class, tap a button on every row, save. <b>21 taps instead of 4</b> — and in exchange: no defaults to trust, no gesture to teach, no hidden long-press, and every child explicitly marked by a human. Five screens, because that is all it needs.</p>
+    <div class="flowmeta">
+      <div class="m"><div class="k">Who</div><div class="v">Dinesh Kurup<br><b>class teacher</b></div></div>
+      <div class="m"><div class="k">Entry point</div><div class="v">Class list<br><b>2 taps in</b></div></div>
+      <div class="m hot"><div class="k">Taps to finish</div><div class="v"><b>22 taps</b><br>one per child + save</div></div>
+      <div class="m"><div class="k">Wall clock</div><div class="v"><b>55 seconds</b><br>2.5 s per child</div></div>
+      <div class="m"><div class="k">Learning curve</div><div class="v"><b>none</b><br>it is the paper register</div></div>
+      <div class="m"><div class="k">Mistake recovery</div><div class="v">Tap the other button<br><b>zero-cost</b></div></div>
+      <div class="m"><div class="k">Fails when</div><div class="v">Sections above ~40, or a teacher who stops halfway — hence the save guard</div></div>
+    </div>
+
+    <div class="rail step-chain">
+
+      <!-- S1 -->
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:04:12</p>
+          <span class="variant-num">STEP 1 · PICK THE CLASS</span>
+          <div class="variant-title">Your classes, largest first</div>
+          <p class="step-does"><b>He does:</b> taps Grade 5-A. <b>System:</b> lists only the classes he actually teaches, with today's status beside each. <i>No date field, no 40-option dropdown.</i></p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:04</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Attendance</h2><p class="sub">Friday 21 August 2026</p></div></div></div>
+            <div class="body">
+              <p class="sectionlabel">Your classes</p>
+              <div class="list">
+                <div class="li" style="padding:12px">
+                  <div class="grow"><div class="nm">Grade 5-A</div><div class="tiny muted">Class teacher · 21 students</div></div>
+                  <span class="badge warn">Not marked</span><div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 1</div></div>
+                </div>
+                <div class="li" style="padding:12px"><div class="grow"><div class="nm">Grade 8-B · Science</div><div class="tiny muted">Period 5 · 25 students</div></div><span class="tiny muted">11:15</span></div>
+                <div class="li" style="padding:12px"><div class="grow"><div class="nm">Grade 6-A · Science</div><div class="tiny muted">Period 7 · 24 students</div></div><span class="tiny muted">13:30</span></div>
+              </div>
+              <div class="card tight"><div class="between"><span class="small muted">Another class?</span><span class="chip">Browse all 40</span></div></div>
+              <div class="banner info">ⓘ<div>Yesterday's roll for 5-A: <b>18 present · 2 absent · 1 late</b>.</div></div>
+            </div>
+            <div class="tabbar"><div><span class="ic">◧</span>Today</div><div class="on"><span class="ic">☑</span>Attendance</div><div><span class="ic">✎</span>Marks</div><div><span class="ic">⌗</span>Classes</div><div><span class="ic">☰</span>More</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <!-- S2 -->
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:04:16</p>
+          <span class="variant-num">STEP 2 · NOTHING ASSUMED</span>
+          <div class="variant-title">Every row starts blank</div>
+          <p class="step-does"><b>System does:</b> shows all 21 with both buttons empty and a counter at <b>0 of 21</b>. <i>The design makes no guess about the class — the teacher does.</i></p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:04</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Attendance</h2><p class="sub">Fri 21 August 2026</p></div><div class="iconbtn">⋯</div></div>
+              <div class="row" style="margin-top:10px;gap:8px"><div class="chip on" style="padding:9px 14px">Grade 5-A ▾</div><span class="tiny muted">21 students</span></div>
+            </div>
+            <div class="body">
+              <div class="card tight">
+                <div class="between"><span class="small" style="font-weight:600">Marked 0 of 21</span><span class="tiny muted">tap a button on each row</span></div>
+                <div class="bar thick" style="margin-top:9px"><span class="g" style="width:0%"></span></div>
+              </div>
+              <div class="list">
+                <div class="li" style="padding:9px 12px;background:var(--surface-2)"><div class="grow"><div class="nm">Rohit Banerjee</div><div class="meta">GPS/2026/0406</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+                <div class="li" style="padding:9px 12px;background:var(--surface-2)"><div class="grow"><div class="nm">Chetan Chatterjee</div><div class="meta">GPS/2026/0414</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+                <div class="li" style="padding:9px 12px;background:var(--surface-2)"><div class="grow"><div class="nm">Neha Chopra</div><div class="meta">GPS/2026/0413</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+                <div class="li" style="padding:9px 12px;background:var(--surface-2)"><div class="grow"><div class="nm">Bhuvan D'Souza</div><div class="meta">GPS/2026/0401</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+                <div class="li" style="padding:9px 12px;background:var(--surface-2)"><div class="grow"><div class="nm">Kartik Dutta</div><div class="meta">GPS/2026/0402 · 60%</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+                <div class="li" style="padding:9px 12px;background:var(--surface-2)"><div class="grow"><div class="nm">Divya Ghosh</div><div class="meta">GPS/2026/0421</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+                <div class="li" style="padding:9px 12px;background:var(--surface-2)"><div class="grow"><div class="nm">Deepak Gowda</div><div class="meta">GPS/2026/0404</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+                <div class="li" style="padding:9px 12px;background:var(--surface-2)"><div class="grow"><div class="nm">Heena Malhotra</div><div class="meta">GPS/2026/0411</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+              </div>
+            </div>
+            <div class="stickybar"><div class="btn" style="background:var(--ink-4)">Save · 0 of 21 marked</div><div class="hint">Save stays inactive until every child has a status</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <!-- S3 -->
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:04:20 → 08:05:10</p>
+          <span class="variant-num">STEP 3 · ONE TAP PER CHILD</span>
+          <div class="variant-title">Down the list, Present, Present, Present…</div>
+          <p class="step-does"><b>He does:</b> taps Present as he looks up at each desk. <b>System:</b> the row turns green and the counter climbs. <i>Roughly 2.5 seconds per child.</i></p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:05</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Attendance</h2><p class="sub">Grade 5-A · Fri 21 Aug</p></div><div class="iconbtn">⋯</div></div>
+            </div>
+            <div class="body">
+              <div class="card tight">
+                <div class="between"><span class="small" style="font-weight:600">Marked 7 of 21</span><div class="row" style="gap:6px"><span class="badge ok">7 P</span></div></div>
+                <div class="bar thick" style="margin-top:9px"><span class="g" style="width:33%"></span></div>
+              </div>
+              <div class="list">
+                <div class="li" style="padding:9px 12px"><div class="grow"><div class="nm">Rohit Banerjee</div><div class="meta">GPS/2026/0406</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p on" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+                <div class="li" style="padding:9px 12px"><div class="grow"><div class="nm">Chetan Chatterjee</div><div class="meta">GPS/2026/0414</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p on" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+                <div class="li" style="padding:9px 12px"><div class="grow"><div class="nm">Neha Chopra</div><div class="meta">GPS/2026/0413</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p on" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+                <div class="li" style="padding:9px 12px"><div class="grow"><div class="nm">Bhuvan D'Souza</div><div class="meta">GPS/2026/0401</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p on" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+                <div class="li" style="padding:9px 12px"><div class="grow"><div class="nm">Kartik Dutta</div><div class="meta">GPS/2026/0402 · 60%</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p on" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+                <div class="li" style="padding:9px 12px"><div class="grow"><div class="nm">Divya Ghosh</div><div class="meta">GPS/2026/0421</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p on" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+                <div class="li" style="padding:9px 12px"><div class="grow"><div class="nm">Deepak Gowda</div><div class="meta">GPS/2026/0404</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p on" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+                <div class="li" style="padding:9px 12px;background:var(--surface-2)"><div class="grow"><div class="nm">Heena Malhotra</div><div class="meta">GPS/2026/0411</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p" style="padding:9px 0">Present<div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 8</div></div></div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+                <div class="li" style="padding:9px 12px;background:var(--surface-2)"><div class="grow"><div class="nm">Rishi Malhotra</div><div class="meta">GPS/2026/0419</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+              </div>
+            </div>
+            <div class="stickybar"><div class="btn" style="background:var(--ink-4)">Save · 7 of 21 marked</div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <!-- S4 -->
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:05:22</p>
+          <span class="variant-num">STEP 4 · ABSENT, AND LATE</span>
+          <div class="variant-title">Chetan gets Absent; Heena gets Late from ⋯</div>
+          <p class="step-does"><b>He does:</b> taps <i>Absent</i> on Chetan's row, then <b>⋯</b> on Heena's for Late. <b>System:</b> the second-day warning appears inline; the two-button main path stays uncluttered.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:22</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar">
+              <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Attendance</h2><p class="sub">Grade 5-A · Fri 21 Aug</p></div><div class="iconbtn">⋯</div></div>
+            </div>
+            <div class="body">
+              <div class="card tight">
+                <div class="between"><span class="small" style="font-weight:600">Marked 19 of 21</span><div class="row" style="gap:6px"><span class="badge ok">17 P</span><span class="badge bad">1 A</span><span class="badge warn">1 L</span></div></div>
+                <div class="bar thick" style="margin-top:9px"><span class="g" style="width:90%"></span></div>
+              </div>
+              <div class="list">
+                <div class="li" style="padding:9px 12px"><div class="grow"><div class="nm">Chetan Shetty</div><div class="meta">GPS/2026/0418 · 75%</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p" style="padding:9px 0">Present</div><div class="pill a on" style="padding:9px 0">Absent<div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP</div></div></div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+              </div>
+              <div class="banner warn">!<div>Chetan was absent <b>Thursday too</b>. A note to Girish Shetty is offered after you save.</div></div>
+              <div class="list">
+                <div class="li" style="padding:9px 12px"><div class="grow"><div class="nm">Heena Malhotra</div><div class="meta">GPS/2026/0411 · late 08:22</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill l on" style="padding:9px 0">Late</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+                <div class="li" style="padding:9px 12px;background:var(--surface-2)"><div class="grow"><div class="nm">Inaya Siddiqui</div><div class="meta">GPS/2026/0407</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+                <div class="li" style="padding:9px 12px;background:var(--surface-2)"><div class="grow"><div class="nm">Myra Verma</div><div class="meta">GPS/2026/0405</div></div><div class="pillgroup" style="flex:0 0 148px"><div class="pill p" style="padding:9px 0">Present</div><div class="pill a" style="padding:9px 0">Absent</div></div><span class="tiny muted" style="width:12px;text-align:center">⋯</span></div>
+              </div>
+              <div class="tiny muted" style="text-align:center">2 rows still grey — Inaya and Myra</div>
+            </div>
+            <div class="scrim"></div>
+            <div class="sheet">
+              <div class="grab"></div>
+              <div class="row"><div class="avatar a">HM</div><div class="grow"><div class="nm" style="font-weight:650">Heena Malhotra</div><div class="tiny muted">Other statuses</div></div></div>
+              <div class="pillgroup" style="margin-top:10px"><div class="pill p">Present</div><div class="pill a">Absent</div><div class="pill l on">Late</div><div class="pill e">Excused</div></div>
+              <div class="row" style="gap:6px;margin-top:10px"><span class="chip on">08:22 (now)</span><span class="chip">Add a note</span></div>
+              <div class="btn" style="margin-top:12px">Mark late · 08:22</div>
+            </div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+      <!-- S5 -->
+      <div class="variant">
+        <div class="variant-head">
+          <p class="step-time">08:22:40</p>
+          <span class="variant-num">STEP 5 · THE GUARD, THEN SAVED</span>
+          <div class="variant-title">"2 children have no status"</div>
+          <p class="step-does"><b>System does:</b> refuses to save silently — the one real risk of a no-defaults design. He confirms both are present in a single tap, and 21 records are written.</p>
+        </div>
+        <div class="phone">
+          <div class="statusbar"><span>8:22</span><span class="dots">●●● ⏶ ▮</span></div>
+          <div class="screen">
+            <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">✕</div><div class="grow"><h2 style="font-size:17px">Before saving</h2><p class="sub">Grade 5-A · 19 of 21 marked</p></div></div></div>
+            <div class="body">
+              <div class="banner warn">!<div><b>2 children have no status yet.</b> Nothing is assumed — choose what to record.</div></div>
+              <div class="list">
+                <div class="li"><div class="avatar">IS</div><div class="grow"><div class="nm">Inaya Siddiqui</div><div class="meta">GPS/2026/0407</div></div><div class="pillgroup" style="flex:0 0 120px"><div class="pill p" style="padding:8px 0">P</div><div class="pill a" style="padding:8px 0">A</div></div></div>
+                <div class="li"><div class="avatar">MV</div><div class="grow"><div class="nm">Myra Verma</div><div class="meta">GPS/2026/0405</div></div><div class="pillgroup" style="flex:0 0 120px"><div class="pill p" style="padding:8px 0">P</div><div class="pill a" style="padding:8px 0">A</div></div></div>
+              </div>
+              <div class="btn sec">Mark both present<div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 21</div></div></div>
+              <div style="height:1px;background:var(--line);margin:4px 0"></div>
+              <div class="card" style="text-align:center;padding:16px">
+                <div class="row" style="justify-content:center;gap:8px">
+                  <span class="badge ok" style="font-size:13px;padding:5px 12px">19 present</span>
+                  <span class="badge bad" style="font-size:13px;padding:5px 12px">1 absent</span>
+                  <span class="badge warn" style="font-size:13px;padding:5px 12px">1 late</span>
+                </div>
+                <div class="tiny muted" style="margin-top:8px">21 of 21 · 55 seconds · 22 taps</div>
+              </div>
+              <div class="banner ok">✓<div>Saved at 08:22. Offline? It queues and goes up on its own — same as every other variant.</div></div>
+            </div>
+            <div class="stickybar"><div class="btn">Save all 21<div class="gesture on-el"><div class="ring2"></div><div class="tag">TAP 22</div></div></div></div>
+          </div>
+          <div class="homebar"></div>
+        </div>
+      </div>
+
+    </div>
+    <div class="painbox" style="margin-top:6px"><b>Read the row:</b> five screens, 22 taps, nothing to teach — and the only clever thing in it is the save guard, which exists precisely <em>because</em> nothing is defaulted. This is the version to launch with: it can be built in days, every teacher understands it on sight, and flows 1, 3 and 5 can be layered on the same list later as opt-in speed-ups without ever taking this path away.</div>
+  </section>
+
+  <!-- ══════════════════════════ VERDICT ══════════════════════════ -->
+  <section class="flowsec" id="cmp">
+    <span class="variant-num">SIDE BY SIDE</span>
+    <h2>The same morning, measured seven ways</h2>
+    <p class="lead">All seven flows produce the identical database result — 19 present, Chetan Shetty absent, Heena Malhotra late, 21 records timestamped by their marker. What differs is what it costs the teacher, and what happens when something goes wrong.</p>
+
+    <table class="cmp">
+      <thead>
+        <tr><th>Measure</th><th>1 · Default-present</th><th>2 · Swipe deck</th><th>3 · Class tiles</th><th>4 · Absent-only</th><th>5 · Period-aware</th><th>6 · Desktop console</th><th>7 · Simple list</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><b>Setup taps</b> (date/section/subject)</td><td class="win">1</td><td>2</td><td class="win">1</td><td class="win">1</td><td class="win">0</td><td class="win">0 — board opens on today</td><td>2 — open, pick class</td></tr>
+        <tr><td><b>Interactions on a normal day</b></td><td>2</td><td>21 swipes</td><td>2</td><td class="win">2</td><td>3</td><td class="win">1 click + <kbd>⌘S</kbd></td><td class="bad2">22 — one per child</td></tr>
+        <tr><td><b>Interactions on this day</b> (2 exceptions)</td><td>6</td><td class="bad2">23</td><td class="win">5</td><td>6</td><td>3</td><td class="win">4 keystrokes</td><td class="bad2">22</td></tr>
+        <tr><td><b>Wall clock</b></td><td>48 s</td><td class="bad2">48 s + full attention</td><td class="win">35 s</td><td class="win">8 s / 55 s</td><td>88 s incl. suggestions</td><td class="win">20 s per section</td><td>55 s</td></tr>
+        <tr><td><b>Whole class visible at once</b></td><td>scroll</td><td class="bad2">no — one card</td><td class="win">yes</td><td class="bad2">no</td><td>scroll</td><td class="win">yes — 25 rows, no scroll</td><td>scroll</td></tr>
+        <tr><td><b>Fix a mistake made 8 children ago</b></td><td class="win">tap the row</td><td class="bad2">re-open list</td><td class="win">tap the tile</td><td class="win">remove chip</td><td class="win">tap the row</td><td class="win"><kbd>↑</kbd> then <kbd>P</kbd></td><td class="win">tap the other button</td></tr>
+        <tr><td><b>Survives dead Wi-Fi</b></td><td class="win">queued</td><td class="win">queued</td><td class="win">queued</td><td class="win">queued</td><td class="win">queued</td><td>queued — rarely needed at a desk</td><td class="win">queued</td></tr>
+        <tr><td><b>Guarantees every child was considered</b></td><td>no</td><td class="win">yes — audit-grade</td><td>visual check</td><td class="bad2">no</td><td>no</td><td>no</td><td class="win">yes — nothing defaulted, save is guarded</td></tr>
+        <tr><td><b>Teaching cost</b></td><td class="win">none</td><td>demo the 4 swipes</td><td>long-press must be taught</td><td class="win">none</td><td class="win">none</td><td>hotkeys must be learned once</td><td class="win">none — it is the paper register</td></tr>
+        <tr><td><b>Works for the subject teacher's 8 periods</b></td><td>needs a picker each time</td><td>no</td><td>no</td><td>no</td><td class="win">built for it</td><td class="bad2">no — she is not at a desk</td><td>picks the class each time</td></tr>
+        <tr><td><b>Biggest risk</b></td><td>exam days where half are absent</td><td>interruption mid-deck</td><td>sections &gt; 35</td><td class="bad2">reflex "all present"</td><td>substitute teachers</td><td class="bad2">treated as the teacher's tool</td><td>22 taps every day, twice on period days</td></tr>
+        <tr><td><b>Verdict</b></td><td class="win">ship — the roster</td><td>option for audit schools</td><td class="win">ship — density toggle</td><td>ship behind a policy guard</td><td class="win">ship — the entry point</td><td class="win">ship — the office tool</td><td class="win">ship first — the baseline</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="color:#9fe3c6;font-size:17px;margin:26px 0 8px">What I'd actually ship: flow 7 first, then flow 5 wrapping flow 1</h3>
+    <p class="lead"><b>Launch with flow 7.</b> It is the plain class list with Present / Absent on every row: nothing to teach, nothing assumed, buildable in days, and every teacher recognises it on sight. Everything below is then a speed-up layered on <em>that same list</em>, never a replacement — a teacher who never discovers any of it still finishes their roll. <b>Flow 5</b> gets the teacher into the right roster with zero questions (it is the only one that serves a subject teacher's eight-period day). <b>Flow 1</b> is what she lands on: everyone present, one tap per exception, undo instead of confirm, queued writes. <b>Flow 3</b> is one tap away for teachers who prefer to check the whole room against one screen. <b>Flow 4</b>'s "all present?" question becomes the shortcut on the class teacher's morning card, and <b>flow 2</b> stays available for schools whose policy requires a spoken roll call. <b>Flow 6 ships in parallel, not instead</b> — the office and the exam coordinator get the desktop console, because chasing 40 sections and marking on behalf of absent staff is a keyboard job, and it writes through the same API with an on-behalf label.</p>
+
+    <div class="flowmeta" style="max-width:1000px">
+      <div class="m hot"><div class="k">Today (current build)</div><div class="v"><b>~11 setup taps</b> then up to 12 status taps, one fragile Save</div></div>
+      <div class="m"><div class="k">Composite flow</div><div class="v"><b>0 setup</b> + 1 tap per exception + 1 submit</div></div>
+      <div class="m"><div class="k">Normal day</div><div class="v"><b>2 taps · 8 seconds</b></div></div>
+      <div class="m"><div class="k">This day</div><div class="v"><b>4 taps · 40 seconds</b></div></div>
+      <div class="m"><div class="k">Data loss risk</div><div class="v"><b>zero</b> — local queue, then sync</div></div>
+    </div>
+
+    <div class="painbox" style="margin-top:12px">
+      <b>What has to exist for this to work</b> — all of it already does in the seeded system: a populated timetable (1600 slots, conflict-free), a class-teacher per section (all 40), per-period attendance records (<code>AttendanceRecord.subjectId</code> is already in the unique index), and guardian phone numbers on students (<code>parentContacts</code>). The only new pieces are client-side: an offline write queue, the status pill component, and a notification at the bell.
+    </div>
+  </section>
+
+  <div class="painbox" style="margin-top:26px">
+    <b>Next screens to storyboard the same way</b> — say the word and I'll build these: <b>Enter Marks</b> (the 10 pm sofa session: 25 numbers, lock state, the "I typed 8 instead of 80" recovery), <b>Timetable Builder</b> (copy last year → 2 conflicts → publish), and <b>Report Cards</b> (pre-flight → 21 PDFs → WhatsApp to 21 guardians).
+  </div>
+</div>
+<nav class="reviewnav" title="← → move between screens · F fit all · I gallery">
+  <a class="rn-btn" href="03-attendance.html" data-nav="prev">‹ <span class="rn-lbl">The 5 concepts</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index">
+    <span class="rn-count">FLOW</span>
+    <span class="rn-title">Attendance journeys</span>
+  </a>
+  <div class="rn-dots">
+    <a class="rn-dot" href="#f1" title="Flow 1"></a><a class="rn-dot" href="#f2" title="Flow 2"></a><a class="rn-dot" href="#f3" title="Flow 3"></a><a class="rn-dot" href="#f4" title="Flow 4"></a><a class="rn-dot" href="#f5" title="Flow 5"></a><a class="rn-dot" href="#f6" title="Flow 6 · desktop"></a><a class="rn-dot" href="#f7" title="Flow 7 · simple list"></a><a class="rn-dot on" href="#cmp" title="Verdict"></a>
+  </div>
+  <a class="rn-btn" href="04-attendance-report.html" data-nav="next"><span class="rn-lbl">Attendance Report</span> ›</a>
+  <span class="rn-keys">← →  ·  F fit  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

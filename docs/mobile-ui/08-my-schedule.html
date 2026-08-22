@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My schedule — 5 mobile concepts · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page">
+  <p class="crumbs"><a href="index.html">← All screens</a> · Academic · <code>MySchedulePage.jsx</code></p>
+  <h1 class="page-title">8 · My Schedule</h1>
+  <p class="page-sub">The most-opened academic screen for 64 teachers, and the cheapest one to fix. It is checked in a corridor with 90 seconds to spare — so it should answer "where am I going and what do I do there".</p>
+
+  <div class="painbox">
+    <b>Pain today:</b> the same 8 × 5 read-only grid as the builder, gated behind an academic-year <code>&lt;select&gt;</code> that starts empty — so the first thing a teacher sees is "Select an academic year to view your schedule". Nothing highlights the current period, and there is no action on any cell.
+  </div>
+
+  <input type="checkbox" id="fit" class="vis-hidden">
+  <div class="zoombar"><label for="fit">▣ Fit all five on one screen (toggle)</label> · real data: Mitali Sinha, Mathematics, 7 periods on Friday</div>
+
+  <div class="rail">
+
+    <!-- V1 -->
+    <div class="variant" id="v1">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 1</span>
+        <div class="variant-title">Now / Next hero <span class="rec">SHIP</span></div>
+        <p class="variant-for"><b>Optimises:</b> the 90 seconds before a bell. The active year is assumed, the current period is the hero, and the action a teacher needs next (mark attendance) is on the card.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>10:38</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="avatar" style="background:var(--accent-soft);color:var(--accent-ink)">MS</div><div class="grow"><h2 style="font-size:17px">My schedule</h2><p class="sub">Friday 21 Aug · 7 periods today</p></div><div class="iconbtn">🔔</div></div>
+          </div>
+          <div class="body">
+            <div class="card" style="border-color:var(--accent);background:var(--accent-soft)">
+              <div class="between"><span class="badge ok">● In progress</span><span class="tiny" style="font-weight:650;color:var(--accent-ink)">37 min left</span></div>
+              <div style="font-size:22px;font-weight:690;margin-top:8px;letter-spacing:-.02em">Grade 5-A · Mathematics</div>
+              <div class="small" style="color:var(--accent-ink);margin-top:2px">P4 · 10:30–11:15 · Room R-5A · 21 students</div>
+              <div class="btn accent" style="margin-top:14px">Mark attendance</div>
+              <div class="row" style="gap:8px;margin-top:8px"><div class="btn sec sm grow">Enter marks</div><div class="btn sec sm grow">Class list</div></div>
+            </div>
+            <div class="card tight">
+              <div class="between"><span class="badge">Up next · 11:15</span><span class="tiny muted">move room</span></div>
+              <div class="row" style="margin-top:8px"><div class="grow"><div class="nm" style="font-weight:600">Grade 7-B · Mathematics</div><div class="tiny muted">P5 · 11:15–12:00 · Room R-7B</div></div><span class="badge warn">2 floors up</span></div>
+            </div>
+            <p class="sectionlabel">Rest of the day</p>
+            <div class="stack">
+              <div class="slot" style="opacity:.55"><div class="time">08:00<br>08:45</div><div class="grow"><div class="subj">Grade 9-C · Maths</div><div class="who">done · 24 marked</div></div><span class="badge ok">✓</span></div>
+              <div class="slot" style="opacity:.55"><div class="time">08:45<br>09:30</div><div class="grow"><div class="subj">Grade 6-D · Maths</div><div class="who">done · 25 marked</div></div><span class="badge ok">✓</span></div>
+              <div class="slot" style="opacity:.55"><div class="time">09:45<br>10:30</div><div class="grow"><div class="subj">Grade 8-A · Maths</div><div class="who">attendance not taken</div></div><span class="badge bad">!</span></div>
+              <div class="slot"><div class="time">12:45<br>13:30</div><div class="grow"><div class="subj">Grade 10-B · Maths</div><div class="who">R-10B</div></div><span class="tiny muted">P6</span></div>
+              <div class="slot"><div class="time">13:30<br>14:15</div><div class="grow"><div class="subj">Grade 4-A · Maths</div><div class="who">R-4A</div></div><span class="tiny muted">P7</span></div>
+              <div class="slot empty">Free · 14:15–15:00</div>
+            </div>
+          </div>
+          <div class="tabbar"><div class="on"><span class="ic">◧</span>Today</div><div><span class="ic">☑</span>Attendance</div><div><span class="ic">✎</span>Marks</div><div><span class="ic">⌗</span>Classes</div><div><span class="ic">☰</span>More</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V2 -->
+    <div class="variant" id="v2">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 2</span>
+        <div class="variant-title">Swipeable day agenda</div>
+        <p class="variant-for"><b>Optimises:</b> planning tomorrow. Swipe between days, current period highlighted, breaks drawn to scale so the day reads like a real day.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>10:38</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Friday 21 Aug</h2><p class="sub">7 classes · 1 free period</p></div><div class="iconbtn">›</div></div>
+            <div class="seg" style="margin-top:10px"><div>Mon<br><span class="tiny">6</span></div><div>Tue<br><span class="tiny">7</span></div><div>Wed<br><span class="tiny">8</span></div><div>Thu<br><span class="tiny">6</span></div><div class="on">Fri<br><span class="tiny">7</span></div></div>
+          </div>
+          <div class="body">
+            <div class="stack" style="gap:6px">
+              <div class="slot"><div class="time">08:00</div><div class="grow"><div class="subj">9-C Mathematics</div><div class="who">R-9C · 24 students</div></div></div>
+              <div class="slot"><div class="time">08:45</div><div class="grow"><div class="subj">6-D Mathematics</div><div class="who">R-6D · 25 students</div></div></div>
+              <div style="text-align:center" class="tiny muted">break · 15 min</div>
+              <div class="slot"><div class="time">09:45</div><div class="grow"><div class="subj">8-A Mathematics</div><div class="who">R-8A · 25 students</div></div></div>
+              <div class="slot now"><div class="time">10:30</div><div class="grow"><div class="subj">5-A Mathematics</div><div class="who">R-5A · 21 students</div></div><span class="badge ok">now</span></div>
+              <div class="slot"><div class="time">11:15</div><div class="grow"><div class="subj">7-B Mathematics</div><div class="who">R-7B · 25 students</div></div></div>
+              <div style="text-align:center" class="tiny muted">lunch · 45 min</div>
+              <div class="slot"><div class="time">12:45</div><div class="grow"><div class="subj">10-B Mathematics</div><div class="who">R-10B · 23 students</div></div></div>
+              <div class="slot"><div class="time">13:30</div><div class="grow"><div class="subj">4-A Mathematics</div><div class="who">R-4A · 25 students</div></div></div>
+              <div class="slot empty" style="height:44px">14:15 · free period</div>
+            </div>
+          </div>
+          <div class="stickybar"><div class="btn sec">Add to phone calendar</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V3 -->
+    <div class="variant" id="v3">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 3</span>
+        <div class="variant-title">Portrait week grid</div>
+        <p class="variant-for"><b>Optimises:</b> the weekly mental map. The 8 × 5 grid does fit a phone — if cells hold codes rather than sentences. Tap any cell for the full detail.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>10:38</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="grow"><h2 style="font-size:17px">My week</h2><p class="sub">Mitali Sinha · Maths · 2026-27</p></div><div class="iconbtn">⇩</div></div>
+          </div>
+          <div class="body">
+            <div class="card tight">
+              <div class="grid-week" style="font-size:10.5px">
+                <div class="h"></div><div class="h">Mon</div><div class="h">Tue</div><div class="h">Wed</div><div class="h">Thu</div><div class="h">Fri</div>
+                <div class="h">P1</div><div class="c">7A</div><div class="c">5B</div><div class="c">9A</div><div class="c">6B</div><div class="c">9C</div>
+                <div class="h">P2</div><div class="c">10D</div><div class="c">8B</div><div class="c">4C</div><div class="c free">—</div><div class="c">6D</div>
+                <div class="h">P3</div><div class="c free">—</div><div class="c">6A</div><div class="c">10A</div><div class="c">5D</div><div class="c">8A</div>
+                <div class="h">P4</div><div class="c">5C</div><div class="c">9D</div><div class="c">7C</div><div class="c">10C</div><div class="c now">5A</div>
+                <div class="h">P5</div><div class="c">8D</div><div class="c free">—</div><div class="c">6C</div><div class="c">4D</div><div class="c">7B</div>
+                <div class="h">P6</div><div class="c">4A</div><div class="c">7D</div><div class="c">8C</div><div class="c">9B</div><div class="c">10B</div>
+                <div class="h">P7</div><div class="c">6B</div><div class="c">10B</div><div class="c">5B</div><div class="c free">—</div><div class="c">4A</div>
+                <div class="h">P8</div><div class="c free">—</div><div class="c">4B</div><div class="c free">—</div><div class="c">8A</div><div class="c free">—</div>
+              </div>
+              <div class="row" style="gap:12px;margin-top:10px"><span class="badge ok">■ Now</span><span class="badge">■ Class</span><span class="badge">□ Free</span></div>
+            </div>
+            <div class="stat3">
+              <div class="stat"><div class="n">34</div><div class="l">Periods / week</div></div>
+              <div class="stat g"><div class="n">6</div><div class="l">Free</div></div>
+              <div class="stat a"><div class="n">18</div><div class="l">Sections</div></div>
+            </div>
+            <div class="card tight">
+              <div class="card-title">Tapped: Fri · P4</div>
+              <div class="kv"><span class="k">Class</span><span class="v">Grade 5-A</span></div>
+              <div class="kv"><span class="k">Room</span><span class="v">R-5A</span></div>
+              <div class="kv"><span class="k">Time</span><span class="v">10:30–11:15</span></div>
+              <div class="btn sec sm" style="margin-top:10px">Mark attendance</div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V4 -->
+    <div class="variant" id="v4">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 4</span>
+        <div class="variant-title">My classes</div>
+        <p class="variant-for"><b>Optimises:</b> teachers who think in sections, not slots. One card per class with its next occurrence, pending work and health — a home screen for a subject teacher.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>10:38</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="grow"><h2 style="font-size:17px">My classes</h2><p class="sub">18 sections · Mathematics</p></div><div class="iconbtn">🔍</div></div>
+            <div class="chiprow" style="margin-top:10px"><div class="chip on">Needs work · 4</div><div class="chip">Today · 7</div><div class="chip">All · 18</div></div>
+          </div>
+          <div class="body">
+            <div class="card tight" style="border-color:var(--accent)">
+              <div class="between"><div><div class="nm" style="font-weight:650">Grade 5-A</div><div class="tiny muted">Now · P4 · R-5A · 21 students</div></div><span class="badge ok">live</span></div>
+              <div class="row" style="gap:8px;margin-top:10px"><div class="btn accent sm grow">Attendance</div><div class="btn sec sm grow">Marks</div></div>
+            </div>
+            <div class="card tight">
+              <div class="between"><div><div class="nm" style="font-weight:650">Grade 8-A</div><div class="tiny muted">Next: today 09:45 (passed)</div></div><span class="badge bad">attendance</span></div>
+              <div class="row" style="gap:6px;margin-top:8px"><span class="badge">avg 68</span><span class="badge warn">3 below 40</span><span class="badge">25 students</span></div>
+            </div>
+            <div class="card tight">
+              <div class="between"><div><div class="nm" style="font-weight:650">Grade 10-B</div><div class="tiny muted">Next: today 12:45</div></div><span class="badge warn">marks due</span></div>
+              <div class="row" style="gap:6px;margin-top:8px"><span class="badge">Term 1 final</span><span class="badge bad">0 of 23 entered</span></div>
+            </div>
+            <div class="card tight">
+              <div class="between"><div><div class="nm" style="font-weight:650">Grade 7-B</div><div class="tiny muted">Next: today 11:15</div></div><span class="badge ok">up to date</span></div>
+              <div class="row" style="gap:6px;margin-top:8px"><span class="badge">avg 72</span><span class="badge ok">96% att.</span></div>
+            </div>
+            <div class="card tight">
+              <div class="between"><div><div class="nm" style="font-weight:650">Grade 9-C</div><div class="tiny muted">Next: Monday 08:00</div></div><span class="badge ok">up to date</span></div>
+            </div>
+          </div>
+          <div class="tabbar"><div><span class="ic">◧</span>Today</div><div><span class="ic">☑</span>Attendance</div><div><span class="ic">✎</span>Marks</div><div class="on"><span class="ic">⌗</span>Classes</div><div><span class="ic">☰</span>More</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V5 -->
+    <div class="variant" id="v5">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 5</span>
+        <div class="variant-title">Glance card / widget</div>
+        <p class="variant-for"><b>Optimises:</b> not opening the app at all. A dense card designed for a home-screen widget or lock screen, with free periods called out for planning.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>10:38</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen" style="background:#111318">
+          <div class="body" style="padding-top:26px;gap:16px">
+            <div class="tiny" style="color:#8b93a1;text-align:center">Friday 21 August · 10:38</div>
+            <div class="card" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);color:#f2f4f7">
+              <div class="between"><span class="tiny" style="color:#9fe3c6;font-weight:700">NOW · ENDS 11:15</span><span class="tiny" style="color:#8b93a1">P4</span></div>
+              <div style="font-size:20px;font-weight:680;margin-top:6px">5-A Mathematics</div>
+              <div class="tiny" style="color:#9aa3b0;margin-top:2px">Room R-5A · 21 students · roll not taken</div>
+              <div class="btn accent" style="margin-top:12px;height:42px">Mark attendance</div>
+            </div>
+            <div class="card" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);color:#f2f4f7">
+              <div class="tiny" style="color:#8b93a1;font-weight:700">NEXT UP</div>
+              <div class="stack" style="gap:9px;margin-top:8px">
+                <div class="between"><span class="small">11:15 · 7-B Maths</span><span class="tiny" style="color:#8b93a1">R-7B</span></div>
+                <div class="between"><span class="small">12:45 · 10-B Maths</span><span class="tiny" style="color:#8b93a1">R-10B</span></div>
+                <div class="between"><span class="small">13:30 · 4-A Maths</span><span class="tiny" style="color:#8b93a1">R-4A</span></div>
+                <div class="between" style="color:#9fe3c6"><span class="small">14:15 · Free period</span><span class="tiny">45 min</span></div>
+              </div>
+            </div>
+            <div class="card" style="background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);color:#f2f4f7">
+              <div class="between"><span class="small">Pending this week</span><span class="badge bad">3</span></div>
+              <div class="tiny" style="color:#9aa3b0;margin-top:6px">8-A attendance · 10-B Term 1 marks · 9-B remedial list</div>
+            </div>
+            <div class="tiny" style="color:#5f6875;text-align:center">Long-press to add this to your home screen</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="margin-top:8px">
+    <b>Recommendation:</b> ship <b>V1</b> and make it the teacher's landing page — it removes the empty-year dead end, answers the corridor question, and is the natural launcher for Attendance V5. <b>V4</b> is the best second step for subject teachers with 18 sections. V3 is a cheap "week" tab inside V1; V5 is a later platform play.
+  </div>
+</div>
+
+<nav class="reviewnav" title="← → move between screens · F fit all five · I gallery">
+  <a class="rn-btn" href="07-timetable.html" data-nav="prev">‹ <span class="rn-lbl">Timetable Builder</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index">
+    <span class="rn-count">8 / 10</span>
+    <span class="rn-title">My Schedule</span>
+  </a>
+  <div class="rn-dots"><a class="rn-dot" href="01-students.html" title="1. Students"></a><a class="rn-dot" href="02-student-detail.html" title="2. Student 360"></a><a class="rn-dot" href="03-attendance.html" title="3. Mark Attendance"></a><a class="rn-dot" href="04-attendance-report.html" title="4. Attendance Report"></a><a class="rn-dot" href="05-grades.html" title="5. Enter Marks"></a><a class="rn-dot" href="06-grade-report.html" title="6. Grade Report"></a><a class="rn-dot" href="07-timetable.html" title="7. Timetable Builder"></a><a class="rn-dot on" href="08-my-schedule.html" title="8. My Schedule"></a><a class="rn-dot" href="09-report-cards.html" title="9. Report Cards"></a><a class="rn-dot" href="10-academic-years.html" title="10. Years & Terms"></a></div>
+  <a class="rn-btn" href="09-report-cards.html" data-nav="next"><span class="rn-lbl">Report Cards</span> ›</a>
+  <span class="rn-keys">← →  ·  F fit  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

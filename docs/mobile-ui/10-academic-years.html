@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Academic years &amp; terms — 5 mobile concepts · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page">
+  <p class="crumbs"><a href="index.html">← All screens</a> · Academic · <code>AcademicYearsPage.jsx</code></p>
+  <h1 class="page-title">10 · Academic Years &amp; Terms</h1>
+  <p class="page-sub">Touched twice a year, but it sets the context every other screen filters by. Right now half of it has no interface at all — and that omission is what makes the term dropdowns ambiguous everywhere else.</p>
+
+  <div class="painbox">
+    <b>Pain today:</b> the page lists years in a five-column table with an <code>Activate</code> button — and <b>terms have no UI whatsoever</b>, even though Grades, Grade Report and Report Cards all filter by term (creating one is an API-only operation). Because those screens call <code>/academic/terms</code> without <code>?yearId</code>, three seeded years render as <b>"Term 1, Term 2, Term 1, Term 2, Term 1, Term 2"</b>.
+  </div>
+
+  <input type="checkbox" id="fit" class="vis-hidden">
+  <div class="zoombar"><label for="fit">▣ Fit all five on one screen (toggle)</label> · real data: 2024-25, 2025-26, 2026-27 (active), 2 terms each</div>
+
+  <div class="rail">
+
+    <!-- V1 -->
+    <div class="variant" id="v1">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 1</span>
+        <div class="variant-title">Year cards with inline terms <span class="rec">SHIP</span></div>
+        <p class="variant-for"><b>Optimises:</b> closing the gap. Terms finally become visible and editable where they belong — nested under the year that owns them, with the active year unmistakable.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Academic years</h2><p class="sub">3 years · 6 terms</p></div><div class="iconbtn">＋</div></div>
+          </div>
+          <div class="body">
+            <div class="card" style="border-color:var(--accent)">
+              <div class="between"><div><div style="font-size:18px;font-weight:680">2026-27</div><div class="tiny muted">1 Apr 2026 – 31 Mar 2027</div></div><span class="badge ok">● Active</span></div>
+              <div class="stack" style="margin-top:12px;gap:7px">
+                <div class="slot" style="padding:9px 11px"><div class="grow"><div class="subj" style="font-size:13px">Term 1</div><div class="who">1 Apr – 30 Sep · you are here</div></div><span class="badge ok">current</span></div>
+                <div class="slot" style="padding:9px 11px"><div class="grow"><div class="subj" style="font-size:13px">Term 2</div><div class="who">1 Oct – 31 Mar</div></div><span class="tiny muted">✎</span></div>
+                <div class="slot empty" style="padding:9px">＋ Add a term</div>
+              </div>
+              <div class="row" style="gap:8px;margin-top:12px"><span class="badge">962 students</span><span class="badge">1600 timetable slots</span><span class="badge">30 764 marks</span></div>
+            </div>
+            <div class="card tight">
+              <div class="between"><div><div class="nm" style="font-weight:650">2025-26</div><div class="tiny muted">1 Apr 2025 – 31 Mar 2026 · 2 terms</div></div><div class="row" style="gap:6px"><span class="chip">Activate</span><span class="tiny muted">⌄</span></div></div>
+            </div>
+            <div class="card tight">
+              <div class="between"><div><div class="nm" style="font-weight:650">2024-25</div><div class="tiny muted">1 Apr 2024 – 31 Mar 2025 · 2 terms</div></div><div class="row" style="gap:6px"><span class="chip">Activate</span><span class="tiny muted">⌄</span></div></div>
+            </div>
+            <div class="banner info">ⓘ<div>Activating a year changes what every other screen defaults to. Marks and attendance stay attached to their own year.</div></div>
+          </div>
+          <div class="stickybar"><div class="btn">＋ New academic year</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V2 -->
+    <div class="variant" id="v2">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 2</span>
+        <div class="variant-title">Timeline strip</div>
+        <p class="variant-for"><b>Optimises:</b> seeing the year as a year. Terms are segments on a horizontal band with today marked; dragging a boundary is how you fix a date, instead of a two-field date form.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="grow"><h2 style="font-size:17px">2026-27</h2><p class="sub">Apr 2026 – Mar 2027 · active</p></div><div class="iconbtn">✎</div></div>
+          </div>
+          <div class="body">
+            <div class="card">
+              <div class="between"><span class="card-title" style="margin:0">Year timeline</span><span class="tiny muted">today 21 Aug</span></div>
+              <div style="margin-top:14px">
+                <div style="display:flex;height:38px;border-radius:10px;overflow:hidden;position:relative">
+                  <div style="flex:6 1 0;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:11.5px;font-weight:650">Term 1 · Apr–Sep</div>
+                  <div style="flex:6 1 0;background:var(--surface-3);color:var(--ink-2);display:grid;place-items:center;font-size:11.5px;font-weight:650">Term 2 · Oct–Mar</div>
+                  <i style="position:absolute;left:39%;top:-6px;bottom:-6px;width:2px;background:var(--absent)"></i>
+                </div>
+                <div class="row" style="justify-content:space-between;margin-top:6px">
+                  <span class="tiny muted">Apr</span><span class="tiny muted">Jul</span><span class="tiny muted">Oct</span><span class="tiny muted">Jan</span><span class="tiny muted">Mar</span>
+                </div>
+              </div>
+              <div class="row" style="gap:8px;margin-top:14px"><div class="btn sec sm grow">Split into 3 terms</div><div class="btn sec sm grow">Shift dates</div></div>
+            </div>
+            <div class="card tight">
+              <div class="card-title">Term 1 · in progress</div>
+              <div class="kv"><span class="k">Starts</span><span class="v">1 Apr 2026</span></div>
+              <div class="kv"><span class="k">Ends</span><span class="v">30 Sep 2026</span></div>
+              <div class="kv"><span class="k">School days elapsed</span><span class="v">98 of 128</span></div>
+              <div class="kv"><span class="k">Assessments</span><span class="v">Quiz · Midterm · Final</span></div>
+              <div class="kv"><span class="k">Finals locked</span><span class="v" style="color:var(--late)">20 of 40 sections</span></div>
+            </div>
+            <div class="card tight">
+              <div class="card-title">Other years</div>
+              <div class="row" style="gap:6px;flex-wrap:wrap"><span class="chip">2025-26</span><span class="chip">2024-25</span><span class="chip soft">＋ 2027-28</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V3 -->
+    <div class="variant" id="v3">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 3</span>
+        <div class="variant-title">Three-step setup wizard</div>
+        <p class="variant-for"><b>Optimises:</b> the first-run cliff. A new tenant needs year → terms → structure before anything else works; a wizard makes the dependency order obvious instead of implied.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">✕</div><div class="grow"><h2 style="font-size:17px">Set up 2027-28</h2><p class="sub">Step 2 of 3 · terms</p></div></div>
+            <div class="wizdots" style="margin-top:12px"><i></i><i class="on"></i><i></i></div>
+          </div>
+          <div class="body">
+            <div class="card tight">
+              <div class="card-title">How is your year divided?</div>
+              <div class="stack" style="gap:8px">
+                <div class="slot" style="border-color:var(--accent);background:var(--accent-soft)"><div class="grow"><div class="subj" style="font-size:13px">Two terms</div><div class="who">Apr–Sep · Oct–Mar · most common in CBSE schools</div></div><span class="badge ok">✓</span></div>
+                <div class="slot"><div class="grow"><div class="subj" style="font-size:13px">Three trimesters</div><div class="who">Apr–Jul · Aug–Nov · Dec–Mar</div></div></div>
+                <div class="slot"><div class="grow"><div class="subj" style="font-size:13px">Four quarters</div><div class="who">Apr–Jun · Jul–Sep · Oct–Dec · Jan–Mar</div></div></div>
+                <div class="slot empty">Custom…</div>
+              </div>
+            </div>
+            <div class="card tight">
+              <div class="card-title">Preview</div>
+              <div class="stack" style="gap:7px">
+                <div class="between"><span class="small">Term 1</span><span class="small muted">1 Apr – 30 Sep 2027</span></div>
+                <div class="between"><span class="small">Term 2</span><span class="small muted">1 Oct 2027 – 31 Mar 2028</span></div>
+              </div>
+            </div>
+            <div class="banner info">ⓘ<div>You can rename terms later. Marks are always stored against a term, so getting the split right now saves re-entry.</div></div>
+            <div class="card tight">
+              <div class="between"><span class="small">Copy structure from 2026-27</span><span class="badge ok">On</span></div>
+              <div class="tiny muted" style="margin-top:6px">10 classes · 40 sections · 80 subjects will be recreated</div>
+            </div>
+          </div>
+          <div class="stickybar"><div class="row" style="gap:8px"><div class="btn sec grow">Back</div><div class="btn grow">Continue ›</div></div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V4 -->
+    <div class="variant" id="v4">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 4</span>
+        <div class="variant-title">Global year switcher <span class="rec">SHIP — fixes the term bug</span></div>
+        <p class="variant-for"><b>Optimises:</b> context everywhere. One switcher owns the year for the whole app, so every term picker can be scoped to it — the cheapest fix for "Term 1, Term 2, Term 1, Term 2…".</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="grow"><h2 style="font-size:17px">Grades</h2><p class="sub">Grade 5-A · Maths</p></div><div class="iconbtn">⇩</div></div>
+            <div class="chiprow" style="margin-top:10px"><div class="chip soft">2026-27 · Term 1 ▾</div><div class="chip">Final ▾</div></div>
+          </div>
+          <div class="body">
+            <div class="card tight" style="opacity:.4"><div class="between"><span class="small">Roster · 21 students</span><span class="badge">avg 69</span></div></div>
+            <div class="card tight" style="opacity:.4"><div class="between"><span class="small">Heena Malhotra</span><span class="small">81</span></div></div>
+            <div class="card tight" style="opacity:.4"><div class="between"><span class="small">Pihu Sheikh</span><span class="small">80</span></div></div>
+          </div>
+          <div class="scrim"></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <div class="between"><span style="font-weight:650">Academic context</span><span class="tiny muted">applies app-wide</span></div>
+            <p class="sectionlabel">Year</p>
+            <div class="stack" style="gap:7px">
+              <div class="slot" style="border-color:var(--accent);background:var(--accent-soft)"><div class="grow"><div class="subj" style="font-size:13px">2026-27</div><div class="who">Active · 962 students</div></div><span class="badge ok">✓</span></div>
+              <div class="slot"><div class="grow"><div class="subj" style="font-size:13px">2025-26</div><div class="who">Archived · read-only</div></div></div>
+              <div class="slot"><div class="grow"><div class="subj" style="font-size:13px">2024-25</div><div class="who">Archived · read-only</div></div></div>
+            </div>
+            <p class="sectionlabel">Term in 2026-27</p>
+            <div class="seg" style="margin-top:6px"><div class="on">Term 1<br><span class="tiny">Apr–Sep</span></div><div>Term 2<br><span class="tiny">Oct–Mar</span></div></div>
+            <div class="banner ok" style="margin-top:12px">✓<div>Only this year's terms are listed — no more six identically-named options.</div></div>
+            <div class="btn" style="margin-top:12px">Use 2026-27 · Term 1</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V5 -->
+    <div class="variant" id="v5">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 5</span>
+        <div class="variant-title">Calendar-anchored editor</div>
+        <p class="variant-for"><b>Optimises:</b> date accuracy. Term boundaries, holidays and exam windows on one month view — which is also what makes attendance denominators and report-card date ranges correct.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">August 2026</h2><p class="sub">Term 1 · 21 school days</p></div><div class="iconbtn">›</div></div>
+          </div>
+          <div class="body">
+            <div class="card tight">
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;text-align:center;font-size:10px;font-weight:700;color:var(--ink-4)">
+                <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:6px;text-align:center;font-size:11px">
+                <div class="tile n" style="aspect-ratio:1">—</div><div class="tile" style="aspect-ratio:1">1</div><div class="tile" style="aspect-ratio:1">2</div><div class="tile" style="aspect-ratio:1">3</div><div class="tile" style="aspect-ratio:1">4</div><div class="tile" style="aspect-ratio:1">5</div><div class="tile n" style="aspect-ratio:1">6</div>
+                <div class="tile n" style="aspect-ratio:1">7</div><div class="tile" style="aspect-ratio:1">8</div><div class="tile" style="aspect-ratio:1">9</div><div class="tile" style="aspect-ratio:1">10</div><div class="tile" style="aspect-ratio:1">11</div><div class="tile" style="aspect-ratio:1">12</div><div class="tile n" style="aspect-ratio:1">13</div>
+                <div class="tile n" style="aspect-ratio:1">14</div><div class="tile e" style="aspect-ratio:1">15</div><div class="tile" style="aspect-ratio:1">16</div><div class="tile" style="aspect-ratio:1">17</div><div class="tile" style="aspect-ratio:1">18</div><div class="tile" style="aspect-ratio:1">19</div><div class="tile n" style="aspect-ratio:1">20</div>
+                <div class="tile n" style="aspect-ratio:1">21</div><div class="tile l" style="aspect-ratio:1">22</div><div class="tile" style="aspect-ratio:1">23</div><div class="tile" style="aspect-ratio:1">24</div><div class="tile" style="aspect-ratio:1">25</div><div class="tile" style="aspect-ratio:1">26</div><div class="tile n" style="aspect-ratio:1">27</div>
+                <div class="tile n" style="aspect-ratio:1">28</div><div class="tile" style="aspect-ratio:1">29</div><div class="tile" style="aspect-ratio:1">30</div><div class="tile" style="aspect-ratio:1">31</div><div class="tile n" style="aspect-ratio:1">—</div><div class="tile n" style="aspect-ratio:1">—</div><div class="tile n" style="aspect-ratio:1">—</div>
+              </div>
+              <div class="row" style="gap:10px;margin-top:12px;flex-wrap:wrap"><span class="badge ok">■ School day</span><span class="badge info">■ Holiday</span><span class="badge warn">■ Exam</span><span class="badge">□ Weekend</span></div>
+            </div>
+            <div class="card tight">
+              <div class="card-title">This month</div>
+              <div class="kv"><span class="k">15 Aug · Independence Day</span><span class="v" style="color:var(--excused)">Holiday</span></div>
+              <div class="kv"><span class="k">22–26 Aug · Unit test week</span><span class="v" style="color:var(--late)">Exam</span></div>
+              <div class="kv"><span class="k">School days</span><span class="v">21</span></div>
+              <div class="kv"><span class="k">Attendance marked</span><span class="v">20 of 21</span></div>
+            </div>
+            <div class="banner warn">!<div><b>17 Aug has no attendance</b> for 12 sections. Holidays entered here are excluded from every attendance percentage.</div></div>
+          </div>
+          <div class="stickybar"><div class="btn sec">＋ Mark a holiday</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="margin-top:8px">
+    <b>Recommendation:</b> <b>V1</b> (year cards with inline terms) plus <b>V4</b> (global year+term switcher). V4 is the highest value-per-line change in the whole module: it gives every screen a scoped term list and retires the ambiguous dropdown. V3 belongs in the existing setup wizard; V5 is the right home for a school calendar once holidays are modelled.
+  </div>
+</div>
+
+<nav class="reviewnav" title="← → move between screens · F fit all five · I gallery">
+  <a class="rn-btn" href="09-report-cards.html" data-nav="prev">‹ <span class="rn-lbl">Report Cards</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index">
+    <span class="rn-count">10 / 10</span>
+    <span class="rn-title">Years & Terms</span>
+  </a>
+  <div class="rn-dots"><a class="rn-dot" href="01-students.html" title="1. Students"></a><a class="rn-dot" href="02-student-detail.html" title="2. Student 360"></a><a class="rn-dot" href="03-attendance.html" title="3. Mark Attendance"></a><a class="rn-dot" href="04-attendance-report.html" title="4. Attendance Report"></a><a class="rn-dot" href="05-grades.html" title="5. Enter Marks"></a><a class="rn-dot" href="06-grade-report.html" title="6. Grade Report"></a><a class="rn-dot" href="07-timetable.html" title="7. Timetable Builder"></a><a class="rn-dot" href="08-my-schedule.html" title="8. My Schedule"></a><a class="rn-dot" href="09-report-cards.html" title="9. Report Cards"></a><a class="rn-dot on" href="10-academic-years.html" title="10. Years & Terms"></a></div>
+  <span class="rn-btn off"><span class="rn-lbl">end</span> ›</span>
+  <span class="rn-keys">← →  ·  F fit  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

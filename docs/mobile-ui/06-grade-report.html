@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grade report — 5 mobile concepts · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page">
+  <p class="crumbs"><a href="index.html">← All screens</a> · Academic · <code>GradeReportPage.jsx</code></p>
+  <h1 class="page-title">6 · Grade Report</h1>
+  <p class="page-sub">Two audiences, one screen: the subject teacher asking "did my class understand this?", and the principal asking "which subject is slipping?". Both need a shape, not a table.</p>
+
+  <div class="painbox">
+    <b>Pain today:</b> four filters, then a distribution rendered as a row of text (<code>A: 2 B: 5 C: 8…</code>), two side-by-side cards that stack awkwardly, and a four-column table underneath. Nothing is charted, so the answer has to be assembled in the reader's head. The term picker has the same missing <code>?yearId</code> problem as the marks screen.
+  </div>
+
+  <input type="checkbox" id="fit" class="vis-hidden">
+  <div class="zoombar"><label for="fit">▣ Fit all five on one screen (toggle)</label> · real data: Grade 5-A Maths Term 1 final — n=21, avg 69</div>
+
+  <div class="rail">
+
+    <!-- V1 -->
+    <div class="variant" id="v1">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 1</span>
+        <div class="variant-title">Distribution first <span class="rec">SHIP</span></div>
+        <p class="variant-for"><b>Optimises:</b> the teacher's real question — the shape of the class. Bars are tappable filters, so "who are the four Ds?" is one tap, not a scroll through 21 rows.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Maths · Term 1 final</h2><p class="sub">Grade 5-A · 21 students graded</p></div><div class="iconbtn">⇩</div></div>
+            <div class="chiprow" style="margin-top:10px"><div class="chip soft">Grade 5-A ▾</div><div class="chip">Maths ▾</div><div class="chip">Term 1 · 2026-27 ▾</div><div class="chip">Final ▾</div></div>
+          </div>
+          <div class="body">
+            <div class="card tight">
+              <div class="row" style="gap:16px">
+                <div class="ring" style="--p:69%"><div><div style="font-size:20px;font-weight:700">69</div><div class="tiny muted">class avg</div></div></div>
+                <div class="grow stack" style="gap:5px">
+                  <div class="between"><span class="small muted">Highest</span><span class="small" style="font-weight:650">81 · Heena M.</span></div>
+                  <div class="between"><span class="small muted">Lowest</span><span class="small" style="font-weight:650">59 · Veer S.</span></div>
+                  <div class="between"><span class="small muted">Pass rate</span><span class="badge ok">100%</span></div>
+                  <div class="between"><span class="small muted">vs midterm</span><span class="badge warn">▼ 2</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="card tight">
+              <div class="between"><span class="card-title" style="margin:0">Grade distribution</span><span class="tiny muted">tap a bar</span></div>
+              <div class="vbars" style="margin-top:12px;height:120px">
+                <div><div class="col g" style="height:16%"></div><div class="lbl">A</div><div class="tiny muted">2</div></div>
+                <div><div class="col g" style="height:40%"></div><div class="lbl">B</div><div class="tiny muted">5</div></div>
+                <div><div class="col" style="height:64%"></div><div class="lbl">C</div><div class="tiny muted">8</div></div>
+                <div style="opacity:1"><div class="col a" style="height:40%;outline:2px solid var(--late);outline-offset:2px"></div><div class="lbl">D</div><div class="tiny muted">5</div></div>
+                <div><div class="col r" style="height:8%"></div><div class="lbl">F</div><div class="tiny muted">1</div></div>
+              </div>
+            </div>
+            <p class="sectionlabel">Grade D · 5 students</p>
+            <div class="list">
+              <div class="li"><div class="avatar a">NC</div><div class="grow"><div class="nm">Neha Chopra</div><div class="tiny muted">GPS/2026/0413</div></div><span style="font-weight:700">62</span></div>
+              <div class="li"><div class="avatar a">MM</div><div class="grow"><div class="nm">Manisha Mehta</div><div class="tiny muted">GPS/2026/0422</div></div><span style="font-weight:700">61</span></div>
+              <div class="li"><div class="avatar a">KD</div><div class="grow"><div class="nm">Kartik Dutta</div><div class="tiny muted">GPS/2026/0402 · 60% att.</div></div><span style="font-weight:700">60</span></div>
+              <div class="li"><div class="avatar a">VS</div><div class="grow"><div class="nm">Veer Sandhu</div><div class="tiny muted">GPS/2026/0409</div></div><span style="font-weight:700">59</span></div>
+            </div>
+          </div>
+          <div class="stickybar"><div class="row" style="gap:8px"><div class="btn sec grow">Share</div><div class="btn grow">Plan remedial</div></div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V2 -->
+    <div class="variant" id="v2">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 2</span>
+        <div class="variant-title">Top / needs-attention split <span class="rec">SHIP</span></div>
+        <p class="variant-for"><b>Optimises:</b> the two lists people act on. Praise and intervention, side by side, with the class median as the reference line — no table needed.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="grow"><h2 style="font-size:17px">Grade 5-A</h2><p class="sub">Term 1 final · all subjects</p></div><div class="iconbtn">⚙</div></div>
+            <div class="seg" style="margin-top:10px"><div class="on">Maths</div><div>English</div><div>Science</div><div>SST</div></div>
+          </div>
+          <div class="body">
+            <div class="card tight">
+              <div class="between"><span class="small">Class average</span><span class="row" style="gap:6px"><span style="font-weight:700;font-size:17px">69</span><span class="badge warn">▼ 2 vs midterm</span></span></div>
+              <div class="bar thick" style="margin-top:9px"><span class="a" style="width:69%"></span></div>
+            </div>
+            <div class="card tight">
+              <div class="between"><span class="card-title" style="margin:0">Top performers</span><span class="badge ok">4</span></div>
+              <div class="stack" style="gap:8px;margin-top:6px">
+                <div class="row"><div class="avatar sm g">HM</div><span class="small grow">Heena Malhotra</span><div class="bar" style="width:70px"><span class="g" style="width:81%"></span></div><span class="small" style="font-weight:650;width:22px;text-align:right">81</span></div>
+                <div class="row"><div class="avatar sm g">PS</div><span class="small grow">Pihu Sheikh</span><div class="bar" style="width:70px"><span class="g" style="width:80%"></span></div><span class="small" style="font-weight:650;width:22px;text-align:right">80</span></div>
+                <div class="row"><div class="avatar sm g">AR</div><span class="small grow">Ananya Roy</span><div class="bar" style="width:70px"><span class="g" style="width:79%"></span></div><span class="small" style="font-weight:650;width:22px;text-align:right">79</span></div>
+                <div class="row"><div class="avatar sm g">DG</div><span class="small grow">Deepak Gowda</span><div class="bar" style="width:70px"><span class="g" style="width:77%"></span></div><span class="small" style="font-weight:650;width:22px;text-align:right">77</span></div>
+              </div>
+            </div>
+            <div class="card tight" style="border-color:#f2bcbc">
+              <div class="between"><span class="card-title" style="margin:0">Needs attention</span><span class="badge bad">4</span></div>
+              <div class="stack" style="gap:8px;margin-top:6px">
+                <div class="row"><div class="avatar sm r">VS</div><span class="small grow">Veer Sandhu</span><div class="bar" style="width:70px"><span class="r" style="width:59%"></span></div><span class="small" style="font-weight:650;width:22px;text-align:right">59</span></div>
+                <div class="row"><div class="avatar sm r">KD</div><span class="small grow">Kartik Dutta</span><div class="bar" style="width:70px"><span class="r" style="width:60%"></span></div><span class="small" style="font-weight:650;width:22px;text-align:right">60</span></div>
+                <div class="row"><div class="avatar sm r">MM</div><span class="small grow">Manisha Mehta</span><div class="bar" style="width:70px"><span class="r" style="width:61%"></span></div><span class="small" style="font-weight:650;width:22px;text-align:right">61</span></div>
+                <div class="row"><div class="avatar sm r">NC</div><span class="small grow">Neha Chopra</span><div class="bar" style="width:70px"><span class="r" style="width:62%"></span></div><span class="small" style="font-weight:650;width:22px;text-align:right">62</span></div>
+              </div>
+              <div class="btn sec sm" style="margin-top:12px">Message these 4 guardians</div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V3 -->
+    <div class="variant" id="v3">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 3</span>
+        <div class="variant-title">Student vs class</div>
+        <p class="variant-for"><b>Optimises:</b> the parent meeting. One child's bars against the class average, subject by subject, with the sentence already written for you.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="avatar sm">KD</div><div class="grow"><h2 style="font-size:16px">Kartik Dutta vs class</h2><p class="sub">Grade 5-A · Term 1 final</p></div><div class="iconbtn">⇄</div></div>
+          </div>
+          <div class="body">
+            <div class="banner info">ⓘ<div>Below the class average in <b>3 of 4</b> core subjects; strongest in English (+2), weakest in Social Studies (−14).</div></div>
+            <div class="card tight">
+              <div class="stack" style="gap:14px">
+                <div>
+                  <div class="between"><span class="small" style="font-weight:600">Mathematics</span><span class="badge bad">−9</span></div>
+                  <div class="row" style="gap:6px;margin-top:6px"><span class="tiny muted" style="width:34px">him</span><div class="bar grow"><span class="a" style="width:60%"></span></div><span class="small" style="width:22px">60</span></div>
+                  <div class="row" style="gap:6px;margin-top:4px"><span class="tiny muted" style="width:34px">class</span><div class="bar grow"><span style="width:69%"></span></div><span class="small" style="width:22px">69</span></div>
+                </div>
+                <div>
+                  <div class="between"><span class="small" style="font-weight:600">English</span><span class="badge ok">+2</span></div>
+                  <div class="row" style="gap:6px;margin-top:6px"><span class="tiny muted" style="width:34px">him</span><div class="bar grow"><span class="g" style="width:71%"></span></div><span class="small" style="width:22px">71</span></div>
+                  <div class="row" style="gap:6px;margin-top:4px"><span class="tiny muted" style="width:34px">class</span><div class="bar grow"><span style="width:69%"></span></div><span class="small" style="width:22px">69</span></div>
+                </div>
+                <div>
+                  <div class="between"><span class="small" style="font-weight:600">Science</span><span class="badge bad">−7</span></div>
+                  <div class="row" style="gap:6px;margin-top:6px"><span class="tiny muted" style="width:34px">him</span><div class="bar grow"><span class="a" style="width:64%"></span></div><span class="small" style="width:22px">64</span></div>
+                  <div class="row" style="gap:6px;margin-top:4px"><span class="tiny muted" style="width:34px">class</span><div class="bar grow"><span style="width:71%"></span></div><span class="small" style="width:22px">71</span></div>
+                </div>
+                <div>
+                  <div class="between"><span class="small" style="font-weight:600">Social Studies</span><span class="badge bad">−14</span></div>
+                  <div class="row" style="gap:6px;margin-top:6px"><span class="tiny muted" style="width:34px">him</span><div class="bar grow"><span class="r" style="width:55%"></span></div><span class="small" style="width:22px">55</span></div>
+                  <div class="row" style="gap:6px;margin-top:4px"><span class="tiny muted" style="width:34px">class</span><div class="bar grow"><span style="width:69%"></span></div><span class="small" style="width:22px">69</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="card tight"><div class="between"><span class="small muted">Class rank</span><span class="small" style="font-weight:650">19 of 21</span></div><div class="between" style="margin-top:6px"><span class="small muted">Attendance</span><span class="badge bad">60%</span></div></div>
+          </div>
+          <div class="stickybar"><div class="btn accent">Share with guardian</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V4 -->
+    <div class="variant" id="v4">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 4</span>
+        <div class="variant-title">Subject scorecard carousel</div>
+        <p class="variant-for"><b>Optimises:</b> the coordinator comparing eight subjects across a class. Swipe through cards; each one carries average, spread, pass rate and lock state.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="grow"><h2 style="font-size:17px">Grade 5-A scorecards</h2><p class="sub">Term 1 final · 8 subjects</p></div><div class="iconbtn">⇩</div></div>
+          </div>
+          <div class="body">
+            <div class="card">
+              <div class="between"><span class="badge">3 of 8</span><span class="badge ok">Locked</span></div>
+              <div style="font-size:19px;font-weight:680;margin-top:8px">Mathematics</div>
+              <div class="small muted">Mitali Sinha · 21 graded</div>
+              <div class="stat3" style="margin-top:12px">
+                <div class="stat"><div class="n">69</div><div class="l">Average</div></div>
+                <div class="stat g"><div class="n">100%</div><div class="l">Pass</div></div>
+                <div class="stat a"><div class="n">22</div><div class="l">Spread</div></div>
+              </div>
+              <div class="vbars" style="height:66px;margin-top:12px">
+                <div><div class="col g" style="height:16%"></div><div class="lbl">A</div></div>
+                <div><div class="col g" style="height:40%"></div><div class="lbl">B</div></div>
+                <div><div class="col" style="height:64%"></div><div class="lbl">C</div></div>
+                <div><div class="col a" style="height:40%"></div><div class="lbl">D</div></div>
+                <div><div class="col r" style="height:8%"></div><div class="lbl">F</div></div>
+              </div>
+              <div class="row" style="gap:6px;margin-top:10px"><span class="chip">‹ English 71</span><span class="grow"></span><span class="chip">Science 71 ›</span></div>
+            </div>
+            <p class="sectionlabel">All subjects</p>
+            <div class="list">
+              <div class="li"><div class="grow"><div class="nm">English</div><div class="bar" style="margin-top:5px"><span class="g" style="width:71%"></span></div></div><span class="small" style="font-weight:650">71</span></div>
+              <div class="li"><div class="grow"><div class="nm">Science</div><div class="bar" style="margin-top:5px"><span class="g" style="width:71%"></span></div></div><span class="small" style="font-weight:650">71</span></div>
+              <div class="li"><div class="grow"><div class="nm">Mathematics</div><div class="bar" style="margin-top:5px"><span class="a" style="width:69%"></span></div></div><span class="small" style="font-weight:650">69</span></div>
+              <div class="li"><div class="grow"><div class="nm">Social Studies</div><div class="bar" style="margin-top:5px"><span class="a" style="width:69%"></span></div></div><span class="small" style="font-weight:650">69</span></div>
+              <div class="li"><div class="grow"><div class="nm">Hindi</div><div class="bar" style="margin-top:5px"><span class="g" style="width:73%"></span></div></div><span class="small" style="font-weight:650">73</span></div>
+              <div class="li"><div class="grow"><div class="nm">Computer Science</div><div class="bar" style="margin-top:5px"><span class="g" style="width:76%"></span></div></div><span class="small" style="font-weight:650">76</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V5 -->
+    <div class="variant" id="v5">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 5</span>
+        <div class="variant-title">Auto-narrative insights</div>
+        <p class="variant-for"><b>Optimises:</b> the principal who wants the sentence, not the chart. Each card is a claim with the evidence behind it and a drill-through; no chart literacy required.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="grow"><h2 style="font-size:17px">What changed</h2><p class="sub">Term 1 final vs midterm · whole school</p></div><div class="iconbtn">⚙</div></div>
+          </div>
+          <div class="body">
+            <div class="card tight" style="border-left:3px solid var(--absent)">
+              <div class="between"><span class="badge bad">Drop</span><span class="tiny muted">Grade 8 · Science</span></div>
+              <div class="small" style="margin-top:7px;font-weight:600;line-height:1.5">Grade 8 Science fell 6 points between midterm and final — the largest drop in the school.</div>
+              <div class="tiny muted" style="margin-top:5px">Average 74 → 68 · 4 sections · 99 students · driven by 8-B (−11)</div>
+              <div class="btn sec sm" style="margin-top:10px">Open Grade 8-B Science</div>
+            </div>
+            <div class="card tight" style="border-left:3px solid var(--late)">
+              <div class="between"><span class="badge warn">Watch</span><span class="tiny muted">Cross-module</span></div>
+              <div class="small" style="margin-top:7px;font-weight:600;line-height:1.5">Of the 31 students below 75% attendance, <b>24</b> are also below the class average in Maths.</div>
+              <div class="tiny muted" style="margin-top:5px">Attendance and marks are moving together — worth one intervention, not two.</div>
+              <div class="btn sec sm" style="margin-top:10px">See the 24 students</div>
+            </div>
+            <div class="card tight" style="border-left:3px solid var(--present)">
+              <div class="between"><span class="badge ok">Good</span><span class="tiny muted">Grade 5 · Computer Science</span></div>
+              <div class="small" style="margin-top:7px;font-weight:600;line-height:1.5">Grade 5 Computer Science is the strongest cohort at 76 average, up 4 points.</div>
+              <div class="tiny muted" style="margin-top:5px">All 4 sections improved · 0 failures</div>
+            </div>
+            <div class="card tight" style="border-left:3px solid var(--excused)">
+              <div class="between"><span class="badge info">Process</span><span class="tiny muted">Publishing</span></div>
+              <div class="small" style="margin-top:7px;font-weight:600;line-height:1.5">Term 1 finals are locked for <b>20 of 40</b> sections. Report cards can't be issued for the other 20.</div>
+              <div class="btn sec sm" style="margin-top:10px">Review unlocked sections</div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="margin-top:8px">
+    <b>Recommendation:</b> one scroll containing <b>V1</b> (distribution + tappable bands) then <b>V2</b> (top / needs-attention with a bulk message action), with <b>V5's insight strip</b> pinned at the top for principals. V3 belongs on the student page; V4 suits an exam-coordinator role once one exists.
+  </div>
+</div>
+
+<nav class="reviewnav" title="← → move between screens · F fit all five · I gallery">
+  <a class="rn-btn" href="05-grades.html" data-nav="prev">‹ <span class="rn-lbl">Enter Marks</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index">
+    <span class="rn-count">6 / 10</span>
+    <span class="rn-title">Grade Report</span>
+  </a>
+  <div class="rn-dots"><a class="rn-dot" href="01-students.html" title="1. Students"></a><a class="rn-dot" href="02-student-detail.html" title="2. Student 360"></a><a class="rn-dot" href="03-attendance.html" title="3. Mark Attendance"></a><a class="rn-dot" href="04-attendance-report.html" title="4. Attendance Report"></a><a class="rn-dot" href="05-grades.html" title="5. Enter Marks"></a><a class="rn-dot on" href="06-grade-report.html" title="6. Grade Report"></a><a class="rn-dot" href="07-timetable.html" title="7. Timetable Builder"></a><a class="rn-dot" href="08-my-schedule.html" title="8. My Schedule"></a><a class="rn-dot" href="09-report-cards.html" title="9. Report Cards"></a><a class="rn-dot" href="10-academic-years.html" title="10. Years & Terms"></a></div>
+  <a class="rn-btn" href="07-timetable.html" data-nav="next"><span class="rn-lbl">Timetable Builder</span> ›</a>
+  <span class="rn-keys">← →  ·  F fit  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>
