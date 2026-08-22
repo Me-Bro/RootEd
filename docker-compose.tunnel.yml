@@ -1,0 +1,37 @@
+# Overlay for running behind the Cloudflare Tunnel.
+# Tenants live at <tenant>-rooted.ruralrootcloud.com — a flat, single-level
+# subdomain so it's covered by the zone's existing *.ruralrootcloud.com
+# Universal SSL cert (a second-level wildcard like *.rooted.ruralrootcloud.com
+# is NOT covered by Cloudflare's free cert and fails TLS handshake).
+# TLS terminates at the Cloudflare edge, so nginx serves plain HTTP only.
+#
+# Onboarding a new tenant for production also requires a DNS route. Use the
+# tunnel's UUID, not its name "rooted-prod" — this cloudflared build
+# (2026.3.0) mis-resolves route-by-name to a different tunnel on this box:
+#   cloudflared tunnel route dns --overwrite-dns b14594a9-bc18-417a-88ae-a5f3d23c02b5 <tenant>-rooted.ruralrootcloud.com
+#
+# File storage (S3_PUBLIC_ENDPOINT) uses self-hosted Minio, exposed through
+# the same tunnel at storage-rooted.ruralrootcloud.com (see
+# ~/.cloudflared/rooted-prod-config.yml ingress) — presigned URLs must use a
+# browser-reachable host, not the internal Docker network hostname. The
+# Minio bucket has no public policy; access is gated entirely by the
+# presigned URL signature (see apps/api/src/services/storage.service.js).
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.tunnel.yml up -d --build
+
+services:
+  nginx:
+    volumes:
+      - ./nginx/nginx.tunnel.conf:/etc/nginx/nginx.conf:ro
+    ports: !override
+      - '80:80'
+  web:
+    build:
+      args:
+        VITE_APP_DOMAIN: ruralrootcloud.com
+  api:
+    environment:
+      APP_DOMAIN: ruralrootcloud.com
+      NODE_ENV: production
+      S3_PUBLIC_ENDPOINT: https://storage-rooted.ruralrootcloud.com
