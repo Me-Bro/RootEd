@@ -18,6 +18,7 @@ const feePaymentSchema = new mongoose.Schema(
     collectedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     notes: { type: String },
     receiptPdfKey: { type: String },
+    installmentIndex: { type: Number },
   },
   { timestamps: true }
 );

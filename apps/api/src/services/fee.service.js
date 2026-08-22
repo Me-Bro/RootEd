@@ -19,7 +19,21 @@ export async function assignFeesToStudents({
   if (!structure) throw new Error('FeeStructure not found');
 
   const totalAmount = calculateMandatoryTotal(structure.components);
-  const dueDate = dueDateOverride || structure.dueDate;
+  const hasInstallments = Boolean(structure.installments?.length);
+  const installmentsSnapshot = hasInstallments
+    ? structure.installments.map((i) => ({
+        label: i.label,
+        amount: i.amount,
+        dueDate: i.dueDate,
+        status: 'unpaid',
+        paidAmount: 0,
+      }))
+    : undefined;
+  const dueDate =
+    dueDateOverride ||
+    (hasInstallments
+      ? new Date(Math.max(...structure.installments.map((i) => new Date(i.dueDate).getTime())))
+      : structure.dueDate);
 
   let created = 0;
   let skipped = 0;
@@ -44,6 +58,7 @@ export async function assignFeesToStudents({
       academicYearId: structure.academicYearId,
       totalAmount,
       dueDate,
+      ...(installmentsSnapshot ? { installments: installmentsSnapshot } : {}),
     });
 
     created++;
@@ -86,6 +101,7 @@ export async function recordPayment({
   collectedBy,
   notes,
   tenantId,
+  installmentIndex,
 }) {
   const assignment = await FeeAssignment.findOne({ _id: assignmentId, tenantId });
   if (!assignment) throw new Error('FeeAssignment not found');
@@ -104,7 +120,14 @@ export async function recordPayment({
     receiptNumber,
     collectedBy,
     notes,
+    installmentIndex,
   });
+
+  if (installmentIndex !== undefined && assignment.installments?.[installmentIndex]) {
+    const inst = assignment.installments[installmentIndex];
+    inst.paidAmount += amount;
+    inst.status = inst.paidAmount >= inst.amount ? 'paid' : 'partial';
+  }
 
   const allPayments = await FeePayment.find({ tenantId, assignmentId }).lean();
   const totalPaid = allPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -235,5 +258,8 @@ export async function getDefaulters(tenantId, academicYearId) {
   return assignments.map((a) => ({
     ...a,
     daysOverdue: Math.floor((today - new Date(a.dueDate)) / (1000 * 60 * 60 * 24)),
+    overdueInstallments: (a.installments || []).filter(
+      (i) => i.status !== 'paid' && new Date(i.dueDate) < today
+    ).length,
   }));
 }

@@ -575,6 +575,48 @@ async function run() {
     sportsFeeStructure = sportsFeeStructure.toObject();
   }
 
+  let installmentFeeStructure = await FeeStructure.findOne(
+    { tenantId, name: 'Annual Fee - Installments' },
+    null,
+    { _bypassTenantScope: true }
+  ).lean();
+  if (!installmentFeeStructure) {
+    installmentFeeStructure = await FeeStructure.create({
+      tenantId,
+      name: 'Annual Fee - Installments',
+      academicYearId: year._id,
+      components: [{ label: 'Annual Tuition', amount: 9000, isOptional: false }],
+      installments: [
+        { label: 'Term 1', amount: 3000, dueDate: new Date('2025-06-30') },
+        { label: 'Term 2', amount: 3000, dueDate: new Date('2025-09-30') },
+        { label: 'Term 3', amount: 3000, dueDate: new Date('2025-12-31') },
+      ],
+    });
+    installmentFeeStructure = installmentFeeStructure.toObject();
+  }
+
+  let installmentAssignment = await FeeAssignment.findOne(
+    { tenantId, studentId: activeStudents[2]._id, feeStructureId: installmentFeeStructure._id },
+    null,
+    { _bypassTenantScope: true }
+  ).lean();
+  if (!installmentAssignment) {
+    installmentAssignment = await FeeAssignment.create({
+      tenantId,
+      studentId: activeStudents[2]._id,
+      feeStructureId: installmentFeeStructure._id,
+      academicYearId: year._id,
+      totalAmount: 9000,
+      dueDate: new Date('2025-12-31'),
+      installments: installmentFeeStructure.installments.map((i) => ({
+        ...i,
+        status: 'unpaid',
+        paidAmount: 0,
+      })),
+    });
+    installmentAssignment = installmentAssignment.toObject();
+  }
+
   // ── Timetable ─────────────────────────────────────────────────────────────
   const mathSub = subjects.find((s) => s.code === 'MATH5');
   const englishSub = subjects.find((s) => s.code === 'ENG5');
@@ -906,6 +948,11 @@ async function run() {
     costCenter: { _id: costCenter._id.toString() },
     feeStructure: { _id: feeStructure._id.toString() },
     feeStructureWithOptional: { _id: sportsFeeStructure._id.toString() },
+    feeStructureWithInstallments: { _id: installmentFeeStructure._id.toString() },
+    installmentAssignment: {
+      _id: installmentAssignment._id.toString(),
+      studentId: installmentAssignment.studentId.toString(),
+    },
     inventoryItems: inventoryItems.map((i) => ({ _id: i._id.toString(), sku: i.sku })),
   };
 

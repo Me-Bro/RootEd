@@ -9,3 +9,8 @@ export function calculateEffectiveTotal(assignment) {
     (assignment.lateFeeAmount || 0)
   );
 }
+
+export function installmentsMatchTotal(installments, components) {
+  const installmentTotal = installments.reduce((sum, i) => sum + i.amount, 0);
+  return installmentTotal === calculateMandatoryTotal(components);
+}

@@ -190,7 +190,8 @@ router.get('/assignments', requirePermission('fees:read'), async (req, res, next
 
 router.post('/payments', requirePermission('fees:collect'), async (req, res, next) => {
   try {
-    const { assignmentId, amount, paymentMethod, transactionId, notes } = req.body;
+    const { assignmentId, amount, paymentMethod, transactionId, notes, installmentIndex } =
+      req.body;
 
     const payment = await recordPayment({
       assignmentId,
@@ -198,6 +199,7 @@ router.post('/payments', requirePermission('fees:collect'), async (req, res, nex
       paymentMethod,
       transactionId,
       notes,
+      installmentIndex,
       collectedBy: req.user.sub,
       tenantId: req.tenant._id,
     });

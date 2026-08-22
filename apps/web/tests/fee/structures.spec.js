@@ -119,4 +119,24 @@ test.describe('Fee Structures', () => {
     });
     expect(res.status()).toBe(200); // proves academicYearId is silently dropped, not validated
   });
+
+  test('paying against a specific installment updates only that installment', async ({
+    request,
+  }) => {
+    const ids = getTestIds();
+    const client = await createTestApiClient(request, 'super_admin');
+    await client.post('/fee/payments', {
+      assignmentId: ids.installmentAssignment._id,
+      amount: 3000,
+      paymentMethod: 'cash',
+      installmentIndex: 0,
+    });
+    const res = await client.get(
+      `/fee/assignments?studentId=${ids.installmentAssignment.studentId}`
+    );
+    const body = await res.json();
+    const a = body.find((x) => x._id === ids.installmentAssignment._id);
+    expect(a.installments[0].status).toBe('paid');
+    expect(a.installments[1].status).toBe('unpaid');
+  });
 });

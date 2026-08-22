@@ -16,6 +16,13 @@ const feeStructureSchema = new mongoose.Schema(
     applicableTo: { type: String, enum: ['all', 'class', 'student'], default: 'all' },
     classId: { type: mongoose.Schema.Types.ObjectId, ref: 'Class' },
     dueDate: { type: Date },
+    installments: [
+      {
+        label: { type: String, required: true },
+        amount: { type: Number, required: true },
+        dueDate: { type: Date, required: true },
+      },
+    ],
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
