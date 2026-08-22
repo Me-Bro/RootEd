@@ -1,246 +1,301 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '../../lib/api.js';
+import { ChevronDown, Zap } from 'lucide-react';
 import { Button } from '../../components/ui/Button.jsx';
+import { Badge } from '../../components/ui/Badge.jsx';
+import { EmptyState } from '../../components/ui/EmptyState.jsx';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+} from '../../components/ui/dropdown-menu.jsx';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../../components/ui/sheet.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
+import { useAttendanceRoster } from '../../hooks/useAttendanceRoster.js';
+import SearchField from '../../components/attendance/SearchField.jsx';
+import FilterChips from '../../components/attendance/FilterChips.jsx';
+import SortMenu from '../../components/attendance/SortMenu.jsx';
+import StatusPills from '../../components/attendance/StatusPills.jsx';
+import UnmarkedGuardSheet from '../../components/attendance/UnmarkedGuardSheet.jsx';
+import BulkUndoToast from '../../components/attendance/BulkUndoToast.jsx';
 
-const STATUS_OPTIONS = ['present', 'absent', 'late', 'excused'];
-const EMPTY_ARRAY = [];
+function initials(firstName, lastName) {
+  return `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase();
+}
 
-const statusColors = {
-  present: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/40 dark:text-green-200',
-  absent: 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/40 dark:text-red-200',
-  late: 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-900/40 dark:text-yellow-200',
-  excused: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/40 dark:text-blue-200',
-  '': 'bg-gray-100 text-gray-600 border-gray-300 dark:bg-gray-800 dark:text-gray-400',
-};
+function PctBadge({ pct }) {
+  if (pct == null) return <span className="text-xs text-muted-foreground">no history</span>;
+  return (
+    <span
+      className={
+        pct < 75 ? 'text-xs font-semibold text-destructive' : 'text-xs text-muted-foreground'
+      }
+    >
+      {pct}%
+    </span>
+  );
+}
 
 export default function AttendancePage() {
-  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [sectionId, setSectionId] = useState(() => searchParams.get('sectionId') || '');
-  const [subjectId, setSubjectId] = useState(() => searchParams.get('subjectId') || '');
-  const [attendanceMap, setAttendanceMap] = useState({});
-  const [syncedRecords, setSyncedRecords] = useState(EMPTY_ARRAY);
+  const [moreSheetFor, setMoreSheetFor] = useState(null); // studentId | null
 
   const { classes } = useClassSections();
-  const classId = classes.find((c) => (c.sections || []).some((s) => s._id === sectionId))?._id;
+  const currentSection = classes
+    .flatMap((c) => (c.sections || []).map((s) => ({ ...s, className: c.name })))
+    .find((s) => s._id === sectionId);
 
-  const { data: subjects = EMPTY_ARRAY } = useQuery({
-    queryKey: ['subjects', classId],
-    queryFn: () => api.get(`/academic/subjects?classId=${classId}`).then((r) => r.data),
-    enabled: Boolean(classId),
-  });
+  const {
+    reportLoading,
+    reportError,
+    searchQuery,
+    setSearchQuery,
+    filter,
+    setFilter,
+    sortBy,
+    setSortBy,
+    rows,
+    filteredRows,
+    unmarkedRows,
+    counts,
+    guardOpen,
+    setGuardOpen,
+    bulkUndo,
+    setStatus,
+    markRestPresent,
+    undoBulk,
+    handleSaveTap,
+    saveMutation,
+  } = useAttendanceRoster({ sectionId, date });
 
-  const { data: students = EMPTY_ARRAY } = useQuery({
-    queryKey: ['students-list', sectionId],
-    queryFn: () =>
-      sectionId
-        ? api
-            .get(`/academic/students?sectionId=${sectionId}&limit=100`)
-            .then((r) => r.data.students)
-        : Promise.resolve(EMPTY_ARRAY),
-    enabled: Boolean(sectionId),
-  });
+  const statusCounts = rows.reduce(
+    (acc, r) => {
+      const s = r.current?.status;
+      if (s) acc[s] = (acc[s] ?? 0) + 1;
+      return acc;
+    },
+    { present: 0, absent: 0, late: 0, excused: 0 }
+  );
+  const markedCount = rows.length - counts.unmarked;
 
-  const { data: existingRecords = EMPTY_ARRAY } = useQuery({
-    queryKey: ['attendance', sectionId, date, subjectId],
-    queryFn: () =>
-      sectionId && date
-        ? api
-            .get(
-              `/academic/attendance?sectionId=${sectionId}&date=${date}` +
-                (subjectId ? `&subjectId=${subjectId}` : '')
-            )
-            .then((r) => r.data)
-        : Promise.resolve(EMPTY_ARRAY),
-    enabled: Boolean(sectionId && date),
-  });
-
-  if (existingRecords !== syncedRecords) {
-    setSyncedRecords(existingRecords);
-    const map = {};
-    for (const r of existingRecords) {
-      map[r.entityId] = r.status;
-    }
-    setAttendanceMap(map);
-  }
-
-  const saveMutation = useMutation({
-    mutationFn: (records) =>
-      api
-        .post('/academic/attendance', {
-          date,
-          sectionId,
-          subjectId: subjectId || null,
-          records,
-        })
-        .then((r) => r.data),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ['attendance', sectionId, date, subjectId] }),
-  });
-
-  function toggleStatus(studentId, current) {
-    const idx = STATUS_OPTIONS.indexOf(current);
-    const next = STATUS_OPTIONS[(idx + 1) % STATUS_OPTIONS.length];
-    setAttendanceMap((m) => ({ ...m, [studentId]: next }));
-  }
-
-  function markAll(status) {
-    setAttendanceMap(() => Object.fromEntries(students.map((s) => [s._id, status])));
-  }
-
-  function handleSave() {
-    const records = students.map((s) => ({
-      entityId: s._id,
-      status: attendanceMap[s._id] || 'absent',
-    }));
-    saveMutation.mutate(records);
-  }
+  const moreSheetRow = rows.find((r) => r.studentId === moreSheetFor);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Attendance</h1>
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Attendance</h1>
+          {currentSection && (
+            <p className="text-sm text-muted-foreground">
+              {currentSection.className} - {currentSection.name}
+            </p>
+          )}
+        </div>
         {sectionId && (
           <Link
             to={`/academic/attendance/report?sectionId=${sectionId}`}
-            className="text-sm font-medium text-blue-600 hover:underline"
+            className="text-sm font-medium text-primary hover:underline"
           >
             View Report →
           </Link>
         )}
       </div>
 
-      <div className="flex flex-wrap gap-4 items-end">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Date</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-          />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Section</label>
-          <select
-            value={sectionId}
-            onChange={(e) => {
-              setSectionId(e.target.value);
-              setSubjectId('');
-            }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-          >
-            <option value="">— Select section —</option>
+      <div className="flex flex-wrap items-center gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium">
+            {currentSection
+              ? `${currentSection.className}-${currentSection.name}`
+              : 'Select section'}
+            <ChevronDown size={14} />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
             {classes.map((c) => (
-              <optgroup key={c._id} label={c.name}>
+              <DropdownMenuGroup key={c._id}>
+                <DropdownMenuLabel>{c.name}</DropdownMenuLabel>
                 {(c.sections || []).map((s) => (
-                  <option key={s._id} value={s._id}>
-                    {s.name}
-                  </option>
+                  <DropdownMenuItem key={s._id} onClick={() => setSectionId(s._id)}>
+                    {c.name} - {s.name}
+                  </DropdownMenuItem>
                 ))}
-              </optgroup>
+              </DropdownMenuGroup>
             ))}
-          </select>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Subject (optional)
-          </label>
-          <select
-            value={subjectId}
-            onChange={(e) => setSubjectId(e.target.value)}
-            disabled={!sectionId}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-          >
-            <option value="">— Daily (no subject) —</option>
-            {subjects.map((sub) => (
-              <option key={sub._id} value={sub._id}>
-                {sub.name}
-              </option>
-            ))}
-          </select>
-        </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="h-9 rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        />
+
+        {rows.length > 0 && (
+          <span className="text-xs text-muted-foreground">{rows.length} students</span>
+        )}
       </div>
 
-      {sectionId && students.length > 0 && (
+      {!sectionId && <EmptyState title="Select a section to mark attendance" />}
+
+      {sectionId && reportError && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          Attendance % unavailable — retry. Marking is still available below.
+        </div>
+      )}
+
+      {sectionId && !reportLoading && rows.length === 0 && (
+        <EmptyState title="No active students in this section." />
+      )}
+
+      {sectionId && rows.length > 0 && (
         <>
+          <SearchField value={searchQuery} onChange={setSearchQuery} />
+
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="text-xs text-gray-400">
-              Click a status to cycle: present → absent → late → excused
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => markAll('present')}>
-                Mark all Present
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => markAll('absent')}>
-                Mark all Absent
-              </Button>
-            </div>
-          </div>
-          <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-800 text-left">
-                <tr>
-                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
-                    Student
-                  </th>
-                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
-                    Admission No
-                  </th>
-                  <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                {students.map((s) => {
-                  const status = attendanceMap[s._id] || '';
-                  return (
-                    <tr key={s._id} className="bg-white dark:bg-gray-900">
-                      <td className="px-4 py-3">
-                        {s.firstName} {s.lastName}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500">{s.admissionNo}</td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => toggleStatus(s._id, status)}
-                          className={[
-                            'rounded border px-3 py-1 text-xs font-medium capitalize transition-colors',
-                            statusColors[status],
-                          ].join(' ')}
-                        >
-                          {status || 'not marked'}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <FilterChips value={filter} onChange={setFilter} counts={counts} />
+            <SortMenu value={sortBy} onChange={setSortBy} />
           </div>
 
-          <div className="flex justify-end">
-            <Button onClick={handleSave} disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? 'Saving…' : 'Save Attendance'}
-            </Button>
+          <div className="rounded-lg border border-border bg-card p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold">
+                Marked {markedCount} of {rows.length}
+              </span>
+              <div className="flex gap-1.5">
+                <Badge variant="success">{statusCounts.present} P</Badge>
+                <Badge variant="danger">{statusCounts.absent} A</Badge>
+                <Badge variant="warning">{statusCounts.late} L</Badge>
+              </div>
+            </div>
+            <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: `${rows.length ? (markedCount / rows.length) * 100 : 0}%` }}
+              />
+            </div>
           </div>
 
-          {saveMutation.isSuccess && (
-            <p className="text-sm text-green-600 text-right">Attendance saved successfully</p>
+          {filteredRows.length === 0 && (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              No student matches &lsquo;{searchQuery}&rsquo;
+            </p>
           )}
-          {saveMutation.isError && (
-            <p className="text-sm text-red-500 text-right">Failed to save attendance</p>
-          )}
+
+          <div className="flex flex-col divide-y divide-border rounded-lg border border-border">
+            {filteredRows.map((r) => (
+              <div key={r.studentId} className="flex items-center gap-3 p-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                  {initials(r.firstName, r.lastName)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">
+                    {r.firstName} {r.lastName}
+                  </p>
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span className="font-mono">{r.admissionNo}</span>
+                    <span>·</span>
+                    <PctBadge pct={r.pct} />
+                    {r.secondConsecutiveAbsence && (
+                      <>
+                        <span>·</span>
+                        <span className="font-medium text-destructive">2nd day absent</span>
+                      </>
+                    )}
+                  </p>
+                </div>
+                <div className="w-40">
+                  <StatusPills
+                    status={r.current?.status}
+                    onSet={(status) => setStatus(r.studentId, status)}
+                    onOpenMore={() => setMoreSheetFor(r.studentId)}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </>
       )}
 
-      {sectionId && students.length === 0 && (
-        <p className="text-gray-400 text-sm">No students in this section</p>
+      {sectionId && rows.length > 0 && (
+        <div className="sticky bottom-0 z-10 -mx-6 border-t border-border bg-card p-3">
+          {bulkUndo && (
+            <div className="mb-2">
+              <BulkUndoToast
+                count={bulkUndo.studentIds.length}
+                onUndo={undoBulk}
+                onExpire={undoBulk}
+              />
+            </div>
+          )}
+          {saveMutation.isError && (
+            <p className="mb-2 text-center text-sm text-destructive">
+              Failed to save attendance — nothing was lost, tap Save to retry.
+            </p>
+          )}
+          <div className="mx-auto flex max-w-3xl gap-2">
+            <Button
+              variant="outline"
+              className="gap-1.5"
+              disabled={counts.unmarked === 0}
+              onClick={markRestPresent}
+            >
+              <Zap size={14} />
+              Mark rest present
+            </Button>
+            <Button className="flex-1" onClick={handleSaveTap} disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Saving…' : `Save · ${markedCount} of ${rows.length}`}
+            </Button>
+          </div>
+        </div>
       )}
 
-      {!sectionId && <p className="text-gray-400 text-sm">Select a section to mark attendance</p>}
+      <UnmarkedGuardSheet
+        open={guardOpen}
+        unmarkedRows={unmarkedRows}
+        onSet={setStatus}
+        onMarkAllPresent={() => {
+          markRestPresent();
+          setGuardOpen(false);
+        }}
+        onClose={() => setGuardOpen(false)}
+      />
+
+      <Sheet open={Boolean(moreSheetFor)} onOpenChange={(next) => !next && setMoreSheetFor(null)}>
+        <SheetContent side="bottom">
+          <SheetHeader>
+            <SheetTitle>
+              {moreSheetRow ? `${moreSheetRow.firstName} ${moreSheetRow.lastName}` : ''}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex gap-2 px-4 pb-4">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => {
+                setStatus(moreSheetFor, 'late', { note: new Date().toTimeString().slice(0, 5) });
+                setMoreSheetFor(null);
+              }}
+            >
+              Late
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => {
+                setStatus(moreSheetFor, 'excused');
+                setMoreSheetFor(null);
+              }}
+            >
+              Excused
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

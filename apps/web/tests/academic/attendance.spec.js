@@ -7,133 +7,112 @@ function getTestIds() {
   return JSON.parse(readFileSync(p, 'utf-8'));
 }
 
+// Rebuilt per docs/mobile-ui/03-attendance-approved.html: daily roll only (subjectId
+// is always null), so the old per-subject/period marking coverage no longer applies —
+// that capability isn't part of this screen's approved spec.
+
 test.describe('Attendance page', () => {
+  let sectionId;
+
   test.beforeEach(async ({ page }) => {
-    await page.goto('/academic/attendance');
+    sectionId = getTestIds().section._id;
+    await page.goto(`/academic/attendance?sectionId=${sectionId}`);
     await page.waitForLoadState('networkidle');
   });
 
-  test('renders date and section controls', async ({ page }) => {
+  test('renders the roster with search, filter, sort and a progress card', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Attendance' })).toBeVisible();
-    await expect(page.locator('input[type="date"]')).toBeVisible();
-    await expect(page.locator('select').first()).toBeVisible();
-    await expect(page.getByText('Select a section')).toBeVisible();
+    await expect(page.getByPlaceholder('Search name or admission no.')).toBeVisible();
+    await expect(page.getByRole('button', { name: /^All ·/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Unmarked ·/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^At-risk ·/ })).toBeVisible();
+    await expect(page.getByText(/^Marked \d+ of \d+$/)).toBeVisible();
   });
 
-  test('selecting section loads student list', async ({ page }) => {
-    const sectionSelect = page.locator('select').first();
-    await sectionSelect.selectOption({ index: 1 });
+  test('search filters the roster by name or admission number', async ({ page }) => {
+    const search = page.getByPlaceholder('Search name or admission no.');
+    await search.fill('2025-TEST-001');
+    await expect(page.getByText('2025-TEST-001')).toBeVisible();
+    await expect(page.getByText('2025-TEST-002')).not.toBeVisible();
 
-    // Students should appear
-    await expect(page.locator('table')).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('table tbody tr').first()).toBeVisible();
+    await search.fill('no-such-student-zzz');
+    await expect(page.getByText(/No student matches/)).toBeVisible();
   });
 
-  test('cycles attendance status on button click', async ({ page }) => {
-    const sectionSelect = page.locator('select').first();
-    await sectionSelect.selectOption({ index: 1 });
-    await page.locator('table').waitFor({ timeout: 10_000 });
+  test('Present/Absent are direct one-tap buttons, never a cycle', async ({ page }) => {
+    const row = page.locator('.divide-y > div').first();
+    const presentBtn = row.getByRole('button', { name: 'Mark present' });
+    const absentBtn = row.getByRole('button', { name: 'Mark absent' });
 
-    const firstStatusBtn = page.locator('table tbody tr').first().getByRole('button');
-    const initialText = await firstStatusBtn.textContent();
+    await presentBtn.click();
+    await expect(presentBtn).toHaveAttribute('aria-pressed', 'true');
+    await expect(absentBtn).toHaveAttribute('aria-pressed', 'false');
 
-    await firstStatusBtn.click();
-    const afterText = await firstStatusBtn.textContent();
-
-    // Text should change (cycles through statuses)
-    expect(afterText).not.toBe(initialText);
+    await absentBtn.click();
+    await expect(absentBtn).toHaveAttribute('aria-pressed', 'true');
+    await expect(presentBtn).toHaveAttribute('aria-pressed', 'false');
   });
 
-  test('saves attendance and shows success message', async ({ page }) => {
-    const today = new Date().toISOString().slice(0, 10);
-    await page.locator('input[type="date"]').fill(today);
-
-    const sectionSelect = page.locator('select').first();
-    await sectionSelect.selectOption({ index: 1 });
-    await page.locator('table').waitFor({ timeout: 10_000 });
-
-    // Mark first 3 students as present
-    const rows = page.locator('table tbody tr');
-    for (let i = 0; i < Math.min(3, await rows.count()); i++) {
-      const btn = rows.nth(i).getByRole('button');
-      // Click until "present"
-      let attempts = 0;
-      while ((await btn.textContent())?.toLowerCase() !== 'present' && attempts < 4) {
-        await btn.click();
-        attempts++;
-      }
-    }
-
-    await page.getByRole('button', { name: 'Save Attendance' }).click();
-    await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: 10_000 });
+  test('the ⋯ sheet sets Late without touching other rows', async ({ page }) => {
+    const rows = page.locator('.divide-y > div');
+    const first = rows.first();
+    await first.getByRole('button', { name: /More status options/ }).click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByRole('button', { name: 'Late' }).click();
+    await expect(page.getByRole('dialog')).not.toBeVisible();
+    await expect(first.getByRole('button', { name: /More status options/ })).toHaveText('L');
   });
 
-  test('save attendance is disabled while saving', async ({ page }) => {
-    const sectionSelect = page.locator('select').first();
-    await sectionSelect.selectOption({ index: 1 });
-    await page.locator('table').waitFor({ timeout: 10_000 });
-
-    const saveBtn = page.getByRole('button', { name: 'Save Attendance' });
-
-    // Intercept only the save POST to slow it down — the same URL also matches the
-    // page's GET for existing records, and delaying that too caused a late
-    // route.continue() to fire after the test/context had already closed.
-    await page.route('**/academic/attendance', (route) => {
-      if (route.request().method() !== 'POST') return route.continue();
-      setTimeout(() => route.continue(), 500);
-    });
-
-    await saveBtn.click();
-    // After click, button text changes — use a fresh locator that matches the new text
-    await expect(page.getByRole('button', { name: /Saving/i })).toBeVisible({ timeout: 3_000 });
-    // Wait for the delayed save to actually complete before unrouting — unrouting
-    // while the intercepted request is still in flight races with its own
-    // route.continue(), which throws "Route is already handled!".
-    await expect(page.getByText(/saved successfully/i)).toBeVisible({ timeout: 5_000 });
-    await page.unrouteAll();
-  });
-
-  test("subject select loads that subject's period record instead of the daily one", async ({
+  test('Mark rest present only fills unmarked rows, and Undo restores exactly those', async ({
     page,
   }) => {
-    const { section, students, subjects } = getTestIds();
-    const student1 = students.find((s) => s.admissionNo.endsWith('001'));
-    const math = subjects.find((s) => s.name === 'Mathematics');
-    const english = subjects.find((s) => s.name === 'English');
+    const rows = page.locator('.divide-y > div');
+    // Leave an explicit trail: mark the first row Absent by hand before the bulk action.
+    await rows.first().getByRole('button', { name: 'Mark absent' }).click();
 
-    // Seeded per-period date: student 1 is present in Math, absent in English.
-    await page.locator('input[type="date"]').fill('2025-06-06');
-    await page.locator('select').first().selectOption(section._id);
-    await page.locator('table').waitFor({ timeout: 10_000 });
+    const unmarkedBefore = Number(
+      (await page.getByRole('button', { name: /^Unmarked ·/ }).textContent()).match(/\d+/)[0]
+    );
+    await page.getByRole('button', { name: 'Mark rest present' }).click();
 
-    const subjectSelect = page.locator('select').nth(1);
-    const row = page.locator('tbody tr', { hasText: student1.admissionNo });
+    await expect(page.getByText(/students? marked present/)).toBeVisible();
+    // The manually-set row is untouched by the bulk action.
+    await expect(rows.first().getByRole('button', { name: 'Mark absent' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
+    await expect(page.getByRole('button', { name: /^Unmarked ·/ })).toHaveText('Unmarked · 0');
 
-    await subjectSelect.selectOption(math._id);
-    await expect(row.getByRole('button')).toHaveText('present', { timeout: 10_000 });
-
-    await subjectSelect.selectOption(english._id);
-    await expect(row.getByRole('button')).toHaveText('absent', { timeout: 10_000 });
+    await page.getByRole('button', { name: 'UNDO' }).click();
+    await expect(page.getByRole('button', { name: /^Unmarked ·/ })).toHaveText(
+      `Unmarked · ${unmarkedBefore}`
+    );
+    // Still untouched after undo.
+    await expect(rows.first().getByRole('button', { name: 'Mark absent' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    );
   });
 
-  test('"Mark all Present" sets every loaded student to present', async ({ page }) => {
-    const sectionSelect = page.locator('select').first();
-    await sectionSelect.selectOption({ index: 1 });
-    await page.locator('table').waitFor({ timeout: 10_000 });
+  test('Save while incomplete opens a guard sheet; marking everyone from it lets Save succeed', async ({
+    page,
+  }) => {
+    const unmarkedCountText = await page.getByRole('button', { name: /^Unmarked ·/ }).textContent();
+    const unmarkedCount = Number(unmarkedCountText.match(/\d+/)[0]);
+    test.skip(unmarkedCount === 0, 'roster already fully marked from a previous run');
 
-    await page.getByRole('button', { name: 'Mark all Present' }).click();
+    await page.getByRole('button', { name: /^Save ·/ }).click();
+    await expect(page.getByText(/students? still unmarked/)).toBeVisible();
 
-    const buttons = page.locator('table tbody tr').getByRole('button');
-    const count = await buttons.count();
-    for (let i = 0; i < count; i++) {
-      await expect(buttons.nth(i)).toHaveText('present');
-    }
+    await page.getByRole('button', { name: /^⚡ Mark all \d+ present$/ }).click();
+    await expect(page.getByText(/students? still unmarked/)).not.toBeVisible();
+    await expect(page.getByRole('button', { name: /^Unmarked ·/ })).toHaveText('Unmarked · 0');
+
+    await page.getByRole('button', { name: /^Save ·/ }).click();
+    await expect(page.getByText(/Failed to save attendance/)).not.toBeVisible();
   });
 
   test('"View Report" link navigates to the attendance report page', async ({ page }) => {
-    const sectionSelect = page.locator('select').first();
-    await sectionSelect.selectOption({ index: 1 });
-
     await page.getByRole('link', { name: 'View Report →' }).click();
     await expect(page).toHaveURL(/\/academic\/attendance\/report/);
     await expect(page.getByRole('heading', { name: 'Attendance Report' })).toBeVisible();

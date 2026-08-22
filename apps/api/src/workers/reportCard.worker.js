@@ -94,7 +94,7 @@ function drawSignatureLines(doc) {
     .text('Principal', 340, y + 5, { width: 140, align: 'center' });
 }
 
-async function generateReportCardPdf(tenantId, termId, sectionId) {
+async function generateReportCardPdf(job, tenantId, termId, sectionId) {
   const {
     section,
     term,
@@ -112,6 +112,10 @@ async function generateReportCardPdf(tenantId, termId, sectionId) {
   const termLabel = term?.name ?? '—';
   const schoolName = tenant?.name ?? 'Report Card';
 
+  // Real per-card progress for the mobile job-status screen (docs/mobile-ui/
+  // 09-report-cards-approved.html §1/§4) — a ring showing "13 of 21", not a spinner.
+  await job.updateProgress({ completed: 0, total: students.length });
+
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
     const chunks = [];
@@ -119,77 +123,85 @@ async function generateReportCardPdf(tenantId, termId, sectionId) {
     doc.on('end', () => resolve(Buffer.concat(chunks)));
     doc.on('error', reject);
 
-    for (let i = 0; i < students.length; i++) {
-      const student = students[i];
-      if (i > 0) doc.addPage();
+    // Wrapped in an async IIFE (rather than making the executor itself async)
+    // purely so each iteration can `await job.updateProgress(...)` between pages —
+    // pdfkit's own data/end/error events still drive resolve/reject above.
+    (async () => {
+      for (let i = 0; i < students.length; i++) {
+        const student = students[i];
+        if (i > 0) doc.addPage();
 
-      doc.fontSize(16).text(schoolName, { align: 'center' });
-      doc.fontSize(12).text('Report Card', { align: 'center' });
-      doc.moveDown(0.3);
-      doc
-        .fontSize(9)
-        .fillColor('gray')
-        .text(`${sectionLabel}  ·  ${termLabel}`, { align: 'center' });
-      doc.fillColor('black');
-      doc.moveDown(0.8);
+        doc.fontSize(16).text(schoolName, { align: 'center' });
+        doc.fontSize(12).text('Report Card', { align: 'center' });
+        doc.moveDown(0.3);
+        doc
+          .fontSize(9)
+          .fillColor('gray')
+          .text(`${sectionLabel}  ·  ${termLabel}`, { align: 'center' });
+        doc.fillColor('black');
+        doc.moveDown(0.8);
 
-      doc.fontSize(12).text(`${student.firstName} ${student.lastName}`);
-      doc.fontSize(10).text(`Admission No: ${student.admissionNo}`);
-      doc.moveDown();
+        doc.fontSize(12).text(`${student.firstName} ${student.lastName}`);
+        doc.fontSize(10).text(`Admission No: ${student.admissionNo}`);
+        doc.moveDown();
 
-      const studentGrades = gradesByStudent[student._id.toString()] || [];
+        const studentGrades = gradesByStudent[student._id.toString()] || [];
 
-      const tableTop = doc.y;
-      doc.fontSize(10);
-      doc.text('Subject', 50, tableTop, { width: 150 });
-      doc.text('Score', 200, tableTop, { width: 60 });
-      doc.text('Grade', 260, tableTop, { width: 60 });
-      doc.text('Remarks', 320, tableTop, { width: 220 });
-      doc.moveDown(0.5);
-      doc.moveTo(50, doc.y).lineTo(540, doc.y).stroke();
-      doc.moveDown(0.5);
-
-      for (const g of studentGrades) {
-        const y = doc.y;
-        const letter = g.letterGrade || '—';
-        const subjectLabel = g.subjectId?.name ?? 'Unknown';
-        const assessmentLabel =
-          g.assessmentType && g.assessmentType !== 'final'
-            ? `${subjectLabel} (${g.assessmentType[0].toUpperCase()}${g.assessmentType.slice(1)})`
-            : subjectLabel;
-        doc.text(assessmentLabel, 50, y, { width: 150 });
-        doc.text(String(g.score ?? '—'), 200, y, { width: 60 });
-        doc.text(letter, 260, y, { width: 60 });
-        doc.text(g.remarks ?? '—', 320, y, { width: 220 });
+        const tableTop = doc.y;
+        doc.fontSize(10);
+        doc.text('Subject', 50, tableTop, { width: 150 });
+        doc.text('Score', 200, tableTop, { width: 60 });
+        doc.text('Grade', 260, tableTop, { width: 60 });
+        doc.text('Remarks', 320, tableTop, { width: 220 });
         doc.moveDown(0.5);
+        doc.moveTo(50, doc.y).lineTo(540, doc.y).stroke();
+        doc.moveDown(0.5);
+
+        for (const g of studentGrades) {
+          const y = doc.y;
+          const letter = g.letterGrade || '—';
+          const subjectLabel = g.subjectId?.name ?? 'Unknown';
+          const assessmentLabel =
+            g.assessmentType && g.assessmentType !== 'final'
+              ? `${subjectLabel} (${g.assessmentType[0].toUpperCase()}${g.assessmentType.slice(1)})`
+              : subjectLabel;
+          doc.text(assessmentLabel, 50, y, { width: 150 });
+          doc.text(String(g.score ?? '—'), 200, y, { width: 60 });
+          doc.text(letter, 260, y, { width: 60 });
+          doc.text(g.remarks ?? '—', 320, y, { width: 220 });
+          doc.moveDown(0.5);
+        }
+
+        doc.moveDown(0.5);
+        doc.moveTo(50, doc.y).lineTo(540, doc.y).stroke();
+        doc.moveDown(0.5);
+
+        const stats = gradeStatsByStudent[student._id.toString()];
+        const attendance = attendanceByStudent[student._id.toString()];
+        const avg = stats?.score ?? '—';
+        const overallLetter = stats?.letterGrade ?? '—';
+        const rankLabel =
+          stats?.rank != null
+            ? `${stats.rank} of ${rankedCount}`
+            : 'Not ranked (no scored subjects)';
+        const attendanceLabel = attendance?.pct != null ? `${attendance.pct}%` : 'No records';
+
+        doc.fontSize(11);
+        doc.text(`Weighted Average: ${avg}   Overall Grade: ${overallLetter}`, { align: 'right' });
+        doc.text(`Class Rank: ${rankLabel}`, { align: 'right' });
+        doc.text(`Attendance: ${attendanceLabel}`, { align: 'right' });
+
+        drawSignatureLines(doc);
+        drawFooter(doc, i + 1, students.length);
+        await job.updateProgress({ completed: i + 1, total: students.length });
       }
 
-      doc.moveDown(0.5);
-      doc.moveTo(50, doc.y).lineTo(540, doc.y).stroke();
-      doc.moveDown(0.5);
+      if (students.length === 0) {
+        doc.fontSize(12).text('No active students in this section.');
+      }
 
-      const stats = gradeStatsByStudent[student._id.toString()];
-      const attendance = attendanceByStudent[student._id.toString()];
-      const avg = stats?.score ?? '—';
-      const overallLetter = stats?.letterGrade ?? '—';
-      const rankLabel =
-        stats?.rank != null ? `${stats.rank} of ${rankedCount}` : 'Not ranked (no scored subjects)';
-      const attendanceLabel = attendance?.pct != null ? `${attendance.pct}%` : 'No records';
-
-      doc.fontSize(11);
-      doc.text(`Weighted Average: ${avg}   Overall Grade: ${overallLetter}`, { align: 'right' });
-      doc.text(`Class Rank: ${rankLabel}`, { align: 'right' });
-      doc.text(`Attendance: ${attendanceLabel}`, { align: 'right' });
-
-      drawSignatureLines(doc);
-      drawFooter(doc, i + 1, students.length);
-    }
-
-    if (students.length === 0) {
-      doc.fontSize(12).text('No active students in this section.');
-    }
-
-    doc.end();
+      doc.end();
+    })().catch(reject);
   });
 }
 
@@ -199,7 +211,7 @@ export function startReportCardWorker() {
     async (job) => {
       const { tenantId, termId, sectionId } = job.data;
 
-      const pdfBuffer = await generateReportCardPdf(tenantId, termId, sectionId);
+      const pdfBuffer = await generateReportCardPdf(job, tenantId, termId, sectionId);
       const key = `report-cards/${tenantId}/${termId}/${sectionId}/${Date.now()}.pdf`;
 
       await uploadBuffer(key, pdfBuffer, 'application/pdf');

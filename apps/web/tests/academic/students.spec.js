@@ -10,13 +10,52 @@ function getTestIds() {
 }
 
 test.describe('Students page', () => {
-  test('loads students list with seeded data', async ({ page }) => {
+  test('loads a section roster directly via ?sectionId=', async ({ page }) => {
+    const ids = getTestIds();
+
+    await page.goto(`/academic/students?sectionId=${ids.section._id}`);
+    await page.waitForLoadState('networkidle');
+
+    // Seeded 12 students in section A — roster renders as links, not a table.
+    await expect(page.getByText(ids.students[0].admissionNo)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('12 students')).toBeVisible();
+  });
+
+  test('shows the class grid with no section pre-selected', async ({ page }) => {
     await page.goto('/academic/students');
     await page.waitForLoadState('networkidle');
 
-    // Seeded 10 students — at least one row visible
-    const rows = page.locator('table tbody tr, [class*="TableRow"]');
-    await expect(rows.first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('listitem').first()).toBeVisible({ timeout: 10_000 });
+    // No 40-option native <select> for browsing by section.
+    await expect(page.locator('select')).toHaveCount(0);
+  });
+
+  test('drilling into a class reveals its section chips, then the roster', async ({ page }) => {
+    const ids = getTestIds();
+
+    await page.goto('/academic/students');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByRole('listitem').first().click();
+    await expect(page.getByRole('group', { name: 'Sections' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'A', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'B', exact: true })).toBeVisible();
+
+    await page.getByRole('button', { name: 'A', exact: true }).click();
+    await expect(page.getByText(ids.students[0].admissionNo)).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('an empty section shows the empty state, Add Student stays available', async ({ page }) => {
+    await page.goto('/academic/students');
+    await page.waitForLoadState('networkidle');
+
+    await page.getByRole('listitem').first().click();
+    await page.getByRole('button', { name: 'B', exact: true }).click();
+
+    await expect(page.getByText('No students in this section yet')).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.getByRole('button', { name: 'Add Student' })).toBeEnabled();
   });
 
   test('opens Add Student dialog', async ({ page }) => {
@@ -42,9 +81,8 @@ test.describe('Students page', () => {
 
     await dialog.getByRole('button', { name: 'Add Student' }).click();
 
-    // Dialog closes, table shows new student
+    // Dialog closes
     await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 8_000 });
-    await expect(page.getByText(admNo)).toBeVisible({ timeout: 10_000 });
   });
 
   test('shows error for duplicate admission number', async ({ page }) => {
@@ -95,31 +133,30 @@ test.describe('Students page', () => {
     await expect(page.getByText(/Errors:|Skipped/).first()).toBeVisible();
   });
 
-  test('search narrows results by admission number', async ({ page }) => {
+  test('search narrows results and bypasses the class drill-down', async ({ page }) => {
     const ids = getTestIds();
     const admNo = ids.students[0].admissionNo;
 
     await page.goto('/academic/students');
     await page.waitForLoadState('networkidle');
 
-    await page.getByPlaceholder('Search name or admission no…').fill(admNo);
+    await page.getByPlaceholder('Search name or admission no.').fill(admNo);
     await page.waitForLoadState('networkidle');
 
     await expect(page.getByText(admNo)).toBeVisible({ timeout: 8_000 });
-    const rows = page.locator('table tbody tr');
-    await expect(rows).toHaveCount(1, { timeout: 8_000 });
+    await expect(page.getByText('1 student', { exact: true })).toBeVisible();
+    // Drill-down UI (class grid) hides while a search is active.
+    await expect(page.getByRole('listitem')).toHaveCount(0);
   });
 
   test('search narrows results by name', async ({ page }) => {
     await page.goto('/academic/students');
     await page.waitForLoadState('networkidle');
 
-    await page.getByPlaceholder('Search name or admission no…').fill('Student1');
+    await page.getByPlaceholder('Search name or admission no.').fill('Student1');
     await page.waitForLoadState('networkidle');
 
-    const rows = page.locator('table tbody tr');
-    await expect(rows.first()).toBeVisible({ timeout: 8_000 });
-    await expect(page.getByText('Student1 Test')).toBeVisible();
+    await expect(page.getByText('Student1 Test')).toBeVisible({ timeout: 8_000 });
   });
 
   test('clicking a student name navigates to the detail page', async ({ page }) => {
@@ -129,7 +166,7 @@ test.describe('Students page', () => {
     await page.goto('/academic/students');
     await page.waitForLoadState('networkidle');
 
-    await page.getByPlaceholder('Search name or admission no…').fill(admNo);
+    await page.getByPlaceholder('Search name or admission no.').fill(admNo);
     await page.waitForLoadState('networkidle');
 
     await page.getByRole('link', { name: 'Student1 Test' }).click();
@@ -137,20 +174,19 @@ test.describe('Students page', () => {
     await expect(page.getByRole('heading', { name: 'Student1 Test' })).toBeVisible();
   });
 
-  test('section filter narrows results', async ({ page }) => {
+  test('the last viewed section is remembered and pre-opened on the next visit', async ({
+    page,
+  }) => {
+    const ids = getTestIds();
+
+    // First visit: deep-link into section A (simulates having picked it via the chips).
+    await page.goto(`/academic/students?sectionId=${ids.section._id}`);
+    await page.waitForLoadState('networkidle');
+    await expect(page.getByText(ids.students[0].admissionNo)).toBeVisible({ timeout: 10_000 });
+
+    // Second visit, no query param — the roster should reopen automatically.
     await page.goto('/academic/students');
     await page.waitForLoadState('networkidle');
-
-    // Select the first section option
-    const sectionSelect = page.locator('select').first();
-    await sectionSelect.selectOption({ index: 1 });
-    await page.waitForLoadState('networkidle');
-
-    // Table refreshes — either shows students or empty state
-    const rows = page.locator('table tbody tr');
-    const empty = page
-      .locator('[class*="EmptyState"], [class*="empty"]')
-      .or(page.getByText('No students'));
-    await expect(rows.first().or(empty.first())).toBeVisible({ timeout: 8_000 });
+    await expect(page.getByText(ids.students[0].admissionNo)).toBeVisible({ timeout: 10_000 });
   });
 });

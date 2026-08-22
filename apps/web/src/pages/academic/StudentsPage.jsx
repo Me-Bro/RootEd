@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowRight } from 'lucide-react';
 import api from '../../lib/api.js';
-import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import {
@@ -13,15 +13,13 @@ import {
   DialogFooter,
 } from '../../components/ui/dialog.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
-import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
+import SearchField from '../../components/attendance/SearchField.jsx';
+import ClassGrid from '../../components/students/ClassGrid.jsx';
+import SectionChips from '../../components/students/SectionChips.jsx';
+import RosterInfiniteList from '../../components/students/RosterInfiniteList.jsx';
 
-function statusVariant(status) {
-  if (status === 'active') return 'success';
-  if (status === 'graduated') return 'default';
-  if (status === 'withdrawn') return 'danger';
-  return 'default';
-}
+const LAST_SECTION_KEY = 'students:lastSectionId';
 
 function AddStudentModal({ open, onOpenChange, sections }) {
   const queryClient = useQueryClient();
@@ -163,33 +161,56 @@ function ImportResultModal({ open, onOpenChange, result }) {
 
 export default function StudentsPage() {
   const queryClient = useQueryClient();
-  const [sectionId, setSectionId] = useState('');
-  const [page, setPage] = useState(1);
+  const [searchParams] = useSearchParams();
   const [showAdd, setShowAdd] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const fileRef = useRef(null);
 
+  // Class drill-down state (replaces the 40-option section <select>). The
+  // initial section prefers an explicit ?sectionId= (Playwright/deep-links),
+  // falling back to the last section this device viewed — "pre-opened next
+  // visit" per the spec's Definition of Done.
+  const [drillSectionId, setDrillSectionId] = useState(() => {
+    try {
+      return searchParams.get('sectionId') || localStorage.getItem(LAST_SECTION_KEY) || null;
+    } catch {
+      return searchParams.get('sectionId') || null;
+    }
+  });
+  const [drillClassId, setDrillClassId] = useState(null);
+  const [lastUsedSectionId, setLastUsedSectionId] = useState(drillSectionId);
+
   const { classes, sections } = useClassSections();
+  const sectionsById = Object.fromEntries(sections.map((s) => [s._id, s]));
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearch(searchInput.trim());
-      setPage(1);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['students', sectionId, search, page],
-    queryFn: () => {
-      const params = new URLSearchParams({ page });
-      if (sectionId) params.set('sectionId', sectionId);
-      if (search) params.set('search', search);
-      return api.get(`/academic/students?${params}`).then((r) => r.data);
-    },
-  });
+  // Resolve which class owns the initially-restored section, once classes load.
+  useEffect(() => {
+    if (!drillSectionId || drillClassId || classes.length === 0) return;
+    const owner = classes.find((c) => (c.sections || []).some((s) => s._id === drillSectionId));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional one-time resync once class data (an external source) finishes loading
+    if (owner) setDrillClassId(owner._id);
+  }, [drillSectionId, drillClassId, classes]);
+
+  useEffect(() => {
+    if (!drillSectionId) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional resync: mirror the active selection into the persisted "last used" bookmark
+    setLastUsedSectionId(drillSectionId);
+    try {
+      localStorage.setItem(LAST_SECTION_KEY, drillSectionId);
+    } catch {
+      // localStorage unavailable (private mode, etc.) — remembering across
+      // visits is a nicety, not a hard requirement, so fail silently.
+    }
+  }, [drillSectionId]);
 
   const importMutation = useMutation({
     mutationFn: (file) => {
@@ -207,12 +228,35 @@ export default function StudentsPage() {
     },
   });
 
-  const sectionMap = Object.fromEntries(sections.map((s) => [s._id, s.label]));
+  function handleExpandClass(classId) {
+    const opening = classId !== drillClassId;
+    setDrillClassId(opening ? classId : null);
+    if (opening) {
+      const ownerClassId = drillSectionId ? sectionsById[drillSectionId]?.classId : null;
+      if (ownerClassId !== classId) {
+        setDrillSectionId(null);
+      }
+    }
+  }
+
+  function jumpToLastUsed() {
+    const sec = sectionsById[lastUsedSectionId];
+    if (!sec) return;
+    setDrillClassId(sec.classId ?? null);
+    setDrillSectionId(sec._id);
+  }
+
+  const expandedClass = classes.find((c) => c._id === drillClassId) || null;
+  const lastUsedSection = lastUsedSectionId ? sectionsById[lastUsedSectionId] : null;
+  const showRecentlyUsed = Boolean(
+    !search && lastUsedSection && lastUsedSectionId !== drillSectionId
+  );
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Students"
+        description="Pick a class, or search for a student directly."
         action={
           <div className="flex gap-2">
             <Button
@@ -237,82 +281,37 @@ export default function StudentsPage() {
         }
       />
 
-      <div className="flex gap-3 items-center">
-        <Input
-          label=""
-          placeholder="Search name or admission no…"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          className="max-w-xs"
-        />
-        <select
-          value={sectionId}
-          onChange={(e) => {
-            setSectionId(e.target.value);
-            setPage(1);
-          }}
-          className="h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-        >
-          <option value="">All Sections</option>
-          {classes.map((c) => (
-            <optgroup key={c._id} label={c.name}>
-              {(c.sections || []).map((s) => (
-                <option key={s._id} value={s._id}>
-                  {s.name}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-      </div>
+      <SearchField value={searchInput} onChange={setSearchInput} />
 
-      {error && <p className="text-destructive">Failed to load students</p>}
+      {search ? (
+        <RosterInfiniteList search={search} />
+      ) : (
+        <div className="flex flex-col gap-4">
+          {showRecentlyUsed && (
+            <button
+              type="button"
+              onClick={jumpToLastUsed}
+              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5 text-left transition-colors hover:bg-muted"
+            >
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">Recently used</p>
+                <p className="text-sm font-medium">{lastUsedSection.label}</p>
+              </div>
+              <ArrowRight size={16} className="shrink-0 text-muted-foreground" />
+            </button>
+          )}
 
-      <DataTable
-        headers={['Admission No', 'Name', 'Section', 'Status']}
-        isLoading={isLoading}
-        isEmpty={data?.students?.length === 0}
-        emptyMessage="No students found"
-      >
-        {data?.students?.map((s) => (
-          <TableRow key={s._id} className="bg-card">
-            <TableCell className="px-4 py-3 font-mono text-xs">{s.admissionNo}</TableCell>
-            <TableCell className="px-4 py-3">
-              <Link to={`/academic/students/${s._id}`} className="hover:underline">
-                {s.firstName} {s.lastName}
-              </Link>
-            </TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">
-              {sectionMap[s.sectionId] ?? '—'}
-            </TableCell>
-            <TableCell className="px-4 py-3">
-              <Badge variant={statusVariant(s.status)}>{s.status}</Badge>
-            </TableCell>
-          </TableRow>
-        ))}
-      </DataTable>
+          <ClassGrid classes={classes} expandedId={drillClassId} onExpand={handleExpandClass} />
 
-      {data && data.pages > 1 && (
-        <div className="flex gap-2 justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-          >
-            Previous
-          </Button>
-          <span className="text-sm self-center text-muted-foreground">
-            Page {page} of {data.pages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={page >= data.pages}
-          >
-            Next
-          </Button>
+          {expandedClass && (
+            <SectionChips
+              sections={expandedClass.sections || []}
+              activeId={drillSectionId}
+              onSelect={setDrillSectionId}
+            />
+          )}
+
+          {drillSectionId && <RosterInfiniteList sectionId={drillSectionId} />}
         </div>
       )}
 

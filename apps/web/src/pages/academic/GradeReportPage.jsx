@@ -1,33 +1,88 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { ChevronDown } from 'lucide-react';
 import { ASSESSMENT_TYPES } from '@rooted/shared/constants';
 import api from '../../lib/api.js';
-import { Badge } from '../../components/ui/Badge.jsx';
+import { EmptyState } from '../../components/ui/EmptyState.jsx';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+} from '../../components/ui/dropdown-menu.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
+import DistributionBars from '../../components/grade-report/DistributionBars.jsx';
 
 const EMPTY_ARRAY = [];
 
+function Chip({ children, disabled, ...props }) {
+  return (
+    <DropdownMenuTrigger
+      disabled={disabled}
+      className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium disabled:pointer-events-none disabled:opacity-40"
+      {...props}
+    >
+      {children}
+      <ChevronDown size={14} />
+    </DropdownMenuTrigger>
+  );
+}
+
+function AverageRing({ score }) {
+  const pct = score == null ? 0 : Math.max(0, Math.min(100, score));
+  return (
+    <div
+      className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full"
+      style={{ backgroundImage: `conic-gradient(var(--primary) ${pct}%, var(--muted) 0)` }}
+    >
+      <div className="absolute inset-[6px] rounded-full bg-card" />
+      <span className="relative text-sm font-semibold">{score ?? '—'}</span>
+    </div>
+  );
+}
+
 export default function GradeReportPage() {
   const [searchParams] = useSearchParams();
-  const [sectionId, setSectionId] = useState(searchParams.get('sectionId') || '');
-  const [subjectId, setSubjectId] = useState('');
-  const [termId, setTermId] = useState('');
-  const [assessmentType, setAssessmentType] = useState('');
+  const [sectionId, setSectionId] = useState(() => searchParams.get('sectionId') || '');
+  const [subjectId, setSubjectId] = useState(() => searchParams.get('subjectId') || '');
+  const [termId, setTermId] = useState(() => searchParams.get('termId') || '');
+  const [assessmentType, setAssessmentType] = useState(
+    () => searchParams.get('assessmentType') || ''
+  );
+  const [bandFilter, setBandFilter] = useState(null); // 'A'|'B'|'C'|'D'|'F'|null
 
   const { classes } = useClassSections();
   const classId = classes.find((c) => (c.sections || []).some((s) => s._id === sectionId))?._id;
+  const currentClass = classes.find((c) => c._id === classId);
+  const currentSection = currentClass?.sections?.find((s) => s._id === sectionId);
 
   const { data: subjects = EMPTY_ARRAY } = useQuery({
     queryKey: ['subjects', classId],
     queryFn: () => api.get(`/academic/subjects?classId=${classId}`).then((r) => r.data),
     enabled: Boolean(classId),
   });
+  const currentSubject = subjects.find((s) => s._id === subjectId);
 
-  const { data: terms = EMPTY_ARRAY } = useQuery({
-    queryKey: ['terms'],
-    queryFn: () => api.get('/academic/terms').then((r) => r.data),
+  // Active academic year, same pattern as MySchedulePage.jsx — years.find(isActive).
+  const { data: years = EMPTY_ARRAY } = useQuery({
+    queryKey: ['academic-years'],
+    queryFn: () => api.get('/academic/years').then((r) => r.data),
   });
+  const activeYearId = years.find((y) => y.isActive)?._id ?? '';
+
+  // Fixes P10: without ?yearId, tenants with >1 academic year get duplicate
+  // term names ("Term 1, Term 2, Term 1, Term 2...") in the dropdown below.
+  const { data: terms = EMPTY_ARRAY } = useQuery({
+    queryKey: ['terms', activeYearId],
+    queryFn: () =>
+      api
+        .get(`/academic/terms${activeYearId ? `?yearId=${activeYearId}` : ''}`)
+        .then((r) => r.data),
+  });
+  const currentTerm = terms.find((t) => t._id === termId);
 
   const ready = Boolean(sectionId && subjectId && termId);
 
@@ -47,179 +102,157 @@ export default function GradeReportPage() {
     enabled: ready,
   });
 
+  const scoredCount = report?.rankedCount ?? 0;
+  const passRate =
+    report && scoredCount > 0
+      ? Math.round(((scoredCount - (report.distribution.F ?? 0)) / scoredCount) * 100)
+      : null;
+
+  const allStudents = report?.students ?? EMPTY_ARRAY;
+  const filteredStudents = bandFilter
+    ? allStudents.filter((s) => s.letterGrade === bandFilter)
+    : allStudents;
+
+  function selectSection(id) {
+    setSectionId(id);
+    setSubjectId('');
+    setBandFilter(null);
+  }
+  function selectSubject(id) {
+    setSubjectId(id);
+    setBandFilter(null);
+  }
+  function selectTerm(id) {
+    setTermId(id);
+    setBandFilter(null);
+  }
+  function selectAssessmentType(type) {
+    setAssessmentType(type);
+    setBandFilter(null);
+  }
+  function selectBand(letter) {
+    setBandFilter((prev) => (prev === letter ? null : letter));
+  }
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-semibold">Grade Report</h1>
 
-      <div className="flex flex-wrap gap-4 items-end">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Section</label>
-          <select
-            value={sectionId}
-            onChange={(e) => {
-              setSectionId(e.target.value);
-              setSubjectId('');
-            }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-          >
-            <option value="">— Select section —</option>
+      <div className="flex flex-wrap items-center gap-2">
+        <DropdownMenu>
+          <Chip>
+            {currentSection ? `${currentSection.className}-${currentSection.name}` : 'Section'}
+          </Chip>
+          <DropdownMenuContent align="start">
             {classes.map((c) => (
-              <optgroup key={c._id} label={c.name}>
+              <DropdownMenuGroup key={c._id}>
+                <DropdownMenuLabel>{c.name}</DropdownMenuLabel>
                 {(c.sections || []).map((s) => (
-                  <option key={s._id} value={s._id}>
-                    {s.name}
-                  </option>
+                  <DropdownMenuItem key={s._id} onClick={() => selectSection(s._id)}>
+                    {c.name} - {s.name}
+                  </DropdownMenuItem>
                 ))}
-              </optgroup>
+              </DropdownMenuGroup>
             ))}
-          </select>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Subject</label>
-          <select
-            value={subjectId}
-            onChange={(e) => setSubjectId(e.target.value)}
-            disabled={!sectionId}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-          >
-            <option value="">— Select subject —</option>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <Chip disabled={!sectionId}>{currentSubject?.name ?? 'Subject'}</Chip>
+          <DropdownMenuContent align="start">
             {subjects.map((sub) => (
-              <option key={sub._id} value={sub._id}>
+              <DropdownMenuItem key={sub._id} onClick={() => selectSubject(sub._id)}>
                 {sub.name}
-              </option>
+              </DropdownMenuItem>
             ))}
-          </select>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Term</label>
-          <select
-            value={termId}
-            onChange={(e) => setTermId(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-          >
-            <option value="">— Select term —</option>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <Chip>{currentTerm?.name ?? 'Term'}</Chip>
+          <DropdownMenuContent align="start">
             {terms.map((t) => (
-              <option key={t._id} value={t._id}>
+              <DropdownMenuItem key={t._id} onClick={() => selectTerm(t._id)}>
                 {t.name}
-              </option>
+              </DropdownMenuItem>
             ))}
-          </select>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Assessment (optional)
-          </label>
-          <select
-            value={assessmentType}
-            onChange={(e) => setAssessmentType(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-          >
-            <option value="">— All (blended) —</option>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <Chip>
+            {assessmentType
+              ? assessmentType[0].toUpperCase() + assessmentType.slice(1)
+              : 'All types'}
+          </Chip>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => selectAssessmentType('')}>
+              All (blended)
+            </DropdownMenuItem>
             {ASSESSMENT_TYPES.map((t) => (
-              <option key={t} value={t}>
+              <DropdownMenuItem key={t} onClick={() => selectAssessmentType(t)}>
                 {t[0].toUpperCase() + t.slice(1)}
-              </option>
+              </DropdownMenuItem>
             ))}
-          </select>
-        </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      {!ready && (
-        <p className="text-gray-400 text-sm">
-          Select section, subject, and term to view the report
-        </p>
-      )}
+      {!ready && <EmptyState title="Select section, subject, and term to view the report" />}
       {isLoading && <p className="text-sm text-muted-foreground">Loading report…</p>}
-      {isError && <p className="text-sm text-red-500">Failed to load grade report</p>}
+      {isError && <p className="text-sm text-destructive">Failed to load grade report</p>}
 
       {report && (
         <>
-          <div className="flex flex-wrap gap-4">
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Class average:{' '}
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
-                  {report.classAverageScore === null ? 'No records yet' : report.classAverageScore}
-                </span>
-              </p>
-            </div>
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Grade distribution</p>
-              <div className="flex gap-3 text-sm">
-                {Object.entries(report.distribution).map(([letter, count]) => (
-                  <span key={letter}>
-                    {letter}: <span className="font-semibold">{count}</span>
-                  </span>
-                ))}
-              </div>
+          <div
+            className="flex items-center gap-4 rounded-lg border border-border bg-card p-3"
+            aria-label={`Class average ${report.classAverageScore ?? 'not available'}${
+              passRate === null ? '' : `, pass rate ${passRate} percent`
+            }`}
+          >
+            <AverageRing score={report.classAverageScore} />
+            <div className="text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">Class average</p>
+              <p>{passRate === null ? 'No scores yet' : `Pass rate ${passRate}%`}</p>
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-              <p className="text-sm font-medium mb-2">Top performers</p>
-              {report.topPerformers.length === 0 && (
-                <p className="text-sm text-gray-400">No scored students yet</p>
-              )}
-              {report.topPerformers.map((s) => (
-                <div key={s.studentId} className="flex justify-between text-sm py-1">
-                  <span>
-                    {s.firstName} {s.lastName}
-                  </span>
-                  <Badge variant="success">{s.score}</Badge>
-                </div>
-              ))}
-            </div>
-            <div className="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-              <p className="text-sm font-medium mb-2">Needs attention</p>
-              {report.bottomPerformers.length === 0 && (
-                <p className="text-sm text-gray-400">No scored students yet</p>
-              )}
-              {report.bottomPerformers.map((s) => (
-                <div key={s.studentId} className="flex justify-between text-sm py-1">
-                  <span>
-                    {s.firstName} {s.lastName}
-                  </span>
-                  <Badge variant="danger">{s.score}</Badge>
-                </div>
-              ))}
-            </div>
+          <div className="rounded-lg border border-border bg-card p-3">
+            <DistributionBars
+              distribution={report.distribution}
+              activeFilter={bandFilter}
+              onSelectBand={selectBand}
+            />
           </div>
+
+          <p className="text-sm font-medium text-muted-foreground">
+            {bandFilter
+              ? `Grade ${bandFilter} · ${filteredStudents.length} student${filteredStudents.length === 1 ? '' : 's'}`
+              : `All students · ${filteredStudents.length}`}
+          </p>
 
           {report.students.length === 0 ? (
-            <p className="text-gray-400 text-sm">No active students in this section</p>
+            <EmptyState title="No active students in this section" />
+          ) : scoredCount === 0 ? (
+            <EmptyState
+              title="No scores yet"
+              description="Enter marks for this term to see the report."
+            />
+          ) : filteredStudents.length === 0 ? (
+            <EmptyState title={`No students with grade ${bandFilter}`} />
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-800 text-left">
-                  <tr>
-                    <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
-                      Student
-                    </th>
-                    <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
-                      Admission No
-                    </th>
-                    <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
-                      Score
-                    </th>
-                    <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
-                      Grade
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {report.students.map((s) => (
-                    <tr key={s.studentId} className="bg-white dark:bg-gray-900">
-                      <td className="px-4 py-3">
-                        {s.firstName} {s.lastName}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500">{s.admissionNo}</td>
-                      <td className="px-4 py-3">{s.score ?? '—'}</td>
-                      <td className="px-4 py-3">{s.letterGrade ?? '—'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="flex flex-col divide-y divide-border rounded-lg border border-border">
+              {filteredStudents.map((s) => (
+                <div key={s.studentId} className="flex items-center justify-between gap-3 p-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">
+                      {s.firstName} {s.lastName}
+                    </p>
+                    <p className="font-mono text-xs text-muted-foreground">{s.admissionNo}</p>
+                  </div>
+                  <span className="text-sm font-semibold">{s.score ?? '—'}</span>
+                </div>
+              ))}
             </div>
           )}
         </>

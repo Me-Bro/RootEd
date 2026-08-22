@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import {
   LayoutDashboard,
@@ -29,8 +29,10 @@ import {
 
 import { useAuth } from '../../contexts/useAuth.js';
 import { Button } from '../ui/Button.jsx';
-import { Separator } from '../ui/separator.jsx';
 import { ThemeConfiguratorTrigger } from '../ui/ThemeConfigurator.jsx';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../ui/sheet.jsx';
+import NavList from './NavList.jsx';
+import MobileBottomBar from './MobileBottomBar.jsx';
 import { cn } from '../../lib/utils.js';
 import api from '../../lib/api.js';
 
@@ -139,26 +141,6 @@ const NAV_GROUPS = [
   },
 ];
 
-function NavItem({ to, label, icon: Icon, collapsed }) {
-  return (
-    <NavLink
-      to={to}
-      end
-      className={({ isActive }) =>
-        cn(
-          'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-          isActive
-            ? 'bg-primary/10 text-primary'
-            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-        )
-      }
-    >
-      <Icon size={18} className="shrink-0" />
-      {!collapsed && <span>{label}</span>}
-    </NavLink>
-  );
-}
-
 function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -246,6 +228,7 @@ function NotificationBell() {
 export default function AppShell() {
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const isSuperAdmin = user?.systemRole === 'super_admin';
   const isImpersonating = Boolean(user?.impersonatedTenantId);
   const permissions = user?.permissions ?? [];
@@ -268,7 +251,7 @@ export default function AppShell() {
     <div className="flex h-screen overflow-hidden bg-background">
       <aside
         className={cn(
-          'flex h-full shrink-0 flex-col border-r border-border bg-card transition-all duration-200',
+          'hidden h-full shrink-0 flex-col border-r border-border bg-card transition-all duration-200 md:flex',
           collapsed ? 'w-16' : 'w-64'
         )}
       >
@@ -284,22 +267,17 @@ export default function AppShell() {
           </button>
         </div>
 
-        <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-2">
-          {navGroups.map((group, i) => (
-            <div key={i}>
-              {group.label && !collapsed && (
-                <p className="mt-4 mb-1 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {group.label}
-                </p>
-              )}
-              {group.label && collapsed && <Separator className="my-2" />}
-              {group.items.map(({ to, label, icon }) => (
-                <NavItem key={to} to={to} label={label} icon={icon} collapsed={collapsed} />
-              ))}
-            </div>
-          ))}
-        </nav>
+        <NavList navGroups={navGroups} collapsed={collapsed} />
       </aside>
+
+      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+        <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto md:hidden">
+          <SheetHeader>
+            <SheetTitle>Menu</SheetTitle>
+          </SheetHeader>
+          <NavList navGroups={navGroups} onNavigate={() => setMenuOpen(false)} />
+        </SheetContent>
+      </Sheet>
 
       <div className="flex h-full min-w-0 min-h-0 flex-1 flex-col">
         {isImpersonating && (
@@ -317,7 +295,7 @@ export default function AppShell() {
             </Button>
           </div>
         )}
-        <header className="flex items-center justify-between px-6 py-3 border-b border-border bg-card">
+        <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-card md:px-6">
           <span className="text-sm text-muted-foreground">{user?.email ?? ''}</span>
           <div className="flex items-center gap-2">
             <ThemeConfiguratorTrigger />
@@ -329,10 +307,12 @@ export default function AppShell() {
           </div>
         </header>
 
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 overflow-auto p-6 pb-20 md:pb-6">
           <Outlet />
         </main>
       </div>
+
+      <MobileBottomBar navGroups={navGroups} onOpenMenu={() => setMenuOpen(true)} />
     </div>
   );
 }

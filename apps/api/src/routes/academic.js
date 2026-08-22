@@ -1192,8 +1192,13 @@ router.get(
 
       const state = await job.getState();
       const result = job.returnvalue;
+      // job.progress is BullMQ's built-in per-job progress field — the worker calls
+      // job.updateProgress({ completed, total }) once per student; defaults to the
+      // number 0 until the worker's first update lands, so only surface it once it's
+      // actually the { completed, total } shape the mobile progress ring expects.
+      const progress = job.progress && typeof job.progress === 'object' ? job.progress : null;
 
-      res.json({ jobId: job.id, state, result });
+      res.json({ jobId: job.id, state, result, progress });
     } catch (err) {
       next(err);
     }
