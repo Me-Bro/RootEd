@@ -30,6 +30,7 @@ import { TimetablePublish } from '../models/TimetablePublish.js';
 import { scoreToLetter } from '@rooted/shared/utils';
 import { StaffMember } from '../models/StaffMember.js';
 import { LeaveType } from '../models/LeaveType.js';
+import { LeaveBalance } from '../models/LeaveBalance.js';
 import { SalaryStructure } from '../models/SalaryStructure.js';
 import { CostCenter } from '../models/CostCenter.js';
 import { FeeStructure } from '../models/FeeStructure.js';
@@ -49,6 +50,7 @@ const USERS = {
   tenant_admin: { email: 'tadmin@testschool.local' },
   teacher: { email: 'teacher@testschool.local' },
   viewer: { email: 'viewer@testschool.local' },
+  principal: { email: 'principal@testschool.local' },
 };
 
 async function upsertUser(data) {
@@ -126,10 +128,14 @@ async function run() {
   const roleByKey = Object.fromEntries(roles.map((r) => [r.templateKey, r]));
 
   // ── Memberships ───────────────────────────────────────────────────────────
+  // principal is a second leave:approve-holding role (besides tenant_admin) —
+  // needed so the leave-approval-chain-order e2e case has two distinct
+  // approver identities to prove out-of-turn approval is rejected.
   const membershipMap = {
     tenant_admin: roleByKey['tenant_admin'],
     teacher: roleByKey['teacher'],
     viewer: roleByKey['librarian'], // use librarian as minimal-permission viewer
+    principal: roleByKey['principal'],
   };
 
   for (const [key, role] of Object.entries(membershipMap)) {
@@ -516,6 +522,33 @@ async function run() {
       isPaid: true,
     });
     leaveType = leaveType.toObject();
+  }
+
+  // ── Leave Balances ────────────────────────────────────────────────────────
+  const currentYear = new Date().getFullYear();
+  const leaveBalanceDefs = [
+    { staffId: staffMembers[0]._id, used: 5 },
+    { staffId: staffMembers[1]._id, used: 0 },
+  ];
+  const leaveBalances = [];
+  for (const def of leaveBalanceDefs) {
+    let balance = await LeaveBalance.findOne(
+      { tenantId, staffId: def.staffId, leaveTypeId: leaveType._id, year: currentYear },
+      null,
+      { _bypassTenantScope: true }
+    ).lean();
+    if (!balance) {
+      balance = await LeaveBalance.create({
+        tenantId,
+        staffId: def.staffId,
+        leaveTypeId: leaveType._id,
+        year: currentYear,
+        total: leaveType.maxDaysPerYear,
+        used: def.used,
+      });
+      balance = balance.toObject();
+    }
+    leaveBalances.push(balance);
   }
 
   // ── Salary Structure ──────────────────────────────────────────────────────
@@ -960,6 +993,12 @@ async function run() {
       sectionId: timetablePublish.sectionId.toString(),
     },
     leaveType: { _id: leaveType._id.toString() },
+    leaveBalances: leaveBalances.map((b) => ({
+      _id: b._id.toString(),
+      staffId: b.staffId.toString(),
+      total: b.total,
+      used: b.used,
+    })),
     salaryStructure: { _id: salaryStructure._id.toString() },
     costCenter: { _id: costCenter._id.toString() },
     feeStructure: { _id: feeStructure._id.toString() },

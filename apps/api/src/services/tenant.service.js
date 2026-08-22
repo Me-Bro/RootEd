@@ -2,18 +2,37 @@ import crypto from 'crypto';
 import { Tenant } from '../models/Tenant.js';
 import { User } from '../models/User.js';
 import { Role, DEFAULT_ROLE_TEMPLATES } from '../models/Role.js';
+import { LeaveType, DEFAULT_LEAVE_TYPES } from '../models/LeaveType.js';
 import { TenantMembership } from '../models/TenantMembership.js';
 import { hashPassword } from './auth.service.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { sendTenantInvite } from './email.service.js';
 import { env } from '../config/env.js';
 
-export async function createTenant({ name, subdomain, plan, adminEmail, adminPassword, locale, timezone, currency }) {
+export async function createTenant({
+  name,
+  subdomain,
+  plan,
+  adminEmail,
+  adminPassword,
+  locale,
+  timezone,
+  currency,
+}) {
   const exists = await Tenant.findOne({ subdomain });
   if (exists) throw new AppError('Subdomain already taken', 409);
 
   const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-  const tenant = await Tenant.create({ name, subdomain, plan, locale, timezone, currency, trialEndsAt, isTrialActive: true });
+  const tenant = await Tenant.create({
+    name,
+    subdomain,
+    plan,
+    locale,
+    timezone,
+    currency,
+    trialEndsAt,
+    isTrialActive: true,
+  });
 
   // Seed default roles
   const roleEntries = Object.entries(DEFAULT_ROLE_TEMPLATES).map(([key, permissions]) => ({
@@ -25,6 +44,10 @@ export async function createTenant({ name, subdomain, plan, adminEmail, adminPas
   }));
   const roles = await Role.insertMany(roleEntries);
   const adminRole = roles.find((r) => r.templateKey === 'tenant_admin');
+
+  await LeaveType.insertMany(
+    DEFAULT_LEAVE_TYPES.map((leaveType) => ({ tenantId: tenant._id, ...leaveType }))
+  );
 
   // Create or find admin user
   let adminUser = await User.findOne({ email: adminEmail });

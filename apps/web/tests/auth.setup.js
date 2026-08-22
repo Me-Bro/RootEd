@@ -67,3 +67,9 @@ setup('auth setup: viewer', async ({ page }) => {
   await loginViaUi(page, email, password);
   await page.context().storageState({ path: AUTH_STATES.viewer });
 });
+
+setup('auth setup: principal', async ({ page }) => {
+  const { email, password } = TEST_USERS.principal;
+  await loginViaUi(page, email, password);
+  await page.context().storageState({ path: AUTH_STATES.principal });
+});
