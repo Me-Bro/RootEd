@@ -54,6 +54,10 @@ const USERS = {
   viewer: { email: 'viewer@testschool.local' },
   principal: { email: 'principal@testschool.local' },
   accountant: { email: 'accountant@testschool.local' },
+  // Belongs to two tenants (testschool + secondschool) — exercises the
+  // general-portal login's tenant-picker screen, which every other seeded
+  // user (single membership) never triggers.
+  multiTenant: { email: 'multi@testschool.local' },
 };
 
 async function upsertUser(data) {
@@ -156,6 +160,68 @@ async function run() {
       { upsert: true, _bypassTenantScope: true }
     );
   }
+
+  // ── Second tenant (general-portal tenant-picker fixture) ─────────────────
+  let secondTenant = await Tenant.findOne({ subdomain: 'secondschool' }).lean();
+  if (!secondTenant) {
+    secondTenant = await Tenant.create({
+      name: 'Second School',
+      subdomain: 'secondschool',
+      plan: 'starter',
+      status: 'active',
+      locale: 'en',
+      timezone: 'Asia/Kolkata',
+      currency: 'INR',
+    });
+    secondTenant = secondTenant.toObject();
+  }
+  const secondTenantId = secondTenant._id;
+
+  const existingSecondRoles = await Role.find({ tenantId: secondTenantId }, null, {
+    _bypassTenantScope: true,
+  }).lean();
+  let secondTenantAdminRole = existingSecondRoles.find((r) => r.templateKey === 'tenant_admin');
+  if (!secondTenantAdminRole) {
+    secondTenantAdminRole = await Role.create({
+      tenantId: secondTenantId,
+      name: 'tenant admin',
+      permissions: DEFAULT_ROLE_TEMPLATES.tenant_admin,
+      isTemplate: true,
+      templateKey: 'tenant_admin',
+    });
+    secondTenantAdminRole = secondTenantAdminRole.toObject();
+  }
+
+  // multiTenant gets active memberships in BOTH tenants, so logging in on
+  // the general portal returns two tenants and lands on the picker screen.
+  // Uses the minimal-permission librarian role in testschool (same choice
+  // as `viewer` above) — NOT tenant_admin — so it doesn't join the pool of
+  // leave:approve holders that leave-hardening.spec.js's approval-chain-order
+  // case relies on being exactly {tenant_admin, principal}.
+  await TenantMembership.findOneAndUpdate(
+    { tenantId, userId: users.multiTenant._id },
+    {
+      $setOnInsert: {
+        tenantId,
+        userId: users.multiTenant._id,
+        roleIds: [roleByKey['librarian']._id],
+        status: 'active',
+      },
+    },
+    { upsert: true, _bypassTenantScope: true }
+  );
+  await TenantMembership.findOneAndUpdate(
+    { tenantId: secondTenantId, userId: users.multiTenant._id },
+    {
+      $setOnInsert: {
+        tenantId: secondTenantId,
+        userId: users.multiTenant._id,
+        roleIds: [secondTenantAdminRole._id],
+        status: 'active',
+      },
+    },
+    { upsert: true, _bypassTenantScope: true }
+  );
 
   // ── Academic Year ─────────────────────────────────────────────────────────
   let year = await AcademicYear.findOne({ tenantId, name: '2025-26' }, null, {
@@ -1054,6 +1120,7 @@ async function run() {
       Object.entries(users).map(([k, u]) => [k, { _id: u._id.toString(), email: u.email }])
     ),
     tenant: { _id: tenantId.toString(), subdomain: 'testschool' },
+    secondTenant: { _id: secondTenantId.toString(), subdomain: 'secondschool' },
     roles: Object.fromEntries(Object.entries(roleByKey).map(([k, r]) => [k, r._id.toString()])),
     academicYear: { _id: year._id.toString() },
     nextAcademicYear: { _id: nextYear._id.toString(), name: nextYear.name },

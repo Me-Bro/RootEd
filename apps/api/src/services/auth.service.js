@@ -2,6 +2,8 @@ import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { User } from '../models/User.js';
+import { Tenant } from '../models/Tenant.js';
+import { TenantMembership } from '../models/TenantMembership.js';
 import { redis } from '../config/redis.js';
 import { env } from '../config/env.js';
 import { AppError } from '../middleware/errorHandler.js';
@@ -52,7 +54,10 @@ export async function handleFailedLogin(user) {
   const updateData = { failedLoginAttempts: attempts };
 
   if (attempts >= LOCKOUT_ATTEMPTS) {
-    const backoffMs = Math.min(LOCKOUT_WINDOW_MS * Math.pow(2, attempts - LOCKOUT_ATTEMPTS), 24 * 60 * 60 * 1000);
+    const backoffMs = Math.min(
+      LOCKOUT_WINDOW_MS * Math.pow(2, attempts - LOCKOUT_ATTEMPTS),
+      24 * 60 * 60 * 1000
+    );
     updateData.lockedUntil = new Date(now + backoffMs);
   }
 
@@ -79,4 +84,23 @@ export async function storeResetToken(userId, token) {
     { passwordResetToken: token, passwordResetExpires: expires },
     { _bypassTenantScope: true }
   );
+}
+
+export async function getActiveTenantsForUser(userId) {
+  const memberships = await TenantMembership.find({ userId, status: 'active' }, 'tenantId', {
+    _bypassTenantScope: true,
+  }).lean();
+  if (memberships.length === 0) return [];
+
+  const tenantIds = memberships.map((m) => m.tenantId);
+  const tenants = await Tenant.find(
+    { _id: { $in: tenantIds }, status: 'active' },
+    '_id name subdomain'
+  ).lean();
+
+  return tenants.map((t) => ({
+    _id: t._id.toString(),
+    name: t.name,
+    subdomain: t.subdomain,
+  }));
 }

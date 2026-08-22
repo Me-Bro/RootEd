@@ -14,11 +14,14 @@ import {
   clearFailedLogins,
   generateResetToken,
   storeResetToken,
+  getActiveTenantsForUser,
 } from '../services/auth.service.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { resolvePermissions, effectivePermissionsFor } from '../middleware/requirePermission.js';
+import { resolveTenantFromToken } from '../middleware/resolveTenant.js';
 import { Tenant } from '../models/Tenant.js';
+import { TenantMembership } from '../models/TenantMembership.js';
 import { env } from '../config/env.js';
 import { auditLog } from '../services/audit.service.js';
 import {
@@ -58,6 +61,8 @@ const loginSchema = z.object({
 });
 
 const forgotSchema = z.object({ email: z.string().email() });
+
+const selectTenantSchema = z.object({ tenantId: z.string() });
 
 const resetSchema = z.object({
   token: z.string(),
@@ -136,7 +141,17 @@ router.post('/login', loginLimiter, async (req, res, next) => {
       { _bypassTenantScope: true }
     );
 
-    const tokenPayload = { sub: user._id.toString(), systemRole: user.systemRole ?? undefined };
+    // super_admin never gets tenant module access via membership — only via
+    // explicit, audited impersonation (see requirePermission.js) — so skip
+    // the membership lookup entirely for that role.
+    const tenants =
+      user.systemRole === 'super_admin' ? [] : await getActiveTenantsForUser(user._id);
+
+    const tokenPayload = {
+      sub: user._id.toString(),
+      systemRole: user.systemRole ?? undefined,
+      ...(tenants.length === 1 && { tenantId: tenants[0]._id }),
+    };
     const accessToken = signAccessToken(tokenPayload);
     const refreshToken = signRefreshToken(tokenPayload);
 
@@ -149,7 +164,7 @@ router.post('/login', loginLimiter, async (req, res, next) => {
       userAgent: req.headers['user-agent'],
     });
 
-    res.json({ accessToken });
+    res.json({ accessToken, tenants });
   } catch (err) {
     next(err);
   }
@@ -186,11 +201,67 @@ router.post('/refresh', async (req, res, next) => {
       sub: payload.sub,
       systemRole: payload.systemRole,
       ...(payload.impersonatedTenantId && { impersonatedTenantId: payload.impersonatedTenantId }),
+      ...(payload.tenantId && { tenantId: payload.tenantId }),
     });
 
     res.json({ accessToken });
   } catch {
     next(new AppError('Invalid refresh token', 401));
+  }
+});
+
+/**
+ * @openapi
+ * /auth/select-tenant:
+ *   post:
+ *     summary: Activate one of the caller's tenant memberships on the general-portal login
+ *     description: >
+ *       For users logging in on the general-portal host (no dedicated subdomain) who
+ *       belong to more than one tenant — POST /auth/login returns their active
+ *       memberships without picking one. This reissues the access token (and refresh
+ *       cookie) with a tenantId claim, which resolveTenant() picks up on any
+ *       subsequent request whose Host has no subdomain of its own. Also usable to
+ *       switch tenants mid-session.
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [tenantId]
+ *             properties:
+ *               tenantId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Tenant activated
+ *       403:
+ *         description: No active membership for this tenant
+ */
+router.post('/select-tenant', authenticate, async (req, res, next) => {
+  try {
+    const { tenantId } = selectTenantSchema.parse(req.body);
+
+    const [membership, tenant] = await Promise.all([
+      TenantMembership.findOne({ userId: req.user.sub, tenantId, status: 'active' }).lean(),
+      Tenant.findOne({ _id: tenantId, status: 'active' }).lean(),
+    ]);
+    if (!membership || !tenant) {
+      throw new AppError('No active membership for this tenant', 403);
+    }
+
+    const tokenPayload = { sub: req.user.sub, systemRole: req.user.systemRole, tenantId };
+    const accessToken = signAccessToken(tokenPayload);
+    const refreshToken = signRefreshToken(tokenPayload);
+
+    res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS);
+
+    res.json({ accessToken });
+  } catch (err) {
+    next(err);
   }
 });
 
@@ -280,12 +351,13 @@ router.get('/me', authenticate, async (req, res, next) => {
 
     const impersonatedPermissions = effectivePermissionsFor(req.user);
     let permissions = impersonatedPermissions ?? [];
+    let tenant = null;
     if (!impersonatedPermissions && user.systemRole !== 'super_admin') {
       const subdomain = req.hostname.replace(`.${env.APP_DOMAIN}`, '');
-      const tenant =
+      tenant =
         subdomain && subdomain !== req.hostname
           ? await Tenant.findOne({ subdomain, status: 'active' }, '_id').lean()
-          : null;
+          : await resolveTenantFromToken(req);
       if (tenant) permissions = await resolvePermissions(req.user.sub, tenant._id.toString());
     }
 
@@ -293,6 +365,7 @@ router.get('/me', authenticate, async (req, res, next) => {
       ...user,
       permissions,
       impersonatedTenantId: req.user.impersonatedTenantId ?? null,
+      tenantId: tenant?._id?.toString() ?? req.user.tenantId ?? null,
     });
   } catch (err) {
     next(err);
