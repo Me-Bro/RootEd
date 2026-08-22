@@ -14,6 +14,7 @@ import {
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
 import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
+import AttentionStrip from '../../components/inventory/AttentionStrip.jsx';
 
 const TABS = ['Items', 'Movements', 'Requisitions', 'Low Stock'];
 
@@ -70,6 +71,7 @@ function AddItemModal({ open, onOpenChange }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-low-stock'] });
       onOpenChange(false);
       setForm({
         name: '',
@@ -219,6 +221,8 @@ function IssueModal({ open, onOpenChange, item }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-movements'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-low-stock'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-open-issues-count'] });
       onOpenChange(false);
       setForm({ entityType: 'staff', entityId: '', quantity: '1', dueDate: '' });
       setError('');
@@ -403,21 +407,21 @@ function ItemsTab() {
   );
 }
 
-function MovementsTab() {
+function MovementsTab({ type, onTypeChange, openOnly, onOpenOnlyChange }) {
   const [itemId] = useState('');
-  const [type, setType] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const queryClient = useQueryClient();
 
   const { data: movements = [], isLoading } = useQuery({
-    queryKey: ['inventory-movements', itemId, type, from, to],
+    queryKey: ['inventory-movements', itemId, type, from, to, openOnly],
     queryFn: () => {
       const params = new URLSearchParams();
       if (itemId) params.set('itemId', itemId);
       if (type) params.set('type', type);
       if (from) params.set('from', from);
       if (to) params.set('to', to);
+      if (openOnly) params.set('returned', 'false');
       return api.get(`/inventory/movements?${params}`).then((r) => r.data);
     },
   });
@@ -428,15 +432,17 @@ function MovementsTab() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventory-movements'] });
       queryClient.invalidateQueries({ queryKey: ['inventory-items'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-low-stock'] });
+      queryClient.invalidateQueries({ queryKey: ['inventory-open-issues-count'] });
     },
   });
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex gap-3 flex-wrap">
+      <div className="flex gap-3 flex-wrap items-center">
         <select
           value={type}
-          onChange={(e) => setType(e.target.value)}
+          onChange={(e) => onTypeChange(e.target.value)}
           className="h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <option value="">All Types</option>
@@ -448,6 +454,14 @@ function MovementsTab() {
         </select>
         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={openOnly}
+            onChange={(e) => onOpenOnlyChange(e.target.checked)}
+          />
+          Not yet returned
+        </label>
       </div>
 
       <DataTable
@@ -632,10 +646,42 @@ function LowStockTab() {
 
 export default function InventoryPage() {
   const [activeTab, setActiveTab] = useState('Items');
+  const [movementsType, setMovementsType] = useState('');
+  const [movementsOpenOnly, setMovementsOpenOnly] = useState(false);
+
+  // Same query key LowStockTab uses, so the two share a cache entry instead
+  // of double-fetching — the strip needs the count on every tab, not just
+  // while Low Stock is active.
+  const { data: lowStockItems = [] } = useQuery({
+    queryKey: ['inventory-low-stock'],
+    queryFn: () => api.get('/inventory/low-stock').then((r) => r.data),
+  });
+
+  const { data: openIssues = [] } = useQuery({
+    queryKey: ['inventory-open-issues-count'],
+    queryFn: () => api.get('/inventory/movements?type=issue&returned=false').then((r) => r.data),
+  });
+
+  function handleTapLowStock() {
+    setActiveTab('Low Stock');
+  }
+
+  function handleTapNotReturned() {
+    setMovementsType('issue');
+    setMovementsOpenOnly(true);
+    setActiveTab('Movements');
+  }
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title="Inventory" />
+
+      <AttentionStrip
+        lowStockCount={lowStockItems.length}
+        notReturnedCount={openIssues.length}
+        onTapLowStock={handleTapLowStock}
+        onTapNotReturned={handleTapNotReturned}
+      />
 
       <div className="flex gap-1 border-b border-border">
         {TABS.map((t) => (
@@ -655,7 +701,14 @@ export default function InventoryPage() {
       </div>
 
       {activeTab === 'Items' && <ItemsTab />}
-      {activeTab === 'Movements' && <MovementsTab />}
+      {activeTab === 'Movements' && (
+        <MovementsTab
+          type={movementsType}
+          onTypeChange={setMovementsType}
+          openOnly={movementsOpenOnly}
+          onOpenOnlyChange={setMovementsOpenOnly}
+        />
+      )}
       {activeTab === 'Requisitions' && <RequisitionsTab />}
       {activeTab === 'Low Stock' && <LowStockTab />}
     </div>
