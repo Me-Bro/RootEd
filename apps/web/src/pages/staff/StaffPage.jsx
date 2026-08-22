@@ -1,12 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
-import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
+import { EmptyState } from '../../components/ui/EmptyState.jsx';
 import {
   Dialog,
   DialogContent,
@@ -15,17 +14,8 @@ import {
   DialogFooter,
 } from '../../components/ui/dialog.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
-import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
-
-const selectCls =
-  'h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
-
-function statusVariant(status) {
-  if (status === 'active') return 'success';
-  if (status === 'on_leave') return 'warning';
-  if (status === 'resigned' || status === 'terminated') return 'danger';
-  return 'default';
-}
+import DepartmentSection from '../../components/staff/DepartmentSection.jsx';
+import OnLeaveStrip from '../../components/staff/OnLeaveStrip.jsx';
 
 const STEPS = ['Basic Info', 'Contact', 'Review'];
 
@@ -207,37 +197,40 @@ function ImportResultModal({ open, onOpenChange, result }) {
   );
 }
 
+// §3 "State & logic": groups the flat member list by department for the
+// default (non-search) view.
+function groupByDepartment(members) {
+  const groups = {};
+  for (const member of members) {
+    const key = member.department || 'Unassigned';
+    (groups[key] ??= []).push(member);
+  }
+  return groups;
+}
+
+function matchesSearch(member, term) {
+  const needle = term.toLowerCase();
+  const fullName = `${member.firstName ?? ''} ${member.lastName ?? ''}`.toLowerCase();
+  return fullName.includes(needle) || (member.employeeId ?? '').toLowerCase().includes(needle);
+}
+
 export default function StaffPage() {
   const { user } = useAuth();
   const canWrite = (user?.permissions ?? []).includes('staff:write');
   const queryClient = useQueryClient();
 
-  const [department, setDepartment] = useState('');
-  const [status, setStatus] = useState('');
-  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
   const [showAdd, setShowAdd] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const fileRef = useRef(null);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearch(searchInput.trim());
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
+  // §2 API contract: one bulk fetch (limit=100, the server's cap) instead of
+  // the old page-by-20 table — 74 rows is small enough to group/search
+  // client-side. A tenant with >100 staff would only see the first 100 here;
+  // that's the spec's documented tradeoff, not a regression to fix in this pass.
   const { data, isLoading, error } = useQuery({
-    queryKey: ['staff-members', department, status, search, page],
-    queryFn: () => {
-      const params = new URLSearchParams({ page });
-      if (department) params.set('department', department);
-      if (status) params.set('status', status);
-      if (search) params.set('search', search);
-      return api.get(`/staff/members?${params}`).then((r) => r.data);
-    },
+    queryKey: ['staff-members'],
+    queryFn: () => api.get('/staff/members?limit=100').then((r) => r.data),
   });
 
   const importMutation = useMutation({
@@ -257,12 +250,26 @@ export default function StaffPage() {
   });
 
   const members = data?.members ?? [];
-  const departments = [...new Set(members.map((m) => m.department).filter(Boolean))];
+  const departmentNames = [...new Set(members.map((m) => m.department).filter(Boolean))];
+  const onLeave = members.filter((m) => m.employmentStatus === 'on_leave');
+
+  const trimmedSearch = search.trim();
+  const filtered = trimmedSearch ? members.filter((m) => matchesSearch(m, trimmedSearch)) : null;
+
+  const byDepartment = groupByDepartment(members);
+  const departments = Object.keys(byDepartment).sort((a, b) => {
+    if (a === 'Unassigned') return 1;
+    if (b === 'Unassigned') return -1;
+    return a.localeCompare(b);
+  });
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Staff Directory"
+        description={
+          data ? `${members.length} staff · ${departmentNames.length} departments` : undefined
+        }
         action={
           canWrite && (
             <div className="flex gap-2">
@@ -289,100 +296,39 @@ export default function StaffPage() {
         }
       />
 
-      <div className="flex gap-3 flex-wrap">
-        <Input
-          placeholder="Search by name or employee ID…"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          className="max-w-xs"
-        />
-        <select
-          value={department}
-          onChange={(e) => {
-            setDepartment(e.target.value);
-            setPage(1);
-          }}
-          className={selectCls}
-        >
-          <option value="">All Departments</option>
-          {departments.map((d) => (
-            <option key={d} value={d}>
-              {d}
-            </option>
-          ))}
-        </select>
-        <select
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value);
-            setPage(1);
-          }}
-          className={selectCls}
-        >
-          <option value="">All Statuses</option>
-          <option value="active">Active</option>
-          <option value="on_leave">On Leave</option>
-          <option value="resigned">Resigned</option>
-          <option value="terminated">Terminated</option>
-        </select>
-      </div>
+      <Input
+        placeholder="Search by name or employee ID…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="max-w-xs"
+      />
 
       {error && <p className="text-destructive">Failed to load staff</p>}
+      {isLoading && <p className="text-sm text-muted-foreground">Loading staff…</p>}
 
-      <DataTable
-        headers={['Employee ID', 'Name', 'Designation', 'Department', 'Status', 'Actions']}
-        isLoading={isLoading}
-        isEmpty={members.length === 0}
-        emptyMessage="No staff members found"
-      >
-        {members.map((m) => (
-          <TableRow key={m._id} className="bg-card">
-            <TableCell className="px-4 py-3 font-mono text-xs">{m.employeeId || '—'}</TableCell>
-            <TableCell className="px-4 py-3">
-              <Link to={`/staff/${m._id}`} className="hover:underline">
-                {m.firstName} {m.lastName}
-              </Link>
-            </TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">
-              {m.designation || '—'}
-            </TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">{m.department || '—'}</TableCell>
-            <TableCell className="px-4 py-3">
-              <Badge variant={statusVariant(m.employmentStatus)}>{m.employmentStatus}</Badge>
-            </TableCell>
-            <TableCell className="px-4 py-3">
-              <Link to={`/staff/${m._id}`}>
-                <Button variant="outline" size="sm">
-                  View
-                </Button>
-              </Link>
-            </TableCell>
-          </TableRow>
-        ))}
-      </DataTable>
+      {!isLoading && !error && (
+        <>
+          <OnLeaveStrip members={onLeave} />
 
-      {data && data.pages > 1 && (
-        <div className="flex gap-2 justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-          >
-            Previous
-          </Button>
-          <span className="text-sm self-center text-muted-foreground">
-            Page {page} of {data.pages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={page >= data.pages}
-          >
-            Next
-          </Button>
-        </div>
+          {members.length === 0 ? (
+            <EmptyState
+              title="No staff members found"
+              description="Add a staff member or import a CSV to get started."
+            />
+          ) : filtered ? (
+            filtered.length === 0 ? (
+              <EmptyState title="No staff match your search" />
+            ) : (
+              <DepartmentSection members={filtered} />
+            )
+          ) : (
+            <div className="flex flex-col gap-5">
+              {departments.map((dept) => (
+                <DepartmentSection key={dept} department={dept} members={byDepartment[dept]} />
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <AddStaffModal open={showAdd} onOpenChange={setShowAdd} />
