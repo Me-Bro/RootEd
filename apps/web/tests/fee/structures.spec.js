@@ -198,3 +198,70 @@ test.describe('Fee Structures', () => {
     expect(body.errors).toHaveLength(1);
   });
 });
+
+test.describe('Fee Structures UI', () => {
+  test('shows Fee Structures page with currency-formatted amounts', async ({ page }) => {
+    const ids = getTestIds();
+    await page.goto('/fee/structures');
+    await expect(page.getByRole('heading', { name: 'Fee Structures' })).toBeVisible();
+    // Scope to the seed's own year — clone tests create same-named structures in
+    // nextAcademicYear, which would otherwise make "Standard Fee" ambiguous here.
+    await page.getByRole('combobox', { name: 'Academic Year' }).selectOption(ids.academicYear._id);
+    await expect(page.getByText('Standard Fee')).toBeVisible();
+    await expect(page.getByText(/5,500/)).toBeVisible();
+  });
+
+  test('search filters the structure list', async ({ page }) => {
+    const ids = getTestIds();
+    await page.goto('/fee/structures');
+    await page.getByRole('combobox', { name: 'Academic Year' }).selectOption(ids.academicYear._id);
+    await page.getByPlaceholder('Search structures...').fill('Sports');
+    await expect(page.getByText('Sports Fee')).toBeVisible();
+    await expect(page.getByText('Standard Fee')).not.toBeVisible();
+  });
+
+  test('editing a structure updates its name', async ({ page, request }) => {
+    const ids = getTestIds();
+    const client = await createTestApiClient(request, 'super_admin');
+    await client.post('/fee/structures', {
+      name: 'UI Edit Target',
+      academicYearId: ids.academicYear._id,
+      components: [{ label: 'X', amount: 100 }],
+    });
+
+    await page.goto('/fee/structures');
+    const card = page.locator('[data-slot="card"]', { hasText: 'UI Edit Target' });
+    await card.getByRole('button', { name: 'Edit' }).click();
+
+    const dialog = page.getByRole('dialog');
+    await dialog.getByLabel('Name').fill('UI Edited Name');
+    await dialog.getByRole('button', { name: 'Save Changes' }).click();
+
+    await expect(page.getByText('UI Edited Name')).toBeVisible();
+  });
+
+  test('deactivating a structure shows Inactive badge', async ({ page, request }) => {
+    const ids = getTestIds();
+    const client = await createTestApiClient(request, 'super_admin');
+    await client.post('/fee/structures', {
+      name: 'UI Deactivate Target',
+      academicYearId: ids.academicYear._id,
+      components: [{ label: 'X', amount: 100 }],
+    });
+
+    await page.goto('/fee/structures');
+    const card = page.locator('[data-slot="card"]', { hasText: 'UI Deactivate Target' });
+    await card.getByRole('button', { name: 'Deactivate' }).click();
+
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('button', { name: 'Confirm' }).click();
+
+    await expect(card.getByText('Inactive')).toBeVisible();
+  });
+
+  test('shows applicable discount count badge on Standard Fee card', async ({ page }) => {
+    await page.goto('/fee/structures');
+    const card = page.locator('[data-slot="card"]', { hasText: 'Standard Fee' });
+    await expect(card.getByText(/1 discount/)).toBeVisible();
+  });
+});

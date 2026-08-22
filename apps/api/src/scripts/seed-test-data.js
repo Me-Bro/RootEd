@@ -37,6 +37,7 @@ import { Consumable, FixedAsset } from '../models/InventoryItem.js';
 import { AttendanceRecord } from '../models/AttendanceRecord.js';
 import { FeeAssignment } from '../models/FeeAssignment.js';
 import { FeePayment } from '../models/FeePayment.js';
+import { FeeDiscount } from '../models/FeeDiscount.js';
 import { hashPassword } from '../services/auth.service.js';
 
 const CLEAN = process.argv.includes('--clean');
@@ -617,6 +618,21 @@ async function run() {
     installmentAssignment = installmentAssignment.toObject();
   }
 
+  let feeDiscount = await FeeDiscount.findOne({ tenantId, name: 'Sibling Discount' }, null, {
+    _bypassTenantScope: true,
+  }).lean();
+  if (!feeDiscount) {
+    feeDiscount = await FeeDiscount.create({
+      tenantId,
+      name: 'Sibling Discount',
+      type: 'percentage',
+      value: 10,
+      applicableTo: 'all',
+      academicYearId: year._id,
+    });
+    feeDiscount = feeDiscount.toObject();
+  }
+
   // ── Timetable ─────────────────────────────────────────────────────────────
   const mathSub = subjects.find((s) => s.code === 'MATH5');
   const englishSub = subjects.find((s) => s.code === 'ENG5');
@@ -953,6 +969,7 @@ async function run() {
       _id: installmentAssignment._id.toString(),
       studentId: installmentAssignment.studentId.toString(),
     },
+    feeDiscount: { _id: feeDiscount._id.toString() },
     inventoryItems: inventoryItems.map((i) => ({ _id: i._id.toString(), sku: i.sku })),
   };
 

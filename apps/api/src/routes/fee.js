@@ -21,7 +21,7 @@ import {
 import { getSignedUrl } from '../services/storage.service.js';
 import { env } from '../config/env.js';
 import { auditLog } from '../services/audit.service.js';
-import { scaleComponents } from '../utils/feeCalculations.js';
+import { scaleComponents, calculateEffectiveTotal } from '../utils/feeCalculations.js';
 import { parseFeeStructureImportRow } from '../utils/feeImportParser.js';
 import {
   createFeeStructureSchema,
@@ -269,6 +269,35 @@ router.get('/structures', requirePermission('fees:read'), async (req, res, next)
       .lean();
 
     res.json(structures);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/structures/:id/summary', requirePermission('fees:read'), async (req, res, next) => {
+  try {
+    const tenantId = req.tenant._id;
+    const structure = await FeeStructure.findOne({ _id: req.params.id, tenantId }).lean();
+    if (!structure) return res.status(404).json({ error: 'Not found' });
+
+    const assignments = await FeeAssignment.find({
+      tenantId,
+      feeStructureId: structure._id,
+    }).lean();
+    const assignmentIds = assignments.map((a) => a._id);
+
+    const paymentAgg = await FeePayment.aggregate([
+      { $match: { tenantId, assignmentId: { $in: assignmentIds } } },
+      { $group: { _id: null, collectedAmount: { $sum: '$amount' } } },
+    ]);
+    const collectedAmount = paymentAgg[0]?.collectedAmount || 0;
+    const totalOwed = assignments.reduce((sum, a) => sum + calculateEffectiveTotal(a), 0);
+
+    res.json({
+      assignedCount: assignments.length,
+      collectedAmount,
+      outstandingAmount: totalOwed - collectedAmount,
+    });
   } catch (err) {
     next(err);
   }
