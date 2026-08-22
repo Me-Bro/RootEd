@@ -22,8 +22,11 @@ const feeAssignmentSchema = new mongoose.Schema(
       },
     ],
     status: { type: String, enum: ['unpaid', 'partial', 'paid', 'waived'], default: 'unpaid' },
+    waivedAt: { type: Date },
+    waivedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    waivedReason: { type: String },
   },
-  { timestamps: true }
+  { timestamps: true, optimisticConcurrency: true }
 );
 
 feeAssignmentSchema.plugin(tenantScopePlugin);

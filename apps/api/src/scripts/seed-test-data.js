@@ -848,6 +848,42 @@ async function run() {
     feeDiscount = feeDiscount.toObject();
   }
 
+  let feeDiscountForClass = await FeeDiscount.findOne(
+    { tenantId, name: 'Class 5 Concession' },
+    null,
+    { _bypassTenantScope: true }
+  ).lean();
+  if (!feeDiscountForClass) {
+    feeDiscountForClass = await FeeDiscount.create({
+      tenantId,
+      name: 'Class 5 Concession',
+      type: 'flat',
+      value: 500,
+      applicableTo: 'class',
+      classId: cls._id,
+      academicYearId: year._id,
+    });
+    feeDiscountForClass = feeDiscountForClass.toObject();
+  }
+
+  let feeDiscountForStudent = await FeeDiscount.findOne(
+    { tenantId, name: 'Merit Scholarship' },
+    null,
+    { _bypassTenantScope: true }
+  ).lean();
+  if (!feeDiscountForStudent) {
+    feeDiscountForStudent = await FeeDiscount.create({
+      tenantId,
+      name: 'Merit Scholarship',
+      type: 'percentage',
+      value: 20,
+      applicableTo: 'student',
+      studentId: activeStudents[1]._id,
+      academicYearId: year._id,
+    });
+    feeDiscountForStudent = feeDiscountForStudent.toObject();
+  }
+
   // ── Timetable ─────────────────────────────────────────────────────────────
   const mathSub = subjects.find((s) => s.code === 'MATH5');
   const englishSub = subjects.find((s) => s.code === 'ENG5');
@@ -1063,6 +1099,123 @@ async function run() {
     }
   }
 
+  // Dedicated, always-fresh assignments (against Sports Fee — mandatory
+  // total 1000, not otherwise assigned to anyone) for e2e coverage of the
+  // discount/waive/refund actions, so those tests don't collide with the
+  // Standard Fee assignments/payment above.
+  const sportsMandatoryTotal = 1000;
+
+  let discountTargetAssignment = await FeeAssignment.findOne(
+    { tenantId, studentId: activeStudents[1]._id, feeStructureId: sportsFeeStructure._id },
+    null,
+    { _bypassTenantScope: true }
+  ).lean();
+  if (!discountTargetAssignment) {
+    discountTargetAssignment = await FeeAssignment.create({
+      tenantId,
+      studentId: activeStudents[1]._id,
+      feeStructureId: sportsFeeStructure._id,
+      academicYearId: year._id,
+      totalAmount: sportsMandatoryTotal,
+      dueDate: new Date('2025-09-30'),
+    });
+    discountTargetAssignment = discountTargetAssignment.toObject();
+  }
+
+  let waiveTargetAssignment = await FeeAssignment.findOne(
+    { tenantId, studentId: activeStudents[3]._id, feeStructureId: sportsFeeStructure._id },
+    null,
+    { _bypassTenantScope: true }
+  ).lean();
+  if (!waiveTargetAssignment) {
+    waiveTargetAssignment = await FeeAssignment.create({
+      tenantId,
+      studentId: activeStudents[3]._id,
+      feeStructureId: sportsFeeStructure._id,
+      academicYearId: year._id,
+      totalAmount: sportsMandatoryTotal,
+      dueDate: new Date('2025-09-30'),
+    });
+    waiveTargetAssignment = waiveTargetAssignment.toObject();
+  }
+
+  let refundTargetAssignment = await FeeAssignment.findOne(
+    { tenantId, studentId: activeStudents[4]._id, feeStructureId: sportsFeeStructure._id },
+    null,
+    { _bypassTenantScope: true }
+  ).lean();
+  if (!refundTargetAssignment) {
+    refundTargetAssignment = await FeeAssignment.create({
+      tenantId,
+      studentId: activeStudents[4]._id,
+      feeStructureId: sportsFeeStructure._id,
+      academicYearId: year._id,
+      totalAmount: sportsMandatoryTotal,
+      dueDate: new Date('2025-09-30'),
+    });
+    refundTargetAssignment = refundTargetAssignment.toObject();
+  }
+
+  let refundTargetPayment = await FeePayment.findOne(
+    { tenantId, assignmentId: refundTargetAssignment._id },
+    null,
+    { _bypassTenantScope: true }
+  ).lean();
+  if (!refundTargetPayment) {
+    refundTargetPayment = await FeePayment.create({
+      tenantId,
+      assignmentId: refundTargetAssignment._id,
+      studentId: refundTargetAssignment.studentId,
+      amount: sportsMandatoryTotal,
+      paymentMethod: 'cash',
+      receiptNumber: 'RCP-TEST-00002',
+      collectedBy: users.tenant_admin._id,
+    });
+    refundTargetPayment = refundTargetPayment.toObject();
+    await FeeAssignment.updateOne(
+      { _id: refundTargetAssignment._id, tenantId },
+      { $set: { status: 'paid' } },
+      { _bypassTenantScope: true }
+    );
+  }
+
+  // Separate, UI-only targets for the discount/waive Playwright UI specs —
+  // kept distinct from the API-level fixtures above so a UI test clicking
+  // through the app doesn't race with an API test mutating the same doc.
+  let discountUiTargetAssignment = await FeeAssignment.findOne(
+    { tenantId, studentId: activeStudents[5]._id, feeStructureId: sportsFeeStructure._id },
+    null,
+    { _bypassTenantScope: true }
+  ).lean();
+  if (!discountUiTargetAssignment) {
+    discountUiTargetAssignment = await FeeAssignment.create({
+      tenantId,
+      studentId: activeStudents[5]._id,
+      feeStructureId: sportsFeeStructure._id,
+      academicYearId: year._id,
+      totalAmount: sportsMandatoryTotal,
+      dueDate: new Date('2025-09-30'),
+    });
+    discountUiTargetAssignment = discountUiTargetAssignment.toObject();
+  }
+
+  let waiveUiTargetAssignment = await FeeAssignment.findOne(
+    { tenantId, studentId: activeStudents[6]._id, feeStructureId: sportsFeeStructure._id },
+    null,
+    { _bypassTenantScope: true }
+  ).lean();
+  if (!waiveUiTargetAssignment) {
+    waiveUiTargetAssignment = await FeeAssignment.create({
+      tenantId,
+      studentId: activeStudents[6]._id,
+      feeStructureId: sportsFeeStructure._id,
+      academicYearId: year._id,
+      totalAmount: sportsMandatoryTotal,
+      dueDate: new Date('2025-09-30'),
+    });
+    waiveUiTargetAssignment = waiveUiTargetAssignment.toObject();
+  }
+
   // ── Inventory Items ───────────────────────────────────────────────────────
   const inventoryItems = [];
 
@@ -1209,6 +1362,36 @@ async function run() {
       studentId: installmentAssignment.studentId.toString(),
     },
     feeDiscount: { _id: feeDiscount._id.toString() },
+    feeDiscountForClass: { _id: feeDiscountForClass._id.toString() },
+    feeDiscountForStudent: {
+      _id: feeDiscountForStudent._id.toString(),
+      studentId: feeDiscountForStudent.studentId.toString(),
+    },
+    discountTargetAssignment: {
+      _id: discountTargetAssignment._id.toString(),
+      studentId: discountTargetAssignment.studentId.toString(),
+      totalAmount: discountTargetAssignment.totalAmount,
+    },
+    waiveTargetAssignment: {
+      _id: waiveTargetAssignment._id.toString(),
+      studentId: waiveTargetAssignment.studentId.toString(),
+    },
+    refundTargetAssignment: {
+      _id: refundTargetAssignment._id.toString(),
+      studentId: refundTargetAssignment.studentId.toString(),
+    },
+    refundTargetPayment: {
+      _id: refundTargetPayment._id.toString(),
+      amount: refundTargetPayment.amount,
+    },
+    discountUiTargetAssignment: {
+      _id: discountUiTargetAssignment._id.toString(),
+      studentId: discountUiTargetAssignment.studentId.toString(),
+    },
+    waiveUiTargetAssignment: {
+      _id: waiveUiTargetAssignment._id.toString(),
+      studentId: waiveUiTargetAssignment.studentId.toString(),
+    },
     inventoryItems: inventoryItems.map((i) => ({ _id: i._id.toString(), sku: i.sku })),
   };
 

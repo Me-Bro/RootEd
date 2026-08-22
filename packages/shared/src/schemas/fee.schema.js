@@ -1,5 +1,9 @@
 import { z } from 'zod';
 
+function optional(schema) {
+  return z.preprocess((v) => (v === '' ? undefined : v), schema.optional());
+}
+
 const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid id');
 
 export const feeComponentSchema = z.object({
@@ -87,3 +91,24 @@ export const createFeeDiscountSchema = z
     message: 'percentage discount value must be <= 100',
     path: ['value'],
   });
+
+export const recordFeePaymentSchema = z.object({
+  assignmentId: objectId,
+  amount: z.coerce.number().positive(),
+  paymentMethod: z.enum(['cash', 'card', 'upi', 'bank_transfer', 'cheque']),
+  transactionId: optional(z.string().trim()),
+  notes: optional(z.string().trim()),
+  installmentIndex: optional(z.coerce.number().int().nonnegative()),
+});
+
+export const applyFeeDiscountSchema = z.object({
+  discountId: objectId,
+});
+
+export const waiveFeeAssignmentSchema = z.object({
+  reason: optional(z.string().trim().min(1).max(500)),
+});
+
+export const refundFeePaymentSchema = z.object({
+  reason: optional(z.string().trim().min(1).max(500)),
+});

@@ -17,11 +17,17 @@ import {
   recordPayment,
   getDefaulters,
   initiateOnlinePayment,
+  applyDiscountToAssignment,
+  refundPayment,
 } from '../services/fee.service.js';
 import { getSignedUrl } from '../services/storage.service.js';
 import { env } from '../config/env.js';
 import { auditLog } from '../services/audit.service.js';
-import { scaleComponents, calculateEffectiveTotal } from '../utils/feeCalculations.js';
+import {
+  scaleComponents,
+  calculateEffectiveTotal,
+  canWaiveAssignment,
+} from '../utils/feeCalculations.js';
 import { parseFeeStructureImportRow } from '../utils/feeImportParser.js';
 import {
   createFeeStructureSchema,
@@ -29,6 +35,10 @@ import {
   assignFeeStructureSchema,
   cloneFeeStructureSchema,
   createFeeDiscountSchema,
+  recordFeePaymentSchema,
+  applyFeeDiscountSchema,
+  waiveFeeAssignmentSchema,
+  refundFeePaymentSchema,
 } from '@rooted/shared/schemas';
 
 const router = Router();
@@ -337,32 +347,107 @@ router.get('/assignments', requirePermission('fees:read'), async (req, res, next
   }
 });
 
-router.post('/payments', requirePermission('fees:collect'), async (req, res, next) => {
-  try {
-    const { assignmentId, amount, paymentMethod, transactionId, notes, installmentIndex } =
-      req.body;
+router.post(
+  '/assignments/:id/discount',
+  requirePermission('fees:write'),
+  validate(applyFeeDiscountSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const before = await FeeAssignment.findOne({ _id: req.params.id, tenantId }).lean();
+      if (!before) return res.status(404).json({ error: 'Not found' });
 
-    const payment = await recordPayment({
-      assignmentId,
-      amount: Number(amount),
-      paymentMethod,
-      transactionId,
-      notes,
-      installmentIndex,
-      collectedBy: req.user.sub,
-      tenantId: req.tenant._id,
-    });
+      const doc = await applyDiscountToAssignment({
+        assignmentId: req.params.id,
+        discountId: req.body.discountId,
+        tenantId,
+      });
 
-    let receiptUrl = null;
-    if (payment.receiptPdfKey) {
-      receiptUrl = await getSignedUrl(payment.receiptPdfKey);
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'feeAssignment.applyDiscount',
+        target: { model: 'FeeAssignment', id: doc._id },
+        before,
+        after: doc.toObject(),
+        ip: req.ip,
+      });
+
+      res.json(doc);
+    } catch (err) {
+      next(err);
     }
-
-    res.status(201).json({ payment, receiptUrl });
-  } catch (err) {
-    next(err);
   }
-});
+);
+
+router.post(
+  '/assignments/:id/waive',
+  requirePermission('tenant:admin'),
+  validate(waiveFeeAssignmentSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const doc = await FeeAssignment.findOne({ _id: req.params.id, tenantId });
+      if (!doc) return res.status(404).json({ error: 'Not found' });
+      if (!canWaiveAssignment(doc.status)) {
+        return res.status(400).json({ error: `Cannot waive a ${doc.status} assignment` });
+      }
+
+      const before = doc.toObject();
+      doc.status = 'waived';
+      doc.waivedAt = new Date();
+      doc.waivedBy = req.user.sub;
+      doc.waivedReason = req.body.reason;
+      await doc.save();
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'feeAssignment.waive',
+        target: { model: 'FeeAssignment', id: doc._id },
+        before,
+        after: doc.toObject(),
+        ip: req.ip,
+      });
+
+      res.json(doc);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/payments',
+  requirePermission('fees:collect'),
+  validate(recordFeePaymentSchema),
+  async (req, res, next) => {
+    try {
+      const { assignmentId, amount, paymentMethod, transactionId, notes, installmentIndex } =
+        req.body;
+
+      const payment = await recordPayment({
+        assignmentId,
+        amount,
+        paymentMethod,
+        transactionId,
+        notes,
+        installmentIndex,
+        collectedBy: req.user.sub,
+        tenantId: req.tenant._id,
+      });
+
+      let receiptUrl = null;
+      if (payment.receiptPdfKey) {
+        receiptUrl = await getSignedUrl(payment.receiptPdfKey);
+      }
+
+      res.status(201).json({ payment, receiptUrl });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.get('/payments', requirePermission('fees:read'), async (req, res, next) => {
   try {
@@ -401,6 +486,36 @@ router.get('/payments/:id/receipt', requirePermission('fees:read'), async (req, 
     next(err);
   }
 });
+
+router.post(
+  '/payments/:id/refund',
+  requirePermission('tenant:admin'),
+  validate(refundFeePaymentSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const payment = await refundPayment({
+        paymentId: req.params.id,
+        tenantId,
+        reason: req.body.reason,
+        actorId: req.user.sub,
+      });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'feePayment.refund',
+        target: { model: 'FeePayment', id: payment._id },
+        after: payment.toObject(),
+        ip: req.ip,
+      });
+
+      res.json(payment);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.get('/defaulters', requirePermission('fees:read'), async (req, res, next) => {
   try {
@@ -478,6 +593,9 @@ router.post('/payments/verify', requirePermission('fees:collect'), async (req, r
       key_secret: env.RAZORPAY_KEY_SECRET,
     });
     const order = await razorpay.orders.fetch(razorpay_order_id);
+    if (order.receipt !== assignmentId) {
+      throw new AppError('Order/assignment mismatch', 400);
+    }
     const amount = order.amount / 100; // paise -> rupees
 
     const payment = await recordPayment({
