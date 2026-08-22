@@ -8,6 +8,15 @@ function getTestIds() {
   return JSON.parse(readFileSync(p, 'utf-8'));
 }
 
+// The default e2e role (super_admin, impersonating the test tenant — see
+// playwright.config.js) resolves to the tenant_admin permission template,
+// which includes `leave:approve`. The Pending tab therefore renders the
+// mobile-redesigned approval queue (one request/card at a time, per
+// docs/mobile-ui/12-leave-requests-approved.html) rather than the plain
+// table — these tests exercise that queue. `leave-hardening.spec.js` covers
+// the underlying approval-chain enforcement (sequential approvers, 403 on
+// out-of-turn actions) at the API level and the non-approver ("teacher")
+// table fallback; it isn't touched here.
 test.describe('Leave Requests', () => {
   let leaveRequestId;
 
@@ -42,7 +51,7 @@ test.describe('Leave Requests', () => {
     await expect(page.getByRole('button', { name: /Pending Approval/i })).toBeVisible();
   });
 
-  test('pending tab shows the created request', async ({ page }) => {
+  test('pending tab shows the approval queue with full context on one card', async ({ page }) => {
     test.skip(!leaveRequestId, 'Leave request creation failed in beforeAll');
 
     await page.goto('/staff/leaves');
@@ -52,8 +61,22 @@ test.describe('Leave Requests', () => {
     await page.getByRole('button', { name: /Pending Approval/i }).click();
     await page.waitForLoadState('networkidle');
 
-    // Should show Approve and Reject buttons for pending requests
-    await expect(page.getByRole('button', { name: 'Approve' }).first()).toBeVisible({ timeout: 10_000 });
+    // Progress indicator ("N of Total pending") replaces the old table's
+    // implicit row count.
+    await expect(page.getByText(/\d+ of \d+ pending/)).toBeVisible({ timeout: 10_000 });
+
+    // Exactly one request is on screen at a time — the whole point of the
+    // queue redesign is no more scanning a table for the right row.
+    const approveBtn = page.getByRole('button', { name: 'Approve' });
+    const rejectBtn = page.getByRole('button', { name: 'Reject' });
+    await expect(approveBtn).toHaveCount(1, { timeout: 10_000 });
+    await expect(rejectBtn).toHaveCount(1);
+
+    // Leave type, dates and reason are visible on the card itself — no
+    // click-through required (DoD: "visible without a click-through").
+    await expect(page.getByText('Leave type')).toBeVisible();
+    await expect(page.getByText('Reason')).toBeVisible();
+    await expect(page.getByText('Balance after')).toBeVisible();
   });
 
   test('approves a pending leave request', async ({ page }) => {
@@ -63,11 +86,12 @@ test.describe('Leave Requests', () => {
     await page.getByRole('button', { name: /Pending Approval/i }).click();
     await page.waitForLoadState('networkidle');
 
-    const approveBtn = page.getByRole('button', { name: 'Approve' }).first();
+    const approveBtn = page.getByRole('button', { name: 'Approve' });
     await expect(approveBtn).toBeVisible({ timeout: 10_000 });
     await approveBtn.click();
 
-    // Wait for mutation to settle (button re-enables) and verify no error
+    // Approve/Reject auto-advance the queue to the next card on success
+    // (DoD) — wait for the mutation to settle and confirm no error surfaced.
     await expect(approveBtn).not.toBeDisabled({ timeout: 8_000 });
     await expect(page.locator('.text-destructive')).not.toBeVisible();
   });
@@ -95,7 +119,7 @@ test.describe('Leave Requests', () => {
     await expect(rejectBtn).toBeVisible({ timeout: 10_000 });
     await rejectBtn.click();
 
-    // Reject dialog appears
+    // Reject-with-comment is unchanged from the desktop flow — same dialog.
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     await dialog.locator('textarea').fill('Not approved due to schedule conflict');
