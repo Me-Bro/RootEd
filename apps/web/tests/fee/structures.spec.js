@@ -63,4 +63,18 @@ test.describe('Fee Structures', () => {
     const activated = await client.patch(`/fee/structures/${_id}/activate`);
     expect((await activated.json()).isActive).toBe(true);
   });
+
+  test('assigning a structure with an optional component only totals mandatory amount', async ({
+    request,
+  }) => {
+    const ids = getTestIds();
+    const client = await createTestApiClient(request, 'super_admin');
+    await client.post(`/fee/structures/${ids.feeStructureWithOptional._id}/assign`, {
+      sectionId: ids.section._id,
+    });
+    const res = await client.get(`/fee/assignments?yearId=${ids.academicYear._id}`);
+    const body = await res.json();
+    const assignment = body.find((a) => a.feeStructureId?._id === ids.feeStructureWithOptional._id);
+    expect(assignment.totalAmount).toBe(1000); // excludes the 800 optional component
+  });
 });

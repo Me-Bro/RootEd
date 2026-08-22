@@ -5,6 +5,7 @@ import { FeePayment } from '../models/FeePayment.js';
 import { FeeStructure } from '../models/FeeStructure.js';
 import { uploadBuffer } from './storage.service.js';
 import { env } from '../config/env.js';
+import { calculateMandatoryTotal, calculateEffectiveTotal } from '../utils/feeCalculations.js';
 
 export async function assignFeesToSection(sectionId, feeStructureId, tenantId) {
   const structure = await FeeStructure.findOne({ _id: feeStructureId, tenantId }).lean();
@@ -12,7 +13,7 @@ export async function assignFeesToSection(sectionId, feeStructureId, tenantId) {
 
   const students = await Student.find({ tenantId, sectionId, status: 'active' }).lean();
 
-  const totalAmount = structure.components.reduce((sum, c) => sum + c.amount, 0);
+  const totalAmount = calculateMandatoryTotal(structure.components);
 
   let created = 0;
   let skipped = 0;
@@ -75,7 +76,7 @@ export async function recordPayment({
 
   const allPayments = await FeePayment.find({ tenantId, assignmentId }).lean();
   const totalPaid = allPayments.reduce((sum, p) => sum + p.amount, 0);
-  const effectiveTotal = assignment.totalAmount - (assignment.discountAmount || 0);
+  const effectiveTotal = calculateEffectiveTotal(assignment);
 
   let status = 'partial';
   if (totalPaid >= effectiveTotal) status = 'paid';
@@ -154,7 +155,7 @@ export async function initiateOnlinePayment(assignmentId, tenantId) {
 
   const payments = await FeePayment.find({ tenantId, assignmentId }).lean();
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-  const outstanding = assignment.totalAmount - (assignment.discountAmount || 0) - totalPaid;
+  const outstanding = calculateEffectiveTotal(assignment) - totalPaid;
 
   if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
     return {

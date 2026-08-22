@@ -559,6 +559,22 @@ async function run() {
     feeStructure = feeStructure.toObject();
   }
 
+  let sportsFeeStructure = await FeeStructure.findOne({ tenantId, name: 'Sports Fee' }, null, {
+    _bypassTenantScope: true,
+  }).lean();
+  if (!sportsFeeStructure) {
+    sportsFeeStructure = await FeeStructure.create({
+      tenantId,
+      name: 'Sports Fee',
+      academicYearId: year._id,
+      components: [
+        { label: 'Sports Kit', amount: 1000, isOptional: false },
+        { label: 'Field Trip', amount: 800, isOptional: true },
+      ],
+    });
+    sportsFeeStructure = sportsFeeStructure.toObject();
+  }
+
   // ── Timetable ─────────────────────────────────────────────────────────────
   const mathSub = subjects.find((s) => s.code === 'MATH5');
   const englishSub = subjects.find((s) => s.code === 'ENG5');
@@ -889,6 +905,7 @@ async function run() {
     salaryStructure: { _id: salaryStructure._id.toString() },
     costCenter: { _id: costCenter._id.toString() },
     feeStructure: { _id: feeStructure._id.toString() },
+    feeStructureWithOptional: { _id: sportsFeeStructure._id.toString() },
     inventoryItems: inventoryItems.map((i) => ({ _id: i._id.toString(), sku: i.sku })),
   };
 

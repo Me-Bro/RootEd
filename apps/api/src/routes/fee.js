@@ -305,9 +305,17 @@ router.post('/payments/verify', requirePermission('fees:collect'), async (req, r
 
     if (expected !== razorpay_signature) throw new AppError('Invalid payment signature', 400);
 
+    const Razorpay = (await import('razorpay')).default;
+    const razorpay = new Razorpay({
+      key_id: env.RAZORPAY_KEY_ID,
+      key_secret: env.RAZORPAY_KEY_SECRET,
+    });
+    const order = await razorpay.orders.fetch(razorpay_order_id);
+    const amount = order.amount / 100; // paise -> rupees
+
     const payment = await recordPayment({
       assignmentId,
-      amount: 0,
+      amount,
       paymentMethod: 'upi',
       transactionId: razorpay_payment_id,
       notes: `Razorpay order: ${razorpay_order_id}`,
