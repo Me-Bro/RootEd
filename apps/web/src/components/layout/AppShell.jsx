@@ -78,6 +78,12 @@ const NAV_GROUPS = [
       },
       { to: '/academic/timetable', label: 'Timetable', icon: Grid, permission: 'students:read' },
       {
+        to: '/academic/my-timetable',
+        label: 'My Schedule',
+        icon: CalendarDays,
+        permission: 'students:read',
+      },
+      {
         to: '/academic/report-cards',
         label: 'Report Cards',
         icon: FileText,

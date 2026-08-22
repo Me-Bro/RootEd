@@ -13,14 +13,27 @@ import {
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
+import { useAuth } from '../../contexts/useAuth.js';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const PERIODS = [1, 2, 3, 4, 5, 6, 7, 8];
 const DAY_TO_NUMBER = { Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5 };
+const EMPTY_FORM = { teacherId: '', subjectId: '', startTime: '', endTime: '', room: '' };
 
-function AddEntryModal({ open, onOpenChange, sectionId, yearId, day, period }) {
+function EntryModal({ open, onOpenChange, sectionId, yearId, day, period, entry }) {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({ teacherId: '', subjectId: '', startTime: '', endTime: '' });
+  const isEdit = Boolean(entry);
+  const [form, setForm] = useState(() =>
+    entry
+      ? {
+          teacherId: entry.teacherId?._id ?? entry.teacherId,
+          subjectId: entry.subjectId?._id ?? entry.subjectId,
+          startTime: entry.startTime,
+          endTime: entry.endTime,
+          room: entry.room ?? '',
+        }
+      : EMPTY_FORM
+  );
   const [error, setError] = useState('');
 
   const { data: staff = [] } = useQuery({
@@ -37,42 +50,48 @@ function AddEntryModal({ open, onOpenChange, sectionId, yearId, day, period }) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
   }
 
+  function resetAndClose() {
+    onOpenChange(false);
+    setForm(EMPTY_FORM);
+    setError('');
+  }
+
   const mutation = useMutation({
-    mutationFn: () =>
-      api
-        .post('/academic/timetable', {
-          academicYearId: yearId,
-          sectionId,
-          dayOfWeek: DAY_TO_NUMBER[day],
-          periodNumber: period,
-          teacherId: form.teacherId,
-          subjectId: form.subjectId,
-          startTime: form.startTime,
-          endTime: form.endTime,
-        })
-        .then((r) => r.data),
+    mutationFn: () => {
+      const body = {
+        academicYearId: yearId,
+        sectionId,
+        dayOfWeek: DAY_TO_NUMBER[day],
+        periodNumber: period,
+        teacherId: form.teacherId,
+        subjectId: form.subjectId,
+        startTime: form.startTime,
+        endTime: form.endTime,
+        room: form.room || undefined,
+      };
+      return isEdit
+        ? api.put(`/academic/timetable/${entry._id}`, body).then((r) => r.data)
+        : api.post('/academic/timetable', body).then((r) => r.data);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['timetable', sectionId, yearId] });
-      onOpenChange(false);
-      setForm({ teacherId: '', subjectId: '', startTime: '', endTime: '' });
-      setError('');
+      resetAndClose();
     },
     onError: (err) => {
-      const msg = err.response?.data?.error || 'Failed to add entry';
-      setError(err.response?.status === 409 ? 'Teacher has a conflict at this period' : msg);
+      setError(err.response?.data?.error || `Failed to ${isEdit ? 'update' : 'add'} entry`);
     },
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => !v && resetAndClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            Add Entry — {day}, Period {period}
+            {isEdit ? 'Edit Entry' : 'Add Entry'} — {day}, Period {period}
           </DialogTitle>
         </DialogHeader>
         <form
-          id="add-timetable"
+          id="timetable-entry-form"
           onSubmit={(e) => {
             e.preventDefault();
             mutation.mutate();
@@ -86,7 +105,7 @@ function AddEntryModal({ open, onOpenChange, sectionId, yearId, day, period }) {
             placeholder="— Select Teacher —"
           >
             {staff.map((s) => (
-              <SelectItem key={s._id} value={s._id}>
+              <SelectItem key={s._id} value={s.userId}>
                 {s.firstName} {s.lastName}
               </SelectItem>
             ))}
@@ -119,14 +138,86 @@ function AddEntryModal({ open, onOpenChange, sectionId, yearId, day, period }) {
               required
             />
           </div>
+          <Input
+            label="Room (optional)"
+            type="text"
+            value={form.room}
+            onChange={update('room')}
+            placeholder="e.g. Room 204"
+          />
           {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={resetAndClose}>
             Cancel
           </Button>
-          <Button type="submit" form="add-timetable" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Adding…' : 'Add'}
+          <Button type="submit" form="timetable-entry-form" disabled={mutation.isPending}>
+            {mutation.isPending ? 'Saving…' : isEdit ? 'Save' : 'Add'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function CopyModal({ open, onOpenChange, sectionId, yearId, years }) {
+  const queryClient = useQueryClient();
+  const [fromYearId, setFromYearId] = useState('');
+  const [result, setResult] = useState(null);
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      api
+        .post('/academic/timetable/copy', { sectionId, fromYearId, toYearId: yearId })
+        .then((r) => r.data),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['timetable', sectionId, yearId] });
+      setResult(data);
+    },
+  });
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        onOpenChange(v);
+        if (!v) {
+          setFromYearId('');
+          setResult(null);
+        }
+      }}
+    >
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Copy Timetable From Another Year</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          <SelectField
+            label="Source Academic Year"
+            value={fromYearId}
+            onValueChange={setFromYearId}
+            placeholder="— Select Year —"
+          >
+            {years
+              .filter((y) => y._id !== yearId)
+              .map((y) => (
+                <SelectItem key={y._id} value={y._id}>
+                  {y.name}
+                </SelectItem>
+              ))}
+          </SelectField>
+          {result && (
+            <p className="text-sm text-muted-foreground">
+              Copied {result.copied}, skipped {result.skipped} (already existed).
+            </p>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
+          <Button onClick={() => mutation.mutate()} disabled={!fromYearId || mutation.isPending}>
+            {mutation.isPending ? 'Copying…' : 'Copy'}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -136,9 +227,13 @@ function AddEntryModal({ open, onOpenChange, sectionId, yearId, day, period }) {
 
 export default function TimetablePage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = (user?.permissions ?? []).includes('tenant:admin');
+
   const [sectionId, setSectionId] = useState('');
   const [yearId, setYearId] = useState('');
-  const [addCell, setAddCell] = useState(null);
+  const [entryCell, setEntryCell] = useState(null);
+  const [copyOpen, setCopyOpen] = useState(false);
 
   const { data: years = [] } = useQuery({
     queryKey: ['academic-years'],
@@ -156,6 +251,25 @@ export default function TimetablePage() {
     enabled: Boolean(sectionId) && Boolean(yearId),
   });
 
+  const { data: publishStatus } = useQuery({
+    queryKey: ['timetable-publish', sectionId, yearId],
+    queryFn: () =>
+      api
+        .get(`/academic/timetable/publish?academicYearId=${yearId}&sectionId=${sectionId}`)
+        .then((r) => r.data),
+    enabled: Boolean(sectionId) && Boolean(yearId),
+  });
+  const published = Boolean(publishStatus?.published);
+
+  const publishMutation = useMutation({
+    mutationFn: (action) =>
+      api
+        .post(`/academic/timetable/${action}`, { academicYearId: yearId, sectionId })
+        .then((r) => r.data),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ['timetable-publish', sectionId, yearId] }),
+  });
+
   const removeMutation = useMutation({
     mutationFn: (id) => api.delete(`/academic/timetable/${id}`).then((r) => r.data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['timetable', sectionId, yearId] }),
@@ -167,9 +281,25 @@ export default function TimetablePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Timetable" />
+      <div className="flex items-center justify-between">
+        <PageHeader title="Timetable" />
+        {sectionId && yearId && isAdmin && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setCopyOpen(true)}>
+              Copy from another year
+            </Button>
+            <Button
+              variant={published ? 'outline' : 'default'}
+              onClick={() => publishMutation.mutate(published ? 'unpublish' : 'publish')}
+              disabled={publishMutation.isPending}
+            >
+              {published ? 'Unpublish' : 'Publish'}
+            </Button>
+          </div>
+        )}
+      </div>
 
-      <div className="flex gap-3 flex-wrap">
+      <div className="flex gap-3 flex-wrap items-center">
         <select
           value={yearId}
           onChange={(e) => setYearId(e.target.value)}
@@ -198,6 +328,18 @@ export default function TimetablePage() {
             </optgroup>
           ))}
         </select>
+        {sectionId && yearId && (
+          <span
+            className={
+              'rounded-full px-2.5 py-0.5 text-xs font-medium ' +
+              (published
+                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200'
+                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200')
+            }
+          >
+            {published ? 'Published' : 'Draft'}
+          </span>
+        )}
       </div>
 
       {(!sectionId || !yearId) && (
@@ -238,14 +380,23 @@ export default function TimetablePage() {
                         <td key={day} className="px-4 py-3 border-l border-border">
                           {entry ? (
                             <div className="flex items-start justify-between gap-2">
-                              <div>
+                              <button
+                                type="button"
+                                onClick={() => setEntryCell({ day, period, entry })}
+                                className="text-left"
+                                title="Edit"
+                              >
                                 <p className="font-medium text-xs">
                                   {entry.subjectId?.name || '—'}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                  {entry.teacherId?.firstName} {entry.teacherId?.lastName}
+                                  {entry.teacher?.firstName} {entry.teacher?.lastName}
                                 </p>
-                              </div>
+                                <p className="text-xs text-muted-foreground">
+                                  {entry.startTime}–{entry.endTime}
+                                  {entry.room ? ` · ${entry.room}` : ''}
+                                </p>
+                              </button>
                               <button
                                 onClick={() => removeMutation.mutate(entry._id)}
                                 className="text-destructive/70 hover:text-destructive text-xs shrink-0"
@@ -256,7 +407,7 @@ export default function TimetablePage() {
                             </div>
                           ) : (
                             <button
-                              onClick={() => setAddCell({ day, period })}
+                              onClick={() => setEntryCell({ day, period })}
                               className="text-primary/70 hover:text-primary text-xs font-medium"
                             >
                               + Add
@@ -273,13 +424,27 @@ export default function TimetablePage() {
         </div>
       )}
 
-      <AddEntryModal
-        open={Boolean(addCell)}
-        onOpenChange={(v) => !v && setAddCell(null)}
+      <EntryModal
+        key={
+          entryCell
+            ? `${entryCell.entry?._id ?? 'new'}-${entryCell.day}-${entryCell.period}`
+            : 'closed'
+        }
+        open={Boolean(entryCell)}
+        onOpenChange={(v) => !v && setEntryCell(null)}
         sectionId={sectionId}
         yearId={yearId}
-        day={addCell?.day}
-        period={addCell?.period}
+        day={entryCell?.day}
+        period={entryCell?.period}
+        entry={entryCell?.entry}
+      />
+
+      <CopyModal
+        open={copyOpen}
+        onOpenChange={setCopyOpen}
+        sectionId={sectionId}
+        yearId={yearId}
+        years={years}
       />
     </div>
   );

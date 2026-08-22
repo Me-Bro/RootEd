@@ -10,10 +10,18 @@ import {
   gradesQuerySchema,
   gradesReportQuerySchema,
   gradeLockSchema,
+  timetableEntrySchema,
+  timetableQuerySchema,
+  copyTimetableSchema,
+  timetablePublishSchema,
 } from '@rooted/shared/schemas';
 import { scoreToLetter } from '@rooted/shared/utils';
 import { authenticate } from '../middleware/authenticate.js';
-import { requirePermission } from '../middleware/requirePermission.js';
+import {
+  requirePermission,
+  resolvePermissions,
+  effectivePermissionsFor,
+} from '../middleware/requirePermission.js';
 import { validate } from '../middleware/validate.js';
 import { redis } from '../config/redis.js';
 import { withCache, invalidateCache } from '../utils/cache.js';
@@ -23,13 +31,16 @@ import { Class } from '../models/Class.js';
 import { Section } from '../models/Section.js';
 import { Subject } from '../models/Subject.js';
 import { Student } from '../models/Student.js';
+import { StaffMember } from '../models/StaffMember.js';
 import { Timetable } from '../models/Timetable.js';
+import { TimetablePublish } from '../models/TimetablePublish.js';
 import { AttendanceRecord } from '../models/AttendanceRecord.js';
 import { Grade } from '../models/Grade.js';
 import { GradeLock } from '../models/GradeLock.js';
 import { buildStudentFilter } from '../utils/studentFilter.js';
 import { computeAttendanceStats } from '../utils/attendanceStats.js';
 import { computeGradeStats } from '../utils/gradeStats.js';
+import { filterVisibleTimetableEntries } from '../utils/timetableVisibility.js';
 import { auditLog } from '../services/audit.service.js';
 
 const DEFAULTER_THRESHOLD_PCT = 75;
@@ -408,72 +419,269 @@ router.post(
 
 // ── Timetable ─────────────────────────────────────────────────────────────────
 
-router.post('/timetable', requirePermission('tenant:admin'), async (req, res, next) => {
+async function findTimetableConflicts(tenantId, entry, excludeId) {
+  const { academicYearId, sectionId, teacherId, room, dayOfWeek, periodNumber } = entry;
+  const base = { tenantId, academicYearId, dayOfWeek, periodNumber };
+  if (excludeId) base._id = { $ne: excludeId };
+
+  const teacherConflict = await Timetable.findOne({ ...base, teacherId });
+  if (teacherConflict) return 'Teacher already has a class at this time';
+
+  const sectionConflict = await Timetable.findOne({ ...base, sectionId });
+  if (sectionConflict) return 'Section already has a class at this period';
+
+  if (room) {
+    const roomConflict = await Timetable.findOne({ ...base, room });
+    if (roomConflict) return 'Room already booked at this period';
+  }
+
+  return null;
+}
+
+router.post(
+  '/timetable/copy',
+  requirePermission('tenant:admin'),
+  validate(copyTimetableSchema),
+  async (req, res, next) => {
+    try {
+      const { sectionId, fromYearId, toYearId } = req.body;
+      const tenantId = req.tenant._id;
+
+      const sourceEntries = await Timetable.find({
+        tenantId,
+        academicYearId: fromYearId,
+        sectionId,
+      }).lean();
+
+      let copied = 0;
+      let skipped = 0;
+      for (const entry of sourceEntries) {
+        try {
+          await Timetable.create({
+            tenantId,
+            academicYearId: toYearId,
+            sectionId: entry.sectionId,
+            subjectId: entry.subjectId,
+            teacherId: entry.teacherId,
+            dayOfWeek: entry.dayOfWeek,
+            periodNumber: entry.periodNumber,
+            startTime: entry.startTime,
+            endTime: entry.endTime,
+            room: entry.room,
+          });
+          copied++;
+        } catch (err) {
+          if (err.code === 11000) {
+            skipped++;
+          } else {
+            throw err;
+          }
+        }
+      }
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'timetable.copy',
+        target: { model: 'Timetable', id: null },
+        after: { sectionId, fromYearId, toYearId, copied, skipped },
+        ip: req.ip,
+      });
+
+      res.json({ copied, skipped });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get('/timetable/publish', requirePermission('students:read'), async (req, res, next) => {
   try {
-    const {
+    const { academicYearId, sectionId } = timetablePublishSchema.parse(req.query);
+    const publish = await TimetablePublish.findOne({
+      tenantId: req.tenant._id,
       academicYearId,
       sectionId,
-      subjectId,
-      teacherId,
-      dayOfWeek,
-      periodNumber,
-      startTime,
-      endTime,
-    } = req.body;
-    const tenantId = req.tenant._id;
+    }).lean();
 
-    const teacherConflict = await Timetable.findOne({
-      tenantId,
-      academicYearId,
-      teacherId,
-      dayOfWeek,
-      periodNumber,
-    });
-    if (teacherConflict)
-      return res.status(409).json({ error: 'Teacher already has a class at this time' });
-
-    const sectionConflict = await Timetable.findOne({
-      tenantId,
-      academicYearId,
-      sectionId,
-      dayOfWeek,
-      periodNumber,
-    });
-    if (sectionConflict)
-      return res.status(409).json({ error: 'Section already has a class at this period' });
-
-    const entry = await Timetable.create({
-      tenantId,
-      academicYearId,
-      sectionId,
-      subjectId,
-      teacherId,
-      dayOfWeek,
-      periodNumber,
-      startTime,
-      endTime,
-    });
-    res.status(201).json(entry);
+    res.json({ published: Boolean(publish), publish: publish ?? null });
   } catch (err) {
     next(err);
   }
 });
 
+router.post(
+  '/timetable/publish',
+  requirePermission('tenant:admin'),
+  validate(timetablePublishSchema),
+  async (req, res, next) => {
+    try {
+      const { academicYearId, sectionId } = req.body;
+      const tenantId = req.tenant._id;
+
+      const publish = await TimetablePublish.findOneAndUpdate(
+        { tenantId, academicYearId, sectionId },
+        { $setOnInsert: { publishedAt: new Date(), publishedBy: req.user.sub } },
+        { upsert: true, new: true }
+      );
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'timetable.publish',
+        target: { model: 'TimetablePublish', id: publish._id },
+        ip: req.ip,
+      });
+
+      res.json(publish);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/timetable/unpublish',
+  requirePermission('tenant:admin'),
+  validate(timetablePublishSchema),
+  async (req, res, next) => {
+    try {
+      const { academicYearId, sectionId } = req.body;
+      const tenantId = req.tenant._id;
+
+      await TimetablePublish.deleteOne({ tenantId, academicYearId, sectionId });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'timetable.unpublish',
+        target: { model: 'TimetablePublish', id: null },
+        after: { academicYearId, sectionId },
+        ip: req.ip,
+      });
+
+      res.json({ unpublished: true });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/timetable',
+  requirePermission('tenant:admin'),
+  validate(timetableEntrySchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const conflict = await findTimetableConflicts(tenantId, req.body);
+      if (conflict) return res.status(409).json({ error: conflict });
+
+      const entry = await Timetable.create({ tenantId, ...req.body });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'timetable.create',
+        target: { model: 'Timetable', id: entry._id },
+        after: entry.toObject(),
+        ip: req.ip,
+      });
+
+      res.status(201).json(entry);
+    } catch (err) {
+      if (err.code === 11000) return res.status(409).json({ error: 'Timetable slot conflict' });
+      next(err);
+    }
+  }
+);
+
+router.put(
+  '/timetable/:id',
+  requirePermission('tenant:admin'),
+  validate(timetableEntrySchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const conflict = await findTimetableConflicts(tenantId, req.body, req.params.id);
+      if (conflict) return res.status(409).json({ error: conflict });
+
+      const entry = await Timetable.findOneAndUpdate(
+        { _id: req.params.id, tenantId },
+        { $set: req.body },
+        { new: true, runValidators: true }
+      );
+      if (!entry) return res.status(404).json({ error: 'Not found' });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'timetable.update',
+        target: { model: 'Timetable', id: entry._id },
+        after: entry.toObject(),
+        ip: req.ip,
+      });
+
+      res.json(entry);
+    } catch (err) {
+      if (err.code === 11000) return res.status(409).json({ error: 'Timetable slot conflict' });
+      next(err);
+    }
+  }
+);
+
 router.get('/timetable', requirePermission('students:read'), async (req, res, next) => {
   try {
-    const filter = { tenantId: req.tenant._id };
-    if (req.query.sectionId) filter.sectionId = req.query.sectionId;
-    if (req.query.teacherId) filter.teacherId = req.query.teacherId;
-    if (req.query.yearId) filter.academicYearId = req.query.yearId;
+    const query = timetableQuerySchema.parse(req.query);
+    const tenantId = req.tenant._id;
+    const filter = { tenantId };
+    if (query.sectionId) filter.sectionId = query.sectionId;
+    if (query.teacherId) filter.teacherId = query.teacherId;
+    if (query.yearId) filter.academicYearId = query.yearId;
 
-    const entries = await Timetable.find(filter)
-      .populate('subjectId', 'name code')
-      .populate('sectionId', 'name')
-      .populate('teacherId', 'firstName lastName email')
-      .sort({ dayOfWeek: 1, periodNumber: 1 })
-      .lean();
+    const [entries, publishes] = await Promise.all([
+      Timetable.find(filter)
+        .populate('subjectId', 'name code')
+        .populate('sectionId', 'name')
+        .sort({ dayOfWeek: 1, periodNumber: 1 })
+        .lean(),
+      TimetablePublish.find({ tenantId }).lean(),
+    ]);
 
-    res.json(entries);
+    // teacherId refs User (no name fields) — StaffMember holds the display
+    // name and links back via userId, so join it separately for the grid.
+    const teacherIds = [...new Set(entries.map((e) => String(e.teacherId)))];
+    const staffMembers = await StaffMember.find(
+      { tenantId, userId: { $in: teacherIds } },
+      'firstName lastName userId'
+    ).lean();
+    const staffByUserId = new Map(staffMembers.map((s) => [String(s.userId), s]));
+
+    const impersonated = effectivePermissionsFor(req.user);
+    const permissions =
+      impersonated ?? (await resolvePermissions(req.user.sub, tenantId.toString()));
+    const isAdmin = permissions.includes('tenant:admin');
+
+    const publishedKeys = new Set(publishes.map((p) => `${p.academicYearId}:${p.sectionId}`));
+    // populate() turns sectionId into {_id, name} — key on the raw id, not the populated doc.
+    const entriesForFilter = entries.map((e) => ({
+      ...e,
+      sectionId: e.sectionId?._id ?? e.sectionId,
+    }));
+    const visibleIds = new Set(
+      filterVisibleTimetableEntries(entriesForFilter, publishedKeys, isAdmin).map((e) =>
+        String(e._id)
+      )
+    );
+    const result = entries
+      .filter((e) => visibleIds.has(String(e._id)))
+      .map((e) => ({
+        ...e,
+        teacher: staffByUserId.get(String(e.teacherId)) ?? null,
+        published: publishedKeys.has(`${e.academicYearId}:${e.sectionId?._id ?? e.sectionId}`),
+      }));
+
+    res.json(result);
   } catch (err) {
     next(err);
   }
@@ -481,11 +689,22 @@ router.get('/timetable', requirePermission('students:read'), async (req, res, ne
 
 router.delete('/timetable/:id', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
+    const tenantId = req.tenant._id;
     const entry = await Timetable.findOneAndDelete({
       _id: req.params.id,
-      tenantId: req.tenant._id,
+      tenantId,
     });
     if (!entry) return res.status(404).json({ error: 'Not found' });
+
+    await auditLog({
+      actorId: req.user.sub,
+      tenantId: tenantId.toString(),
+      action: 'timetable.delete',
+      target: { model: 'Timetable', id: entry._id },
+      before: entry.toObject(),
+      ip: req.ip,
+    });
+
     res.json({ deleted: true });
   } catch (err) {
     next(err);

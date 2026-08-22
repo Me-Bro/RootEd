@@ -75,3 +75,39 @@ export const gradeLockSchema = z.object({
   termId: objectId,
   assessmentType: assessmentType.default('final'),
 });
+
+const timeString = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Invalid time');
+
+export const timetableEntrySchema = z
+  .object({
+    academicYearId: objectId,
+    sectionId: objectId,
+    subjectId: objectId,
+    teacherId: objectId,
+    dayOfWeek: z.coerce.number().int().min(0).max(6),
+    periodNumber: z.coerce.number().int().positive(),
+    startTime: timeString,
+    endTime: timeString,
+    room: z.string().trim().min(1).optional(),
+  })
+  .refine((v) => v.endTime > v.startTime, {
+    message: 'endTime must be after startTime',
+    path: ['endTime'],
+  });
+
+export const timetableQuerySchema = z.object({
+  sectionId: objectId.optional(),
+  teacherId: objectId.optional(),
+  yearId: objectId.optional(),
+});
+
+export const copyTimetableSchema = z.object({
+  sectionId: objectId,
+  fromYearId: objectId,
+  toYearId: objectId,
+});
+
+export const timetablePublishSchema = z.object({
+  academicYearId: objectId,
+  sectionId: objectId,
+});
