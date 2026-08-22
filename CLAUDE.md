@@ -108,6 +108,14 @@ Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts 
 | `packages/shared/src/` | Zod schemas reused across API validation and frontend forms |
 | `docs/adr/` | Architecture decision records — tenancy model, field encryption, in-process workers, approval workflow engine |
 
+## Agent Skills
+
+`agent-home/*.md` — repo-specific runbooks for Claude Code, not user-facing docs:
+- `feature-tdd-seed-e2e.md` — plan → TDD → extend seed data → Playwright e2e workflow for building a feature end-to-end
+- `restore-dev-stack.md` — **read this before touching Docker for local E2E**: switching between dev mode (`docker-compose.dev.yml`) and e2e mode (local API + `vite --mode test` on the same ports), the port-release race, and a `node_modules` corruption gotcha from the container's own `pnpm install` running against the bind-mounted volume
+- `branch-commit-pr-from-upstream.md` — cut a branch from `upstream/main`, commit with hooks, PR against upstream (fork workflow: `origin` = your fork, `upstream` = source repo)
+- `sync-main-with-upstream.md` — fast-forward local `main`/`origin/main` from `upstream/main`
+
 ## Environment Setup
 
 ### Dev
