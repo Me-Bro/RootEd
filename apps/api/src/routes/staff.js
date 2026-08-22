@@ -778,7 +778,20 @@ router.get('/salary-structures', requirePermission('payroll:read'), async (req, 
   try {
     const tenantId = req.tenant._id;
     const structures = await SalaryStructure.find({ tenantId }).lean();
-    res.json(structures.map((s) => decryptStructure(s, tenantId)));
+
+    // tenantScopePlugin doesn't hook `aggregate`, so tenantId is explicit here.
+    const counts = await StaffMember.aggregate([
+      { $match: { tenantId, salaryStructureId: { $ne: null } } },
+      { $group: { _id: '$salaryStructureId', count: { $sum: 1 } } },
+    ]);
+    const countByStructureId = new Map(counts.map((c) => [String(c._id), c.count]));
+
+    res.json(
+      structures.map((s) => ({
+        ...decryptStructure(s, tenantId),
+        staffCount: countByStructureId.get(String(s._id)) ?? 0,
+      }))
+    );
   } catch (err) {
     next(err);
   }
@@ -814,6 +827,43 @@ router.patch(
       });
 
       res.json(decryptStructure(structure.toObject(), tenantId));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.delete(
+  '/salary-structures/:id',
+  requirePermission('tenant:admin'),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const structure = await SalaryStructure.findOne({ _id: req.params.id, tenantId }).lean();
+      if (!structure) return res.status(404).json({ error: 'Salary structure not found' });
+
+      const staffCount = await StaffMember.countDocuments({
+        tenantId,
+        salaryStructureId: structure._id,
+      });
+      if (staffCount > 0) {
+        return res.status(409).json({
+          error: `Cannot delete: ${staffCount} staff member(s) are assigned to this salary structure`,
+        });
+      }
+
+      await SalaryStructure.deleteOne({ _id: structure._id, tenantId });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'salaryStructure.delete',
+        target: { model: 'SalaryStructure', id: structure._id },
+        before: structure,
+        ip: req.ip,
+      });
+
+      res.json({ deleted: true });
     } catch (err) {
       next(err);
     }

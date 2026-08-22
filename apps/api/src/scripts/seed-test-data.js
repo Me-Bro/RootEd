@@ -564,11 +564,49 @@ async function run() {
       tenantId,
       name: 'Basic Structure',
       components: [
-        { label: 'Basic', type: 'earning', amount: 30000, isPercentage: false },
-        { label: 'HRA', type: 'earning', amount: 40, isPercentage: true },
+        {
+          id: 'basic-component',
+          label: 'Basic',
+          type: 'earning',
+          amount: 30000,
+          isPercentage: false,
+        },
+        {
+          id: 'hra-component',
+          label: 'HRA',
+          type: 'earning',
+          amount: 40,
+          isPercentage: true,
+          baseRef: 'basic-component',
+        },
       ],
     });
     salaryStructure = salaryStructure.toObject();
+  }
+
+  // Second structure, deliberately assigned to zero staff — exercises the
+  // "delete succeeds" e2e path (the in-use "Basic Structure" above exercises
+  // the "delete blocked, 409" path instead).
+  let salaryStructureUnused = await SalaryStructure.findOne(
+    { tenantId, name: 'Unused Structure' },
+    null,
+    { _bypassTenantScope: true }
+  ).lean();
+  if (!salaryStructureUnused) {
+    salaryStructureUnused = await SalaryStructure.create({
+      tenantId,
+      name: 'Unused Structure',
+      components: [
+        {
+          id: 'unused-basic-component',
+          label: 'Basic',
+          type: 'earning',
+          amount: 20000,
+          isPercentage: false,
+        },
+      ],
+    });
+    salaryStructureUnused = salaryStructureUnused.toObject();
   }
 
   // Dedicated staff member with a salary structure assigned — today no
@@ -1078,6 +1116,7 @@ async function run() {
       used: b.used,
     })),
     salaryStructure: { _id: salaryStructure._id.toString() },
+    salaryStructureUnused: { _id: salaryStructureUnused._id.toString() },
     staffWithSalaryStructure: {
       _id: staffWithSalaryStructure._id.toString(),
       employeeId: staffWithSalaryStructure.employeeId,

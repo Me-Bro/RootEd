@@ -131,6 +131,98 @@ test.describe('Salary', () => {
       await expect(dialog).not.toBeVisible({ timeout: 8_000 });
       await expect(page.getByText('E2E Created Structure').first()).toBeVisible();
     });
+
+    test('salary structure cards show a staff-count badge', async ({ page }) => {
+      const ids = getTestIds();
+      await page.goto('/staff/salary-structures');
+      await page.waitForLoadState('networkidle');
+
+      const basicCard = page.getByTestId(`salary-structure-card-${ids.salaryStructure._id}`);
+      await expect(basicCard.getByText('1 staff')).toBeVisible();
+
+      const unusedCard = page.getByTestId(`salary-structure-card-${ids.salaryStructureUnused._id}`);
+      await expect(unusedCard.getByText('0 staff')).toBeVisible();
+    });
+
+    test('Delete is disabled, with an explanatory title, for a structure with staff assigned', async ({
+      page,
+    }) => {
+      const ids = getTestIds();
+      await page.goto('/staff/salary-structures');
+      await page.waitForLoadState('networkidle');
+
+      const basicCard = page.getByTestId(`salary-structure-card-${ids.salaryStructure._id}`);
+      const deleteButton = basicCard.getByRole('button', { name: 'Delete' });
+      await expect(deleteButton).toBeDisabled();
+      await expect(deleteButton).toHaveAttribute('title', /staff member/i);
+    });
+
+    test('Duplicate prefills the New Structure modal from an existing structure', async ({
+      page,
+    }) => {
+      const ids = getTestIds();
+      await page.goto('/staff/salary-structures');
+      await page.waitForLoadState('networkidle');
+
+      const basicCard = page.getByTestId(`salary-structure-card-${ids.salaryStructure._id}`);
+      await basicCard.getByRole('button', { name: 'Duplicate' }).click();
+
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible();
+      await expect(dialog.getByLabel('Name')).toHaveValue('Copy of Basic Structure');
+      await expect(dialog.getByPlaceholder('Label (e.g. Basic)').nth(0)).toHaveValue('Basic');
+      await expect(dialog.getByPlaceholder('Label (e.g. Basic)').nth(1)).toHaveValue('HRA');
+
+      // Cancel, not submit — a real create here would shift later
+      // count/list assertions in this file.
+      await dialog.getByRole('button', { name: 'Cancel' }).click();
+      await expect(dialog).not.toBeVisible();
+    });
+
+    test('a percentage component over 100% is rejected with a clear message', async ({ page }) => {
+      await page.goto('/staff/salary-structures');
+      await page.waitForLoadState('networkidle');
+
+      await page.getByRole('button', { name: 'New Structure' }).click();
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible();
+
+      await dialog.getByLabel('Name').fill('E2E Invalid Percentage Structure');
+      await dialog.getByPlaceholder('Label (e.g. Basic)').first().fill('Basic');
+      await dialog.getByPlaceholder('Amount').first().fill('10000');
+
+      await dialog.getByRole('button', { name: '+ Add Row' }).click();
+      await dialog.getByPlaceholder('Label (e.g. Basic)').nth(1).fill('HRA');
+      await dialog.locator('input[type="checkbox"]').nth(1).check();
+      await dialog.getByPlaceholder('Percent').fill('150');
+      await dialog.locator('select').last().selectOption({ label: 'Basic' });
+
+      await dialog.getByRole('button', { name: 'Create' }).click();
+      await expect(dialog).toBeVisible();
+      await expect(dialog.getByText(/between 0 and 100/i)).toBeVisible();
+    });
+
+    // Permanently consumes the "Unused Structure" fixture — run last in this
+    // file, after the badge test above (which still expects the card to
+    // exist), matching the existing "Mark as Paid" precedent of a test that
+    // consumes its own fixture.
+    test('Delete removes a structure with zero staff assigned', async ({ page }) => {
+      const ids = getTestIds();
+      await page.goto('/staff/salary-structures');
+      await page.waitForLoadState('networkidle');
+
+      const unusedCard = page.getByTestId(`salary-structure-card-${ids.salaryStructureUnused._id}`);
+      await unusedCard.getByRole('button', { name: 'Delete' }).click();
+
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible();
+      await dialog.getByRole('button', { name: 'Delete' }).click();
+      await expect(dialog).not.toBeVisible({ timeout: 8_000 });
+
+      await expect(
+        page.getByTestId(`salary-structure-card-${ids.salaryStructureUnused._id}`)
+      ).toHaveCount(0);
+    });
   });
 
   test('accountant gets payroll:write but not tenant:admin (API-only check)', async ({
@@ -152,5 +244,15 @@ test.describe('Salary', () => {
       components: [{ label: 'Basic', type: 'earning', amount: 1000, isPercentage: false }],
     });
     expect(createStructure.status()).toBe(403);
+  });
+
+  test('deleting a salary structure with staff assigned returns 409 (API-only check)', async ({
+    request,
+  }) => {
+    const ids = getTestIds();
+    const client = await createTestApiClient(request, 'tenant_admin');
+
+    const res = await client.delete(`/staff/salary-structures/${ids.salaryStructure._id}`);
+    expect(res.status()).toBe(409);
   });
 });
