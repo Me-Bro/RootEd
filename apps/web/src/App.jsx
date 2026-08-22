@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { useAuth } from './contexts/useAuth.js';
 import LoginPage from './pages/auth/LoginPage.jsx';
+import SelectTenantPage from './pages/auth/SelectTenantPage.jsx';
 import ImpersonateCallbackPage from './pages/auth/ImpersonateCallbackPage.jsx';
 import AppShell from './components/layout/AppShell.jsx';
 import DashboardPage from './pages/admin/DashboardPage.jsx';
@@ -66,6 +67,7 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/select-tenant" element={<SelectTenantPage />} />
       <Route path="/impersonate" element={<ImpersonateCallbackPage />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route

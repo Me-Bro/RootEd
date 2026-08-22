@@ -29,6 +29,10 @@ export const TEST_USERS = {
     email: 'accountant@testschool.local',
     password: 'TestPass123!',
   },
+  multiTenant: {
+    email: 'multi@testschool.local',
+    password: 'TestPass123!',
+  },
 };
 
 export const TEST_TENANT = {

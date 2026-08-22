@@ -26,6 +26,19 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           headers: { Host: `testschool.${appDomain}` },
         },
+        // General-portal path — bare apex Host (no subdomain), exercises
+        // resolveTenant()'s tenantId-claim fallback for tests. The default
+        // /__api proxy above always pins Host to the testschool subdomain,
+        // so this is the only way to reach that branch locally/in e2e.
+        // Vite matches proxy prefixes with a plain startsWith (no path-segment
+        // boundary check) — this key must NOT itself start with '/__api' or
+        // the rule above silently swallows it first.
+        '/__portal-api': {
+          target: apiProxyTarget,
+          rewrite: (path) => path.replace(/^\/__portal-api/, ''),
+          changeOrigin: true,
+          headers: { Host: appDomain },
+        },
       },
     },
     resolve: {

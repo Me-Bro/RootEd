@@ -30,8 +30,8 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await login(email, password, needsTotp ? totpCode : undefined);
-      navigate('/dashboard');
+      const data = await login(email, password, needsTotp ? totpCode : undefined);
+      navigate(data.tenants?.length > 1 ? '/select-tenant' : '/dashboard');
     } catch (err) {
       const msg = err.response?.data?.error || err.message || 'Login failed';
       if (msg.toLowerCase().includes('totp')) {

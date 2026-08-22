@@ -6,6 +6,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [accessToken, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [tenants, setTenants] = useState([]);
 
   const logout = useCallback(async () => {
     try {
@@ -58,6 +59,7 @@ export function AuthProvider({ children }) {
     });
     setAccessToken(data.accessToken);
     setToken(data.accessToken);
+    setTenants(data.tenants ?? []);
     try {
       const meRes = await api.get('/auth/me');
       setUser(meRes.data);
@@ -65,6 +67,18 @@ export function AuthProvider({ children }) {
       setUser({ email });
     }
     return data;
+  }, []);
+
+  // Called from the tenant-picker screen when a general-portal user belongs
+  // to more than one tenant — reissues the access token (and refresh cookie)
+  // with a tenantId claim (see POST /auth/select-tenant).
+  const selectTenant = useCallback(async (tenantId) => {
+    const { data } = await api.post('/auth/select-tenant', { tenantId });
+    setAccessToken(data.accessToken);
+    setToken(data.accessToken);
+    const meRes = await api.get('/auth/me');
+    setUser(meRes.data);
+    return meRes.data;
   }, []);
 
   // Used by the impersonation callback: an access token issued out-of-band by
@@ -81,7 +95,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, loading, login, loginWithToken, logout }}>
+    <AuthContext.Provider
+      value={{ user, accessToken, loading, tenants, login, loginWithToken, selectTenant, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
