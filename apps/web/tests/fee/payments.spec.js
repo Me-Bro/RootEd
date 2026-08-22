@@ -58,7 +58,16 @@ test.describe('Fee Collection', () => {
     await page.goto('/fee');
     await page.waitForLoadState('networkidle');
 
-    const collectBtn = page.getByRole('button', { name: 'Collect' }).first();
+    // Student1's Standard Fee assignment already carries a seeded partial
+    // payment (2750 of 5500) — target Student2's untouched Standard Fee
+    // assignment instead, so the full 5500 doesn't trip the overpayment
+    // guard (Student2 also has an unrelated Sports Fee assignment — filter
+    // on both cell texts to land on the right row).
+    const row = page
+      .locator('table tbody tr')
+      .filter({ hasText: 'Student2 Test' })
+      .filter({ hasText: 'Standard Fee' });
+    const collectBtn = row.getByRole('button', { name: 'Collect' });
     await expect(collectBtn).toBeVisible({ timeout: 10_000 });
     await collectBtn.click();
 

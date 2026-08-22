@@ -5,7 +5,11 @@ import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from '../../components/ui/dialog.jsx';
 import { formatCurrency } from '../../utils/intl.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
@@ -22,7 +26,12 @@ function statusVariant(status) {
 
 function CollectPaymentModal({ open, onOpenChange, assignment }) {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({ amount: '', paymentMethod: 'cash', transactionId: '', notes: '' });
+  const [form, setForm] = useState({
+    amount: '',
+    paymentMethod: 'cash',
+    transactionId: '',
+    notes: '',
+  });
   const [receiptUrl, setReceiptUrl] = useState(null);
   const [error, setError] = useState('');
   const [onlineSuccess, setOnlineSuccess] = useState(false);
@@ -43,13 +52,15 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
 
   const mutation = useMutation({
     mutationFn: () =>
-      api.post('/fee/payments', {
-        assignmentId: assignment._id,
-        amount: Number(form.amount),
-        paymentMethod: form.paymentMethod,
-        transactionId: form.transactionId,
-        notes: form.notes,
-      }).then((r) => r.data),
+      api
+        .post('/fee/payments', {
+          assignmentId: assignment._id,
+          amount: Number(form.amount),
+          paymentMethod: form.paymentMethod,
+          transactionId: form.transactionId,
+          notes: form.notes,
+        })
+        .then((r) => r.data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['fee-assignments'] });
       setPaymentSuccess(true);
@@ -61,7 +72,9 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
   async function handlePayOnline() {
     setError('');
     try {
-      const { data: orderData } = await api.post('/fee/payments/initiate', { assignmentId: assignment._id });
+      const { data: orderData } = await api.post('/fee/payments/initiate', {
+        assignmentId: assignment._id,
+      });
       if (orderData.mock) {
         setOnlineSuccess(true);
         queryClient.invalidateQueries({ queryKey: ['fee-assignments'] });
@@ -95,14 +108,17 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
     }
   }
 
-  const selectCls = 'h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
+  const selectCls =
+    'h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {receiptUrl || onlineSuccess || paymentSuccess ? 'Payment Successful' : 'Collect Payment'}
+            {receiptUrl || onlineSuccess || paymentSuccess
+              ? 'Payment Successful'
+              : 'Collect Payment'}
           </DialogTitle>
         </DialogHeader>
 
@@ -121,16 +137,40 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
             )}
           </div>
         ) : (
-          <form id="collect-payment" onSubmit={(e) => { e.preventDefault(); mutation.mutate(); }} className="flex flex-col gap-4">
+          <form
+            id="collect-payment"
+            onSubmit={(e) => {
+              e.preventDefault();
+              mutation.mutate();
+            }}
+            className="flex flex-col gap-4"
+          >
             <div className="text-sm text-muted-foreground rounded-lg bg-muted/50 px-3 py-2">
-              Student: <strong className="text-foreground">{assignment?.studentId?.firstName} {assignment?.studentId?.lastName}</strong>
+              Student:{' '}
+              <strong className="text-foreground">
+                {assignment?.studentId?.firstName} {assignment?.studentId?.lastName}
+              </strong>
               <br />
-              Total Due: <strong className="text-foreground">{formatCurrency((assignment?.totalAmount ?? 0) - (assignment?.discountAmount || 0))}</strong>
+              Total Due:{' '}
+              <strong className="text-foreground">
+                {formatCurrency((assignment?.totalAmount ?? 0) - (assignment?.discountAmount || 0))}
+              </strong>
             </div>
-            <Input label="Amount" type="number" value={form.amount} onChange={update('amount')} required min="1" />
+            <Input
+              label="Amount"
+              type="number"
+              value={form.amount}
+              onChange={update('amount')}
+              required
+              min="1"
+            />
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium">Payment Method</label>
-              <select value={form.paymentMethod} onChange={update('paymentMethod')} className={selectCls}>
+              <select
+                value={form.paymentMethod}
+                onChange={update('paymentMethod')}
+                className={selectCls}
+              >
                 <option value="cash">Cash</option>
                 <option value="card">Card</option>
                 <option value="upi">UPI</option>
@@ -138,7 +178,11 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
                 <option value="cheque">Cheque</option>
               </select>
             </div>
-            <Input label="Transaction ID (optional)" value={form.transactionId} onChange={update('transactionId')} />
+            <Input
+              label="Transaction ID (optional)"
+              value={form.transactionId}
+              onChange={update('transactionId')}
+            />
             <Input label="Notes (optional)" value={form.notes} onChange={update('notes')} />
             {error && <p className="text-sm text-destructive">{error}</p>}
           </form>
@@ -164,10 +208,143 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
   );
 }
 
+function ApplyDiscountModal({ open, onOpenChange, assignment }) {
+  const queryClient = useQueryClient();
+  const [discountId, setDiscountId] = useState('');
+  const [error, setError] = useState('');
+
+  const { data: discounts = [] } = useQuery({
+    queryKey: ['fee-discounts'],
+    queryFn: () => api.get('/fee/discounts').then((r) => r.data),
+    enabled: open,
+  });
+
+  function handleClose() {
+    onOpenChange(false);
+    setDiscountId('');
+    setError('');
+  }
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      api.post(`/fee/assignments/${assignment._id}/discount`, { discountId }).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fee-assignments'] });
+      handleClose();
+    },
+    onError: (err) => setError(err.response?.data?.error || 'Failed to apply discount'),
+  });
+
+  const selectCls =
+    'h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Apply Discount</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">
+            Student:{' '}
+            <strong className="text-foreground">
+              {assignment?.studentId?.firstName} {assignment?.studentId?.lastName}
+            </strong>
+          </p>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium">Discount</label>
+            <select
+              aria-label="Discount"
+              value={discountId}
+              onChange={(e) => setDiscountId(e.target.value)}
+              className={selectCls}
+            >
+              <option value="">— Select Discount —</option>
+              {discounts.map((d) => (
+                <option key={d._id} value={d._id}>
+                  {d.name} ({d.type === 'percentage' ? `${d.value}%` : formatCurrency(d.value)})
+                </option>
+              ))}
+            </select>
+          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button onClick={() => mutation.mutate()} disabled={!discountId || mutation.isPending}>
+            {mutation.isPending ? 'Applying…' : 'Apply'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function WaiveAssignmentModal({ open, onOpenChange, assignment }) {
+  const queryClient = useQueryClient();
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState('');
+
+  function handleClose() {
+    onOpenChange(false);
+    setReason('');
+    setError('');
+  }
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      api
+        .post(`/fee/assignments/${assignment._id}/waive`, { reason: reason || undefined })
+        .then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fee-assignments'] });
+      handleClose();
+    },
+    onError: (err) => setError(err.response?.data?.error || 'Failed to waive assignment'),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Waive Fee Assignment</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">
+            This will mark{' '}
+            <strong className="text-foreground">
+              {assignment?.studentId?.firstName} {assignment?.studentId?.lastName}
+            </strong>
+            's assignment as waived.
+          </p>
+          <Input
+            label="Reason (optional)"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+          {error && <p className="text-sm text-destructive">{error}</p>}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+            {mutation.isPending ? 'Waiving…' : 'Waive'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function AssignmentsTab() {
   const [studentSearch, setStudentSearch] = useState('');
   const [yearId, setYearId] = useState('');
   const [collectFor, setCollectFor] = useState(null);
+  const [discountFor, setDiscountFor] = useState(null);
+  const [waiveFor, setWaiveFor] = useState(null);
 
   const { data: years = [] } = useQuery({
     queryKey: ['academic-years'],
@@ -195,30 +372,55 @@ function AssignmentsTab() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex gap-3 flex-wrap">
-        <Input placeholder="Search student…" value={studentSearch} onChange={(e) => setStudentSearch(e.target.value)} />
+        <Input
+          placeholder="Search student…"
+          value={studentSearch}
+          onChange={(e) => setStudentSearch(e.target.value)}
+        />
         <select
           value={yearId}
           onChange={(e) => setYearId(e.target.value)}
           className="h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <option value="">All Years</option>
-          {years.map((y) => <option key={y._id} value={y._id}>{y.name}</option>)}
+          {years.map((y) => (
+            <option key={y._id} value={y._id}>
+              {y.name}
+            </option>
+          ))}
         </select>
       </div>
 
       <DataTable
-        headers={['Student', 'Admission No', 'Structure', 'Total', 'Discount', 'Status', 'Due Date', 'Action']}
+        headers={[
+          'Student',
+          'Admission No',
+          'Structure',
+          'Total',
+          'Discount',
+          'Status',
+          'Due Date',
+          'Action',
+        ]}
         isLoading={isLoading}
         isEmpty={filtered.length === 0}
         emptyMessage="No assignments found"
       >
         {filtered.map((a) => (
           <TableRow key={a._id} className="bg-card">
-            <TableCell className="px-4 py-3">{a.studentId?.firstName} {a.studentId?.lastName}</TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">{a.studentId?.admissionNo}</TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">{a.feeStructureId?.name}</TableCell>
+            <TableCell className="px-4 py-3">
+              {a.studentId?.firstName} {a.studentId?.lastName}
+            </TableCell>
+            <TableCell className="px-4 py-3 text-muted-foreground">
+              {a.studentId?.admissionNo}
+            </TableCell>
+            <TableCell className="px-4 py-3 text-muted-foreground">
+              {a.feeStructureId?.name}
+            </TableCell>
             <TableCell className="px-4 py-3">{formatCurrency(a.totalAmount ?? 0)}</TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">{formatCurrency(a.discountAmount ?? 0)}</TableCell>
+            <TableCell className="px-4 py-3 text-muted-foreground">
+              {formatCurrency(a.discountAmount ?? 0)}
+            </TableCell>
             <TableCell className="px-4 py-3">
               <Badge variant={statusVariant(a.status)}>{a.status}</Badge>
             </TableCell>
@@ -227,7 +429,17 @@ function AssignmentsTab() {
             </TableCell>
             <TableCell className="px-4 py-3">
               {a.status !== 'paid' && a.status !== 'waived' && (
-                <Button size="sm" onClick={() => setCollectFor(a)}>Collect</Button>
+                <div className="flex gap-1.5">
+                  <Button size="sm" onClick={() => setCollectFor(a)}>
+                    Collect
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setDiscountFor(a)}>
+                    Discount
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setWaiveFor(a)}>
+                    Waive
+                  </Button>
+                </div>
               )}
             </TableCell>
           </TableRow>
@@ -239,13 +451,81 @@ function AssignmentsTab() {
         onOpenChange={(v) => !v && setCollectFor(null)}
         assignment={collectFor}
       />
+      <ApplyDiscountModal
+        open={Boolean(discountFor)}
+        onOpenChange={(v) => !v && setDiscountFor(null)}
+        assignment={discountFor}
+      />
+      <WaiveAssignmentModal
+        open={Boolean(waiveFor)}
+        onOpenChange={(v) => !v && setWaiveFor(null)}
+        assignment={waiveFor}
+      />
     </div>
+  );
+}
+
+function RefundPaymentModal({ open, onOpenChange, payment }) {
+  const queryClient = useQueryClient();
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState('');
+
+  function handleClose() {
+    onOpenChange(false);
+    setReason('');
+    setError('');
+  }
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      api
+        .post(`/fee/payments/${payment._id}/refund`, { reason: reason || undefined })
+        .then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fee-payments'] });
+      queryClient.invalidateQueries({ queryKey: ['fee-assignments'] });
+      handleClose();
+    },
+    onError: (err) => setError(err.response?.data?.error || 'Failed to refund payment'),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Refund Payment</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">
+            This reverses receipt{' '}
+            <strong className="text-foreground">{payment?.receiptNumber}</strong> (
+            {formatCurrency(payment?.amount ?? 0)}) as an internal ledger correction only — no
+            gateway refund is issued.
+          </p>
+          <Input
+            label="Reason (optional)"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
+          {error && <p className="text-sm text-destructive">{error}</p>}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+            {mutation.isPending ? 'Refunding…' : 'Refund'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 function PaymentsTab() {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  const [refundFor, setRefundFor] = useState(null);
 
   const { data: payments = [], isLoading } = useQuery({
     queryKey: ['fee-payments', from, to],
@@ -270,7 +550,16 @@ function PaymentsTab() {
       </div>
 
       <DataTable
-        headers={['Receipt No', 'Student', 'Amount', 'Method', 'Date', 'Collected By', 'Receipt']}
+        headers={[
+          'Receipt No',
+          'Student',
+          'Amount',
+          'Method',
+          'Date',
+          'Collected By',
+          'Receipt',
+          'Refund',
+        ]}
         isLoading={isLoading}
         isEmpty={payments.length === 0}
         emptyMessage="No payments found"
@@ -278,21 +567,40 @@ function PaymentsTab() {
         {payments.map((p) => (
           <TableRow key={p._id} className="bg-card">
             <TableCell className="px-4 py-3 font-mono text-xs">{p.receiptNumber}</TableCell>
-            <TableCell className="px-4 py-3">{p.studentId?.firstName} {p.studentId?.lastName}</TableCell>
+            <TableCell className="px-4 py-3">
+              {p.studentId?.firstName} {p.studentId?.lastName}
+            </TableCell>
             <TableCell className="px-4 py-3">{formatCurrency(p.amount ?? 0)}</TableCell>
             <TableCell className="px-4 py-3 capitalize">{p.paymentMethod}</TableCell>
             <TableCell className="px-4 py-3 text-muted-foreground">
               {p.paymentDate ? new Date(p.paymentDate).toLocaleDateString() : '—'}
             </TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">{p.collectedBy?.email}</TableCell>
+            <TableCell className="px-4 py-3 text-muted-foreground">
+              {p.collectedBy?.email}
+            </TableCell>
             <TableCell className="px-4 py-3">
               <Button size="sm" variant="outline" onClick={() => downloadReceipt(p._id)}>
                 Download
               </Button>
             </TableCell>
+            <TableCell className="px-4 py-3">
+              {p.refunded ? (
+                <Badge variant="danger">Refunded</Badge>
+              ) : (
+                <Button size="sm" variant="outline" onClick={() => setRefundFor(p)}>
+                  Refund
+                </Button>
+              )}
+            </TableCell>
           </TableRow>
         ))}
       </DataTable>
+
+      <RefundPaymentModal
+        open={Boolean(refundFor)}
+        onOpenChange={(v) => !v && setRefundFor(null)}
+        payment={refundFor}
+      />
     </div>
   );
 }
@@ -323,7 +631,11 @@ function DefaultersTab() {
           className="h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           <option value="">All Years</option>
-          {years.map((y) => <option key={y._id} value={y._id}>{y.name}</option>)}
+          {years.map((y) => (
+            <option key={y._id} value={y._id}>
+              {y.name}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -335,16 +647,24 @@ function DefaultersTab() {
       >
         {defaulters.map((d) => (
           <TableRow key={d._id} className="bg-card">
-            <TableCell className="px-4 py-3">{d.studentId?.firstName} {d.studentId?.lastName}</TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">{d.studentId?.admissionNo}</TableCell>
-            <TableCell className="px-4 py-3">{formatCurrency(d.totalAmount - (d.discountAmount || 0))}</TableCell>
+            <TableCell className="px-4 py-3">
+              {d.studentId?.firstName} {d.studentId?.lastName}
+            </TableCell>
+            <TableCell className="px-4 py-3 text-muted-foreground">
+              {d.studentId?.admissionNo}
+            </TableCell>
+            <TableCell className="px-4 py-3">
+              {formatCurrency(d.totalAmount - (d.discountAmount || 0))}
+            </TableCell>
             <TableCell className="px-4 py-3">
               <Badge variant={statusVariant(d.status)}>{d.status}</Badge>
             </TableCell>
             <TableCell className="px-4 py-3 text-muted-foreground">
               {d.dueDate ? new Date(d.dueDate).toLocaleDateString() : '—'}
             </TableCell>
-            <TableCell className="px-4 py-3 text-destructive font-medium">{d.daysOverdue}</TableCell>
+            <TableCell className="px-4 py-3 text-destructive font-medium">
+              {d.daysOverdue}
+            </TableCell>
           </TableRow>
         ))}
       </DataTable>

@@ -4,11 +4,53 @@ import { Section } from '../models/Section.js';
 import { FeeAssignment } from '../models/FeeAssignment.js';
 import { FeePayment } from '../models/FeePayment.js';
 import { FeeStructure } from '../models/FeeStructure.js';
+import { FeeDiscount } from '../models/FeeDiscount.js';
 import { uploadBuffer } from './storage.service.js';
+import { getNextSequence } from './counter.service.js';
 import { env } from '../config/env.js';
-import { calculateMandatoryTotal, calculateEffectiveTotal } from '../utils/feeCalculations.js';
+import { AppError } from '../middleware/errorHandler.js';
+import {
+  calculateMandatoryTotal,
+  calculateEffectiveTotal,
+  calculateDiscountAmount,
+  calculateRemainingDue,
+  recomputeFeeStatus,
+  discountAppliesTo,
+} from '../utils/feeCalculations.js';
 import { autoAssignSupported } from '../utils/feeAutoAssignScope.js';
 import { scheduleLateCharge } from '../workers/feeLateCharge.worker.js';
+
+const MAX_MUTATION_ATTEMPTS = 3;
+
+// Fetch -> mutate -> recompute -> save, with retry on optimistic-concurrency
+// conflicts (FeeAssignment has `optimisticConcurrency: true`). Shared by
+// recordPayment, refundPayment, and applyDiscountToAssignment so all three
+// derive `installments`/`status` from the same recomputeFeeStatus logic.
+export async function applyAssignmentMutation(assignmentId, tenantId, extraMutate) {
+  for (let attempt = 1; attempt <= MAX_MUTATION_ATTEMPTS; attempt++) {
+    const assignment = await FeeAssignment.findOne({ _id: assignmentId, tenantId });
+    if (!assignment) throw new AppError('FeeAssignment not found', 404);
+
+    if (extraMutate) extraMutate(assignment);
+
+    const payments = await FeePayment.find({
+      tenantId,
+      assignmentId,
+      refunded: { $ne: true },
+    }).lean();
+    const { installments, status } = recomputeFeeStatus({ assignment, payments });
+    if (installments) assignment.installments = installments;
+    if (assignment.status !== 'waived') assignment.status = status;
+
+    try {
+      await assignment.save();
+      return assignment;
+    } catch (err) {
+      if (err.name === 'VersionError' && attempt < MAX_MUTATION_ATTEMPTS) continue;
+      throw err;
+    }
+  }
+}
 
 export async function assignFeesToStudents({
   studentIds,
@@ -110,12 +152,24 @@ export async function recordPayment({
   tenantId,
   installmentIndex,
 }) {
-  const assignment = await FeeAssignment.findOne({ _id: assignmentId, tenantId });
-  if (!assignment) throw new Error('FeeAssignment not found');
+  const assignment = await FeeAssignment.findOne({ _id: assignmentId, tenantId }).lean();
+  if (!assignment) throw new AppError('FeeAssignment not found', 404);
+  if (assignment.status === 'waived') {
+    throw new AppError('Cannot record a payment against a waived assignment', 400);
+  }
 
-  const count = await FeePayment.countDocuments({ tenantId });
+  const existingPayments = await FeePayment.find({
+    tenantId,
+    assignmentId,
+    refunded: { $ne: true },
+  }).lean();
+  const totalPaid = existingPayments.reduce((sum, p) => sum + p.amount, 0);
+  const remaining = calculateRemainingDue({ assignment, totalPaid, installmentIndex });
+  if (amount > remaining) throw new AppError('Payment exceeds amount due', 400);
+
   const year = new Date().getFullYear();
-  const receiptNumber = `RCP-${year}-${String(count + 1).padStart(5, '0')}`;
+  const seq = await getNextSequence(tenantId, `feePayment:receipt:${year}`);
+  const receiptNumber = `RCP-${year}-${String(seq).padStart(5, '0')}`;
 
   const payment = await FeePayment.create({
     tenantId,
@@ -130,21 +184,24 @@ export async function recordPayment({
     installmentIndex,
   });
 
-  if (installmentIndex !== undefined && assignment.installments?.[installmentIndex]) {
-    const inst = assignment.installments[installmentIndex];
-    inst.paidAmount += amount;
-    inst.status = inst.paidAmount >= inst.amount ? 'paid' : 'partial';
+  try {
+    // NOTE: this still reads totalPaid (above) before this payment was
+    // created, so two truly concurrent recordPayment calls on the same
+    // assignment can each pass the overpayment check against the same
+    // stale totalPaid. optimisticConcurrency + this retry loop fixes the
+    // lost-update on installments/status, not this check-then-act race —
+    // closing that fully needs a transaction, out of scope here.
+    await applyAssignmentMutation(assignmentId, tenantId);
+  } catch (err) {
+    // Don't leave an orphaned payment behind if the assignment side
+    // permanently fails after retrying — a client retry on 409 must be
+    // safe, i.e. must not find a payment that was silently double-recorded.
+    await FeePayment.deleteOne({ _id: payment._id, tenantId });
+    if (err.name === 'VersionError') {
+      throw new AppError('Concurrent payment conflict — please retry', 409);
+    }
+    throw err;
   }
-
-  const allPayments = await FeePayment.find({ tenantId, assignmentId }).lean();
-  const totalPaid = allPayments.reduce((sum, p) => sum + p.amount, 0);
-  const effectiveTotal = calculateEffectiveTotal(assignment);
-
-  let status = 'partial';
-  if (totalPaid >= effectiveTotal) status = 'paid';
-
-  assignment.status = status;
-  await assignment.save();
 
   const student = await Student.findOne({ _id: assignment.studentId, tenantId }).lean();
   const receiptPdfKey = await generateReceiptPdf({
@@ -213,9 +270,13 @@ async function generateReceiptPdf({
 
 export async function initiateOnlinePayment(assignmentId, tenantId) {
   const assignment = await FeeAssignment.findOne({ _id: assignmentId, tenantId }).lean();
-  if (!assignment) throw new Error('FeeAssignment not found');
+  if (!assignment) throw new AppError('FeeAssignment not found', 404);
 
-  const payments = await FeePayment.find({ tenantId, assignmentId }).lean();
+  const payments = await FeePayment.find({
+    tenantId,
+    assignmentId,
+    refunded: { $ne: true },
+  }).lean();
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
   const outstanding = calculateEffectiveTotal(assignment) - totalPaid;
 
@@ -246,6 +307,60 @@ export async function initiateOnlinePayment(assignmentId, tenantId) {
     currency: order.currency,
     key: env.RAZORPAY_KEY_ID,
   };
+}
+
+export async function applyDiscountToAssignment({ assignmentId, discountId, tenantId }) {
+  const discount = await FeeDiscount.findOne({ _id: discountId, tenantId }).lean();
+  if (!discount) throw new AppError('FeeDiscount not found', 404);
+
+  const assignment = await FeeAssignment.findOne({ _id: assignmentId, tenantId }).lean();
+  if (!assignment) throw new AppError('FeeAssignment not found', 404);
+  if (assignment.status === 'paid' || assignment.status === 'waived') {
+    throw new AppError(`Cannot apply a discount to a ${assignment.status} assignment`, 400);
+  }
+
+  let studentClassId;
+  if (discount.applicableTo === 'class') {
+    const student = await Student.findOne({ _id: assignment.studentId, tenantId }).lean();
+    const section = student?.sectionId
+      ? await Section.findOne({ _id: student.sectionId, tenantId }).lean()
+      : null;
+    studentClassId = section?.classId;
+  }
+
+  if (!discountAppliesTo({ discount, assignment, studentClassId })) {
+    throw new AppError('Discount is not applicable to this assignment', 400);
+  }
+
+  const discountAmount = calculateDiscountAmount({
+    type: discount.type,
+    value: discount.value,
+    baseAmount: assignment.totalAmount,
+  });
+
+  return applyAssignmentMutation(assignmentId, tenantId, (doc) => {
+    doc.discountAmount = discountAmount;
+    doc.discountReason = discount.name;
+  });
+}
+
+export async function refundPayment({ paymentId, tenantId, reason, actorId }) {
+  const payment = await FeePayment.findOne({ _id: paymentId, tenantId });
+  if (!payment) throw new AppError('FeePayment not found', 404);
+  if (payment.refunded) throw new AppError('Payment has already been refunded', 400);
+
+  payment.refunded = true;
+  payment.refundedAt = new Date();
+  payment.refundedBy = actorId;
+  payment.refundReason = reason;
+  await payment.save();
+
+  // NOTE: internal ledger reversal only — does not call Razorpay's refund
+  // API. If the original payment was collected online, moving money back
+  // to the payer is a manual/out-of-band process.
+  await applyAssignmentMutation(payment.assignmentId, tenantId);
+
+  return payment;
 }
 
 export async function getDefaulters(tenantId, academicYearId) {

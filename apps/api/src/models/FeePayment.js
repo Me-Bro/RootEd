@@ -19,6 +19,10 @@ const feePaymentSchema = new mongoose.Schema(
     notes: { type: String },
     receiptPdfKey: { type: String },
     installmentIndex: { type: Number },
+    refunded: { type: Boolean, default: false },
+    refundedAt: { type: Date },
+    refundedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    refundReason: { type: String },
   },
   { timestamps: true }
 );
