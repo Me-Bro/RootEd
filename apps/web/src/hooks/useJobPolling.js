@@ -5,9 +5,12 @@ const DEFAULT_INTERVAL_MS = 3000;
 const DEFAULT_MAX_ATTEMPTS = 40; // ~2 minutes
 
 /**
- * Polls a BullMQ job-status endpoint (`{jobId, state, result}` shape, e.g.
- * GET /academic/report-card/status/:jobId or
+ * Polls a BullMQ job-status endpoint (`{jobId, state, result, progress?}` shape,
+ * e.g. GET /academic/report-card/status/:jobId or
  * GET /staff/salary-slips/status/:jobId) until it settles.
+ *
+ * `progress` mirrors BullMQ's `job.progress` field when the worker calls
+ * `job.updateProgress({ completed, total })` — null until the first update lands.
  *
  * statusUrl: full path string, or null/undefined to leave polling disabled.
  */
@@ -17,6 +20,7 @@ export function useJobPolling(
 ) {
   const [state, setState] = useState(null);
   const [result, setResult] = useState(null);
+  const [progress, setProgress] = useState(null);
   const [error, setError] = useState('');
   const [timedOut, setTimedOut] = useState(false);
   const attempts = useRef(0);
@@ -25,6 +29,7 @@ export function useJobPolling(
     attempts.current = 0;
     setState(null);
     setResult(null);
+    setProgress(null);
     setError('');
     setTimedOut(false);
   }, []);
@@ -44,6 +49,9 @@ export function useJobPolling(
       try {
         const { data } = await api.get(statusUrl);
         setState(data.state);
+        if (data.progress && typeof data.progress === 'object') {
+          setProgress(data.progress);
+        }
         if (data.state === 'completed' || data.state === 'failed') {
           setResult(data.result);
           onSettled?.(data);
@@ -59,5 +67,5 @@ export function useJobPolling(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusUrl, state, intervalMs, maxAttempts]);
 
-  return { state, result, error, timedOut, reset };
+  return { state, result, progress, error, timedOut, reset };
 }

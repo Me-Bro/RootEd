@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api.js';
@@ -15,6 +15,9 @@ import {
 } from '../../components/ui/dialog.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
+import { EmptyState } from '../../components/ui/EmptyState.jsx';
+import { Progress } from '../../components/ui/progress.jsx';
+import ApprovalQueueCard from '../../components/leave/ApprovalQueueCard.jsx';
 
 const selectCls =
   'h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
@@ -26,7 +29,7 @@ function statusVariant(status) {
   return 'default';
 }
 
-function RejectModal({ open, onOpenChange, requestId }) {
+function RejectModal({ open, onOpenChange, requestId, onSuccess }) {
   const queryClient = useQueryClient();
   const [comment, setComment] = useState('');
   const [error, setError] = useState('');
@@ -39,6 +42,7 @@ function RejectModal({ open, onOpenChange, requestId }) {
       onOpenChange(false);
       setComment('');
       setError('');
+      onSuccess?.();
     },
     onError: (err) => setError(err.response?.data?.error || 'Failed to reject'),
   });
@@ -258,6 +262,8 @@ function LeaveTypesSection({ leaveTypes }) {
   );
 }
 
+const EMPTY_REQUESTS = [];
+
 function ConflictBadge({ flags }) {
   if (!flags?.length) return null;
   return (
@@ -302,22 +308,87 @@ export default function LeaveRequestsPage() {
     enabled: Boolean(myStaff?._id),
   });
 
+  // Approver's Pending tab (Mock 2, docs/mobile-ui/12-leave-requests-approved.html)
+  // works the whole pending set in one sitting instead of paging through it —
+  // bump the limit to the API's max instead of the table's default page size.
+  const isApproverQueue = tab === 'pending' && canApprove;
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['leave-requests', tab, statusFilter, from, to, page],
+    queryKey: ['leave-requests', tab, statusFilter, from, to, page, canApprove],
     queryFn: () => {
       const params = new URLSearchParams({ page });
-      if (tab === 'pending') params.set('status', 'pending');
-      else if (statusFilter) params.set('status', statusFilter);
+      if (tab === 'pending') {
+        params.set('status', 'pending');
+        if (canApprove) params.set('limit', '100');
+      } else if (statusFilter) params.set('status', statusFilter);
       if (from) params.set('from', from);
       if (to) params.set('to', to);
       return api.get(`/staff/leave-requests?${params}`).then((r) => r.data);
     },
   });
-  const requests = data?.requests ?? [];
+  const requests = data?.requests ?? EMPTY_REQUESTS;
+
+  // The approval chain (LeaveRequest.approvalChain / currentApproverIndex,
+  // enforced server-side in staff.js's approve/reject routes) is sequential —
+  // only the current step's approver may act. GET /leave-requests?status=pending
+  // returns every pending request tenant-wide, not just "my turn" ones, so the
+  // queue filters client-side to what this approver can actually decide right
+  // now; otherwise a multi-step chain would surface a card that 403s on every
+  // action with no way to skip it. A super_admin bypasses the chain check
+  // server-side (see isCurrentApprover call sites in staff.js), so it bypasses
+  // the filter here too. Not in the spec's literal text — see build report.
+  const myPendingQueue = useMemo(() => {
+    if (!isApproverQueue) return EMPTY_REQUESTS;
+    if (user?.systemRole === 'super_admin') return requests;
+    return requests.filter(
+      (r) => r.approvalChain?.[r.currentApproverIndex]?.approverId === user?._id
+    );
+  }, [isApproverQueue, requests, user]);
+
+  const currentRequest = myPendingQueue[0];
+
+  // "N of Total" tracks progress through this approver's own actionable queue
+  // (myPendingQueue), not the raw tenant-wide pending count — see comment above
+  // on why those two numbers differ from the mock's flat "36 pending". Session
+  // state (queueTotal/processedCount/queueError) is reset by adjusting it
+  // directly during render — React's documented pattern for "reset state when
+  // something changes" — rather than in an Effect, so re-entering the
+  // approver's Pending tab always starts a fresh count without an extra
+  // render-then-clear round trip.
+  const [processedCount, setProcessedCount] = useState(0);
+  const [queueTotal, setQueueTotal] = useState(null);
+  const [queueError, setQueueError] = useState('');
+  const lastQueueRequestId = useRef(null);
+
+  if (!isApproverQueue) {
+    if (queueTotal !== null || processedCount !== 0) {
+      setQueueTotal(null);
+      setProcessedCount(0);
+    }
+  } else if (queueTotal === null && data) {
+    setQueueTotal(myPendingQueue.length);
+  }
+
+  if (currentRequest?._id !== lastQueueRequestId.current) {
+    lastQueueRequestId.current = currentRequest?._id ?? null;
+    if (queueError) setQueueError('');
+  }
+
+  const { data: currentBalance } = useQuery({
+    queryKey: ['leave-balances', currentRequest?.staffId?._id],
+    queryFn: () =>
+      api.get(`/staff/leave-balances?staffId=${currentRequest.staffId._id}`).then((r) => r.data),
+    enabled: isApproverQueue && Boolean(currentRequest?.staffId?._id),
+  });
 
   const approveMutation = useMutation({
     mutationFn: (id) => api.patch(`/staff/leave-requests/${id}/approve`).then((r) => r.data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['leave-requests'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
+      setProcessedCount((c) => c + 1);
+      setQueueError('');
+    },
+    onError: (err) => setQueueError(err.response?.data?.error || 'Failed to approve'),
   });
 
   const cancelMutation = useMutation({
@@ -422,67 +493,102 @@ export default function LeaveRequestsPage() {
 
       {error && <p className="text-destructive">Failed to load leave requests</p>}
 
-      <DataTable
-        headers={['Staff', 'Leave Type', 'From', 'To', 'Days', 'Status', 'Actions']}
-        isLoading={isLoading}
-        isEmpty={requests.length === 0}
-        emptyMessage="No leave requests found"
-      >
-        {requests.map((r) => {
-          const isOwn = myStaff && r.staffId?._id === myStaff._id;
-          return (
-            <TableRow key={r._id} className="bg-card">
-              <TableCell className="px-4 py-3">
-                {r.staffId?.firstName} {r.staffId?.lastName}
-              </TableCell>
-              <TableCell className="px-4 py-3 text-muted-foreground">
-                {r.leaveTypeId?.name || '—'}
-              </TableCell>
-              <TableCell className="px-4 py-3">{formatDate(r.fromDate)}</TableCell>
-              <TableCell className="px-4 py-3">{formatDate(r.toDate)}</TableCell>
-              <TableCell className="px-4 py-3">{r.totalDays}</TableCell>
-              <TableCell className="px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <Badge variant={statusVariant(r.status)}>{r.status}</Badge>
-                  <ConflictBadge flags={r.conflictFlags} />
-                </div>
-              </TableCell>
-              <TableCell className="px-4 py-3">
-                {r.status === 'pending' && (
-                  <div className="flex gap-2">
-                    {canApprove && (
-                      <>
+      {isApproverQueue ? (
+        isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading queue…</p>
+        ) : myPendingQueue.length === 0 ? (
+          <EmptyState
+            title="All caught up"
+            description="No leave requests are waiting on your approval right now."
+          />
+        ) : (
+          <div className="flex max-w-md flex-col gap-3">
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span aria-live="polite">
+                {Math.min(processedCount + 1, queueTotal ?? myPendingQueue.length)} of{' '}
+                {queueTotal ?? myPendingQueue.length} pending
+              </span>
+            </div>
+            <Progress
+              value={
+                queueTotal ? Math.min(100, Math.round((processedCount / queueTotal) * 100)) : 0
+              }
+              aria-label="Approval queue progress"
+            />
+            <ApprovalQueueCard
+              key={currentRequest._id}
+              request={currentRequest}
+              balance={currentBalance}
+              onApprove={() => approveMutation.mutate(currentRequest._id)}
+              onReject={() => setRejectId(currentRequest._id)}
+              busy={approveMutation.isPending}
+              error={queueError}
+            />
+          </div>
+        )
+      ) : (
+        <DataTable
+          headers={['Staff', 'Leave Type', 'From', 'To', 'Days', 'Status', 'Actions']}
+          isLoading={isLoading}
+          isEmpty={requests.length === 0}
+          emptyMessage="No leave requests found"
+        >
+          {requests.map((r) => {
+            const isOwn = myStaff && r.staffId?._id === myStaff._id;
+            return (
+              <TableRow key={r._id} className="bg-card">
+                <TableCell className="px-4 py-3">
+                  {r.staffId?.firstName} {r.staffId?.lastName}
+                </TableCell>
+                <TableCell className="px-4 py-3 text-muted-foreground">
+                  {r.leaveTypeId?.name || '—'}
+                </TableCell>
+                <TableCell className="px-4 py-3">{formatDate(r.fromDate)}</TableCell>
+                <TableCell className="px-4 py-3">{formatDate(r.toDate)}</TableCell>
+                <TableCell className="px-4 py-3">{r.totalDays}</TableCell>
+                <TableCell className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <Badge variant={statusVariant(r.status)}>{r.status}</Badge>
+                    <ConflictBadge flags={r.conflictFlags} />
+                  </div>
+                </TableCell>
+                <TableCell className="px-4 py-3">
+                  {r.status === 'pending' && (
+                    <div className="flex gap-2">
+                      {canApprove && (
+                        <>
+                          <Button
+                            size="sm"
+                            onClick={() => approveMutation.mutate(r._id)}
+                            disabled={approveMutation.isPending}
+                          >
+                            Approve
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setRejectId(r._id)}>
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                      {isOwn && (
                         <Button
                           size="sm"
-                          onClick={() => approveMutation.mutate(r._id)}
-                          disabled={approveMutation.isPending}
+                          variant="outline"
+                          onClick={() => cancelMutation.mutate(r._id)}
+                          disabled={cancelMutation.isPending}
                         >
-                          Approve
+                          Cancel
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => setRejectId(r._id)}>
-                          Reject
-                        </Button>
-                      </>
-                    )}
-                    {isOwn && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => cancelMutation.mutate(r._id)}
-                        disabled={cancelMutation.isPending}
-                      >
-                        Cancel
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </TableCell>
-            </TableRow>
-          );
-        })}
-      </DataTable>
+                      )}
+                    </div>
+                  )}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </DataTable>
+      )}
 
-      {data && data.pages > 1 && (
+      {!isApproverQueue && data && data.pages > 1 && (
         <div className="flex gap-2 justify-end">
           <Button
             variant="outline"
@@ -510,6 +616,7 @@ export default function LeaveRequestsPage() {
         open={Boolean(rejectId)}
         onOpenChange={(v) => !v && setRejectId(null)}
         requestId={rejectId}
+        onSuccess={() => setProcessedCount((c) => c + 1)}
       />
       <ApplyLeaveModal
         open={showApply}

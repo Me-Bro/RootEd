@@ -7,7 +7,13 @@ import { InventoryItem, Consumable, FixedAsset } from '../models/InventoryItem.j
 import { StockMovement } from '../models/StockMovement.js';
 import { PurchaseRequisition } from '../models/PurchaseRequisition.js';
 import { ExpenseEntry } from '../models/ExpenseEntry.js';
-import { issueItem, returnItem, checkLowStock, calculateDepreciation, generateQrCode } from '../services/inventory.service.js';
+import {
+  issueItem,
+  returnItem,
+  checkLowStock,
+  calculateDepreciation,
+  generateQrCode,
+} from '../services/inventory.service.js';
 import { auditLog } from '../services/audit.service.js';
 import { redis } from '../config/redis.js';
 
@@ -26,7 +32,16 @@ function generateSku(category) {
 router.post('/items', requirePermission('inventory:write'), async (req, res, next) => {
   try {
     const tenantId = req.tenant._id;
-    const { itemType, category, name, unitCost, location, custodianId, sku: skuInput, ...rest } = req.body;
+    const {
+      itemType,
+      category,
+      name,
+      unitCost,
+      location,
+      custodianId,
+      sku: skuInput,
+      ...rest
+    } = req.body;
 
     const sku = skuInput || generateSku(category);
 
@@ -70,7 +85,10 @@ router.get('/items', requirePermission('inventory:read'), async (req, res, next)
 
 router.get('/items/:id', requirePermission('inventory:read'), async (req, res, next) => {
   try {
-    const item = await InventoryItem.findOne({ _id: req.params.id, tenantId: req.tenant._id }).lean();
+    const item = await InventoryItem.findOne({
+      _id: req.params.id,
+      tenantId: req.tenant._id,
+    }).lean();
     if (!item) return res.status(404).json({ error: 'Not found' });
 
     const qrCodeDataUrl = await generateQrCode(item._id.toString(), item.sku);
@@ -119,14 +137,18 @@ router.post('/items/:id/issue', requirePermission('inventory:write'), async (req
   }
 });
 
-router.post('/movements/:movementId/return', requirePermission('inventory:write'), async (req, res, next) => {
-  try {
-    const movement = await returnItem(req.params.movementId, req.tenant._id);
-    res.json(movement);
-  } catch (err) {
-    next(err);
+router.post(
+  '/movements/:movementId/return',
+  requirePermission('inventory:write'),
+  async (req, res, next) => {
+    try {
+      const movement = await returnItem(req.params.movementId, req.tenant._id);
+      res.json(movement);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 router.get('/movements', requirePermission('inventory:read'), async (req, res, next) => {
   try {
@@ -137,6 +159,11 @@ router.get('/movements', requirePermission('inventory:read'), async (req, res, n
       filter.createdAt = {};
       if (req.query.from) filter.createdAt.$gte = new Date(req.query.from);
       if (req.query.to) filter.createdAt.$lte = new Date(req.query.to);
+    }
+    if (req.query.returned === 'false') {
+      filter.returnedAt = null;
+    } else if (req.query.returned === 'true') {
+      filter.returnedAt = { $ne: null };
     }
 
     const movements = await StockMovement.find(filter)
@@ -167,46 +194,50 @@ router.get('/requisitions', requirePermission('inventory:read'), async (req, res
   }
 });
 
-router.patch('/requisitions/:id/approve', requirePermission('expense:approve'), async (req, res, next) => {
-  try {
-    const tenantId = req.tenant._id;
-    const requisition = await PurchaseRequisition.findOne({ _id: req.params.id, tenantId });
-    if (!requisition) return res.status(404).json({ error: 'Not found' });
+router.patch(
+  '/requisitions/:id/approve',
+  requirePermission('expense:approve'),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const requisition = await PurchaseRequisition.findOne({ _id: req.params.id, tenantId });
+      if (!requisition) return res.status(404).json({ error: 'Not found' });
 
-    requisition.status = 'approved';
-    requisition.approvedBy = req.user.sub;
+      requisition.status = 'approved';
+      requisition.approvedBy = req.user.sub;
 
-    const item = await InventoryItem.findOne({ _id: requisition.itemId, tenantId }).lean();
-    if (item) {
-      const expense = await ExpenseEntry.create({
-        tenantId,
-        title: `Purchase: ${item.name}`,
-        category: 'inventory',
-        amount: (item.unitCost || 0) * requisition.requestedQuantity,
-        submittedBy: req.user.sub,
-        status: 'draft',
-        approvalChain: [],
-        currentApproverIndex: 0,
+      const item = await InventoryItem.findOne({ _id: requisition.itemId, tenantId }).lean();
+      if (item) {
+        const expense = await ExpenseEntry.create({
+          tenantId,
+          title: `Purchase: ${item.name}`,
+          category: 'inventory',
+          amount: (item.unitCost || 0) * requisition.requestedQuantity,
+          submittedBy: req.user.sub,
+          status: 'draft',
+          approvalChain: [],
+          currentApproverIndex: 0,
+        });
+
+        requisition.linkedExpenseId = expense._id;
+      }
+
+      await requisition.save();
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'inventory.requisition.approved',
+        target: { type: 'PurchaseRequisition', id: req.params.id },
+        ip: req.ip,
       });
 
-      requisition.linkedExpenseId = expense._id;
+      res.json(requisition);
+    } catch (err) {
+      next(err);
     }
-
-    await requisition.save();
-
-    await auditLog({
-      actorId: req.user.sub,
-      tenantId: tenantId.toString(),
-      action: 'inventory.requisition.approved',
-      target: { type: 'PurchaseRequisition', id: req.params.id },
-      ip: req.ip,
-    });
-
-    res.json(requisition);
-  } catch (err) {
-    next(err);
   }
-});
+);
 
 router.get('/depreciation', requirePermission('inventory:read'), async (req, res, next) => {
   try {
@@ -217,7 +248,13 @@ router.get('/depreciation', requirePermission('inventory:read'), async (req, res
     const assets = await FixedAsset.find({ tenantId, itemType: 'fixed_asset' }).lean();
 
     const result = assets.map((item) => ({
-      item: { _id: item._id, name: item.name, sku: item.sku, depreciationMethod: item.depreciationMethod },
+      item: {
+        _id: item._id,
+        name: item.name,
+        sku: item.sku,
+        unitCost: item.unitCost,
+        depreciationMethod: item.depreciationMethod,
+      },
       annualDepreciation: calculateDepreciation(item, asOfDate),
       currentValue: item.currentValue ?? item.unitCost ?? 0,
     }));
@@ -258,18 +295,22 @@ router.post('/valuation/generate', requirePermission('inventory:read'), async (r
   }
 });
 
-router.get('/valuation/status/:jobId', requirePermission('inventory:read'), async (req, res, next) => {
-  try {
-    const job = await stockValuationQueue.getJob(req.params.jobId);
-    if (!job) return res.status(404).json({ error: 'Job not found' });
+router.get(
+  '/valuation/status/:jobId',
+  requirePermission('inventory:read'),
+  async (req, res, next) => {
+    try {
+      const job = await stockValuationQueue.getJob(req.params.jobId);
+      if (!job) return res.status(404).json({ error: 'Job not found' });
 
-    const state = await job.getState();
-    const result = job.returnvalue;
+      const state = await job.getState();
+      const result = job.returnvalue;
 
-    res.json({ jobId: job.id, state, result: result ?? null });
-  } catch (err) {
-    next(err);
+      res.json({ jobId: job.id, state, result: result ?? null });
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 export default router;

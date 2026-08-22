@@ -10,25 +10,14 @@ function getTestIds() {
 }
 
 test.describe('Staff Directory', () => {
-  test('loads staff list with seeded data', async ({ page }) => {
+  test('loads staff list with seeded data, grouped by department', async ({ page }) => {
     await page.goto('/staff');
     await page.waitForLoadState('networkidle');
 
-    const rows = page.locator('table tbody tr');
+    // Scoped to <main>: the sidebar's own nav also has /staff/leaves, /staff/salary,
+    // etc, which otherwise match this same prefix selector.
+    const rows = page.locator('main a[href^="/staff/"]');
     await expect(rows.first()).toBeVisible({ timeout: 10_000 });
-  });
-
-  test('pagination controls page through results', async ({ page }) => {
-    // Seeded with 25 bulk staff + 4 named ones, default page size 20 → 2 pages.
-    await page.goto('/staff');
-    await page.waitForLoadState('networkidle');
-
-    await expect(page.getByText(/Page 1 of \d+/)).toBeVisible({ timeout: 10_000 });
-    const nextBtn = page.getByRole('button', { name: 'Next' });
-    await expect(nextBtn).toBeEnabled();
-    await nextBtn.click();
-    await page.waitForLoadState('networkidle');
-    await expect(page.getByText('Page 2 of 2')).toBeVisible({ timeout: 8_000 });
   });
 
   test('opens Add Staff dialog', async ({ page }) => {
@@ -55,10 +44,10 @@ test.describe('Staff Directory', () => {
 
     await expect(dialog).not.toBeVisible({ timeout: 8_000 });
 
-    // The new row can land on any page given how many staff are seeded —
-    // search for it directly instead of assuming page-1 visibility.
+    // The new staff member lands in an "Unassigned" department bucket (no
+    // department was set) — search for it directly instead of assuming
+    // which section it renders under.
     await page.getByPlaceholder('Search by name or employee ID…').fill(empId);
-    await page.waitForLoadState('networkidle');
     await expect(page.getByText(empId)).toBeVisible({ timeout: 10_000 });
   });
 
@@ -115,34 +104,29 @@ test.describe('Staff Directory', () => {
     await expect(page.getByText(/Errors: [1-9]/)).toBeVisible();
   });
 
-  test('department filter narrows results', async ({ page }) => {
+  test('groups staff by department instead of a flat table', async ({ page }) => {
     const ids = getTestIds();
 
     await page.goto('/staff');
     await page.waitForLoadState('networkidle');
-    await page
-      .getByPlaceholder('Search by name or employee ID…')
-      .fill(ids.staffMembers[1].employeeId);
-    await page.waitForLoadState('networkidle');
 
-    const departmentSelect = page.locator('select').first();
-    await departmentSelect.selectOption('Finance');
-    await page.waitForLoadState('networkidle');
-
-    await expect(page.getByText(ids.staffMembers[1].employeeId)).toBeVisible({ timeout: 8_000 });
+    // Bob Jones (EMP-TEST-002) is seeded into the "Finance" department —
+    // the department section heading should be visible with no filter
+    // select needed, and his row should be visible under it.
+    await expect(page.getByText(/^Finance/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(ids.staffMembers[1].employeeId)).toBeVisible();
   });
 
-  test('status filter narrows results to on-leave staff', async ({ page }) => {
+  test('surfaces on-leave staff in the on-leave-today strip', async ({ page }) => {
     const ids = getTestIds();
 
     await page.goto('/staff');
     await page.waitForLoadState('networkidle');
 
-    const statusSelect = page.locator('select').nth(1);
-    await statusSelect.selectOption('on_leave');
-    await page.waitForLoadState('networkidle');
-
-    await expect(page.getByText(ids.staffOnLeave.employeeId)).toBeVisible({ timeout: 8_000 });
+    await expect(page.getByText(/On leave today/)).toBeVisible({ timeout: 10_000 });
+    // The plain employee ID also matches this same person's row in the department
+    // list below — the strip's chip is the only place it's prefixed with "· ".
+    await expect(page.getByText(`· ${ids.staffOnLeave.employeeId}`)).toBeVisible();
   });
 
   test('search narrows results by employee ID', async ({ page }) => {
@@ -154,14 +138,15 @@ test.describe('Staff Directory', () => {
     await page
       .getByPlaceholder('Search by name or employee ID…')
       .fill(ids.staffMembers[0].employeeId);
-    await page.waitForLoadState('networkidle');
 
-    const rows = page.locator('table tbody tr');
+    // Scoped to <main>: the sidebar's own nav also has /staff/leaves, /staff/salary,
+    // etc, which otherwise match this same prefix selector.
+    const rows = page.locator('main a[href^="/staff/"]');
     await expect(rows).toHaveCount(1, { timeout: 8_000 });
     await expect(page.getByText(ids.staffMembers[0].employeeId)).toBeVisible();
   });
 
-  test('clicking View navigates to the staff detail page', async ({ page }) => {
+  test('clicking a staff row navigates to the staff detail page', async ({ page }) => {
     const ids = getTestIds();
 
     await page.goto('/staff');
@@ -169,7 +154,6 @@ test.describe('Staff Directory', () => {
     await page
       .getByPlaceholder('Search by name or employee ID…')
       .fill(ids.staffWithDocs.employeeId);
-    await page.waitForLoadState('networkidle');
 
     await page.getByRole('link', { name: 'Carla Diaz' }).click();
     await page.waitForURL(/\/staff\/[a-f0-9]+$/, { timeout: 10_000 });
@@ -188,7 +172,7 @@ test.describe('Staff Directory', () => {
 
   test('status transition updates the badge', async ({ page }) => {
     // Transitions the fixture forward then back to its original status so
-    // this test stays order-independent from the status-filter test above
+    // this test stays order-independent from the on-leave-strip test above
     // (both share the `staffOnLeave` fixture, and specs may run in parallel).
     const ids = getTestIds();
 

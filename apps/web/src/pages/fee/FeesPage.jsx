@@ -15,7 +15,10 @@ import { formatCurrency } from '../../utils/intl.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
 
-const TABS = ['Assignments', 'Payments', 'Defaulters'];
+// Defaulters leads: chasing 160 unpaid + 254 partial assignments (₹1.98Cr
+// outstanding) is this module's real job, not an afterthought behind two
+// other tabs. See docs/mobile-ui/17-fee-collection-approved.html.
+const TABS = ['Defaulters', 'Assignments', 'Payments'];
 
 function statusVariant(status) {
   if (status === 'paid') return 'success';
@@ -613,6 +616,9 @@ function DefaultersTab() {
     queryFn: () => api.get('/academic/years').then((r) => r.data),
   });
 
+  // NOTE: GET /fee/defaulters is unpaginated (414 rows / ~430KB at current
+  // scale) — known limitation, not fixed by this pass. Flagged for a future
+  // pagination pass rather than silently ignored (see spec §5).
   const { data: defaulters = [], isLoading } = useQuery({
     queryKey: ['fee-defaulters', yearId],
     queryFn: () => {
@@ -622,8 +628,21 @@ function DefaultersTab() {
     },
   });
 
+  // Worst-overdue first — the longest-outstanding cases should surface first.
+  const sorted = [...defaulters].sort((a, b) => b.daysOverdue - a.daysOverdue);
+  const totalOutstanding = sorted.reduce(
+    (sum, d) => sum + (d.totalAmount - (d.discountAmount || 0)),
+    0
+  );
+
   return (
     <div className="flex flex-col gap-4">
+      {!isLoading && (
+        <p className="text-sm text-muted-foreground">
+          {sorted.length} outstanding · {formatCurrency(totalOutstanding)}
+        </p>
+      )}
+
       <div className="flex gap-3">
         <select
           value={yearId}
@@ -642,10 +661,10 @@ function DefaultersTab() {
       <DataTable
         headers={['Student', 'Admission No', 'Amount Due', 'Status', 'Due Date', 'Days Overdue']}
         isLoading={isLoading}
-        isEmpty={defaulters.length === 0}
-        emptyMessage="No defaulters found"
+        isEmpty={sorted.length === 0}
+        emptyMessage="Nothing outstanding"
       >
-        {defaulters.map((d) => (
+        {sorted.map((d) => (
           <TableRow key={d._id} className="bg-card">
             <TableCell className="px-4 py-3">
               {d.studentId?.firstName} {d.studentId?.lastName}
@@ -673,7 +692,7 @@ function DefaultersTab() {
 }
 
 export default function FeesPage() {
-  const [activeTab, setActiveTab] = useState('Assignments');
+  const [activeTab, setActiveTab] = useState('Defaulters');
 
   return (
     <div className="flex flex-col gap-6">
@@ -696,9 +715,9 @@ export default function FeesPage() {
         ))}
       </div>
 
+      {activeTab === 'Defaulters' && <DefaultersTab />}
       {activeTab === 'Assignments' && <AssignmentsTab />}
       {activeTab === 'Payments' && <PaymentsTab />}
-      {activeTab === 'Defaulters' && <DefaultersTab />}
     </div>
   );
 }

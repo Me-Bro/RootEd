@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card.jsx';
+import { Progress } from '../../components/ui/progress.jsx';
 import {
   Dialog,
   DialogContent,
@@ -378,27 +379,29 @@ function AssignToSectionModal({ open, onOpenChange, structure }) {
   );
 }
 
-function StructureSummary({ structureId }) {
-  const { data } = useQuery({
-    queryKey: ['fee-structure-summary', structureId],
-    queryFn: () => api.get(`/fee/structures/${structureId}/summary`).then((r) => r.data),
-  });
+// Renders the collection-rate bar inline on every structure card (Mock 2, approved) —
+// the summary query itself now runs at the page level via useQueries (see §3 "State &
+// logic" in docs/mobile-ui/16-fee-structures-approved.html) so every visible card's
+// summary fires immediately instead of being fetched lazily per card. This component
+// stays purely presentational: a failed/pending fetch for one card just renders nothing
+// here, leaving the components/total block above it intact (spec §5).
+function StructureSummary({ summaryQuery }) {
+  const { data, isError } = summaryQuery || {};
 
-  if (!data) return null;
+  if (!data || isError) return null;
+
+  const totalOwed = data.collectedAmount + data.outstandingAmount;
+  const pct = totalOwed > 0 ? Math.round((data.collectedAmount / totalOwed) * 100) : 0;
 
   return (
-    <div className="mt-3 pt-3 border-t border-border grid grid-cols-3 gap-2 text-xs text-muted-foreground">
-      <div>
-        <div className="font-medium text-foreground">{data.assignedCount}</div>
-        <div>Assigned</div>
-      </div>
-      <div>
-        <div className="font-medium text-foreground">{formatCurrency(data.collectedAmount)}</div>
-        <div>Collected</div>
-      </div>
-      <div>
-        <div className="font-medium text-foreground">{formatCurrency(data.outstandingAmount)}</div>
-        <div>Outstanding</div>
+    <div className="mt-3 pt-3 border-t border-border">
+      <p className="text-xs text-muted-foreground mb-2">{data.assignedCount} assigned</p>
+      <Progress value={pct} aria-label={`${pct}% of fees collected`} />
+      <div className="flex items-center justify-between mt-1.5 text-xs text-muted-foreground">
+        <span>{pct}% collected</span>
+        <span>
+          {formatCurrency(data.collectedAmount)} of {formatCurrency(totalOwed)}
+        </span>
       </div>
     </div>
   );
@@ -438,6 +441,15 @@ export default function FeeStructuresPage() {
     const matchesSearch = !search || s.name.toLowerCase().includes(search.toLowerCase());
     const matchesClass = !classFilter || s.classId?._id === classFilter;
     return matchesSearch && matchesClass;
+  });
+
+  // Fired for every visible card up front (not on-demand behind a click) — see
+  // §2 "API contracts" / §3 "State & logic" in the approved mobile spec.
+  const summaryQueries = useQueries({
+    queries: filtered.map((s) => ({
+      queryKey: ['fee-structure-summary', s._id],
+      queryFn: () => api.get(`/fee/structures/${s._id}/summary`).then((r) => r.data),
+    })),
   });
 
   return (
@@ -485,7 +497,7 @@ export default function FeeStructuresPage() {
       {isLoading && <p className="text-muted-foreground">Loading…</p>}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((s) => {
+        {filtered.map((s, i) => {
           const applicableDiscounts = discounts.filter(
             (d) =>
               d.academicYearId === s.academicYearId?._id &&
@@ -499,7 +511,11 @@ export default function FeeStructuresPage() {
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle className="text-base">{s.name}</CardTitle>
                   <div className="flex gap-1">
-                    {s.isActive === false && <Badge variant="danger">Inactive</Badge>}
+                    {s.isActive === false ? (
+                      <Badge variant="danger">Inactive</Badge>
+                    ) : (
+                      <Badge variant="success">Active</Badge>
+                    )}
                     {applicableDiscounts.length > 0 && (
                       <Badge
                         variant="secondary"
@@ -531,7 +547,7 @@ export default function FeeStructuresPage() {
                     {formatCurrency((s.components || []).reduce((sum, c) => sum + c.amount, 0))}
                   </span>
                 </div>
-                <StructureSummary structureId={s._id} />
+                <StructureSummary summaryQuery={summaryQueries[i]} />
               </CardContent>
               <CardFooter className="flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" onClick={() => setAssignFor(s)}>

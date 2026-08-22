@@ -20,7 +20,7 @@ test.describe('Fee Collection', () => {
     });
   });
 
-  test('shows Fee Collection page with tabs', async ({ page }) => {
+  test('shows Fee Collection page with tabs, Defaulters first', async ({ page }) => {
     await page.goto('/fee');
     await page.waitForLoadState('networkidle');
 
@@ -30,11 +30,38 @@ test.describe('Fee Collection', () => {
     await expect(page.getByRole('button', { name: 'Defaulters' })).toBeVisible();
   });
 
-  test('Assignments tab shows fee assignments after structure assigned', async ({ page }) => {
+  test('Defaulters is the default tab and lists overdue assignments', async ({ page }) => {
     await page.goto('/fee');
     await page.waitForLoadState('networkidle');
 
-    // Assignments is default tab — table should have rows
+    // Defaulters is the landing tab — its table (unique "Days Overdue"
+    // column) should render without clicking any tab button.
+    await expect(page.locator('table')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('columnheader', { name: 'Days Overdue' })).toBeVisible();
+    const rows = page.locator('table tbody tr');
+    await expect(rows.first()).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('Defaulters list sorts by days overdue, worst first', async ({ page }) => {
+    await page.goto('/fee');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.locator('table')).toBeVisible({ timeout: 10_000 });
+    const overdueCells = page.locator('table tbody tr td:last-child');
+    const count = await overdueCells.count();
+    expect(count).toBeGreaterThan(1);
+
+    const values = (await overdueCells.allTextContents()).map(Number);
+    for (let i = 1; i < values.length; i++) {
+      expect(values[i - 1]).toBeGreaterThanOrEqual(values[i]);
+    }
+  });
+
+  test('Assignments tab shows fee assignments after structure assigned', async ({ page }) => {
+    await page.goto('/fee');
+    await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'Assignments' }).click();
+
     await expect(page.locator('table')).toBeVisible({ timeout: 10_000 });
     const rows = page.locator('table tbody tr');
     await expect(rows.first()).toBeVisible({ timeout: 10_000 });
@@ -43,6 +70,7 @@ test.describe('Fee Collection', () => {
   test('Collect button opens payment dialog', async ({ page }) => {
     await page.goto('/fee');
     await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'Assignments' }).click();
 
     const collectBtn = page.getByRole('button', { name: 'Collect' }).first();
     await expect(collectBtn).toBeVisible({ timeout: 10_000 });
@@ -57,6 +85,7 @@ test.describe('Fee Collection', () => {
   test('records a cash payment and shows receipt link', async ({ page }) => {
     await page.goto('/fee');
     await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'Assignments' }).click();
 
     // Student1's Standard Fee assignment already carries a seeded partial
     // payment (2750 of 5500) — target Student2's untouched Standard Fee

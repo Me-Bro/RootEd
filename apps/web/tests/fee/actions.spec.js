@@ -134,6 +134,9 @@ test.describe('Fee Actions UI', () => {
   }) => {
     await page.goto('/fee');
     await page.waitForLoadState('networkidle');
+    // Defaulters is now the default landing tab — switch to Assignments,
+    // which is where the Discount/Waive/Collect row actions live.
+    await page.getByRole('button', { name: 'Assignments' }).click();
 
     // discountUiTargetAssignment (Student6, Sports Fee, totalAmount 1000) —
     // dedicated UI-only fixture, distinct from the API-level discount tests.
@@ -158,6 +161,7 @@ test.describe('Fee Actions UI', () => {
   test('waiving an assignment from the Assignments tab shows a waived badge', async ({ page }) => {
     await page.goto('/fee');
     await page.waitForLoadState('networkidle');
+    await page.getByRole('button', { name: 'Assignments' }).click();
 
     // waiveUiTargetAssignment (Student7, Sports Fee) — dedicated UI-only
     // fixture, distinct from the API-level waive tests.

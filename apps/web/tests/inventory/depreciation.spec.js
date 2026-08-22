@@ -1,0 +1,67 @@
+import { test, expect } from '@playwright/test';
+
+test.describe('Depreciation page', () => {
+  test('shows the page with year select and CSV export', async ({ page }) => {
+    await page.goto('/inventory/depreciation');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('heading', { name: 'Asset Depreciation' })).toBeVisible();
+    await expect(page.locator('select').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Export CSV' })).toBeVisible();
+  });
+
+  test('lists the seeded fixed asset with its depreciation figures', async ({ page }) => {
+    await page.goto('/inventory/depreciation');
+    await page.waitForLoadState('networkidle');
+
+    const row = page.getByRole('row', { name: /Projector/ });
+    await expect(row).toBeVisible({ timeout: 10_000 });
+    await expect(row.getByText('INV-TEST-002')).toBeVisible();
+  });
+
+  test('shows a fleet total card above the list', async ({ page }) => {
+    await page.goto('/inventory/depreciation');
+    await page.waitForLoadState('networkidle');
+
+    // Single seeded fixed asset (Projector, unitCost 25000, no currentValue
+    // override on the fixture) — fleet current value equals fleet original
+    // cost, so retained sits at 100%.
+    await expect(page.getByText('Fleet value')).toBeVisible();
+    await expect(page.getByText(/25,000.*of.*25,000/)).toBeVisible();
+    await expect(page.getByText('100.0% of original value retained')).toBeVisible();
+  });
+
+  test('near write-off section is hidden when no asset is under the threshold', async ({
+    page,
+  }) => {
+    await page.goto('/inventory/depreciation');
+    await page.waitForLoadState('networkidle');
+
+    // Seeded Projector retains 100% of its value, well above the 10%
+    // near-write-off cutoff, so the dedicated section should not render.
+    await expect(page.getByText(/Near write-off/)).not.toBeVisible();
+  });
+
+  test('CSV export stays enabled while records exist', async ({ page }) => {
+    await page.goto('/inventory/depreciation');
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('button', { name: 'Export CSV' })).toBeEnabled();
+  });
+
+  test('switching year keeps the page on a valid state (no crash, table or empty state renders)', async ({
+    page,
+  }) => {
+    await page.goto('/inventory/depreciation');
+    await page.waitForLoadState('networkidle');
+
+    const yearSelect = page.locator('select').first();
+    const options = await yearSelect.locator('option').allTextContents();
+    expect(options.length).toBeGreaterThan(1);
+
+    await yearSelect.selectOption(options[options.length - 1]);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('heading', { name: 'Asset Depreciation' })).toBeVisible();
+  });
+});
