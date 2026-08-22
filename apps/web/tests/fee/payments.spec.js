@@ -16,7 +16,6 @@ test.describe('Fee Collection', () => {
     // Assign fee structure to section so students have fee assignments
     await client.post(`/fee/structures/${ids.feeStructure._id}/assign`, {
       sectionId: ids.section._id,
-      academicYearId: ids.academicYear._id,
       dueDate: new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10),
     });
   });

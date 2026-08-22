@@ -1,26 +1,48 @@
 import PDFDocument from 'pdfkit';
 import { Student } from '../models/Student.js';
+import { Section } from '../models/Section.js';
 import { FeeAssignment } from '../models/FeeAssignment.js';
 import { FeePayment } from '../models/FeePayment.js';
 import { FeeStructure } from '../models/FeeStructure.js';
 import { uploadBuffer } from './storage.service.js';
 import { env } from '../config/env.js';
+import { calculateMandatoryTotal, calculateEffectiveTotal } from '../utils/feeCalculations.js';
+import { autoAssignSupported } from '../utils/feeAutoAssignScope.js';
+import { scheduleLateCharge } from '../workers/feeLateCharge.worker.js';
 
-export async function assignFeesToSection(sectionId, feeStructureId, tenantId) {
+export async function assignFeesToStudents({
+  studentIds,
+  feeStructureId,
+  tenantId,
+  dueDateOverride,
+}) {
   const structure = await FeeStructure.findOne({ _id: feeStructureId, tenantId }).lean();
   if (!structure) throw new Error('FeeStructure not found');
 
-  const students = await Student.find({ tenantId, sectionId, status: 'active' }).lean();
-
-  const totalAmount = structure.components.reduce((sum, c) => sum + c.amount, 0);
+  const totalAmount = calculateMandatoryTotal(structure.components);
+  const hasInstallments = Boolean(structure.installments?.length);
+  const installmentsSnapshot = hasInstallments
+    ? structure.installments.map((i) => ({
+        label: i.label,
+        amount: i.amount,
+        dueDate: i.dueDate,
+        status: 'unpaid',
+        paidAmount: 0,
+      }))
+    : undefined;
+  const dueDate =
+    dueDateOverride ||
+    (hasInstallments
+      ? new Date(Math.max(...structure.installments.map((i) => new Date(i.dueDate).getTime())))
+      : structure.dueDate);
 
   let created = 0;
   let skipped = 0;
 
-  for (const student of students) {
+  for (const studentId of studentIds) {
     const exists = await FeeAssignment.findOne({
       tenantId,
-      studentId: student._id,
+      studentId,
       feeStructureId: structure._id,
       academicYearId: structure.academicYearId,
     }).lean();
@@ -30,19 +52,52 @@ export async function assignFeesToSection(sectionId, feeStructureId, tenantId) {
       continue;
     }
 
-    await FeeAssignment.create({
+    const assignment = await FeeAssignment.create({
       tenantId,
-      studentId: student._id,
+      studentId,
       feeStructureId: structure._id,
       academicYearId: structure.academicYearId,
       totalAmount,
-      dueDate: structure.dueDate,
+      dueDate,
+      ...(installmentsSnapshot ? { installments: installmentsSnapshot } : {}),
     });
 
     created++;
+
+    if (structure.lateFeeEnabled && dueDate) {
+      const delayMs =
+        new Date(dueDate).getTime() + (structure.lateFeeGraceDays || 0) * 86400000 - Date.now();
+      await scheduleLateCharge(assignment._id, delayMs);
+    }
   }
 
   return { created, skipped };
+}
+
+export async function assignFeesToSection(sectionId, feeStructureId, tenantId, dueDateOverride) {
+  const students = await Student.find({ tenantId, sectionId, status: 'active' }, '_id').lean();
+  return assignFeesToStudents({
+    studentIds: students.map((s) => s._id),
+    feeStructureId,
+    tenantId,
+    dueDateOverride,
+  });
+}
+
+export async function resolveStudentIdsForStructure(structure, tenantId) {
+  if (!autoAssignSupported(structure.applicableTo, structure.classId)) return [];
+
+  if (structure.applicableTo === 'all') {
+    const students = await Student.find({ tenantId, status: 'active' }, '_id').lean();
+    return students.map((s) => s._id);
+  }
+
+  const sections = await Section.find({ tenantId, classId: structure.classId }, '_id').lean();
+  const students = await Student.find(
+    { tenantId, sectionId: { $in: sections.map((s) => s._id) }, status: 'active' },
+    '_id'
+  ).lean();
+  return students.map((s) => s._id);
 }
 
 export async function recordPayment({
@@ -53,6 +108,7 @@ export async function recordPayment({
   collectedBy,
   notes,
   tenantId,
+  installmentIndex,
 }) {
   const assignment = await FeeAssignment.findOne({ _id: assignmentId, tenantId });
   if (!assignment) throw new Error('FeeAssignment not found');
@@ -71,11 +127,18 @@ export async function recordPayment({
     receiptNumber,
     collectedBy,
     notes,
+    installmentIndex,
   });
+
+  if (installmentIndex !== undefined && assignment.installments?.[installmentIndex]) {
+    const inst = assignment.installments[installmentIndex];
+    inst.paidAmount += amount;
+    inst.status = inst.paidAmount >= inst.amount ? 'paid' : 'partial';
+  }
 
   const allPayments = await FeePayment.find({ tenantId, assignmentId }).lean();
   const totalPaid = allPayments.reduce((sum, p) => sum + p.amount, 0);
-  const effectiveTotal = assignment.totalAmount - (assignment.discountAmount || 0);
+  const effectiveTotal = calculateEffectiveTotal(assignment);
 
   let status = 'partial';
   if (totalPaid >= effectiveTotal) status = 'paid';
@@ -154,7 +217,7 @@ export async function initiateOnlinePayment(assignmentId, tenantId) {
 
   const payments = await FeePayment.find({ tenantId, assignmentId }).lean();
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-  const outstanding = assignment.totalAmount - (assignment.discountAmount || 0) - totalPaid;
+  const outstanding = calculateEffectiveTotal(assignment) - totalPaid;
 
   if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
     return {
@@ -202,5 +265,8 @@ export async function getDefaulters(tenantId, academicYearId) {
   return assignments.map((a) => ({
     ...a,
     daysOverdue: Math.floor((today - new Date(a.dueDate)) / (1000 * 60 * 60 * 24)),
+    overdueInstallments: (a.installments || []).filter(
+      (i) => i.status !== 'paid' && new Date(i.dueDate) < today
+    ).length,
   }));
 }

@@ -1,7 +1,10 @@
 import crypto from 'crypto';
 import { Router } from 'express';
+import multer from 'multer';
+import { parse } from 'csv-parse/sync';
 import { authenticate } from '../middleware/authenticate.js';
 import { requirePermission } from '../middleware/requirePermission.js';
+import { validate } from '../middleware/validate.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { FeeStructure } from '../models/FeeStructure.js';
 import { FeeAssignment } from '../models/FeeAssignment.js';
@@ -9,34 +12,251 @@ import { FeePayment } from '../models/FeePayment.js';
 import { FeeDiscount } from '../models/FeeDiscount.js';
 import {
   assignFeesToSection,
+  assignFeesToStudents,
+  resolveStudentIdsForStructure,
   recordPayment,
   getDefaulters,
   initiateOnlinePayment,
 } from '../services/fee.service.js';
 import { getSignedUrl } from '../services/storage.service.js';
 import { env } from '../config/env.js';
+import { auditLog } from '../services/audit.service.js';
+import { scaleComponents, calculateEffectiveTotal } from '../utils/feeCalculations.js';
+import { parseFeeStructureImportRow } from '../utils/feeImportParser.js';
+import {
+  createFeeStructureSchema,
+  updateFeeStructureSchema,
+  assignFeeStructureSchema,
+  cloneFeeStructureSchema,
+  createFeeDiscountSchema,
+} from '@rooted/shared/schemas';
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.use(authenticate);
 
-router.post('/structures', requirePermission('fees:write'), async (req, res, next) => {
+router.post(
+  '/structures',
+  requirePermission('fees:write'),
+  validate(createFeeStructureSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { name, academicYearId } = req.body;
+
+      const existing = await FeeStructure.findOne({ tenantId, name, academicYearId });
+      if (existing) {
+        return res
+          .status(409)
+          .json({ error: 'A fee structure with this name already exists for this academic year' });
+      }
+
+      const structure = await FeeStructure.create({ tenantId, ...req.body });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'feeStructure.create',
+        target: { model: 'FeeStructure', id: structure._id },
+        after: structure.toObject(),
+        ip: req.ip,
+      });
+
+      let autoAssign = { created: 0, skipped: 0 };
+      if (structure.applicableTo === 'all' || structure.applicableTo === 'class') {
+        const studentIds = await resolveStudentIdsForStructure(structure, tenantId);
+        autoAssign = await assignFeesToStudents({
+          studentIds,
+          feeStructureId: structure._id,
+          tenantId,
+        });
+      }
+
+      res.status(201).json({ ...structure.toObject(), autoAssign });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.patch(
+  '/structures/:id',
+  requirePermission('fees:write'),
+  validate(updateFeeStructureSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const before = await FeeStructure.findOne({ _id: req.params.id, tenantId }).lean();
+      if (!before) return res.status(404).json({ error: 'Not found' });
+
+      const doc = await FeeStructure.findOneAndUpdate(
+        { _id: req.params.id, tenantId },
+        { $set: req.body },
+        { new: true }
+      );
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'feeStructure.update',
+        target: { model: 'FeeStructure', id: doc._id },
+        before,
+        after: doc.toObject(),
+        ip: req.ip,
+      });
+
+      res.json(doc);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+async function setStructureActive(req, res, next, isActive) {
   try {
-    const { name, academicYearId, components, applicableTo, classId, dueDate } = req.body;
-    const structure = await FeeStructure.create({
-      tenantId: req.tenant._id,
-      name,
-      academicYearId,
-      components,
-      applicableTo,
-      classId,
-      dueDate,
+    const tenantId = req.tenant._id;
+    const doc = await FeeStructure.findOneAndUpdate(
+      { _id: req.params.id, tenantId },
+      { $set: { isActive } },
+      { new: true }
+    );
+    if (!doc) return res.status(404).json({ error: 'Not found' });
+
+    await auditLog({
+      actorId: req.user.sub,
+      tenantId: tenantId.toString(),
+      action: isActive ? 'feeStructure.activate' : 'feeStructure.deactivate',
+      target: { model: 'FeeStructure', id: doc._id },
+      after: doc.toObject(),
+      ip: req.ip,
     });
-    res.status(201).json(structure);
+
+    res.json(doc);
   } catch (err) {
     next(err);
   }
-});
+}
+router.patch('/structures/:id/activate', requirePermission('fees:write'), (req, res, next) =>
+  setStructureActive(req, res, next, true)
+);
+router.patch('/structures/:id/deactivate', requirePermission('fees:write'), (req, res, next) =>
+  setStructureActive(req, res, next, false)
+);
+
+router.post(
+  '/structures/:id/clone',
+  requirePermission('fees:write'),
+  validate(cloneFeeStructureSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { targetAcademicYearId, amountAdjustmentPercent } = req.body;
+
+      const source = await FeeStructure.findOne({ _id: req.params.id, tenantId }).lean();
+      if (!source) return res.status(404).json({ error: 'Not found' });
+
+      const existing = await FeeStructure.findOne({
+        tenantId,
+        name: source.name,
+        academicYearId: targetAcademicYearId,
+      });
+      if (existing) {
+        return res
+          .status(409)
+          .json({ error: 'A fee structure with this name already exists for this academic year' });
+      }
+
+      const scaledComponents = scaleComponents(source.components, amountAdjustmentPercent);
+      const scaledInstallments = scaleComponents(
+        source.installments || [],
+        amountAdjustmentPercent
+      );
+
+      const clone = await FeeStructure.create({
+        tenantId,
+        name: source.name,
+        academicYearId: targetAcademicYearId,
+        components: scaledComponents,
+        ...(scaledInstallments.length ? { installments: scaledInstallments } : {}),
+        applicableTo: source.applicableTo,
+        classId: source.classId,
+        dueDate: source.dueDate,
+        lateFeeEnabled: source.lateFeeEnabled,
+        lateFeeType: source.lateFeeType,
+        lateFeeValue: source.lateFeeValue,
+        lateFeeGraceDays: source.lateFeeGraceDays,
+      });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'feeStructure.clone',
+        target: { model: 'FeeStructure', id: clone._id },
+        after: clone.toObject(),
+        ip: req.ip,
+      });
+
+      res.status(201).json(clone);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/structures/import',
+  requirePermission('fees:write'),
+  upload.single('file'),
+  async (req, res, next) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+      const records = parse(req.file.buffer, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true,
+      });
+      const tenantId = req.tenant._id;
+      let saved = 0;
+      const errors = [];
+
+      for (const row of records) {
+        try {
+          const validated = createFeeStructureSchema.parse(parseFeeStructureImportRow(row));
+
+          const existing = await FeeStructure.findOne({
+            tenantId,
+            name: validated.name,
+            academicYearId: validated.academicYearId,
+          });
+          if (existing) {
+            errors.push({ row, reason: 'Duplicate name+academicYearId' });
+            continue;
+          }
+
+          await FeeStructure.create({ tenantId, ...validated });
+          saved++;
+        } catch (rowErr) {
+          errors.push({ row, reason: rowErr.message });
+        }
+      }
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'feeStructure.import',
+        target: { model: 'FeeStructure', id: null },
+        after: { saved, errors: errors.length },
+        ip: req.ip,
+      });
+
+      res.json({ saved, errors });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.get('/structures', requirePermission('fees:read'), async (req, res, next) => {
   try {
@@ -54,17 +274,49 @@ router.get('/structures', requirePermission('fees:read'), async (req, res, next)
   }
 });
 
-router.post('/structures/:id/assign', requirePermission('fees:write'), async (req, res, next) => {
+router.get('/structures/:id/summary', requirePermission('fees:read'), async (req, res, next) => {
   try {
-    const { sectionId } = req.body;
-    if (!sectionId) throw new AppError('sectionId required', 400);
+    const tenantId = req.tenant._id;
+    const structure = await FeeStructure.findOne({ _id: req.params.id, tenantId }).lean();
+    if (!structure) return res.status(404).json({ error: 'Not found' });
 
-    const result = await assignFeesToSection(sectionId, req.params.id, req.tenant._id);
-    res.json(result);
+    const assignments = await FeeAssignment.find({
+      tenantId,
+      feeStructureId: structure._id,
+    }).lean();
+    const assignmentIds = assignments.map((a) => a._id);
+
+    const paymentAgg = await FeePayment.aggregate([
+      { $match: { tenantId, assignmentId: { $in: assignmentIds } } },
+      { $group: { _id: null, collectedAmount: { $sum: '$amount' } } },
+    ]);
+    const collectedAmount = paymentAgg[0]?.collectedAmount || 0;
+    const totalOwed = assignments.reduce((sum, a) => sum + calculateEffectiveTotal(a), 0);
+
+    res.json({
+      assignedCount: assignments.length,
+      collectedAmount,
+      outstandingAmount: totalOwed - collectedAmount,
+    });
   } catch (err) {
     next(err);
   }
 });
+
+router.post(
+  '/structures/:id/assign',
+  requirePermission('fees:write'),
+  validate(assignFeeStructureSchema),
+  async (req, res, next) => {
+    try {
+      const { sectionId, dueDate } = req.body;
+      const result = await assignFeesToSection(sectionId, req.params.id, req.tenant._id, dueDate);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.get('/assignments', requirePermission('fees:read'), async (req, res, next) => {
   try {
@@ -87,7 +339,8 @@ router.get('/assignments', requirePermission('fees:read'), async (req, res, next
 
 router.post('/payments', requirePermission('fees:collect'), async (req, res, next) => {
   try {
-    const { assignmentId, amount, paymentMethod, transactionId, notes } = req.body;
+    const { assignmentId, amount, paymentMethod, transactionId, notes, installmentIndex } =
+      req.body;
 
     const payment = await recordPayment({
       assignmentId,
@@ -95,6 +348,7 @@ router.post('/payments', requirePermission('fees:collect'), async (req, res, nex
       paymentMethod,
       transactionId,
       notes,
+      installmentIndex,
       collectedBy: req.user.sub,
       tenantId: req.tenant._id,
     });
@@ -157,24 +411,30 @@ router.get('/defaulters', requirePermission('fees:read'), async (req, res, next)
   }
 });
 
-router.post('/discounts', requirePermission('tenant:admin'), async (req, res, next) => {
-  try {
-    const { name, type, value, applicableTo, classId, studentId, academicYearId } = req.body;
-    const discount = await FeeDiscount.create({
-      tenantId: req.tenant._id,
-      name,
-      type,
-      value,
-      applicableTo,
-      classId,
-      studentId,
-      academicYearId,
-    });
-    res.status(201).json(discount);
-  } catch (err) {
-    next(err);
+router.post(
+  '/discounts',
+  requirePermission('tenant:admin'),
+  validate(createFeeDiscountSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const discount = await FeeDiscount.create({ tenantId, ...req.body });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'feeDiscount.create',
+        target: { model: 'FeeDiscount', id: discount._id },
+        after: discount.toObject(),
+        ip: req.ip,
+      });
+
+      res.status(201).json(discount);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 router.get('/discounts', requirePermission('fees:read'), async (req, res, next) => {
   try {
@@ -212,9 +472,17 @@ router.post('/payments/verify', requirePermission('fees:collect'), async (req, r
 
     if (expected !== razorpay_signature) throw new AppError('Invalid payment signature', 400);
 
+    const Razorpay = (await import('razorpay')).default;
+    const razorpay = new Razorpay({
+      key_id: env.RAZORPAY_KEY_ID,
+      key_secret: env.RAZORPAY_KEY_SECRET,
+    });
+    const order = await razorpay.orders.fetch(razorpay_order_id);
+    const amount = order.amount / 100; // paise -> rupees
+
     const payment = await recordPayment({
       assignmentId,
-      amount: 0,
+      amount,
       paymentMethod: 'upi',
       transactionId: razorpay_payment_id,
       notes: `Razorpay order: ${razorpay_order_id}`,

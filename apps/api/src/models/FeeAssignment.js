@@ -10,7 +10,17 @@ const feeAssignmentSchema = new mongoose.Schema(
     totalAmount: { type: Number, required: true },
     discountAmount: { type: Number, default: 0 },
     discountReason: { type: String },
+    lateFeeAmount: { type: Number, default: 0 },
     dueDate: { type: Date },
+    installments: [
+      {
+        label: { type: String, required: true },
+        amount: { type: Number, required: true },
+        dueDate: { type: Date, required: true },
+        status: { type: String, enum: ['unpaid', 'partial', 'paid'], default: 'unpaid' },
+        paidAmount: { type: Number, default: 0 },
+      },
+    ],
     status: { type: String, enum: ['unpaid', 'partial', 'paid', 'waived'], default: 'unpaid' },
   },
   { timestamps: true }
