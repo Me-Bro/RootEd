@@ -1,0 +1,3 @@
+firstName,lastName,email,employeeId
+,Missing,not-an-email,EMP-E2E-BAD-001
+Priya,NoEmail,,EMP-E2E-BAD-002

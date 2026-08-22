@@ -21,6 +21,7 @@ import TimetablePage from './pages/academic/TimetablePage.jsx';
 import MySchedulePage from './pages/academic/MySchedulePage.jsx';
 import ReportCardPage from './pages/academic/ReportCardPage.jsx';
 import StaffPage from './pages/staff/StaffPage.jsx';
+import StaffDetailPage from './pages/staff/StaffDetailPage.jsx';
 import LeaveRequestsPage from './pages/staff/LeaveRequestsPage.jsx';
 import SalaryPage from './pages/staff/SalaryPage.jsx';
 import ExpensesPage from './pages/expense/ExpensesPage.jsx';
@@ -191,6 +192,14 @@ function AppRoutes() {
           element={
             <RequirePermission permission="staff:read">
               <StaffPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/staff/:id"
+          element={
+            <RequirePermission permission="staff:read">
+              <StaffDetailPage />
             </RequirePermission>
           }
         />

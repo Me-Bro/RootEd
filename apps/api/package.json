@@ -55,6 +55,13 @@
   },
   "jest": {
     "testEnvironment": "node",
-    "transform": {}
+    "transform": {},
+    "setupFiles": [
+      "<rootDir>/src/__tests__/setup-env.js"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/src/__tests__/setup-env.js"
+    ]
   }
 }

@@ -1,0 +1,3 @@
+firstName,lastName,email,employeeId,designation,department,joiningDate,phone
+Nina,Roy,nina.roy.e2e@testschool.local,EMP-E2E-001,Teacher,Academics,2024-01-15,9998887771
+Sam,Verma,sam.verma.e2e@testschool.local,EMP-E2E-002,Clerk,Administration,2024-02-01,9998887772
