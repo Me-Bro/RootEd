@@ -10,6 +10,8 @@ import { FeePayment } from '../models/FeePayment.js';
 import { FeeDiscount } from '../models/FeeDiscount.js';
 import {
   assignFeesToSection,
+  assignFeesToStudents,
+  resolveStudentIdsForStructure,
   recordPayment,
   getDefaulters,
   initiateOnlinePayment,
@@ -20,6 +22,7 @@ import { auditLog } from '../services/audit.service.js';
 import {
   createFeeStructureSchema,
   updateFeeStructureSchema,
+  assignFeeStructureSchema,
   createFeeDiscountSchema,
 } from '@rooted/shared/schemas';
 
@@ -54,7 +57,17 @@ router.post(
         ip: req.ip,
       });
 
-      res.status(201).json(structure);
+      let autoAssign = { created: 0, skipped: 0 };
+      if (structure.applicableTo === 'all' || structure.applicableTo === 'class') {
+        const studentIds = await resolveStudentIdsForStructure(structure, tenantId);
+        autoAssign = await assignFeesToStudents({
+          studentIds,
+          feeStructureId: structure._id,
+          tenantId,
+        });
+      }
+
+      res.status(201).json({ ...structure.toObject(), autoAssign });
     } catch (err) {
       next(err);
     }
@@ -141,17 +154,20 @@ router.get('/structures', requirePermission('fees:read'), async (req, res, next)
   }
 });
 
-router.post('/structures/:id/assign', requirePermission('fees:write'), async (req, res, next) => {
-  try {
-    const { sectionId } = req.body;
-    if (!sectionId) throw new AppError('sectionId required', 400);
-
-    const result = await assignFeesToSection(sectionId, req.params.id, req.tenant._id);
-    res.json(result);
-  } catch (err) {
-    next(err);
+router.post(
+  '/structures/:id/assign',
+  requirePermission('fees:write'),
+  validate(assignFeeStructureSchema),
+  async (req, res, next) => {
+    try {
+      const { sectionId, dueDate } = req.body;
+      const result = await assignFeesToSection(sectionId, req.params.id, req.tenant._id, dueDate);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 router.get('/assignments', requirePermission('fees:read'), async (req, res, next) => {
   try {

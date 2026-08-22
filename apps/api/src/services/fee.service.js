@@ -1,27 +1,33 @@
 import PDFDocument from 'pdfkit';
 import { Student } from '../models/Student.js';
+import { Section } from '../models/Section.js';
 import { FeeAssignment } from '../models/FeeAssignment.js';
 import { FeePayment } from '../models/FeePayment.js';
 import { FeeStructure } from '../models/FeeStructure.js';
 import { uploadBuffer } from './storage.service.js';
 import { env } from '../config/env.js';
 import { calculateMandatoryTotal, calculateEffectiveTotal } from '../utils/feeCalculations.js';
+import { autoAssignSupported } from '../utils/feeAutoAssignScope.js';
 
-export async function assignFeesToSection(sectionId, feeStructureId, tenantId) {
+export async function assignFeesToStudents({
+  studentIds,
+  feeStructureId,
+  tenantId,
+  dueDateOverride,
+}) {
   const structure = await FeeStructure.findOne({ _id: feeStructureId, tenantId }).lean();
   if (!structure) throw new Error('FeeStructure not found');
 
-  const students = await Student.find({ tenantId, sectionId, status: 'active' }).lean();
-
   const totalAmount = calculateMandatoryTotal(structure.components);
+  const dueDate = dueDateOverride || structure.dueDate;
 
   let created = 0;
   let skipped = 0;
 
-  for (const student of students) {
+  for (const studentId of studentIds) {
     const exists = await FeeAssignment.findOne({
       tenantId,
-      studentId: student._id,
+      studentId,
       feeStructureId: structure._id,
       academicYearId: structure.academicYearId,
     }).lean();
@@ -33,17 +39,43 @@ export async function assignFeesToSection(sectionId, feeStructureId, tenantId) {
 
     await FeeAssignment.create({
       tenantId,
-      studentId: student._id,
+      studentId,
       feeStructureId: structure._id,
       academicYearId: structure.academicYearId,
       totalAmount,
-      dueDate: structure.dueDate,
+      dueDate,
     });
 
     created++;
   }
 
   return { created, skipped };
+}
+
+export async function assignFeesToSection(sectionId, feeStructureId, tenantId, dueDateOverride) {
+  const students = await Student.find({ tenantId, sectionId, status: 'active' }, '_id').lean();
+  return assignFeesToStudents({
+    studentIds: students.map((s) => s._id),
+    feeStructureId,
+    tenantId,
+    dueDateOverride,
+  });
+}
+
+export async function resolveStudentIdsForStructure(structure, tenantId) {
+  if (!autoAssignSupported(structure.applicableTo, structure.classId)) return [];
+
+  if (structure.applicableTo === 'all') {
+    const students = await Student.find({ tenantId, status: 'active' }, '_id').lean();
+    return students.map((s) => s._id);
+  }
+
+  const sections = await Section.find({ tenantId, classId: structure.classId }, '_id').lean();
+  const students = await Student.find(
+    { tenantId, sectionId: { $in: sections.map((s) => s._id) }, status: 'active' },
+    '_id'
+  ).lean();
+  return students.map((s) => s._id);
 }
 
 export async function recordPayment({

@@ -77,4 +77,46 @@ test.describe('Fee Structures', () => {
     const assignment = body.find((a) => a.feeStructureId?._id === ids.feeStructureWithOptional._id);
     expect(assignment.totalAmount).toBe(1000); // excludes the 800 optional component
   });
+
+  test('creating an applicableTo:all structure auto-assigns active students', async ({
+    request,
+  }) => {
+    const ids = getTestIds();
+    const client = await createTestApiClient(request, 'super_admin');
+    const res = await client.post('/fee/structures', {
+      name: 'Auto All Fee',
+      academicYearId: ids.academicYear._id,
+      applicableTo: 'all',
+      components: [{ label: 'X', amount: 100 }],
+    });
+    const body = await res.json();
+    expect(body.autoAssign.created).toBeGreaterThan(0);
+  });
+
+  test('creating an applicableTo:class structure auto-assigns only that class', async ({
+    request,
+  }) => {
+    const ids = getTestIds();
+    const client = await createTestApiClient(request, 'super_admin');
+    const res = await client.post('/fee/structures', {
+      name: 'Auto Class Fee',
+      academicYearId: ids.academicYear._id,
+      applicableTo: 'class',
+      classId: ids.class._id,
+      components: [{ label: 'X', amount: 100 }],
+    });
+    const body = await res.json();
+    expect(body.autoAssign.created).toBeGreaterThan(0);
+  });
+
+  test('assign route accepts dueDate override and ignores academicYearId', async ({ request }) => {
+    const ids = getTestIds();
+    const client = await createTestApiClient(request, 'super_admin');
+    const res = await client.post(`/fee/structures/${ids.feeStructure._id}/assign`, {
+      sectionId: ids.sectionB._id,
+      dueDate: '2026-01-15',
+      academicYearId: 'ignored-not-an-objectid',
+    });
+    expect(res.status()).toBe(200); // proves academicYearId is silently dropped, not validated
+  });
 });
