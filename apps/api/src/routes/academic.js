@@ -14,6 +14,8 @@ import {
   timetableQuerySchema,
   copyTimetableSchema,
   timetablePublishSchema,
+  reportCardGenerateSchema,
+  reportCardHistoryQuerySchema,
 } from '@rooted/shared/schemas';
 import { scoreToLetter } from '@rooted/shared/utils';
 import { authenticate } from '../middleware/authenticate.js';
@@ -37,11 +39,14 @@ import { TimetablePublish } from '../models/TimetablePublish.js';
 import { AttendanceRecord } from '../models/AttendanceRecord.js';
 import { Grade } from '../models/Grade.js';
 import { GradeLock } from '../models/GradeLock.js';
+import { ReportCardBatch } from '../models/ReportCardBatch.js';
 import { buildStudentFilter } from '../utils/studentFilter.js';
 import { computeAttendanceStats } from '../utils/attendanceStats.js';
 import { computeGradeStats } from '../utils/gradeStats.js';
+import { findMatchingJob } from '../utils/reportCardJobs.js';
 import { filterVisibleTimetableEntries } from '../utils/timetableVisibility.js';
 import { auditLog } from '../services/audit.service.js';
+import { getSignedUrl } from '../services/storage.service.js';
 
 const DEFAULTER_THRESHOLD_PCT = 75;
 const DEFAULT_REPORT_RANGE_DAYS = 30;
@@ -1116,20 +1121,64 @@ router.post(
 
 // ── Report Card ───────────────────────────────────────────────────────────────
 
-router.post('/report-card/generate', requirePermission('grades:read'), async (req, res, next) => {
-  try {
-    const { termId, sectionId } = req.body;
-    const job = await reportCardQueue.add('generate', {
-      tenantId: req.tenant._id.toString(),
-      termId,
-      sectionId,
-      requestedBy: req.user.sub,
-    });
-    res.json({ jobId: job.id });
-  } catch (err) {
-    next(err);
+router.post(
+  '/report-card/generate',
+  requirePermission('grades:publish'),
+  validate(reportCardGenerateSchema),
+  async (req, res, next) => {
+    try {
+      const { termId, sectionId } = req.body;
+      const tenantId = req.tenant._id;
+      const tenantIdStr = tenantId.toString();
+
+      const [section, term] = await Promise.all([
+        Section.findOne({ _id: sectionId, tenantId }).lean(),
+        Term.findOne({ _id: termId, tenantId }).lean(),
+      ]);
+      if (!section) return res.status(404).json({ error: 'Section not found' });
+      if (!term) return res.status(404).json({ error: 'Term not found' });
+
+      const pendingJobs = await reportCardQueue.getJobs(['waiting', 'active'], 0, 50);
+      const existing = findMatchingJob(pendingJobs, {
+        tenantId: tenantIdStr,
+        sectionId,
+        termId,
+      });
+      if (existing) {
+        return res.json({ jobId: existing.id, existing: true });
+      }
+
+      const job = await reportCardQueue.add('generate', {
+        tenantId: tenantIdStr,
+        termId,
+        sectionId,
+        requestedBy: req.user.sub,
+      });
+
+      await ReportCardBatch.create({
+        tenantId,
+        sectionId,
+        termId,
+        requestedBy: req.user.sub,
+        jobId: job.id,
+        status: 'queued',
+      });
+
+      await auditLog({
+        tenantId,
+        actorId: req.user.sub,
+        action: 'report-card.generate',
+        target: { model: 'Section', id: sectionId },
+        after: { sectionId, termId, jobId: job.id },
+        ip: req.ip,
+      });
+
+      res.json({ jobId: job.id, existing: false });
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 router.get(
   '/report-card/status/:jobId',
@@ -1150,5 +1199,32 @@ router.get(
     }
   }
 );
+
+router.get('/report-card/history', requirePermission('grades:read'), async (req, res, next) => {
+  try {
+    const { sectionId, termId } = reportCardHistoryQuerySchema.parse(req.query);
+    const tenantId = req.tenant._id;
+
+    const batches = await ReportCardBatch.find({ tenantId, sectionId, termId })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean();
+
+    const withUrls = await Promise.all(
+      batches.map(async (b) => ({
+        _id: b._id,
+        status: b.status,
+        jobId: b.jobId,
+        createdAt: b.createdAt,
+        error: b.error ?? null,
+        url: b.status === 'completed' && b.s3Key ? await getSignedUrl(b.s3Key, 3600) : null,
+      }))
+    );
+
+    res.json(withUrls);
+  } catch (err) {
+    next(err);
+  }
+});
 
 export default router;

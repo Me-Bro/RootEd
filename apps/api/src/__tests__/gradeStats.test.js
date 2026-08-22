@@ -75,6 +75,21 @@ test('top/bottom performers are ranked descending/ascending by score', () => {
   expect(result.bottomPerformers.map((s) => s.studentId)).toEqual(['a3', 'a1', 'a2']);
 });
 
+test('students carry a 1-based rank by descending score, ties broken by input order, unscored students get null rank', () => {
+  const grades = [
+    { studentId: 'a1', score: 70, weightage: 1 },
+    { studentId: 'a2', score: 95, weightage: 1 },
+    // a3 has no grade rows -> null score
+  ];
+
+  const result = computeGradeStats(students, grades);
+  const byId = Object.fromEntries(result.students.map((s) => [s.studentId, s]));
+
+  expect(byId.a2.rank).toBe(1);
+  expect(byId.a1.rank).toBe(2);
+  expect(byId.a3.rank).toBeNull();
+});
+
 test('matches ObjectId-like studentId by string equality', () => {
   const objIdStudents = [{ _id: { toString: () => 'a1' }, firstName: 'Ann' }];
   const grades = [{ studentId: { toString: () => 'a1' }, score: 88, weightage: 1 }];

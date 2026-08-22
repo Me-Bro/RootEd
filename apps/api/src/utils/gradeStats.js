@@ -52,11 +52,18 @@ export function computeGradeStats(students, grades) {
   }
 
   const ranked = [...scored].sort((a, b) => b.score - a.score);
+  ranked.forEach((s, i) => {
+    s.rank = i + 1;
+  });
+  for (const s of studentStats) {
+    if (s.rank === undefined) s.rank = null;
+  }
 
   return {
     students: studentStats,
     classAverageScore,
     distribution,
+    rankedCount: scored.length,
     topPerformers: ranked.slice(0, 3),
     bottomPerformers: ranked.slice(-3).reverse(),
   };
