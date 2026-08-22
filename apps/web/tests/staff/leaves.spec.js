@@ -74,7 +74,9 @@ test.describe('Leave Requests', () => {
 
     // Leave type, dates and reason are visible on the card itself — no
     // click-through required (DoD: "visible without a click-through").
-    await expect(page.getByText('Leave type')).toBeVisible();
+    // exact: true — "Leave type" is otherwise a substring of the page's own
+    // "Leave Types" admin-section heading and its "Add Leave Type" button.
+    await expect(page.getByText('Leave type', { exact: true })).toBeVisible();
     await expect(page.getByText('Reason')).toBeVisible();
     await expect(page.getByText('Balance after')).toBeVisible();
   });

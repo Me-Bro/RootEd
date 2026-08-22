@@ -14,7 +14,9 @@ test.describe('Staff Directory', () => {
     await page.goto('/staff');
     await page.waitForLoadState('networkidle');
 
-    const rows = page.locator('a[href^="/staff/"]');
+    // Scoped to <main>: the sidebar's own nav also has /staff/leaves, /staff/salary,
+    // etc, which otherwise match this same prefix selector.
+    const rows = page.locator('main a[href^="/staff/"]');
     await expect(rows.first()).toBeVisible({ timeout: 10_000 });
   });
 
@@ -122,7 +124,9 @@ test.describe('Staff Directory', () => {
     await page.waitForLoadState('networkidle');
 
     await expect(page.getByText(/On leave today/)).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText(ids.staffOnLeave.employeeId)).toBeVisible();
+    // The plain employee ID also matches this same person's row in the department
+    // list below — the strip's chip is the only place it's prefixed with "· ".
+    await expect(page.getByText(`· ${ids.staffOnLeave.employeeId}`)).toBeVisible();
   });
 
   test('search narrows results by employee ID', async ({ page }) => {
@@ -135,7 +139,9 @@ test.describe('Staff Directory', () => {
       .getByPlaceholder('Search by name or employee ID…')
       .fill(ids.staffMembers[0].employeeId);
 
-    const rows = page.locator('a[href^="/staff/"]');
+    // Scoped to <main>: the sidebar's own nav also has /staff/leaves, /staff/salary,
+    // etc, which otherwise match this same prefix selector.
+    const rows = page.locator('main a[href^="/staff/"]');
     await expect(rows).toHaveCount(1, { timeout: 8_000 });
     await expect(page.getByText(ids.staffMembers[0].employeeId)).toBeVisible();
   });

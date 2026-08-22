@@ -39,6 +39,8 @@ test.describe('Budgets page', () => {
     // Deliberately inserted in a non-sorted order (Academics, Transport, Facilities) so a
     // pass here can't be an accident of the mock's own ordering.
     await page.route('**/expense/budgets**', async (route) => {
+      // The glob also matches this page's own top-level navigation — only mock the API fetch.
+      if (route.request().resourceType() === 'document') return route.continue();
       await route.fulfill({
         json: [
           {
@@ -84,6 +86,8 @@ test.describe('Budgets page', () => {
     const { costCenter } = getTestIds();
 
     await page.route('**/expense/budgets**', async (route) => {
+      // The glob also matches this page's own top-level navigation — only mock the API fetch.
+      if (route.request().resourceType() === 'document') return route.continue();
       await route.fulfill({
         json: [
           {
@@ -118,6 +122,8 @@ test.describe('Budgets page', () => {
     page,
   }) => {
     await page.route('**/expense/budgets**', async (route) => {
+      // The glob also matches this page's own top-level navigation — only mock the API fetch.
+      if (route.request().resourceType() === 'document') return route.continue();
       await route.fulfill({ json: [] });
     });
 

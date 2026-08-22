@@ -284,7 +284,9 @@ test.describe('Fee Structures UI', () => {
 
   test('shows an Active badge on an active structure card', async ({ page }) => {
     await page.goto('/fee/structures');
-    const card = page.locator('[data-slot="card"]', { hasText: 'Standard Fee' });
+    // .first(): a clone-to-year test elsewhere in this file may leave a second
+    // "Standard Fee"-named card behind, and both are equally valid for this assertion.
+    const card = page.locator('[data-slot="card"]', { hasText: 'Standard Fee' }).first();
     await expect(card.getByText('Active', { exact: true })).toBeVisible();
   });
 

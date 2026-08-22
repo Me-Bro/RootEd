@@ -1,4 +1,11 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'fs';
+import path from 'path';
+
+function getTestIds() {
+  const p = path.join(import.meta.dirname, '../seed/.test-ids.json');
+  return JSON.parse(readFileSync(p, 'utf-8'));
+}
 
 // Rebuilt per docs/mobile-ui/18-inventory-approved.html: the desktop's 4 tabs
 // (Items / Movements / Requisitions / Low Stock) stay, but an AttentionStrip
@@ -58,7 +65,11 @@ test.describe('Inventory page', () => {
   test('issuing an item surfaces the not-returned strip and jumps to filtered Movements', async ({
     page,
   }) => {
-    const entityId = `E2E-STAFF-${Date.now()}`;
+    // StockMovement.issuedTo.entityId is a real ObjectId ref, not a free-text label —
+    // reuse a seeded staff member's id rather than an arbitrary string, which Mongoose
+    // rejects with a cast/validation error and leaves the dialog stuck open.
+    const { staffMembers } = getTestIds();
+    const entityId = staffMembers[1]._id;
 
     // Issue the seeded fixed asset (Projector) — no quantity field involved,
     // keeps this test independent from the low-stock scenario above.
