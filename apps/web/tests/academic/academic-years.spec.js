@@ -111,7 +111,10 @@ test.describe('Academic Years page', () => {
 });
 
 test.describe('Academic Years page (read-only)', () => {
-  test.use({ storageState: AUTH_STATES.viewer });
+  // 'viewer' only has inventory:read in the seed data (no students:read at all,
+  // so it can't reach this page) — 'teacher' has students:read but not
+  // tenant:admin, which is what this test actually needs to exercise.
+  test.use({ storageState: AUTH_STATES.teacher });
 
   test('write controls are absent, not disabled, for a user without tenant:admin', async ({
     page,

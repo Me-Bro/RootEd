@@ -113,7 +113,11 @@ test.describe('Attendance report page', () => {
   test('a failed report fetch shows a retry banner instead of crashing', async ({ page }) => {
     const { section } = getTestIds();
 
-    await page.route('**/attendance/report**', (route) => route.abort('failed'));
+    // The glob also matches the page's own top-level navigation (same path) —
+    // only abort the API fetch, or page.goto itself fails with net::ERR_FAILED.
+    await page.route('**/attendance/report**', (route) =>
+      route.request().resourceType() === 'document' ? route.continue() : route.abort('failed')
+    );
     await page.goto(`/academic/attendance/report?sectionId=${section._id}&from=${FROM}&to=${TO}`);
 
     // React Query's default retry (3 attempts, exponential backoff) runs before
