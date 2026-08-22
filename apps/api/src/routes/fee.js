@@ -1,5 +1,7 @@
 import crypto from 'crypto';
 import { Router } from 'express';
+import multer from 'multer';
+import { parse } from 'csv-parse/sync';
 import { authenticate } from '../middleware/authenticate.js';
 import { requirePermission } from '../middleware/requirePermission.js';
 import { validate } from '../middleware/validate.js';
@@ -20,6 +22,7 @@ import { getSignedUrl } from '../services/storage.service.js';
 import { env } from '../config/env.js';
 import { auditLog } from '../services/audit.service.js';
 import { scaleComponents } from '../utils/feeCalculations.js';
+import { parseFeeStructureImportRow } from '../utils/feeImportParser.js';
 import {
   createFeeStructureSchema,
   updateFeeStructureSchema,
@@ -29,6 +32,7 @@ import {
 } from '@rooted/shared/schemas';
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.use(authenticate);
 
@@ -194,6 +198,60 @@ router.post(
       });
 
       res.status(201).json(clone);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/structures/import',
+  requirePermission('fees:write'),
+  upload.single('file'),
+  async (req, res, next) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+      const records = parse(req.file.buffer, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true,
+      });
+      const tenantId = req.tenant._id;
+      let saved = 0;
+      const errors = [];
+
+      for (const row of records) {
+        try {
+          const validated = createFeeStructureSchema.parse(parseFeeStructureImportRow(row));
+
+          const existing = await FeeStructure.findOne({
+            tenantId,
+            name: validated.name,
+            academicYearId: validated.academicYearId,
+          });
+          if (existing) {
+            errors.push({ row, reason: 'Duplicate name+academicYearId' });
+            continue;
+          }
+
+          await FeeStructure.create({ tenantId, ...validated });
+          saved++;
+        } catch (rowErr) {
+          errors.push({ row, reason: rowErr.message });
+        }
+      }
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'feeStructure.import',
+        target: { model: 'FeeStructure', id: null },
+        after: { saved, errors: errors.length },
+        ip: req.ip,
+      });
+
+      res.json({ saved, errors });
     } catch (err) {
       next(err);
     }

@@ -104,11 +104,24 @@ export async function createTestApiClient(request, role) {
     return res;
   }
 
+  async function postFile(path, file) {
+    const csrf = await fetchCsrf(request);
+    return request.post(`${API_DIRECT}${path}`, {
+      multipart: { file },
+      headers: {
+        Host: TENANT_HOST,
+        Authorization: `Bearer ${accessToken}`,
+        'x-csrf-token': csrf,
+      },
+    });
+  }
+
   return {
     get: (path) => call('GET', path),
     post: (path, body) => call('POST', path, body),
     patch: (path, body) => call('PATCH', path, body),
     delete: (path) => call('DELETE', path),
+    postFile,
     accessToken,
   };
 }

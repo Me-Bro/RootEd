@@ -179,4 +179,22 @@ test.describe('Fee Structures', () => {
     });
     expect(res.status()).toBe(409);
   });
+
+  test('CSV import creates structures and reports row errors', async ({ request }) => {
+    const ids = getTestIds();
+    const client = await createTestApiClient(request, 'super_admin');
+    const csv = [
+      'name,academicYearId,dueDate,component1Label,component1Amount',
+      `Imported Fee A,${ids.academicYear._id},2025-11-01,Tuition,4000`,
+      `,${ids.academicYear._id},2025-11-01,Tuition,4000`,
+    ].join('\n');
+    const res = await client.postFile('/fee/structures/import', {
+      name: 'structures.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(csv),
+    });
+    const body = await res.json();
+    expect(body.saved).toBe(1);
+    expect(body.errors).toHaveLength(1);
+  });
 });
