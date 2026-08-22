@@ -28,6 +28,7 @@ test.describe('Salary', () => {
 
     await expect(page.getByText('Priya Menon')).toBeVisible();
     await expect(page.getByText('generated', { exact: true })).toBeVisible();
+    await expect(page.getByText('Total payroll')).toBeVisible();
   });
 
   test('lists the seeded failed slip for its period', async ({ page }) => {
@@ -82,10 +83,15 @@ test.describe('Salary', () => {
       await page.getByRole('button', { name: 'Generate All Slips' }).click();
 
       await expect(page.getByText(/generating slips for/i)).toBeVisible();
+      // Live progress bar (docs/mobile-ui/13-salary-approved.html) replaces the old
+      // silent "Status: active — polling…" text while the batch job is in flight.
+      await expect(page.getByRole('progressbar')).toBeVisible();
       await expect(page.getByText(/slip.*generated\./i)).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByRole('progressbar')).not.toBeVisible();
 
       const monthLabel = now.toLocaleString('default', { month: 'long' });
       await expect(page.getByText('Priya Menon')).toBeVisible();
+      await expect(page.getByText('Total payroll')).toBeVisible();
       void monthLabel;
     });
 

@@ -61,7 +61,13 @@ export function startSalarySlipWorker() {
       const succeeded = [];
       const failed = [];
 
-      for (const staffId of staffIds) {
+      // Real per-slip progress for the mobile progress bar (docs/mobile-ui/
+      // 13-salary-approved.html §1/§3) — mirrors reportCard.worker.js's pattern
+      // of surfacing a "58 of 74" count instead of a silent multi-second wait.
+      await job.updateProgress({ completed: 0, total: staffIds.length });
+
+      for (let i = 0; i < staffIds.length; i++) {
+        const staffId = staffIds[i];
         try {
           const { staff, structure } = await loadStaffAndStructure(tenantId, staffId);
           const { plaintext, encrypted } = computeSalarySlip(structure, tenantId);
@@ -85,6 +91,7 @@ export function startSalarySlipWorker() {
           );
           failed.push({ staffId, error: err.message });
         }
+        await job.updateProgress({ completed: i + 1, total: staffIds.length });
       }
 
       return { succeeded, failed };

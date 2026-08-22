@@ -16,6 +16,8 @@ import {
 } from '../../components/ui/dialog.jsx';
 import { useJobPolling } from '../../hooks/useJobPolling.js';
 import { formatCurrency } from '../../utils/intl.js';
+import { PayrollTotalCard } from '../../components/salary/PayrollTotalCard.jsx';
+import { GenerateProgress } from '../../components/salary/GenerateProgress.jsx';
 
 const selectCls =
   'h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
@@ -86,7 +88,7 @@ function MarkPaidDialog({ open, onOpenChange, slip }) {
 
 function GenerateAllPanel({ jobId, staffCount, month, year }) {
   const queryClient = useQueryClient();
-  const { state, result, error, timedOut } = useJobPolling(
+  const { state, result, progress, error, timedOut } = useJobPolling(
     jobId ? `/staff/salary-slips/status/${jobId}` : null,
     {
       onSettled: () => queryClient.invalidateQueries({ queryKey: ['salary-slips', month, year] }),
@@ -95,18 +97,19 @@ function GenerateAllPanel({ jobId, staffCount, month, year }) {
 
   if (!jobId) return null;
 
+  const isSettled = state === 'completed' || state === 'failed';
+
   return (
     <div
-      className="rounded-lg border border-border bg-card p-4 flex flex-col gap-2"
+      className="rounded-lg border border-border bg-card p-4 flex flex-col gap-3"
       aria-live="polite"
     >
       <p className="text-sm text-muted-foreground">
         Job ID: <span className="font-mono text-xs">{jobId}</span> — generating slips for{' '}
         {staffCount} staff member{staffCount === 1 ? '' : 's'}…
       </p>
-      {!state && <p className="text-sm text-muted-foreground">Queued…</p>}
-      {state && state !== 'completed' && state !== 'failed' && (
-        <p className="text-sm text-muted-foreground">Status: {state} — polling every 3 seconds…</p>
+      {!isSettled && (
+        <GenerateProgress done={progress?.completed ?? 0} total={progress?.total ?? staffCount} />
       )}
       {state === 'completed' && result && (
         <div className="text-sm">
@@ -211,6 +214,8 @@ export default function SalaryPage() {
           ))}
         </select>
       </div>
+
+      {slips.length > 0 && <PayrollTotalCard slips={slips} />}
 
       {genError && <p className="text-sm text-destructive">{genError}</p>}
 
