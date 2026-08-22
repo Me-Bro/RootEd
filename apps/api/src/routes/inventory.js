@@ -252,6 +252,7 @@ router.get('/depreciation', requirePermission('inventory:read'), async (req, res
         _id: item._id,
         name: item.name,
         sku: item.sku,
+        unitCost: item.unitCost,
         depreciationMethod: item.depreciationMethod,
       },
       annualDepreciation: calculateDepreciation(item, asOfDate),
