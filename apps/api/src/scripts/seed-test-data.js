@@ -424,12 +424,83 @@ async function run() {
       staff = await StaffMember.create({
         tenantId,
         ...data,
-        status: 'active',
+        employmentStatus: 'active',
         joiningDate: new Date('2020-06-01'),
       });
       staff = staff.toObject();
     }
     staffMembers.push(staff);
+  }
+
+  // Staff member with an uploaded document — exercises the document
+  // download route without needing a real S3/Minio upload at seed time.
+  let staffWithDocs = await StaffMember.findOne({ tenantId, employeeId: 'EMP-TEST-003' }, null, {
+    _bypassTenantScope: true,
+  }).lean();
+  if (!staffWithDocs) {
+    staffWithDocs = await StaffMember.create({
+      tenantId,
+      userId: new mongoose.Types.ObjectId(),
+      employeeId: 'EMP-TEST-003',
+      firstName: 'Carla',
+      lastName: 'Diaz',
+      designation: 'Librarian',
+      department: 'Library',
+      employmentStatus: 'active',
+      joiningDate: new Date('2021-03-01'),
+      documents: [
+        {
+          name: 'ID Proof.pdf',
+          key: 'staff/seed/id-proof.pdf',
+          uploadedAt: new Date('2021-03-02'),
+        },
+      ],
+    });
+    staffWithDocs = staffWithDocs.toObject();
+  }
+
+  // Staff member already on leave — exercises the status-transition UI/guard.
+  let staffOnLeave = await StaffMember.findOne({ tenantId, employeeId: 'EMP-TEST-004' }, null, {
+    _bypassTenantScope: true,
+  }).lean();
+  if (!staffOnLeave) {
+    staffOnLeave = await StaffMember.create({
+      tenantId,
+      userId: new mongoose.Types.ObjectId(),
+      employeeId: 'EMP-TEST-004',
+      firstName: 'Dev',
+      lastName: 'Kumar',
+      designation: 'Lab Assistant',
+      department: 'Academics',
+      employmentStatus: 'on_leave',
+      joiningDate: new Date('2022-01-10'),
+    });
+    staffOnLeave = staffOnLeave.toObject();
+  }
+
+  // A page-and-a-half of lightweight staff so pagination controls have
+  // something to page through.
+  const bulkStaffMembers = [];
+  for (let i = 1; i <= 25; i++) {
+    const employeeId = `EMP-BULK-${String(i).padStart(4, '0')}`;
+    let bulkStaff = await StaffMember.findOne({ tenantId, employeeId }, null, {
+      _bypassTenantScope: true,
+    }).lean();
+    if (!bulkStaff) {
+      bulkStaff = await StaffMember.create({
+        tenantId,
+        userId: new mongoose.Types.ObjectId(),
+        employeeId,
+        firstName: `Bulk${i}`,
+        lastName: 'Staff',
+        designation: 'Support Staff',
+        department: 'Operations',
+        employmentStatus: 'active',
+        joiningDate: new Date('2023-01-01'),
+      });
+      bulkStaff = bulkStaff.toObject();
+    }
+    bulkStaffMembers.push(bulkStaff);
   }
 
   // ── Leave Type ────────────────────────────────────────────────────────────
@@ -798,6 +869,9 @@ async function run() {
       employeeId: s.employeeId,
       userId: s.userId.toString(),
     })),
+    staffWithDocs: { _id: staffWithDocs._id.toString(), employeeId: staffWithDocs.employeeId },
+    staffOnLeave: { _id: staffOnLeave._id.toString(), employeeId: staffOnLeave.employeeId },
+    bulkStaffCount: bulkStaffMembers.length,
     timetable: timetable.map((t) => ({
       _id: t._id.toString(),
       sectionId: t.sectionId.toString(),

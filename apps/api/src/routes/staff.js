@@ -1,8 +1,15 @@
 import { Router } from 'express';
 import multer from 'multer';
+import { parse } from 'csv-parse/sync';
 import PDFDocument from 'pdfkit';
+import {
+  createStaffMemberSchema,
+  patchStaffMemberSchema,
+  staffCsvRowSchema,
+} from '@rooted/shared/schemas';
 import { authenticate } from '../middleware/authenticate.js';
 import { requirePermission } from '../middleware/requirePermission.js';
+import { validate } from '../middleware/validate.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { StaffMember } from '../models/StaffMember.js';
 import { LeaveType } from '../models/LeaveType.js';
@@ -17,6 +24,12 @@ import { Role } from '../models/Role.js';
 import { encryptField, decryptField } from '../utils/fieldEncryption.js';
 import { uploadBuffer, getSignedUrl } from '../services/storage.service.js';
 import { auditLog } from '../services/audit.service.js';
+import {
+  provisionStaffUser,
+  assertStaffMemberNotLinked,
+  setStaffAccessStatus,
+} from '../services/staffOnboarding.service.js';
+import { isValidStaffStatusTransition } from '../services/staffStatusTransitions.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -30,7 +43,10 @@ function hasPermission(req, perm) {
 
 async function resolveAndCachePermissions(req, _res, next) {
   try {
-    if (req.user?.systemRole === 'super_admin') { req._resolvedPermissions = []; return next(); }
+    if (req.user?.systemRole === 'super_admin') {
+      req._resolvedPermissions = [];
+      return next();
+    }
     const { TenantMembership: TM } = await import('../models/TenantMembership.js');
     const { Role: R } = await import('../models/Role.js');
     const { redis } = await import('../config/redis.js');
@@ -38,9 +54,15 @@ async function resolveAndCachePermissions(req, _res, next) {
     const userId = req.user.sub;
     const cacheKey = `perms:${tenantId}:${userId}`;
     const cached = await redis.get(cacheKey);
-    if (cached) { req._resolvedPermissions = JSON.parse(cached); return next(); }
+    if (cached) {
+      req._resolvedPermissions = JSON.parse(cached);
+      return next();
+    }
     const membership = await TM.findOne({ userId, tenantId, status: 'active' }).lean();
-    if (!membership) { req._resolvedPermissions = []; return next(); }
+    if (!membership) {
+      req._resolvedPermissions = [];
+      return next();
+    }
     const roles = await R.find({ _id: { $in: membership.roleIds }, tenantId }).lean();
     const permissions = [...new Set(roles.flatMap((r) => r.permissions))];
     await redis.setex(cacheKey, 60, JSON.stringify(permissions));
@@ -95,23 +117,41 @@ async function buildLeaveApprovalChain(staff, tenantId) {
 
 // ── Staff Members ─────────────────────────────────────────────────────────────
 
-router.post('/members', requirePermission('staff:write'), async (req, res, next) => {
-  try {
-    const tenantId = req.tenant._id;
-    const body = { ...req.body };
+router.post(
+  '/members',
+  requirePermission('staff:write'),
+  validate(createStaffMemberSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { email, ...body } = req.body;
 
-    if (body.governmentId) body.governmentId = encryptField(body.governmentId, tenantId);
-    if (body.bankAccount) body.bankAccount = encryptField(body.bankAccount, tenantId);
+      const userId = await provisionStaffUser({ tenantId, email });
+      await assertStaffMemberNotLinked(tenantId, userId);
 
-    const staff = await StaffMember.create({ tenantId, ...body });
-    const result = staff.toObject();
-    delete result.governmentId;
-    delete result.bankAccount;
-    res.status(201).json(result);
-  } catch (err) {
-    next(err);
+      if (body.governmentId) body.governmentId = encryptField(body.governmentId, tenantId);
+      if (body.bankAccount) body.bankAccount = encryptField(body.bankAccount, tenantId);
+
+      const staff = await StaffMember.create({ tenantId, userId, ...body });
+      const result = staff.toObject();
+      delete result.governmentId;
+      delete result.bankAccount;
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'staff.created',
+        target: { model: 'StaffMember', id: staff._id.toString() },
+        after: { ...body, email },
+        ip: req.ip,
+      });
+
+      res.status(201).json(result);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 router.get('/members', requirePermission('staff:read'), async (req, res, next) => {
   try {
@@ -124,12 +164,20 @@ router.get('/members', requirePermission('staff:read'), async (req, res, next) =
       filter.$or = [{ firstName: re }, { lastName: re }, { employeeId: re }];
     }
 
-    const members = await StaffMember.find(filter)
-      .select('-governmentId -bankAccount')
-      .sort({ lastName: 1, firstName: 1 })
-      .lean();
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Number(req.query.limit) || 20);
 
-    res.json(members);
+    const [members, total] = await Promise.all([
+      StaffMember.find(filter)
+        .select('-governmentId -bankAccount')
+        .sort({ lastName: 1, firstName: 1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      StaffMember.countDocuments(filter),
+    ]);
+
+    res.json({ members, total, page, pages: Math.ceil(total / limit) });
   } catch (err) {
     next(err);
   }
@@ -155,45 +203,183 @@ router.get('/members/:id', requirePermission('staff:read'), async (req, res, nex
   }
 });
 
-router.patch('/members/:id', requirePermission('staff:write'), async (req, res, next) => {
-  try {
-    const tenantId = req.tenant._id;
-    const updates = { ...req.body };
+router.patch(
+  '/members/:id',
+  requirePermission('staff:write'),
+  validate(patchStaffMemberSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const updates = { ...req.body };
 
-    if (updates.governmentId) updates.governmentId = encryptField(updates.governmentId, tenantId);
-    if (updates.bankAccount) updates.bankAccount = encryptField(updates.bankAccount, tenantId);
+      const existing = await StaffMember.findOne({ _id: req.params.id, tenantId });
+      if (!existing) return res.status(404).json({ error: 'Not found' });
 
-    const staff = await StaffMember.findOneAndUpdate(
-      { _id: req.params.id, tenantId },
-      { $set: updates },
-      { new: true }
-    ).select('-governmentId -bankAccount');
+      if (updates.employmentStatus && updates.employmentStatus !== existing.employmentStatus) {
+        if (!isValidStaffStatusTransition(existing.employmentStatus, updates.employmentStatus)) {
+          return res.status(400).json({
+            error: `Cannot move staff from ${existing.employmentStatus} to ${updates.employmentStatus}`,
+          });
+        }
+      }
 
-    if (!staff) return res.status(404).json({ error: 'Not found' });
-    res.json(staff);
-  } catch (err) {
-    next(err);
+      const before = {
+        firstName: existing.firstName,
+        lastName: existing.lastName,
+        designation: existing.designation,
+        department: existing.department,
+        employmentStatus: existing.employmentStatus,
+      };
+
+      if (updates.governmentId) updates.governmentId = encryptField(updates.governmentId, tenantId);
+      if (updates.bankAccount) updates.bankAccount = encryptField(updates.bankAccount, tenantId);
+
+      const staff = await StaffMember.findOneAndUpdate(
+        { _id: req.params.id, tenantId },
+        { $set: updates },
+        { new: true }
+      ).select('-governmentId -bankAccount');
+
+      if (updates.employmentStatus === 'resigned' || updates.employmentStatus === 'terminated') {
+        await setStaffAccessStatus(tenantId, existing.userId, 'suspended');
+      } else if (updates.employmentStatus === 'active') {
+        await setStaffAccessStatus(tenantId, existing.userId, 'active');
+      }
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'staff.updated',
+        target: { model: 'StaffMember', id: staff._id.toString() },
+        before,
+        after: {
+          firstName: updates.firstName ?? before.firstName,
+          lastName: updates.lastName ?? before.lastName,
+          designation: updates.designation ?? before.designation,
+          department: updates.department ?? before.department,
+          employmentStatus: updates.employmentStatus ?? before.employmentStatus,
+        },
+        ip: req.ip,
+      });
+
+      res.json(staff);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
-router.post('/members/:id/documents', requirePermission('staff:write'), upload.single('file'), async (req, res, next) => {
-  try {
-    if (!req.file) throw new AppError('No file uploaded', 400);
-    const tenantId = req.tenant._id;
-    const staff = await StaffMember.findOne({ _id: req.params.id, tenantId });
-    if (!staff) return res.status(404).json({ error: 'Not found' });
+router.post(
+  '/members/:id/documents',
+  requirePermission('staff:write'),
+  upload.single('file'),
+  async (req, res, next) => {
+    try {
+      if (!req.file) throw new AppError('No file uploaded', 400);
+      const tenantId = req.tenant._id;
+      const staff = await StaffMember.findOne({ _id: req.params.id, tenantId });
+      if (!staff) return res.status(404).json({ error: 'Not found' });
 
-    const key = `staff/${tenantId}/${staff._id}/docs/${Date.now()}-${req.file.originalname}`;
-    await uploadBuffer(key, req.file.buffer, req.file.mimetype);
+      const key = `staff/${tenantId}/${staff._id}/docs/${Date.now()}-${req.file.originalname}`;
+      await uploadBuffer(key, req.file.buffer, req.file.mimetype);
 
-    staff.documents.push({ name: req.body.name || req.file.originalname, key, uploadedAt: new Date() });
-    await staff.save();
+      staff.documents.push({
+        name: req.body.name || req.file.originalname,
+        key,
+        uploadedAt: new Date(),
+      });
+      await staff.save();
 
-    res.json({ document: staff.documents[staff.documents.length - 1] });
-  } catch (err) {
-    next(err);
+      res.json({ document: staff.documents[staff.documents.length - 1] });
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
+
+router.get(
+  '/members/:id/documents/:index/download',
+  requirePermission('staff:read'),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const staff = await StaffMember.findOne({ _id: req.params.id, tenantId }).lean();
+      if (!staff) return res.status(404).json({ error: 'Not found' });
+
+      const doc = staff.documents?.[Number(req.params.index)];
+      if (!doc?.key) return res.status(404).json({ error: 'Document not found' });
+
+      const url = await getSignedUrl(doc.key, 3600);
+      res.json({ url });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/members/import',
+  requirePermission('staff:write'),
+  upload.single('file'),
+  async (req, res, next) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+      const records = parse(req.file.buffer, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true,
+      });
+
+      const tenantId = req.tenant._id;
+      let created = 0;
+      let skipped = 0;
+      const errors = [];
+
+      for (const row of records) {
+        try {
+          const parsedRow = staffCsvRowSchema.parse(row);
+          const {
+            email,
+            employeeId,
+            designation,
+            department,
+            joiningDate,
+            phone,
+            firstName,
+            lastName,
+          } = parsedRow;
+
+          const userId = await provisionStaffUser({ tenantId, email });
+          const existing = await StaffMember.findOne({ tenantId, userId }).lean();
+          if (existing) {
+            skipped++;
+            continue;
+          }
+
+          await StaffMember.create({
+            tenantId,
+            userId,
+            firstName,
+            lastName,
+            employeeId: employeeId || undefined,
+            designation: designation || undefined,
+            department: department || undefined,
+            joiningDate: joiningDate ? new Date(joiningDate) : undefined,
+            phone: phone || undefined,
+          });
+          created++;
+        } catch (rowErr) {
+          errors.push({ row, reason: rowErr.message });
+        }
+      }
+
+      res.json({ created, skipped, errors });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 // ── Leave Types ───────────────────────────────────────────────────────────────
 
@@ -209,7 +395,13 @@ router.get('/leave-types', async (req, res, next) => {
 router.post('/leave-types', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
     const { name, maxDaysPerYear, isPaid, requiresApproval } = req.body;
-    const lt = await LeaveType.create({ tenantId: req.tenant._id, name, maxDaysPerYear, isPaid, requiresApproval });
+    const lt = await LeaveType.create({
+      tenantId: req.tenant._id,
+      name,
+      maxDaysPerYear,
+      isPaid,
+      requiresApproval,
+    });
     res.status(201).json(lt);
   } catch (err) {
     next(err);
@@ -244,7 +436,9 @@ router.post('/leave-requests', requirePermission('leave:write'), async (req, res
     if (balance) {
       const remaining = balance.total - balance.used;
       if (totalDays > remaining) {
-        return res.status(400).json({ error: `Insufficient leave balance. Available: ${remaining} days` });
+        return res
+          .status(400)
+          .json({ error: `Insufficient leave balance. Available: ${remaining} days` });
       }
     }
 
@@ -312,78 +506,86 @@ router.get('/leave-requests', requirePermission('leave:read'), async (req, res, 
   }
 });
 
-router.patch('/leave-requests/:id/approve', requirePermission('leave:approve'), async (req, res, next) => {
-  try {
-    const tenantId = req.tenant._id;
-    const lr = await LeaveRequest.findOne({ _id: req.params.id, tenantId });
-    if (!lr) return res.status(404).json({ error: 'Not found' });
-    if (lr.status !== 'pending') return res.status(400).json({ error: 'Request is not pending' });
+router.patch(
+  '/leave-requests/:id/approve',
+  requirePermission('leave:approve'),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const lr = await LeaveRequest.findOne({ _id: req.params.id, tenantId });
+      if (!lr) return res.status(404).json({ error: 'Not found' });
+      if (lr.status !== 'pending') return res.status(400).json({ error: 'Request is not pending' });
 
-    const step = lr.approvalChain[lr.currentApproverIndex];
-    if (!step) return res.status(400).json({ error: 'No pending approver step' });
+      const step = lr.approvalChain[lr.currentApproverIndex];
+      if (!step) return res.status(400).json({ error: 'No pending approver step' });
 
-    step.status = 'approved';
-    step.actedAt = new Date();
-
-    const nextIndex = lr.currentApproverIndex + 1;
-    if (nextIndex >= lr.approvalChain.length) {
-      lr.status = 'approved';
-
-      const year = lr.fromDate.getFullYear();
-      await LeaveBalance.findOneAndUpdate(
-        { tenantId, staffId: lr.staffId, leaveTypeId: lr.leaveTypeId, year },
-        { $inc: { used: lr.totalDays } }
-      );
-    } else {
-      lr.currentApproverIndex = nextIndex;
-    }
-
-    await lr.save();
-
-    await auditLog({
-      actorId: req.user.sub,
-      tenantId: tenantId.toString(),
-      action: 'leave.approved',
-      target: { type: 'LeaveRequest', id: lr._id.toString() },
-      ip: req.ip,
-    });
-
-    res.json(lr);
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.patch('/leave-requests/:id/reject', requirePermission('leave:approve'), async (req, res, next) => {
-  try {
-    const tenantId = req.tenant._id;
-    const { comment } = req.body;
-    const lr = await LeaveRequest.findOne({ _id: req.params.id, tenantId });
-    if (!lr) return res.status(404).json({ error: 'Not found' });
-    if (lr.status !== 'pending') return res.status(400).json({ error: 'Request is not pending' });
-
-    const step = lr.approvalChain[lr.currentApproverIndex];
-    if (step) {
-      step.status = 'rejected';
+      step.status = 'approved';
       step.actedAt = new Date();
-      step.comment = comment;
+
+      const nextIndex = lr.currentApproverIndex + 1;
+      if (nextIndex >= lr.approvalChain.length) {
+        lr.status = 'approved';
+
+        const year = lr.fromDate.getFullYear();
+        await LeaveBalance.findOneAndUpdate(
+          { tenantId, staffId: lr.staffId, leaveTypeId: lr.leaveTypeId, year },
+          { $inc: { used: lr.totalDays } }
+        );
+      } else {
+        lr.currentApproverIndex = nextIndex;
+      }
+
+      await lr.save();
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'leave.approved',
+        target: { type: 'LeaveRequest', id: lr._id.toString() },
+        ip: req.ip,
+      });
+
+      res.json(lr);
+    } catch (err) {
+      next(err);
     }
-    lr.status = 'rejected';
-    await lr.save();
-
-    await auditLog({
-      actorId: req.user.sub,
-      tenantId: tenantId.toString(),
-      action: 'leave.rejected',
-      target: { type: 'LeaveRequest', id: lr._id.toString() },
-      ip: req.ip,
-    });
-
-    res.json(lr);
-  } catch (err) {
-    next(err);
   }
-});
+);
+
+router.patch(
+  '/leave-requests/:id/reject',
+  requirePermission('leave:approve'),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { comment } = req.body;
+      const lr = await LeaveRequest.findOne({ _id: req.params.id, tenantId });
+      if (!lr) return res.status(404).json({ error: 'Not found' });
+      if (lr.status !== 'pending') return res.status(400).json({ error: 'Request is not pending' });
+
+      const step = lr.approvalChain[lr.currentApproverIndex];
+      if (step) {
+        step.status = 'rejected';
+        step.actedAt = new Date();
+        step.comment = comment;
+      }
+      lr.status = 'rejected';
+      await lr.save();
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'leave.rejected',
+        target: { type: 'LeaveRequest', id: lr._id.toString() },
+        ip: req.ip,
+      });
+
+      res.json(lr);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 // ── Salary Structures ─────────────────────────────────────────────────────────
 
@@ -476,56 +678,64 @@ async function generateSalaryPdf(staff, slip, month, year) {
   });
 }
 
-router.post('/salary-slips/generate', requirePermission('payroll:write'), async (req, res, next) => {
-  try {
-    const tenantId = req.tenant._id;
-    const { staffId, month, year } = req.body;
+router.post(
+  '/salary-slips/generate',
+  requirePermission('payroll:write'),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { staffId, month, year } = req.body;
 
-    const staff = await StaffMember.findOne({ _id: staffId, tenantId }).lean();
-    if (!staff) return res.status(404).json({ error: 'Staff not found' });
-    if (!staff.salaryStructureId) return res.status(400).json({ error: 'Staff has no salary structure assigned' });
+      const staff = await StaffMember.findOne({ _id: staffId, tenantId }).lean();
+      if (!staff) return res.status(404).json({ error: 'Staff not found' });
+      if (!staff.salaryStructureId)
+        return res.status(400).json({ error: 'Staff has no salary structure assigned' });
 
-    const structure = await SalaryStructure.findOne({ _id: staff.salaryStructureId, tenantId }).lean();
-    if (!structure) return res.status(404).json({ error: 'Salary structure not found' });
+      const structure = await SalaryStructure.findOne({
+        _id: staff.salaryStructureId,
+        tenantId,
+      }).lean();
+      if (!structure) return res.status(404).json({ error: 'Salary structure not found' });
 
-    const resolvedComponents = resolveComponents(structure.components);
+      const resolvedComponents = resolveComponents(structure.components);
 
-    const grossEarnings = resolvedComponents
-      .filter((c) => c.type === 'earning')
-      .reduce((sum, c) => sum + c.amount, 0);
-    const totalDeductions = resolvedComponents
-      .filter((c) => c.type === 'deduction')
-      .reduce((sum, c) => sum + c.amount, 0);
-    const netPay = grossEarnings - totalDeductions;
+      const grossEarnings = resolvedComponents
+        .filter((c) => c.type === 'earning')
+        .reduce((sum, c) => sum + c.amount, 0);
+      const totalDeductions = resolvedComponents
+        .filter((c) => c.type === 'deduction')
+        .reduce((sum, c) => sum + c.amount, 0);
+      const netPay = grossEarnings - totalDeductions;
 
-    const slipData = {
-      tenantId,
-      staffId,
-      month,
-      year,
-      components: resolvedComponents,
-      grossEarnings,
-      totalDeductions,
-      netPay,
-      status: 'generated',
-    };
+      const slipData = {
+        tenantId,
+        staffId,
+        month,
+        year,
+        components: resolvedComponents,
+        grossEarnings,
+        totalDeductions,
+        netPay,
+        status: 'generated',
+      };
 
-    const pdfBuffer = await generateSalaryPdf(staff, slipData, month, year);
-    const pdfKey = `salary-slips/${tenantId}/${staffId}/${year}-${month}.pdf`;
-    await uploadBuffer(pdfKey, pdfBuffer, 'application/pdf');
-    slipData.pdfKey = pdfKey;
+      const pdfBuffer = await generateSalaryPdf(staff, slipData, month, year);
+      const pdfKey = `salary-slips/${tenantId}/${staffId}/${year}-${month}.pdf`;
+      await uploadBuffer(pdfKey, pdfBuffer, 'application/pdf');
+      slipData.pdfKey = pdfKey;
 
-    const slip = await SalarySlip.findOneAndUpdate(
-      { tenantId, staffId, month, year },
-      { $set: slipData },
-      { upsert: true, new: true }
-    );
+      const slip = await SalarySlip.findOneAndUpdate(
+        { tenantId, staffId, month, year },
+        { $set: slipData },
+        { upsert: true, new: true }
+      );
 
-    res.status(201).json(slip);
-  } catch (err) {
-    next(err);
+      res.status(201).json(slip);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 router.get('/salary-slips', requirePermission('payroll:read'), async (req, res, next) => {
   try {
@@ -545,18 +755,25 @@ router.get('/salary-slips', requirePermission('payroll:read'), async (req, res, 
   }
 });
 
-router.get('/salary-slips/:id/download', requirePermission('payroll:read'), async (req, res, next) => {
-  try {
-    const slip = await SalarySlip.findOne({ _id: req.params.id, tenantId: req.tenant._id }).lean();
-    if (!slip) return res.status(404).json({ error: 'Not found' });
-    if (!slip.pdfKey) return res.status(404).json({ error: 'PDF not generated' });
+router.get(
+  '/salary-slips/:id/download',
+  requirePermission('payroll:read'),
+  async (req, res, next) => {
+    try {
+      const slip = await SalarySlip.findOne({
+        _id: req.params.id,
+        tenantId: req.tenant._id,
+      }).lean();
+      if (!slip) return res.status(404).json({ error: 'Not found' });
+      if (!slip.pdfKey) return res.status(404).json({ error: 'PDF not generated' });
 
-    const url = await getSignedUrl(slip.pdfKey, 3600);
-    res.json({ url });
-  } catch (err) {
-    next(err);
+      const url = await getSignedUrl(slip.pdfKey, 3600);
+      res.json({ url });
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 // ── Staff Attendance ──────────────────────────────────────────────────────────
 
