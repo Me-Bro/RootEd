@@ -1,10 +1,22 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { ChevronDown } from 'lucide-react';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
-import { Badge } from '../../components/ui/Badge.jsx';
+import { EmptyState } from '../../components/ui/EmptyState.jsx';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+} from '../../components/ui/dropdown-menu.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
+import DefaulterRing from '../../components/attendance-report/DefaulterRing.jsx';
+import CallRow from '../../components/attendance-report/CallRow.jsx';
+import ShareSummaryCard from '../../components/attendance-report/ShareSummaryCard.jsx';
 
 const EMPTY_ARRAY = [];
 
@@ -41,11 +53,14 @@ function downloadCsv(report) {
 export default function AttendanceReportPage() {
   const [searchParams] = useSearchParams();
   const [sectionId, setSectionId] = useState(searchParams.get('sectionId') || '');
-  const [subjectId, setSubjectId] = useState('');
-  const [from, setFrom] = useState(defaultFrom);
-  const [to, setTo] = useState(() => isoDate(new Date()));
+  const [subjectId, setSubjectId] = useState(searchParams.get('subjectId') || '');
+  const [from, setFrom] = useState(searchParams.get('from') || defaultFrom);
+  const [to, setTo] = useState(() => searchParams.get('to') || isoDate(new Date()));
 
   const { classes } = useClassSections();
+  const currentSection = classes
+    .flatMap((c) => (c.sections || []).map((s) => ({ ...s, className: c.name })))
+    .find((s) => s._id === sectionId);
   const classId = classes.find((c) => (c.sections || []).some((s) => s._id === sectionId))?._id;
 
   const { data: subjects = EMPTY_ARRAY } = useQuery({
@@ -53,11 +68,14 @@ export default function AttendanceReportPage() {
     queryFn: () => api.get(`/academic/subjects?classId=${classId}`).then((r) => r.data),
     enabled: Boolean(classId),
   });
+  const currentSubject = subjects.find((s) => s._id === subjectId);
 
   const {
     data: report,
     isLoading,
     isError,
+    refetch,
+    isFetching,
   } = useQuery({
     queryKey: ['attendance-report', sectionId, subjectId, from, to],
     queryFn: () =>
@@ -70,132 +88,135 @@ export default function AttendanceReportPage() {
     enabled: Boolean(sectionId && from && to),
   });
 
+  const sortedStudents = useMemo(() => {
+    if (!report) return EMPTY_ARRAY;
+    // Worst attendance first — the whole point of this screen is triage, not
+    // an alphabetical roster. Students with no attendance history (pct ===
+    // null) sort last, same rule as Attendance's smart sort.
+    return [...report.students].sort((a, b) => (a.pct ?? 101) - (b.pct ?? 101));
+  }, [report]);
+
+  const defaulterCount = useMemo(
+    () => (report ? report.students.filter((s) => s.isDefaulter).length : 0),
+    [report]
+  );
+
+  function handleCall(student) {
+    window.location.href = `tel:${student.guardianPhone}`;
+  }
+
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 pb-4">
       <h1 className="text-2xl font-semibold">Attendance Report</h1>
 
-      <div className="flex flex-wrap gap-4 items-end">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Section</label>
-          <select
-            value={sectionId}
-            onChange={(e) => {
-              setSectionId(e.target.value);
-              setSubjectId('');
-            }}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-          >
-            <option value="">— Select section —</option>
+      <div className="flex flex-wrap items-center gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium">
+            {currentSection
+              ? `${currentSection.className} - ${currentSection.name}`
+              : 'Select section'}
+            <ChevronDown size={14} />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
             {classes.map((c) => (
-              <optgroup key={c._id} label={c.name}>
+              <DropdownMenuGroup key={c._id}>
+                <DropdownMenuLabel>{c.name}</DropdownMenuLabel>
                 {(c.sections || []).map((s) => (
-                  <option key={s._id} value={s._id}>
-                    {s.name}
-                  </option>
+                  <DropdownMenuItem
+                    key={s._id}
+                    onClick={() => {
+                      setSectionId(s._id);
+                      setSubjectId('');
+                    }}
+                  >
+                    {c.name} - {s.name}
+                  </DropdownMenuItem>
                 ))}
-              </optgroup>
+              </DropdownMenuGroup>
             ))}
-          </select>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Subject (optional)
-          </label>
-          <select
-            value={subjectId}
-            onChange={(e) => setSubjectId(e.target.value)}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger
             disabled={!sectionId}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium disabled:opacity-50"
           >
-            <option value="">— All subjects —</option>
+            {currentSubject ? currentSubject.name : 'All subjects'}
+            <ChevronDown size={14} />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => setSubjectId('')}>All subjects</DropdownMenuItem>
             {subjects.map((sub) => (
-              <option key={sub._id} value={sub._id}>
+              <DropdownMenuItem key={sub._id} onClick={() => setSubjectId(sub._id)}>
                 {sub.name}
-              </option>
+              </DropdownMenuItem>
             ))}
-          </select>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">From</label>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <div className="flex items-center gap-1.5 rounded-full border border-border bg-card px-2 py-1">
+          <label className="sr-only" htmlFor="attendance-report-from">
+            From
+          </label>
           <input
+            id="attendance-report-from"
             type="date"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            className="w-[124px] border-none bg-transparent text-xs outline-none"
           />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">To</label>
+          <span className="text-xs text-muted-foreground">to</span>
+          <label className="sr-only" htmlFor="attendance-report-to">
+            To
+          </label>
           <input
+            id="attendance-report-to"
             type="date"
             value={to}
             onChange={(e) => setTo(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            className="w-[124px] border-none bg-transparent text-xs outline-none"
           />
         </div>
-        {report && report.students.length > 0 && (
-          <Button variant="outline" onClick={() => downloadCsv(report)}>
-            Export CSV
-          </Button>
-        )}
       </div>
 
-      {!sectionId && <p className="text-gray-400 text-sm">Select a section to view the report</p>}
-      {isLoading && <p className="text-sm text-muted-foreground">Loading report…</p>}
-      {isError && <p className="text-sm text-red-500">Failed to load attendance report</p>}
+      {!sectionId && <EmptyState title="Select a section to view the report" />}
 
-      {report && (
+      {sectionId && isLoading && <p className="text-sm text-muted-foreground">Loading report…</p>}
+
+      {sectionId && isError && (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <span>Failed to load attendance report.</span>
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            {isFetching ? 'Retrying…' : 'Retry'}
+          </Button>
+        </div>
+      )}
+
+      {report && report.students.length === 0 && (
+        <EmptyState title="No active students in this section" />
+      )}
+
+      {report && report.students.length > 0 && (
         <>
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              Class average:{' '}
-              <span className="font-semibold text-gray-900 dark:text-gray-100">
-                {report.classAveragePct === null ? 'No records yet' : `${report.classAveragePct}%`}
-              </span>
-              {' · '}Defaulter threshold: {report.thresholdPct}%
-            </p>
+          <DefaulterRing
+            classAveragePct={report.classAveragePct}
+            thresholdPct={report.thresholdPct}
+            defaulterCount={defaulterCount}
+          />
+
+          <div className="flex flex-col divide-y divide-border rounded-lg border border-border">
+            {sortedStudents.map((s) => (
+              <CallRow key={s.studentId} student={s} onCall={handleCall} />
+            ))}
           </div>
 
-          {report.students.length === 0 ? (
-            <p className="text-gray-400 text-sm">No active students in this section</p>
-          ) : (
-            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-800 text-left">
-                  <tr>
-                    <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
-                      Student
-                    </th>
-                    <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
-                      Admission No
-                    </th>
-                    <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
-                      Present / Total
-                    </th>
-                    <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">%</th>
-                    <th className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-                  {report.students.map((s) => (
-                    <tr key={s.studentId} className="bg-white dark:bg-gray-900">
-                      <td className="px-4 py-3">
-                        {s.firstName} {s.lastName}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500">{s.admissionNo}</td>
-                      <td className="px-4 py-3">
-                        {s.presentCount}/{s.totalCount}
-                      </td>
-                      <td className="px-4 py-3">{s.pct === null ? '—' : `${s.pct}%`}</td>
-                      <td className="px-4 py-3">
-                        {s.isDefaulter && <Badge variant="danger">Defaulter</Badge>}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <div className="sticky bottom-0 z-10 -mx-6 flex gap-2 border-t border-border bg-card p-3">
+            <ShareSummaryCard report={report} />
+            <Button variant="outline" onClick={() => downloadCsv(report)}>
+              Export CSV
+            </Button>
+          </div>
         </>
       )}
     </div>

@@ -34,6 +34,10 @@ export function computeAttendanceStats(students, records, thresholdPct) {
       firstName: student.firstName,
       lastName: student.lastName,
       admissionNo: student.admissionNo,
+      // Guardian phone for report/call-chip consumers — already on the
+      // Student document (Student.find() has no restrictive projection), so
+      // no query change is needed to surface it here.
+      guardianPhone: student.parentContacts?.[0]?.phone ?? null,
       presentCount,
       totalCount,
       pct,
