@@ -1,16 +1,27 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api.js';
-import { Badge } from '../../components/ui/Badge.jsx';
+import { useAuth } from '../../contexts/useAuth.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
 } from '../../components/ui/dialog.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
-import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
+import { EmptyState } from '../../components/ui/EmptyState.jsx';
+import YearCard from '../../components/academic-years/YearCard.jsx';
+import AddTermSheet from '../../components/academic-years/AddTermSheet.jsx';
+import ActivateConfirm from '../../components/academic-years/ActivateConfirm.jsx';
 
-function CreateYearModal({ open, onOpenChange }) {
+// Unchanged from today except the copy: creating a year auto-activates it and
+// deactivates every other one (POST /academic/years does this server-side in
+// one transaction-less updateMany-then-create), so the dialog says so up front
+// instead of surprising the admin after the fact.
+function CreateYearModal({ open, onOpenChange, currentActiveName }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({ name: '', startDate: '', endDate: '' });
   const [error, setError] = useState('');
@@ -38,16 +49,43 @@ function CreateYearModal({ open, onOpenChange }) {
         </DialogHeader>
         <form
           id="create-year"
-          onSubmit={(e) => { e.preventDefault(); mutation.mutate(form); }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            mutation.mutate(form);
+          }}
           className="flex flex-col gap-4"
         >
-          <Input label="Name" value={form.name} onChange={update('name')} required placeholder="2025–26" />
-          <Input label="Start Date" type="date" value={form.startDate} onChange={update('startDate')} required />
-          <Input label="End Date" type="date" value={form.endDate} onChange={update('endDate')} required />
+          <Input
+            label="Name"
+            value={form.name}
+            onChange={update('name')}
+            required
+            placeholder="2025–26"
+          />
+          <Input
+            label="Start Date"
+            type="date"
+            value={form.startDate}
+            onChange={update('startDate')}
+            required
+          />
+          <Input
+            label="End Date"
+            type="date"
+            value={form.endDate}
+            onChange={update('endDate')}
+            required
+          />
+          <p className="text-xs text-muted-foreground">
+            This year becomes active immediately
+            {currentActiveName ? `, replacing ${currentActiveName}` : ''}.
+          </p>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button type="submit" form="create-year" disabled={mutation.isPending}>
             {mutation.isPending ? 'Creating…' : 'Create'}
           </Button>
@@ -58,61 +96,125 @@ function CreateYearModal({ open, onOpenChange }) {
 }
 
 export default function AcademicYearsPage() {
+  const { user } = useAuth();
+  const canWrite = (user?.permissions ?? []).includes('tenant:admin');
   const queryClient = useQueryClient();
-  const [showCreate, setShowCreate] = useState(false);
 
-  const { data: years = [], isLoading, error } = useQuery({
+  const [showCreate, setShowCreate] = useState(false);
+  // The active year is always expanded regardless of this value (see
+  // isExpanded below) — this only tracks which *inactive* year, if any, the
+  // user has manually expanded. Single id, not a set: expanding one inactive
+  // year collapses whichever other inactive year was open (accordion).
+  const [expandedYearId, setExpandedYearId] = useState(null);
+  const [addTermFor, setAddTermFor] = useState(null); // yearId | null
+  const [confirmActivate, setConfirmActivate] = useState(null); // year | null
+
+  const {
+    data: years = [],
+    isLoading: yearsLoading,
+    error: yearsError,
+  } = useQuery({
     queryKey: ['academic-years'],
     queryFn: () => api.get('/academic/years').then((r) => r.data),
   });
 
-  const activate = useMutation({
-    mutationFn: (id) => api.patch(`/academic/years/${id}/activate`).then((r) => r.data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['academic-years'] }),
+  // One unfiltered call for every term the tenant has, grouped client-side by
+  // year — the dataset is small and bounded (spec: ~3 years / 6 terms), so
+  // this is cheaper than a lazy per-year fetch and it's the only way to show
+  // an accurate "N terms" count on collapsed (never-expanded) cards, which
+  // the Definition of Done requires.
+  const { data: allTerms = [] } = useQuery({
+    queryKey: ['academic-terms'],
+    queryFn: () => api.get('/academic/terms').then((r) => r.data),
   });
+
+  const termsByYear = useMemo(() => {
+    const map = {};
+    for (const term of allTerms) {
+      const key = term.academicYearId;
+      if (!map[key]) map[key] = [];
+      map[key].push(term);
+    }
+    return map;
+  }, [allTerms]);
+
+  const activeYear = years.find((y) => y.isActive);
+
+  const activateMutation = useMutation({
+    mutationFn: (id) => api.patch(`/academic/years/${id}/activate`).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['academic-years'] });
+      setConfirmActivate(null);
+    },
+  });
+
+  function isExpanded(year) {
+    return year.isActive || year._id === expandedYearId;
+  }
+
+  function handleToggle(year) {
+    setExpandedYearId((prev) => (prev === year._id ? null : year._id));
+  }
+
+  function cancelActivate() {
+    activateMutation.reset();
+    setConfirmActivate(null);
+  }
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Academic Years"
-        action={<Button onClick={() => setShowCreate(true)}>New Year</Button>}
+        description={`${years.length} year${years.length === 1 ? '' : 's'} · ${allTerms.length} term${allTerms.length === 1 ? '' : 's'}`}
+        action={canWrite && <Button onClick={() => setShowCreate(true)}>New Year</Button>}
       />
 
-      {error && <p className="text-destructive">Failed to load academic years</p>}
+      {yearsError && <p className="text-sm text-destructive">Failed to load academic years</p>}
 
-      <DataTable
-        headers={['Name', 'Start Date', 'End Date', 'Status', 'Actions']}
-        isLoading={isLoading}
-        isEmpty={years.length === 0}
-        emptyMessage="No academic years yet"
-      >
-        {years.map((y) => (
-          <TableRow key={y._id} className="bg-card">
-            <TableCell className="px-4 py-3 font-medium">{y.name}</TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">{new Date(y.startDate).toLocaleDateString()}</TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">{new Date(y.endDate).toLocaleDateString()}</TableCell>
-            <TableCell className="px-4 py-3">
-              {y.isActive
-                ? <Badge variant="success">Active</Badge>
-                : <Badge variant="default">Inactive</Badge>}
-            </TableCell>
-            <TableCell className="px-4 py-3">
-              {!y.isActive && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => activate.mutate(y._id)}
-                  disabled={activate.isPending}
-                >
-                  Activate
-                </Button>
-              )}
-            </TableCell>
-          </TableRow>
+      {yearsLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+
+      {!yearsLoading && !yearsError && years.length === 0 && (
+        <EmptyState
+          title="No academic years yet"
+          description={canWrite ? 'Create the first academic year to get started.' : undefined}
+        />
+      )}
+
+      <div className="flex flex-col gap-3">
+        {years.map((year) => (
+          <YearCard
+            key={year._id}
+            year={year}
+            terms={termsByYear[year._id] ?? []}
+            expanded={isExpanded(year)}
+            onToggle={() => handleToggle(year)}
+            onSetActive={() => setConfirmActivate(year)}
+            onAddTerm={() => setAddTermFor(year._id)}
+            canWrite={canWrite}
+          />
         ))}
-      </DataTable>
+      </div>
 
-      <CreateYearModal open={showCreate} onOpenChange={setShowCreate} />
+      <CreateYearModal
+        open={showCreate}
+        onOpenChange={setShowCreate}
+        currentActiveName={activeYear?.name}
+      />
+
+      <AddTermSheet
+        open={Boolean(addTermFor)}
+        yearId={addTermFor}
+        existingTerms={addTermFor ? (termsByYear[addTermFor] ?? []) : []}
+        onClose={() => setAddTermFor(null)}
+      />
+
+      <ActivateConfirm
+        year={confirmActivate}
+        isPending={activateMutation.isPending}
+        error={activateMutation.isError}
+        onConfirm={() => activateMutation.mutate(confirmActivate._id)}
+        onCancel={cancelActivate}
+      />
     </div>
   );
 }
