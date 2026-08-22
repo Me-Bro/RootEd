@@ -24,6 +24,7 @@ import StaffPage from './pages/staff/StaffPage.jsx';
 import StaffDetailPage from './pages/staff/StaffDetailPage.jsx';
 import LeaveRequestsPage from './pages/staff/LeaveRequestsPage.jsx';
 import SalaryPage from './pages/staff/SalaryPage.jsx';
+import SalaryStructuresPage from './pages/staff/SalaryStructuresPage.jsx';
 import ExpensesPage from './pages/expense/ExpensesPage.jsx';
 import BudgetsPage from './pages/expense/BudgetsPage.jsx';
 import FeesPage from './pages/fee/FeesPage.jsx';
@@ -216,6 +217,14 @@ function AppRoutes() {
           element={
             <RequirePermission permission="payroll:read">
               <SalaryPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/staff/salary-structures"
+          element={
+            <RequirePermission permission="payroll:read">
+              <SalaryStructuresPage />
             </RequirePermission>
           }
         />
