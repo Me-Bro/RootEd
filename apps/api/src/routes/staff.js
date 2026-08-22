@@ -6,6 +6,10 @@ import {
   createStaffMemberSchema,
   patchStaffMemberSchema,
   staffCsvRowSchema,
+  createLeaveRequestSchema,
+  rejectLeaveRequestSchema,
+  createLeaveTypeSchema,
+  patchLeaveTypeSchema,
 } from '@rooted/shared/schemas';
 import { authenticate } from '../middleware/authenticate.js';
 import { requirePermission } from '../middleware/requirePermission.js';
@@ -28,8 +32,14 @@ import {
   provisionStaffUser,
   assertStaffMemberNotLinked,
   setStaffAccessStatus,
+  seedLeaveBalancesForStaff,
 } from '../services/staffOnboarding.service.js';
 import { isValidStaffStatusTransition } from '../services/staffStatusTransitions.js';
+import {
+  canFileLeaveForStaff,
+  hasOverlappingLeaveRequest,
+  isCurrentApprover,
+} from '../services/leaveRequestRules.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -133,6 +143,7 @@ router.post(
       if (body.bankAccount) body.bankAccount = encryptField(body.bankAccount, tenantId);
 
       const staff = await StaffMember.create({ tenantId, userId, ...body });
+      await seedLeaveBalancesForStaff(tenantId, staff._id, new Date().getFullYear());
       const result = staff.toObject();
       delete result.governmentId;
       delete result.bankAccount;
@@ -178,6 +189,21 @@ router.get('/members', requirePermission('staff:read'), async (req, res, next) =
     ]);
 
     res.json({ members, total, page, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// No staff:read requirement — any tenant member may look up their own linked
+// staff record (needed to self-file leave without staff-directory access).
+router.get('/members/me', async (req, res, next) => {
+  try {
+    const tenantId = req.tenant._id;
+    const staff = await StaffMember.findOne({ tenantId, userId: req.user.sub })
+      .select('-governmentId -bankAccount')
+      .lean();
+    if (!staff) return res.status(404).json({ error: 'No staff record linked to this account' });
+    res.json(staff);
   } catch (err) {
     next(err);
   }
@@ -383,7 +409,7 @@ router.post(
 
 // ── Leave Types ───────────────────────────────────────────────────────────────
 
-router.get('/leave-types', async (req, res, next) => {
+router.get('/leave-types', requirePermission('leave:read'), async (req, res, next) => {
   try {
     const types = await LeaveType.find({ tenantId: req.tenant._id }).lean();
     res.json(types);
@@ -392,31 +418,54 @@ router.get('/leave-types', async (req, res, next) => {
   }
 });
 
-router.post('/leave-types', requirePermission('tenant:admin'), async (req, res, next) => {
-  try {
-    const { name, maxDaysPerYear, isPaid, requiresApproval } = req.body;
-    const lt = await LeaveType.create({
-      tenantId: req.tenant._id,
-      name,
-      maxDaysPerYear,
-      isPaid,
-      requiresApproval,
-    });
-    res.status(201).json(lt);
-  } catch (err) {
-    next(err);
+router.post(
+  '/leave-types',
+  requirePermission('tenant:admin'),
+  validate(createLeaveTypeSchema),
+  async (req, res, next) => {
+    try {
+      const { name, maxDaysPerYear, isPaid, requiresApproval } = req.body;
+      const lt = await LeaveType.create({
+        tenantId: req.tenant._id,
+        name,
+        maxDaysPerYear,
+        isPaid,
+        requiresApproval,
+      });
+      res.status(201).json(lt);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
-router.patch('/leave-types/:id', requirePermission('tenant:admin'), async (req, res, next) => {
+router.patch(
+  '/leave-types/:id',
+  requirePermission('tenant:admin'),
+  validate(patchLeaveTypeSchema),
+  async (req, res, next) => {
+    try {
+      const lt = await LeaveType.findOneAndUpdate(
+        { _id: req.params.id, tenantId: req.tenant._id },
+        { $set: req.body },
+        { new: true }
+      );
+      if (!lt) return res.status(404).json({ error: 'Not found' });
+      res.json(lt);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get('/leave-balances', requirePermission('leave:read'), async (req, res, next) => {
   try {
-    const lt = await LeaveType.findOneAndUpdate(
-      { _id: req.params.id, tenantId: req.tenant._id },
-      { $set: req.body },
-      { new: true }
-    );
-    if (!lt) return res.status(404).json({ error: 'Not found' });
-    res.json(lt);
+    const filter = { tenantId: req.tenant._id };
+    if (req.query.staffId) filter.staffId = req.query.staffId;
+    filter.year = req.query.year ? Number(req.query.year) : new Date().getFullYear();
+
+    const balances = await LeaveBalance.find(filter).populate('leaveTypeId', 'name').lean();
+    res.json(balances);
   } catch (err) {
     next(err);
   }
@@ -424,64 +473,96 @@ router.patch('/leave-types/:id', requirePermission('tenant:admin'), async (req, 
 
 // ── Leave Requests ────────────────────────────────────────────────────────────
 
-router.post('/leave-requests', requirePermission('leave:write'), async (req, res, next) => {
-  try {
-    const tenantId = req.tenant._id;
-    const { staffId, leaveTypeId, fromDate, toDate, reason } = req.body;
+router.post(
+  '/leave-requests',
+  requirePermission('leave:write'),
+  validate(createLeaveRequestSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { staffId, leaveTypeId, fromDate, toDate, reason } = req.body;
 
-    const totalDays = calcTotalDays(fromDate, toDate);
-
-    const year = new Date(fromDate).getFullYear();
-    const balance = await LeaveBalance.findOne({ tenantId, staffId, leaveTypeId, year });
-    if (balance) {
-      const remaining = balance.total - balance.used;
-      if (totalDays > remaining) {
-        return res
-          .status(400)
-          .json({ error: `Insufficient leave balance. Available: ${remaining} days` });
-      }
-    }
-
-    const staff = await StaffMember.findOne({ _id: staffId, tenantId }).lean();
-    if (!staff) return res.status(404).json({ error: 'Staff not found' });
-
-    const approvalChain = await buildLeaveApprovalChain(staff, tenantId);
-
-    const from = new Date(fromDate);
-    const to = new Date(toDate);
-    const conflictFlags = [];
-
-    const timetableEntries = await Timetable.find({ tenantId, teacherId: staff.userId }).lean();
-    for (const entry of timetableEntries) {
-      let current = new Date(from);
-      while (current <= to) {
-        if (current.getDay() === entry.dayOfWeek) {
-          const dateStr = current.toISOString().split('T')[0];
-          conflictFlags.push(`has_classes_on_${dateStr}`);
+      if (req.user?.systemRole !== 'super_admin') {
+        const actorStaff = await StaffMember.findOne({ tenantId, userId: req.user.sub }).lean();
+        const allowed = canFileLeaveForStaff({
+          staffId,
+          actorStaffId: actorStaff?._id,
+          actorPermissions: req._resolvedPermissions ?? [],
+        });
+        if (!allowed) {
+          return res
+            .status(403)
+            .json({ error: 'Cannot file leave on behalf of this staff member' });
         }
-        current.setDate(current.getDate() + 1);
       }
+
+      const totalDays = calcTotalDays(fromDate, toDate);
+
+      const year = new Date(fromDate).getFullYear();
+      const balance = await LeaveBalance.findOne({ tenantId, staffId, leaveTypeId, year });
+      if (balance) {
+        const remaining = balance.total - balance.used;
+        if (totalDays > remaining) {
+          return res
+            .status(400)
+            .json({ error: `Insufficient leave balance. Available: ${remaining} days` });
+        }
+      }
+
+      const staff = await StaffMember.findOne({ _id: staffId, tenantId }).lean();
+      if (!staff) return res.status(404).json({ error: 'Staff not found' });
+
+      const existingRequests = await LeaveRequest.find({
+        tenantId,
+        staffId,
+        status: { $in: ['pending', 'approved'] },
+      })
+        .select('fromDate toDate status')
+        .lean();
+      if (hasOverlappingLeaveRequest(existingRequests, new Date(fromDate), new Date(toDate))) {
+        return res.status(409).json({
+          error: 'Staff member already has a pending or approved leave request in this date range',
+        });
+      }
+
+      const approvalChain = await buildLeaveApprovalChain(staff, tenantId);
+
+      const from = new Date(fromDate);
+      const to = new Date(toDate);
+      const conflictFlags = [];
+
+      const timetableEntries = await Timetable.find({ tenantId, teacherId: staff.userId }).lean();
+      for (const entry of timetableEntries) {
+        let current = new Date(from);
+        while (current <= to) {
+          if (current.getDay() === entry.dayOfWeek) {
+            const dateStr = current.toISOString().split('T')[0];
+            conflictFlags.push(`has_classes_on_${dateStr}`);
+          }
+          current.setDate(current.getDate() + 1);
+        }
+      }
+
+      const uniqueFlags = [...new Set(conflictFlags)];
+
+      const leaveReq = await LeaveRequest.create({
+        tenantId,
+        staffId,
+        leaveTypeId,
+        fromDate: from,
+        toDate: to,
+        totalDays,
+        reason,
+        approvalChain,
+        conflictFlags: uniqueFlags,
+      });
+
+      res.status(201).json(leaveReq);
+    } catch (err) {
+      next(err);
     }
-
-    const uniqueFlags = [...new Set(conflictFlags)];
-
-    const leaveReq = await LeaveRequest.create({
-      tenantId,
-      staffId,
-      leaveTypeId,
-      fromDate: from,
-      toDate: to,
-      totalDays,
-      reason,
-      approvalChain,
-      conflictFlags: uniqueFlags,
-    });
-
-    res.status(201).json(leaveReq);
-  } catch (err) {
-    next(err);
   }
-});
+);
 
 router.get('/leave-requests', requirePermission('leave:read'), async (req, res, next) => {
   try {
@@ -494,13 +575,21 @@ router.get('/leave-requests', requirePermission('leave:read'), async (req, res, 
       if (req.query.to) filter.fromDate.$lte = new Date(req.query.to);
     }
 
-    const requests = await LeaveRequest.find(filter)
-      .populate('staffId', 'firstName lastName employeeId')
-      .populate('leaveTypeId', 'name')
-      .sort({ createdAt: -1 })
-      .lean();
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Number(req.query.limit) || 20);
 
-    res.json(requests);
+    const [requests, total] = await Promise.all([
+      LeaveRequest.find(filter)
+        .populate('staffId', 'firstName lastName employeeId')
+        .populate('leaveTypeId', 'name')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      LeaveRequest.countDocuments(filter),
+    ]);
+
+    res.json({ requests, total, page, pages: Math.ceil(total / limit) });
   } catch (err) {
     next(err);
   }
@@ -515,6 +604,9 @@ router.patch(
       const lr = await LeaveRequest.findOne({ _id: req.params.id, tenantId });
       if (!lr) return res.status(404).json({ error: 'Not found' });
       if (lr.status !== 'pending') return res.status(400).json({ error: 'Request is not pending' });
+      if (req.user?.systemRole !== 'super_admin' && !isCurrentApprover(lr, req.user.sub)) {
+        return res.status(403).json({ error: 'You are not the current approver for this request' });
+      }
 
       const step = lr.approvalChain[lr.currentApproverIndex];
       if (!step) return res.status(400).json({ error: 'No pending approver step' });
@@ -555,6 +647,7 @@ router.patch(
 router.patch(
   '/leave-requests/:id/reject',
   requirePermission('leave:approve'),
+  validate(rejectLeaveRequestSchema),
   async (req, res, next) => {
     try {
       const tenantId = req.tenant._id;
@@ -562,6 +655,9 @@ router.patch(
       const lr = await LeaveRequest.findOne({ _id: req.params.id, tenantId });
       if (!lr) return res.status(404).json({ error: 'Not found' });
       if (lr.status !== 'pending') return res.status(400).json({ error: 'Request is not pending' });
+      if (req.user?.systemRole !== 'super_admin' && !isCurrentApprover(lr, req.user.sub)) {
+        return res.status(403).json({ error: 'You are not the current approver for this request' });
+      }
 
       const step = lr.approvalChain[lr.currentApproverIndex];
       if (step) {
@@ -576,6 +672,47 @@ router.patch(
         actorId: req.user.sub,
         tenantId: tenantId.toString(),
         action: 'leave.rejected',
+        target: { type: 'LeaveRequest', id: lr._id.toString() },
+        ip: req.ip,
+      });
+
+      res.json(lr);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.patch(
+  '/leave-requests/:id/cancel',
+  requirePermission('leave:write'),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const lr = await LeaveRequest.findOne({ _id: req.params.id, tenantId });
+      if (!lr) return res.status(404).json({ error: 'Not found' });
+      if (lr.status !== 'pending')
+        return res.status(400).json({ error: 'Only pending requests can be cancelled' });
+
+      if (req.user?.systemRole !== 'super_admin') {
+        const actorStaff = await StaffMember.findOne({ tenantId, userId: req.user.sub }).lean();
+        const allowed = canFileLeaveForStaff({
+          staffId: lr.staffId,
+          actorStaffId: actorStaff?._id,
+          actorPermissions: req._resolvedPermissions ?? [],
+        });
+        if (!allowed) {
+          return res.status(403).json({ error: 'Cannot cancel this leave request' });
+        }
+      }
+
+      lr.status = 'cancelled';
+      await lr.save();
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'leave.cancelled',
         target: { type: 'LeaveRequest', id: lr._id.toString() },
         ip: req.ip,
       });

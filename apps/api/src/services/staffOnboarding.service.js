@@ -3,6 +3,8 @@ import argon2 from 'argon2';
 import { User } from '../models/User.js';
 import { TenantMembership } from '../models/TenantMembership.js';
 import { StaffMember } from '../models/StaffMember.js';
+import { LeaveType } from '../models/LeaveType.js';
+import { LeaveBalance } from '../models/LeaveBalance.js';
 import { AppError } from '../middleware/errorHandler.js';
 
 export async function provisionStaffUser({ tenantId, email }) {
@@ -32,4 +34,19 @@ export async function assertStaffMemberNotLinked(tenantId, userId) {
 
 export async function setStaffAccessStatus(tenantId, userId, status) {
   await TenantMembership.findOneAndUpdate({ tenantId, userId }, { $set: { status } });
+}
+
+export async function seedLeaveBalancesForStaff(tenantId, staffId, year) {
+  const leaveTypes = await LeaveType.find({ tenantId }).lean();
+  if (!leaveTypes.length) return;
+
+  await LeaveBalance.bulkWrite(
+    leaveTypes.map((leaveType) => ({
+      updateOne: {
+        filter: { tenantId, staffId, leaveTypeId: leaveType._id, year },
+        update: { $setOnInsert: { total: leaveType.maxDaysPerYear, used: 0 } },
+        upsert: true,
+      },
+    }))
+  );
 }

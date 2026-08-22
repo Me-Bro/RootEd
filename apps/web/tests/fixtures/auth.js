@@ -21,6 +21,10 @@ export const TEST_USERS = {
     email: 'viewer@testschool.local',
     password: 'TestPass123!',
   },
+  principal: {
+    email: 'principal@testschool.local',
+    password: 'TestPass123!',
+  },
 };
 
 export const TEST_TENANT = {
@@ -35,6 +39,7 @@ export const AUTH_STATES = {
   tenant_admin: path.join(AUTH_DIR, 'tenant_admin.json'),
   teacher: path.join(AUTH_DIR, 'teacher.json'),
   viewer: path.join(AUTH_DIR, 'viewer.json'),
+  principal: path.join(AUTH_DIR, 'principal.json'),
 };
 
 /**
