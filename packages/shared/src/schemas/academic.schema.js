@@ -76,6 +76,16 @@ export const gradeLockSchema = z.object({
   assessmentType: assessmentType.default('final'),
 });
 
+export const reportCardGenerateSchema = z.object({
+  sectionId: objectId,
+  termId: objectId,
+});
+
+export const reportCardHistoryQuerySchema = z.object({
+  sectionId: objectId,
+  termId: objectId,
+});
+
 const timeString = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Invalid time');
 
 export const timetableEntrySchema = z

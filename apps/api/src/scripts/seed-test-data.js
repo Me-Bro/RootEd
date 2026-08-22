@@ -24,6 +24,7 @@ import { Section } from '../models/Section.js';
 import { Subject } from '../models/Subject.js';
 import { Student } from '../models/Student.js';
 import { Grade } from '../models/Grade.js';
+import { ReportCardBatch } from '../models/ReportCardBatch.js';
 import { Timetable } from '../models/Timetable.js';
 import { TimetablePublish } from '../models/TimetablePublish.js';
 import { scoreToLetter } from '@rooted/shared/utils';
@@ -77,6 +78,7 @@ async function run() {
   await Grade.syncIndexes();
   await Timetable.syncIndexes();
   await TimetablePublish.syncIndexes();
+  await ReportCardBatch.syncIndexes();
 
   if (CLEAN) {
     const collections = await mongoose.connection.db.collections();
@@ -363,6 +365,35 @@ async function run() {
       quizGrade = quizGrade.toObject();
     }
     grades.push(quizGrade);
+  }
+
+  // ── Report Card Batches ───────────────────────────────────────────────────
+  // Created directly (no queue/worker/Minio involved) so the history-list e2e
+  // spec has rows to assert against without needing a real PDF generation run.
+  const reportCardBatchDefs = [
+    {
+      jobId: 'seed-report-card-completed-1',
+      status: 'completed',
+      s3Key: `report-cards/${tenantId}/${term._id}/${section._id}/seed-fixture.pdf`,
+    },
+    { jobId: 'seed-report-card-queued-1', status: 'queued' },
+  ];
+  const reportCardBatches = [];
+  for (const def of reportCardBatchDefs) {
+    let batch = await ReportCardBatch.findOne({ tenantId, jobId: def.jobId }, null, {
+      _bypassTenantScope: true,
+    }).lean();
+    if (!batch) {
+      batch = await ReportCardBatch.create({
+        tenantId,
+        sectionId: section._id,
+        termId: term._id,
+        requestedBy: users.tenant_admin._id,
+        ...def,
+      });
+      batch = batch.toObject();
+    }
+    reportCardBatches.push(batch);
   }
 
   // ── Staff Members (linked to tenant users) ───────────────────────────────
@@ -746,6 +777,13 @@ async function run() {
       _id: a._id.toString(),
       studentId: a.studentId.toString(),
       totalAmount: a.totalAmount,
+    })),
+    reportCardBatches: reportCardBatches.map((b) => ({
+      _id: b._id.toString(),
+      jobId: b.jobId,
+      status: b.status,
+      sectionId: b.sectionId.toString(),
+      termId: b.termId.toString(),
     })),
     grades: grades.map((g) => ({
       _id: g._id.toString(),
