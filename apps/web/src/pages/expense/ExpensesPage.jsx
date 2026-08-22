@@ -4,6 +4,7 @@ import api from '../../lib/api.js';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
+import { EmptyState } from '../../components/ui/EmptyState.jsx';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,7 @@ import {
 import { formatCurrency } from '../../utils/intl.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
+import ApprovalQueueCard from '../../components/expense/ApprovalQueueCard.jsx';
 
 const STATUS_TABS = ['All', 'Pending', 'Approved', 'Rejected', 'Paid'];
 
@@ -22,6 +24,18 @@ function statusVariant(status) {
   if (status === 'pending') return 'warning';
   if (status === 'rejected') return 'danger';
   return 'default';
+}
+
+// docs/mobile-ui/14-expenses-approved.html §3 — joins a pending entry to its
+// cost center's *annual* budget so the approval queue can show spend-to-date.
+// Entries/budgets are both populated with a costCenterId object by the API,
+// so comparisons are done on the id string rather than object identity.
+function budgetFor(costCenterId, budgets) {
+  if (!costCenterId) return undefined;
+  return budgets.find((b) => {
+    const budgetCostCenterId = b.costCenterId?._id ?? b.costCenterId;
+    return String(budgetCostCenterId) === String(costCenterId) && b.period === 'annual';
+  });
 }
 
 function NewExpenseModal({ open, onOpenChange, costCenters }) {
@@ -255,15 +269,32 @@ export default function ExpensesPage() {
     },
   });
 
+  const isPendingTab = activeTab === 'Pending';
+
+  // Budget context is only ever shown on the pending-approval queue (mock 2),
+  // so this query is skipped for every other tab.
+  const { data: budgets = [] } = useQuery({
+    queryKey: ['expense-budgets', new Date().getFullYear()],
+    queryFn: () => api.get(`/expense/budgets?year=${new Date().getFullYear()}`).then((r) => r.data),
+    enabled: isPendingTab,
+  });
+
   const approveMutation = useMutation({
     mutationFn: (id) => api.patch(`/expense/entries/${id}/approve`).then((r) => r.data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expense-entries'] }),
   });
 
+  const pendingTotal = entries.reduce((sum, e) => sum + (e.amount ?? 0), 0);
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Expenses"
+        description={
+          isPendingTab && entries.length > 0
+            ? `${entries.length} pending · ${formatCurrency(pendingTotal)}`
+            : undefined
+        }
         action={<Button onClick={() => setShowNew(true)}>New Expense</Button>}
       />
 
@@ -303,55 +334,81 @@ export default function ExpensesPage() {
 
       {error && <p className="text-destructive">Failed to load expenses</p>}
 
-      <DataTable
-        headers={[
-          'Title',
-          'Category',
-          'Amount',
-          'Vendor',
-          'Cost Center',
-          'Status',
-          'Submitted By',
-          'Actions',
-        ]}
-        isLoading={isLoading}
-        isEmpty={entries.length === 0}
-        emptyMessage="No expenses found"
-      >
-        {entries.map((e) => (
-          <TableRow key={e._id} className="bg-card">
-            <TableCell className="px-4 py-3 font-medium">{e.title}</TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">{e.category}</TableCell>
-            <TableCell className="px-4 py-3">{formatCurrency(e.amount ?? 0)}</TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">{e.vendor || '—'}</TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">
-              {e.costCenterId?.name || '—'}
-            </TableCell>
-            <TableCell className="px-4 py-3">
-              <Badge variant={statusVariant(e.status)}>{e.status}</Badge>
-            </TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">
-              {e.submittedBy?.email || '—'}
-            </TableCell>
-            <TableCell className="px-4 py-3">
-              {e.status === 'pending' && (
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => approveMutation.mutate(e._id)}
-                    disabled={approveMutation.isPending}
-                  >
-                    Approve
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setRejectId(e._id)}>
-                    Reject
-                  </Button>
-                </div>
-              )}
-            </TableCell>
-          </TableRow>
-        ))}
-      </DataTable>
+      {isPendingTab ? (
+        // Mock 2 (approved) — approval queue with budget-in-context, replacing
+        // the table for the one view where a decision actually has to be made.
+        isLoading ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">Loading expenses…</p>
+        ) : entries.length === 0 ? (
+          <EmptyState
+            title="No pending expenses"
+            description="Nothing waiting for approval right now."
+          />
+        ) : (
+          <div className="flex flex-col gap-3">
+            {entries.map((e) => (
+              <ApprovalQueueCard
+                key={e._id}
+                entry={e}
+                budget={budgetFor(e.costCenterId?._id, budgets)}
+                onApprove={(id) => approveMutation.mutate(id)}
+                onReject={(id) => setRejectId(id)}
+                isApproving={approveMutation.isPending && approveMutation.variables === e._id}
+              />
+            ))}
+          </div>
+        )
+      ) : (
+        <DataTable
+          headers={[
+            'Title',
+            'Category',
+            'Amount',
+            'Vendor',
+            'Cost Center',
+            'Status',
+            'Submitted By',
+            'Actions',
+          ]}
+          isLoading={isLoading}
+          isEmpty={entries.length === 0}
+          emptyMessage="No expenses found"
+        >
+          {entries.map((e) => (
+            <TableRow key={e._id} className="bg-card">
+              <TableCell className="px-4 py-3 font-medium">{e.title}</TableCell>
+              <TableCell className="px-4 py-3 text-muted-foreground">{e.category}</TableCell>
+              <TableCell className="px-4 py-3">{formatCurrency(e.amount ?? 0)}</TableCell>
+              <TableCell className="px-4 py-3 text-muted-foreground">{e.vendor || '—'}</TableCell>
+              <TableCell className="px-4 py-3 text-muted-foreground">
+                {e.costCenterId?.name || '—'}
+              </TableCell>
+              <TableCell className="px-4 py-3">
+                <Badge variant={statusVariant(e.status)}>{e.status}</Badge>
+              </TableCell>
+              <TableCell className="px-4 py-3 text-muted-foreground">
+                {e.submittedBy?.email || '—'}
+              </TableCell>
+              <TableCell className="px-4 py-3">
+                {e.status === 'pending' && (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => approveMutation.mutate(e._id)}
+                      disabled={approveMutation.isPending}
+                    >
+                      Approve
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setRejectId(e._id)}>
+                      Reject
+                    </Button>
+                  </div>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </DataTable>
+      )}
 
       <NewExpenseModal open={showNew} onOpenChange={setShowNew} costCenters={costCenters} />
       <RejectModal

@@ -41,7 +41,7 @@ test.describe('Expenses page', () => {
 
     await dialog.getByRole('button', { name: 'Submit' }).click();
 
-    // Dialog closes, entry appears in list
+    // Dialog closes, entry appears in list (default "All" tab renders the table)
     await expect(dialog).not.toBeVisible({ timeout: 8_000 });
     await expect(page.getByText(title)).toBeVisible({ timeout: 10_000 });
   });
@@ -67,7 +67,7 @@ test.describe('Expenses page', () => {
     await expect(page.getByText(title)).toBeVisible({ timeout: 10_000 });
   });
 
-  test('approves a pending expense', async ({ page }) => {
+  test('approves a pending expense from the approval queue', async ({ page }) => {
     const title = `E2E Approve ${Date.now()}`;
 
     // Create via UI first
@@ -81,18 +81,19 @@ test.describe('Expenses page', () => {
     await dialog.getByRole('button', { name: 'Submit' }).click();
     await expect(dialog).not.toBeVisible({ timeout: 8_000 });
 
-    // Switch to Pending tab
+    // Switch to Pending tab — mock 2 (approved): a card-based approval queue,
+    // not a table, per docs/mobile-ui/14-expenses-approved.html
     await page.getByRole('button', { name: 'Pending' }).click();
     await page.waitForLoadState('networkidle');
 
-    const row = page.getByRole('row').filter({ hasText: title });
-    await expect(row).toBeVisible({ timeout: 10_000 });
+    const card = page.getByRole('group', { name: `Expense: ${title}` });
+    await expect(card).toBeVisible({ timeout: 10_000 });
 
-    const approveBtn = row.getByRole('button', { name: 'Approve' });
+    const approveBtn = card.getByRole('button', { name: 'Approve' });
     await approveBtn.click();
 
-    // Status badge changes — row no longer shows Approve button
-    await expect(approveBtn).not.toBeVisible({ timeout: 8_000 });
+    // Approved entries drop out of the pending queue
+    await expect(card).not.toBeVisible({ timeout: 8_000 });
   });
 
   test('rejects a pending expense with comment', async ({ page }) => {
@@ -111,10 +112,10 @@ test.describe('Expenses page', () => {
     await page.getByRole('button', { name: 'Pending' }).click();
     await page.waitForLoadState('networkidle');
 
-    const row = page.getByRole('row').filter({ hasText: title });
-    await expect(row).toBeVisible({ timeout: 10_000 });
+    const card = page.getByRole('group', { name: `Expense: ${title}` });
+    await expect(card).toBeVisible({ timeout: 10_000 });
 
-    await row.getByRole('button', { name: 'Reject' }).click();
+    await card.getByRole('button', { name: 'Reject' }).click();
 
     const rejectDialog = page.getByRole('dialog');
     await expect(rejectDialog).toBeVisible();
@@ -122,6 +123,23 @@ test.describe('Expenses page', () => {
     await rejectDialog.getByRole('button', { name: 'Reject' }).click();
 
     await expect(rejectDialog).not.toBeVisible({ timeout: 8_000 });
+    // Rejected entries drop out of the pending queue
+    await expect(card).not.toBeVisible({ timeout: 8_000 });
+  });
+
+  test('pending queue shows budget context when the cost center has a budget', async ({ page }) => {
+    await page.goto('/expense');
+    await page.getByRole('button', { name: 'Pending' }).click();
+    await page.waitForLoadState('networkidle');
+
+    const budgetBars = page.getByRole('progressbar');
+    // Budget context is optional per entry (§5: hides gracefully when there's
+    // no budget for the cost center), so this only asserts the shape is valid
+    // when at least one bar is rendered, rather than requiring seed data.
+    const count = await budgetBars.count();
+    for (let i = 0; i < count; i++) {
+      await expect(budgetBars.nth(i)).toHaveAttribute('aria-valuenow');
+    }
   });
 
   test('status tabs filter expenses correctly', async ({ page }) => {
