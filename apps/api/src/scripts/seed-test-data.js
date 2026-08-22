@@ -32,6 +32,8 @@ import { StaffMember } from '../models/StaffMember.js';
 import { LeaveType } from '../models/LeaveType.js';
 import { LeaveBalance } from '../models/LeaveBalance.js';
 import { SalaryStructure } from '../models/SalaryStructure.js';
+import { SalarySlip } from '../models/SalarySlip.js';
+import { encryptField } from '../utils/fieldEncryption.js';
 import { CostCenter } from '../models/CostCenter.js';
 import { FeeStructure } from '../models/FeeStructure.js';
 import { Consumable, FixedAsset } from '../models/InventoryItem.js';
@@ -51,6 +53,7 @@ const USERS = {
   teacher: { email: 'teacher@testschool.local' },
   viewer: { email: 'viewer@testschool.local' },
   principal: { email: 'principal@testschool.local' },
+  accountant: { email: 'accountant@testschool.local' },
 };
 
 async function upsertUser(data) {
@@ -136,6 +139,7 @@ async function run() {
     teacher: roleByKey['teacher'],
     viewer: roleByKey['librarian'], // use librarian as minimal-permission viewer
     principal: roleByKey['principal'],
+    accountant: roleByKey['accountant'],
   };
 
   for (const [key, role] of Object.entries(membershipMap)) {
@@ -565,6 +569,80 @@ async function run() {
       ],
     });
     salaryStructure = salaryStructure.toObject();
+  }
+
+  // Dedicated staff member with a salary structure assigned — today no
+  // other seeded staff member has salaryStructureId set, so "Generate All
+  // Slips" would have zero eligible staff without this fixture.
+  let staffWithSalaryStructure = await StaffMember.findOne(
+    { tenantId, employeeId: 'EMP-TEST-005' },
+    null,
+    { _bypassTenantScope: true }
+  ).lean();
+  if (!staffWithSalaryStructure) {
+    staffWithSalaryStructure = await StaffMember.create({
+      tenantId,
+      userId: new mongoose.Types.ObjectId(),
+      employeeId: 'EMP-TEST-005',
+      firstName: 'Priya',
+      lastName: 'Menon',
+      designation: 'Clerk',
+      department: 'Finance',
+      employmentStatus: 'active',
+      joiningDate: new Date('2022-06-01'),
+      salaryStructureId: salaryStructure._id,
+    });
+    staffWithSalaryStructure = staffWithSalaryStructure.toObject();
+  }
+
+  // Two SalarySlip fixtures inserted directly (no worker/PDF/S3 call needed
+  // at seed time) — one 'generated' (exercises mark-paid + the disabled-
+  // download-without-pdfKey assertion), one 'failed' (exercises the failed
+  // badge without touching Redis/Minio). Month/year deliberately in the
+  // past so they don't collide with an e2e "Generate All" run against the
+  // current month/year.
+  let salarySlipGenerated = await SalarySlip.findOne(
+    { tenantId, staffId: staffWithSalaryStructure._id, month: 1, year: 2024 },
+    null,
+    { _bypassTenantScope: true }
+  ).lean();
+  if (!salarySlipGenerated) {
+    salarySlipGenerated = await SalarySlip.create({
+      tenantId,
+      staffId: staffWithSalaryStructure._id,
+      month: 1,
+      year: 2024,
+      components: [
+        { label: 'Basic', type: 'earning', amount: encryptField('30000', tenantId) },
+        { label: 'HRA', type: 'earning', amount: encryptField('12000', tenantId) },
+      ],
+      grossEarnings: encryptField('42000', tenantId),
+      totalDeductions: encryptField('0', tenantId),
+      netPay: encryptField('42000', tenantId),
+      status: 'generated',
+    });
+    salarySlipGenerated = salarySlipGenerated.toObject();
+  }
+
+  let salarySlipFailed = await SalarySlip.findOne(
+    { tenantId, staffId: staffMembers[1]._id, month: 2, year: 2024 },
+    null,
+    { _bypassTenantScope: true }
+  ).lean();
+  if (!salarySlipFailed) {
+    salarySlipFailed = await SalarySlip.create({
+      tenantId,
+      staffId: staffMembers[1]._id,
+      month: 2,
+      year: 2024,
+      components: [],
+      grossEarnings: encryptField('0', tenantId),
+      totalDeductions: encryptField('0', tenantId),
+      netPay: encryptField('0', tenantId),
+      status: 'failed',
+      error: 'Staff has no salary structure assigned',
+    });
+    salarySlipFailed = salarySlipFailed.toObject();
   }
 
   // ── Cost Center ───────────────────────────────────────────────────────────
@@ -1000,6 +1078,22 @@ async function run() {
       used: b.used,
     })),
     salaryStructure: { _id: salaryStructure._id.toString() },
+    staffWithSalaryStructure: {
+      _id: staffWithSalaryStructure._id.toString(),
+      employeeId: staffWithSalaryStructure.employeeId,
+    },
+    salarySlipGenerated: {
+      _id: salarySlipGenerated._id.toString(),
+      staffId: staffWithSalaryStructure._id.toString(),
+      month: 1,
+      year: 2024,
+    },
+    salarySlipFailed: {
+      _id: salarySlipFailed._id.toString(),
+      staffId: staffMembers[1]._id.toString(),
+      month: 2,
+      year: 2024,
+    },
     costCenter: { _id: costCenter._id.toString() },
     feeStructure: { _id: feeStructure._id.toString() },
     feeStructureWithOptional: { _id: sportsFeeStructure._id.toString() },

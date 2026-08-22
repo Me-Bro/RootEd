@@ -19,6 +19,7 @@ import {
   DollarSign,
   PieChart,
   CreditCard,
+  Settings2,
   Archive,
   BarChart2,
   Bell,
@@ -102,6 +103,12 @@ const NAV_GROUPS = [
         permission: 'leave:read',
       },
       { to: '/staff/salary', label: 'Salary', icon: Wallet, permission: 'payroll:read' },
+      {
+        to: '/staff/salary-structures',
+        label: 'Salary Structures',
+        icon: Settings2,
+        permission: 'payroll:read',
+      },
     ],
   },
   {

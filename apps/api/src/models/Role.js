@@ -52,6 +52,7 @@ export const DEFAULT_ROLE_TEMPLATES = {
     'expense:read',
     'expense:write',
     'payroll:read',
+    'payroll:write',
   ],
   librarian: ['inventory:read', 'inventory:write'],
 };
