@@ -38,7 +38,10 @@ function EntryModal({ open, onOpenChange, sectionId, yearId, day, period, entry 
 
   const { data: staff = [] } = useQuery({
     queryKey: ['staff-list'],
-    queryFn: () => api.get('/staff/members').then((r) => r.data),
+    // /staff/members is paginated ({ members, total, page, pages }) — the
+    // teacher picker needs the full list, so request the server's max page
+    // size rather than the default 20.
+    queryFn: () => api.get('/staff/members?limit=100').then((r) => r.data.members),
   });
 
   const { data: subjects = [] } = useQuery({
