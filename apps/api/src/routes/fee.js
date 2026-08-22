@@ -16,7 +16,12 @@ import {
 } from '../services/fee.service.js';
 import { getSignedUrl } from '../services/storage.service.js';
 import { env } from '../config/env.js';
-import { createFeeStructureSchema, createFeeDiscountSchema } from '@rooted/shared/schemas';
+import { auditLog } from '../services/audit.service.js';
+import {
+  createFeeStructureSchema,
+  updateFeeStructureSchema,
+  createFeeDiscountSchema,
+} from '@rooted/shared/schemas';
 
 const router = Router();
 
@@ -28,21 +33,96 @@ router.post(
   validate(createFeeStructureSchema),
   async (req, res, next) => {
     try {
-      const { name, academicYearId, components, applicableTo, classId, dueDate } = req.body;
-      const structure = await FeeStructure.create({
-        tenantId: req.tenant._id,
-        name,
-        academicYearId,
-        components,
-        applicableTo,
-        classId,
-        dueDate,
+      const tenantId = req.tenant._id;
+      const { name, academicYearId } = req.body;
+
+      const existing = await FeeStructure.findOne({ tenantId, name, academicYearId });
+      if (existing) {
+        return res
+          .status(409)
+          .json({ error: 'A fee structure with this name already exists for this academic year' });
+      }
+
+      const structure = await FeeStructure.create({ tenantId, ...req.body });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'feeStructure.create',
+        target: { model: 'FeeStructure', id: structure._id },
+        after: structure.toObject(),
+        ip: req.ip,
       });
+
       res.status(201).json(structure);
     } catch (err) {
       next(err);
     }
   }
+);
+
+router.patch(
+  '/structures/:id',
+  requirePermission('fees:write'),
+  validate(updateFeeStructureSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const before = await FeeStructure.findOne({ _id: req.params.id, tenantId }).lean();
+      if (!before) return res.status(404).json({ error: 'Not found' });
+
+      const doc = await FeeStructure.findOneAndUpdate(
+        { _id: req.params.id, tenantId },
+        { $set: req.body },
+        { new: true }
+      );
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'feeStructure.update',
+        target: { model: 'FeeStructure', id: doc._id },
+        before,
+        after: doc.toObject(),
+        ip: req.ip,
+      });
+
+      res.json(doc);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+async function setStructureActive(req, res, next, isActive) {
+  try {
+    const tenantId = req.tenant._id;
+    const doc = await FeeStructure.findOneAndUpdate(
+      { _id: req.params.id, tenantId },
+      { $set: { isActive } },
+      { new: true }
+    );
+    if (!doc) return res.status(404).json({ error: 'Not found' });
+
+    await auditLog({
+      actorId: req.user.sub,
+      tenantId: tenantId.toString(),
+      action: isActive ? 'feeStructure.activate' : 'feeStructure.deactivate',
+      target: { model: 'FeeStructure', id: doc._id },
+      after: doc.toObject(),
+      ip: req.ip,
+    });
+
+    res.json(doc);
+  } catch (err) {
+    next(err);
+  }
+}
+router.patch('/structures/:id/activate', requirePermission('fees:write'), (req, res, next) =>
+  setStructureActive(req, res, next, true)
+);
+router.patch('/structures/:id/deactivate', requirePermission('fees:write'), (req, res, next) =>
+  setStructureActive(req, res, next, false)
 );
 
 router.get('/structures', requirePermission('fees:read'), async (req, res, next) => {
@@ -170,17 +250,18 @@ router.post(
   validate(createFeeDiscountSchema),
   async (req, res, next) => {
     try {
-      const { name, type, value, applicableTo, classId, studentId, academicYearId } = req.body;
-      const discount = await FeeDiscount.create({
-        tenantId: req.tenant._id,
-        name,
-        type,
-        value,
-        applicableTo,
-        classId,
-        studentId,
-        academicYearId,
+      const tenantId = req.tenant._id;
+      const discount = await FeeDiscount.create({ tenantId, ...req.body });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'feeDiscount.create',
+        target: { model: 'FeeDiscount', id: discount._id },
+        after: discount.toObject(),
+        ip: req.ip,
       });
+
       res.status(201).json(discount);
     } catch (err) {
       next(err);
