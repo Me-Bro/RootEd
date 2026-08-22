@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { Router } from 'express';
 import { authenticate } from '../middleware/authenticate.js';
 import { requirePermission } from '../middleware/requirePermission.js';
+import { validate } from '../middleware/validate.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { FeeStructure } from '../models/FeeStructure.js';
 import { FeeAssignment } from '../models/FeeAssignment.js';
@@ -15,28 +16,34 @@ import {
 } from '../services/fee.service.js';
 import { getSignedUrl } from '../services/storage.service.js';
 import { env } from '../config/env.js';
+import { createFeeStructureSchema, createFeeDiscountSchema } from '@rooted/shared/schemas';
 
 const router = Router();
 
 router.use(authenticate);
 
-router.post('/structures', requirePermission('fees:write'), async (req, res, next) => {
-  try {
-    const { name, academicYearId, components, applicableTo, classId, dueDate } = req.body;
-    const structure = await FeeStructure.create({
-      tenantId: req.tenant._id,
-      name,
-      academicYearId,
-      components,
-      applicableTo,
-      classId,
-      dueDate,
-    });
-    res.status(201).json(structure);
-  } catch (err) {
-    next(err);
+router.post(
+  '/structures',
+  requirePermission('fees:write'),
+  validate(createFeeStructureSchema),
+  async (req, res, next) => {
+    try {
+      const { name, academicYearId, components, applicableTo, classId, dueDate } = req.body;
+      const structure = await FeeStructure.create({
+        tenantId: req.tenant._id,
+        name,
+        academicYearId,
+        components,
+        applicableTo,
+        classId,
+        dueDate,
+      });
+      res.status(201).json(structure);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 router.get('/structures', requirePermission('fees:read'), async (req, res, next) => {
   try {
@@ -157,24 +164,29 @@ router.get('/defaulters', requirePermission('fees:read'), async (req, res, next)
   }
 });
 
-router.post('/discounts', requirePermission('tenant:admin'), async (req, res, next) => {
-  try {
-    const { name, type, value, applicableTo, classId, studentId, academicYearId } = req.body;
-    const discount = await FeeDiscount.create({
-      tenantId: req.tenant._id,
-      name,
-      type,
-      value,
-      applicableTo,
-      classId,
-      studentId,
-      academicYearId,
-    });
-    res.status(201).json(discount);
-  } catch (err) {
-    next(err);
+router.post(
+  '/discounts',
+  requirePermission('tenant:admin'),
+  validate(createFeeDiscountSchema),
+  async (req, res, next) => {
+    try {
+      const { name, type, value, applicableTo, classId, studentId, academicYearId } = req.body;
+      const discount = await FeeDiscount.create({
+        tenantId: req.tenant._id,
+        name,
+        type,
+        value,
+        applicableTo,
+        classId,
+        studentId,
+        academicYearId,
+      });
+      res.status(201).json(discount);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 router.get('/discounts', requirePermission('fees:read'), async (req, res, next) => {
   try {
