@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { parse } from 'csv-parse/sync';
-import PDFDocument from 'pdfkit';
+import { Queue } from 'bullmq';
 import {
   createStaffMemberSchema,
   patchStaffMemberSchema,
@@ -10,6 +10,12 @@ import {
   rejectLeaveRequestSchema,
   createLeaveTypeSchema,
   patchLeaveTypeSchema,
+  createSalaryStructureSchema,
+  updateSalaryStructureSchema,
+  generateSalarySlipSchema,
+  generateBulkSalarySlipSchema,
+  markSalarySlipPaidSchema,
+  payrollExportQuerySchema,
 } from '@rooted/shared/schemas';
 import { authenticate } from '../middleware/authenticate.js';
 import { requirePermission } from '../middleware/requirePermission.js';
@@ -28,6 +34,7 @@ import { Role } from '../models/Role.js';
 import { encryptField, decryptField } from '../utils/fieldEncryption.js';
 import { uploadBuffer, getSignedUrl } from '../services/storage.service.js';
 import { auditLog } from '../services/audit.service.js';
+import { redis } from '../config/redis.js';
 import {
   provisionStaffUser,
   assertStaffMemberNotLinked,
@@ -40,9 +47,20 @@ import {
   hasOverlappingLeaveRequest,
   isCurrentApprover,
 } from '../services/leaveRequestRules.js';
+import {
+  encryptComponents,
+  decryptStructure,
+  decryptSlip,
+  decryptSlipTotals,
+  loadStaffAndStructure,
+  SalarySlipInputError,
+} from '../services/salary.service.js';
+import { isValidSalarySlipStatusTransition } from '../services/salarySlipStatusTransitions.js';
+import { findMatchingSalaryJob } from '../utils/salarySlipJobs.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
+const salarySlipQueue = new Queue('salary-slip', { connection: redis });
 
 router.use(authenticate);
 
@@ -726,148 +744,227 @@ router.patch(
 
 // ── Salary Structures ─────────────────────────────────────────────────────────
 
-router.post('/salary-structures', requirePermission('tenant:admin'), async (req, res, next) => {
+router.post(
+  '/salary-structures',
+  requirePermission('tenant:admin'),
+  validate(createSalaryStructureSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { name, components } = req.body;
+      const ss = await SalaryStructure.create({
+        tenantId,
+        name,
+        components: encryptComponents(components, tenantId),
+      });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'salaryStructure.create',
+        target: { model: 'SalaryStructure', id: ss._id },
+        after: ss.toObject(),
+        ip: req.ip,
+      });
+
+      res.status(201).json(decryptStructure(ss.toObject(), tenantId));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get('/salary-structures', requirePermission('payroll:read'), async (req, res, next) => {
   try {
-    const { name, components } = req.body;
-    const ss = await SalaryStructure.create({ tenantId: req.tenant._id, name, components });
-    res.status(201).json(ss);
+    const tenantId = req.tenant._id;
+    const structures = await SalaryStructure.find({ tenantId }).lean();
+    res.json(structures.map((s) => decryptStructure(s, tenantId)));
   } catch (err) {
     next(err);
   }
 });
 
-router.get('/salary-structures', async (req, res, next) => {
-  try {
-    const structures = await SalaryStructure.find({ tenantId: req.tenant._id }).lean();
-    res.json(structures);
-  } catch (err) {
-    next(err);
+router.patch(
+  '/salary-structures/:id',
+  requirePermission('tenant:admin'),
+  validate(updateSalaryStructureSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const before = await SalaryStructure.findOne({ _id: req.params.id, tenantId }).lean();
+      if (!before) return res.status(404).json({ error: 'Salary structure not found' });
+
+      const update = { ...req.body };
+      if (update.components) update.components = encryptComponents(update.components, tenantId);
+
+      const structure = await SalaryStructure.findOneAndUpdate(
+        { _id: req.params.id, tenantId },
+        { $set: update },
+        { new: true }
+      );
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'salaryStructure.update',
+        target: { model: 'SalaryStructure', id: structure._id },
+        before,
+        after: structure.toObject(),
+        ip: req.ip,
+      });
+
+      res.json(decryptStructure(structure.toObject(), tenantId));
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 // ── Salary Slips ──────────────────────────────────────────────────────────────
-
-function resolveComponents(components) {
-  const resolved = [];
-  const labelMap = {};
-
-  for (const comp of components) {
-    if (!comp.isPercentage) {
-      labelMap[comp.label] = comp.amount;
-      resolved.push({ label: comp.label, type: comp.type, amount: comp.amount });
-    }
-  }
-
-  for (const comp of components) {
-    if (comp.isPercentage) {
-      const base = labelMap[comp.baseRef] ?? 0;
-      const amount = parseFloat(((comp.amount / 100) * base).toFixed(2));
-      labelMap[comp.label] = amount;
-      resolved.push({ label: comp.label, type: comp.type, amount });
-    }
-  }
-
-  return resolved;
-}
-
-async function generateSalaryPdf(staff, slip, month, year) {
-  const monthName = new Date(year, month - 1, 1).toLocaleString('default', { month: 'long' });
-
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50, size: 'A4' });
-    const chunks = [];
-    doc.on('data', (c) => chunks.push(c));
-    doc.on('end', () => resolve(Buffer.concat(chunks)));
-    doc.on('error', reject);
-
-    doc.fontSize(18).text('Salary Slip', { align: 'center' });
-    doc.moveDown(0.5);
-    doc.fontSize(12).text(`${staff.firstName} ${staff.lastName}`);
-    if (staff.employeeId) doc.text(`Employee ID: ${staff.employeeId}`);
-    if (staff.designation) doc.text(`Designation: ${staff.designation}`);
-    if (staff.department) doc.text(`Department: ${staff.department}`);
-    doc.text(`Period: ${monthName} ${year}`);
-    doc.moveDown();
-
-    const tableTop = doc.y;
-    doc.fontSize(10).text('Component', 50, tableTop, { width: 250 });
-    doc.text('Type', 310, tableTop, { width: 100 });
-    doc.text('Amount', 420, tableTop, { width: 100 });
-    doc.moveDown(0.5);
-    doc.moveTo(50, doc.y).lineTo(540, doc.y).stroke();
-    doc.moveDown(0.5);
-
-    for (const comp of slip.components) {
-      const y = doc.y;
-      doc.text(comp.label, 50, y, { width: 250 });
-      doc.text(comp.type, 310, y, { width: 100 });
-      doc.text(comp.amount.toFixed(2), 420, y, { width: 100 });
-      doc.moveDown(0.5);
-    }
-
-    doc.moveTo(50, doc.y).lineTo(540, doc.y).stroke();
-    doc.moveDown(0.5);
-    doc.fontSize(11).text(`Gross Earnings: ${slip.grossEarnings.toFixed(2)}`, { align: 'right' });
-    doc.text(`Total Deductions: ${slip.totalDeductions.toFixed(2)}`, { align: 'right' });
-    doc.fontSize(13).text(`Net Pay: ${slip.netPay.toFixed(2)}`, { align: 'right' });
-
-    doc.end();
-  });
-}
+// PDF generation runs asynchronously via workers/salarySlip.worker.js — see
+// that file for resolveComponents/PDF-rendering logic (moved out of this route).
 
 router.post(
   '/salary-slips/generate',
   requirePermission('payroll:write'),
+  validate(generateSalarySlipSchema),
   async (req, res, next) => {
     try {
       const tenantId = req.tenant._id;
       const { staffId, month, year } = req.body;
 
-      const staff = await StaffMember.findOne({ _id: staffId, tenantId }).lean();
-      if (!staff) return res.status(404).json({ error: 'Staff not found' });
-      if (!staff.salaryStructureId)
-        return res.status(400).json({ error: 'Staff has no salary structure assigned' });
+      await loadStaffAndStructure(tenantId, staffId);
 
-      const structure = await SalaryStructure.findOne({
-        _id: staff.salaryStructureId,
-        tenantId,
-      }).lean();
-      if (!structure) return res.status(404).json({ error: 'Salary structure not found' });
-
-      const resolvedComponents = resolveComponents(structure.components);
-
-      const grossEarnings = resolvedComponents
-        .filter((c) => c.type === 'earning')
-        .reduce((sum, c) => sum + c.amount, 0);
-      const totalDeductions = resolvedComponents
-        .filter((c) => c.type === 'deduction')
-        .reduce((sum, c) => sum + c.amount, 0);
-      const netPay = grossEarnings - totalDeductions;
-
-      const slipData = {
-        tenantId,
-        staffId,
+      const pendingJobs = await salarySlipQueue.getJobs(['waiting', 'active'], 0, 50);
+      const existing = findMatchingSalaryJob(pendingJobs, {
+        tenantId: tenantId.toString(),
         month,
         year,
-        components: resolvedComponents,
-        grossEarnings,
-        totalDeductions,
-        netPay,
-        status: 'generated',
-      };
+        staffId,
+      });
+      if (existing) {
+        return res.json({ jobId: existing.id, existing: true });
+      }
 
-      const pdfBuffer = await generateSalaryPdf(staff, slipData, month, year);
-      const pdfKey = `salary-slips/${tenantId}/${staffId}/${year}-${month}.pdf`;
-      await uploadBuffer(pdfKey, pdfBuffer, 'application/pdf');
-      slipData.pdfKey = pdfKey;
-
+      // Upsert to 'queued' first — this is the real concurrency guard (the
+      // unique {tenantId,staffId,month,year} index makes it atomic), the
+      // in-flight-job check above is only a best-effort optimization.
       const slip = await SalarySlip.findOneAndUpdate(
         { tenantId, staffId, month, year },
-        { $set: slipData },
+        { $set: { status: 'queued', error: null } },
         { upsert: true, new: true }
       );
 
-      res.status(201).json(slip);
+      const job = await salarySlipQueue.add('generate', {
+        tenantId: tenantId.toString(),
+        month,
+        year,
+        staffIds: [staffId],
+        requestedBy: req.user.sub,
+      });
+
+      slip.jobId = job.id;
+      await slip.save();
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'salarySlip.generate',
+        target: { model: 'SalarySlip', id: slip._id },
+        after: { staffId, month, year, jobId: job.id },
+        ip: req.ip,
+      });
+
+      res.status(202).json({ jobId: job.id, slipId: slip._id, existing: false });
+    } catch (err) {
+      if (err instanceof SalarySlipInputError) {
+        return res
+          .status(err.message.includes('not found') ? 404 : 400)
+          .json({ error: err.message });
+      }
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/salary-slips/generate-all',
+  requirePermission('payroll:write'),
+  validate(generateBulkSalarySlipSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { month, year, staffIds: requestedStaffIds } = req.body;
+
+      let staffIds = requestedStaffIds;
+      if (!staffIds?.length) {
+        const members = await StaffMember.find({
+          tenantId,
+          employmentStatus: 'active',
+          salaryStructureId: { $ne: null },
+        })
+          .select('_id')
+          .lean();
+        staffIds = members.map((m) => m._id.toString());
+      }
+
+      if (staffIds.length === 0) {
+        return res.status(400).json({ error: 'No staff with a salary structure assigned' });
+      }
+
+      await SalarySlip.bulkWrite(
+        staffIds.map((staffId) => ({
+          updateOne: {
+            filter: { tenantId, staffId, month, year },
+            update: { $set: { status: 'queued', error: null } },
+            upsert: true,
+          },
+        }))
+      );
+
+      const job = await salarySlipQueue.add('generate', {
+        tenantId: tenantId.toString(),
+        month,
+        year,
+        staffIds,
+        requestedBy: req.user.sub,
+      });
+
+      await SalarySlip.updateMany(
+        { tenantId, staffId: { $in: staffIds }, month, year },
+        { $set: { jobId: job.id } }
+      );
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'salarySlip.generateAll',
+        target: { model: 'SalarySlip', id: null },
+        after: { month, year, staffCount: staffIds.length, jobId: job.id },
+        ip: req.ip,
+      });
+
+      res.status(202).json({ jobId: job.id, staffCount: staffIds.length });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/salary-slips/status/:jobId',
+  requirePermission('payroll:read'),
+  async (req, res, next) => {
+    try {
+      const job = await salarySlipQueue.getJob(req.params.jobId);
+      if (!job || job.data?.tenantId !== req.tenant._id.toString()) {
+        return res.status(404).json({ error: 'Job not found' });
+      }
+
+      const state = await job.getState();
+      const result = job.returnvalue;
+
+      res.json({ jobId: job.id, state, result });
     } catch (err) {
       next(err);
     }
@@ -876,7 +973,8 @@ router.post(
 
 router.get('/salary-slips', requirePermission('payroll:read'), async (req, res, next) => {
   try {
-    const filter = { tenantId: req.tenant._id };
+    const tenantId = req.tenant._id;
+    const filter = { tenantId };
     if (req.query.staffId) filter.staffId = req.query.staffId;
     if (req.query.month) filter.month = Number(req.query.month);
     if (req.query.year) filter.year = Number(req.query.year);
@@ -886,11 +984,50 @@ router.get('/salary-slips', requirePermission('payroll:read'), async (req, res, 
       .sort({ year: -1, month: -1 })
       .lean();
 
-    res.json(slips);
+    res.json(slips.map((s) => decryptSlip(s, tenantId)));
   } catch (err) {
     next(err);
   }
 });
+
+router.post(
+  '/salary-slips/:id/mark-paid',
+  requirePermission('payroll:write'),
+  validate(markSalarySlipPaidSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const slip = await SalarySlip.findOne({ _id: req.params.id, tenantId });
+      if (!slip) return res.status(404).json({ error: 'Not found' });
+
+      if (!isValidSalarySlipStatusTransition(slip.status, 'paid')) {
+        return res
+          .status(400)
+          .json({ error: `Cannot mark slip as paid from status "${slip.status}"` });
+      }
+
+      const before = slip.toObject();
+      slip.status = 'paid';
+      slip.paidOn = req.body.paidOn ?? new Date();
+      slip.paidBy = req.user.sub;
+      await slip.save();
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'salarySlip.markPaid',
+        target: { model: 'SalarySlip', id: slip._id },
+        before,
+        after: slip.toObject(),
+        ip: req.ip,
+      });
+
+      res.json(decryptSlip(slip.toObject(), tenantId));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.get(
   '/salary-slips/:id/download',
@@ -966,10 +1103,10 @@ router.get('/attendance', requirePermission('attendance:read'), async (req, res,
 
 router.get('/export/payroll', requirePermission('payroll:write'), async (req, res, next) => {
   try {
-    const { month, year } = req.query;
+    const { month, year } = payrollExportQuerySchema.parse(req.query);
     const tenantId = req.tenant._id;
 
-    const slips = await SalarySlip.find({ tenantId, month: Number(month), year: Number(year) })
+    const slips = await SalarySlip.find({ tenantId, month, year })
       .populate('staffId', 'firstName lastName employeeId')
       .lean();
 
@@ -977,7 +1114,8 @@ router.get('/export/payroll', requirePermission('payroll:write'), async (req, re
     for (const slip of slips) {
       const name = slip.staffId ? `${slip.staffId.firstName} ${slip.staffId.lastName}` : 'Unknown';
       const empId = slip.staffId?.employeeId ?? '';
-      lines.push(`"${name}","${empId}",${slip.netPay.toFixed(2)}`);
+      const { netPay } = decryptSlipTotals(slip, tenantId);
+      lines.push(`"${name}","${empId}",${netPay.toFixed(2)}`);
     }
 
     res.setHeader('Content-Type', 'text/csv');
