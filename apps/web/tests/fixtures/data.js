@@ -8,11 +8,18 @@
  *   const client = await createTestApiClient(request, 'tenant_admin');
  *   const student = await client.post('/academic/students', { ... });
  */
+import { readFileSync } from 'fs';
+import path from 'path';
 
 const API_DIRECT = 'http://localhost:3001';
 const TENANT_HOST = 'testschool.localhost';
 
 let _csrfCache = null;
+
+function getTestTenantId() {
+  const p = path.join(import.meta.dirname, '../seed/.test-ids.json');
+  return JSON.parse(readFileSync(p, 'utf-8')).tenant._id;
+}
 
 async function fetchCsrf(request) {
   if (_csrfCache) return _csrfCache;
@@ -22,7 +29,12 @@ async function fetchCsrf(request) {
   const { csrfToken } = await res.json();
   _csrfCache = csrfToken;
   // CSRF tokens are short-lived; clear cache after 5 min
-  setTimeout(() => { _csrfCache = null; }, 5 * 60 * 1000);
+  setTimeout(
+    () => {
+      _csrfCache = null;
+    },
+    5 * 60 * 1000
+  );
   return csrfToken;
 }
 
@@ -38,6 +50,27 @@ async function loginDirect(request, email, password) {
   return accessToken;
 }
 
+// super_admin only gets tenant-module permissions while actively impersonating
+// a tenant (see apps/api/src/middleware/requirePermission.js) — a bare login
+// 403s on every tenant-scoped call this client makes. Exchange the bare token
+// for an impersonation token via the same endpoint the "Login to tenant" UI
+// button uses (mirrors auth.setup.js's loginAsImpersonatingSuperAdmin).
+async function impersonateTestTenant(request, accessToken) {
+  const csrf = await fetchCsrf(request);
+  const res = await request.post(`${API_DIRECT}/admin/tenants/${getTestTenantId()}/impersonate`, {
+    headers: {
+      Host: TENANT_HOST,
+      Authorization: `Bearer ${accessToken}`,
+      'x-csrf-token': csrf,
+    },
+  });
+  if (!res.ok()) {
+    throw new Error(`Impersonation failed: ${await res.text()}`);
+  }
+  const { accessToken: impersonationToken } = await res.json();
+  return impersonationToken;
+}
+
 /**
  * Create an API client authenticated as `role`.
  * `TEST_USERS` credentials are used to obtain an access token.
@@ -50,7 +83,10 @@ export async function createTestApiClient(request, role) {
   // new context fetches its own token+cookie pair (avoids 403 on double-submit).
   _csrfCache = null;
 
-  const accessToken = await loginDirect(request, creds.email, creds.password);
+  let accessToken = await loginDirect(request, creds.email, creds.password);
+  if (role === 'super_admin') {
+    accessToken = await impersonateTestTenant(request, accessToken);
+  }
 
   async function call(method, path, body) {
     const csrf = ['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())
