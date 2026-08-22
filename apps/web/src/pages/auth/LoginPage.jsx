@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/useAuth.js';
 import {
   Card,
@@ -10,8 +11,10 @@ import {
 } from '../../components/ui/Card.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { Button } from '../../components/ui/Button.jsx';
+import { LanguageSwitcherTrigger } from '../../components/ui/LanguageSwitcher.jsx';
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const { login, accessToken, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -33,10 +36,10 @@ export default function LoginPage() {
       const data = await login(email, password, needsTotp ? totpCode : undefined);
       navigate(data.tenants?.length > 1 ? '/select-tenant' : '/dashboard');
     } catch (err) {
-      const msg = err.response?.data?.error || err.message || 'Login failed';
+      const msg = err.response?.data?.error || err.message || t('auth.loginFailed');
       if (msg.toLowerCase().includes('totp')) {
         setNeedsTotp(true);
-        setError('Please enter your TOTP code');
+        setError(t('auth.needsTotp'));
       } else {
         setError(msg);
       }
@@ -60,6 +63,10 @@ export default function LoginPage() {
         }}
       />
 
+      <div className="absolute right-4 top-4 z-20">
+        <LanguageSwitcherTrigger />
+      </div>
+
       <div className="relative z-10 flex w-full max-w-sm flex-col items-center gap-6">
         {/* logo */}
         <div className="flex items-center gap-3">
@@ -69,13 +76,13 @@ export default function LoginPage() {
 
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>Sign in</CardTitle>
-            <CardDescription>Enter your credentials to continue</CardDescription>
+            <CardTitle>{t('auth.signIn')}</CardTitle>
+            <CardDescription>{t('auth.enterCredentials')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} aria-label="Login form" className="flex flex-col gap-4">
               <Input
-                label="Email"
+                label={t('auth.email')}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -84,7 +91,7 @@ export default function LoginPage() {
               />
               <div className="flex flex-col gap-1">
                 <Input
-                  label="Password"
+                  label={t('auth.password')}
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -96,23 +103,23 @@ export default function LoginPage() {
                     href="/forgot-password"
                     className="text-xs text-muted-foreground hover:text-primary transition-colors"
                   >
-                    Forgot password?
+                    {t('auth.forgotPassword')}
                   </a>
                 </div>
               </div>
               {needsTotp && (
                 <Input
-                  label="Authenticator Code"
+                  label={t('auth.authenticatorCode')}
                   type="text"
                   inputMode="numeric"
                   value={totpCode}
                   onChange={(e) => setTotpCode(e.target.value)}
-                  placeholder="6-digit code"
+                  placeholder={t('auth.sixDigitCode')}
                 />
               )}
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button type="submit" disabled={loading} size="lg" className="w-full mt-1">
-                {loading ? 'Signing in…' : 'Sign in'}
+                {loading ? t('auth.signingIn') : t('auth.signIn')}
               </Button>
             </form>
           </CardContent>

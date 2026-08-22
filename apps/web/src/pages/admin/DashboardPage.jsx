@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { formatDate } from '../../utils/intl.js';
 import { useAuth } from '../../contexts/useAuth.js';
@@ -42,6 +43,7 @@ function useRecentAudit(enabled) {
 }
 
 function SuperAdminDashboard() {
+  const { t } = useTranslation();
   const { data: totalTenants, isLoading: loadingTotal } = useTenantsCount(null, true);
   const { data: activeTenants, isLoading: loadingActive } = useTenantsCount('active', true);
   const { data: suspendedTenants, isLoading: loadingSuspended } = useTenantsCount(
@@ -56,19 +58,30 @@ function SuperAdminDashboard() {
   return (
     <>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total Tenants" value={isLoading ? '…' : totalTenants} />
-        <StatCard label="Active Tenants" value={loadingActive ? '…' : activeTenants} />
-        <StatCard label="Suspended" value={loadingSuspended ? '…' : suspendedTenants} />
-        <StatCard label="Archived" value={loadingArchived ? '…' : archivedTenants} />
+        <StatCard label={t('dashboard.totalTenants')} value={isLoading ? '…' : totalTenants} />
+        <StatCard
+          label={t('dashboard.activeTenants')}
+          value={loadingActive ? '…' : activeTenants}
+        />
+        <StatCard
+          label={t('dashboard.suspended')}
+          value={loadingSuspended ? '…' : suspendedTenants}
+        />
+        <StatCard label={t('dashboard.archived')} value={loadingArchived ? '…' : archivedTenants} />
       </div>
 
       <div className="flex flex-col gap-3">
-        <h2 className="text-base font-semibold text-foreground">Recent Activity</h2>
+        <h2 className="text-base font-semibold text-foreground">{t('dashboard.recentActivity')}</h2>
         <DataTable
-          headers={['Action', 'Actor', 'IP', 'Time']}
+          headers={[
+            t('dashboard.columnAction'),
+            t('dashboard.columnActor'),
+            t('dashboard.columnIp'),
+            t('dashboard.columnTime'),
+          ]}
           isLoading={loadingAudit}
           isEmpty={!auditLogs?.length}
-          emptyMessage="No audit entries found."
+          emptyMessage={t('dashboard.noAuditEntries')}
         >
           {auditLogs?.map((log) => (
             <TableRow key={log._id}>
@@ -97,6 +110,7 @@ function SuperAdminDashboard() {
 }
 
 function TenantDashboard() {
+  const { t } = useTranslation();
   const { data: tenant, isLoading } = useQuery({
     queryKey: ['tenant-settings'],
     queryFn: () => api.get('/tenant/settings').then((r) => r.data),
@@ -104,23 +118,24 @@ function TenantDashboard() {
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <StatCard label="School" value={isLoading ? '…' : tenant?.name} />
-      <StatCard label="Plan" value={isLoading ? '…' : tenant?.plan} />
-      <StatCard label="Status" value={isLoading ? '…' : tenant?.status} />
-      <StatCard label="Timezone" value={isLoading ? '…' : tenant?.timezone} />
+      <StatCard label={t('dashboard.school')} value={isLoading ? '…' : tenant?.name} />
+      <StatCard label={t('dashboard.plan')} value={isLoading ? '…' : tenant?.plan} />
+      <StatCard label={t('common.status')} value={isLoading ? '…' : tenant?.status} />
+      <StatCard label={t('dashboard.timezone')} value={isLoading ? '…' : tenant?.timezone} />
     </div>
   );
 }
 
 export default function DashboardPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isSuperAdmin = user?.systemRole === 'super_admin';
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Dashboard"
-        description={isSuperAdmin ? 'System overview and recent activity' : 'Overview'}
+        title={t('dashboard.title')}
+        description={isSuperAdmin ? t('dashboard.systemOverview') : t('dashboard.overview')}
       />
       {isSuperAdmin ? <SuperAdminDashboard /> : <TenantDashboard />}
     </div>

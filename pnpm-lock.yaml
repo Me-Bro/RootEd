@@ -161,6 +161,9 @@ importers:
       '@fontsource-variable/geist':
         specifier: ^5.2.8
         version: 5.2.8
+      '@fontsource/noto-sans-devanagari':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@rooted/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -1015,6 +1018,12 @@ packages:
     resolution:
       {
         integrity: sha512-cJ6m9e+8MQ5dCYJsLylfZrgBh6KkG4bOLckB35Tr9J/EqdkEM6QllH5PxqP1dhTvFup+HtMRPuz9xOjxXJggxw==,
+      }
+
+  '@fontsource/noto-sans-devanagari@5.3.0':
+    resolution:
+      {
+        integrity: sha512-7khYmipS/5KAUUmrO1DKir8yL8XI00d0+ZE9BqbS8XF1jzObv6CpPOk3UeYxF+Pvi8bx9bBvprBCOcbx/eQWTQ==,
       }
 
   '@formatjs/ecma402-abstract@2.3.6':
@@ -9190,6 +9199,8 @@ snapshots:
   '@floating-ui/utils@0.2.11': {}
 
   '@fontsource-variable/geist@5.2.8': {}
+
+  '@fontsource/noto-sans-devanagari@5.3.0': {}
 
   '@formatjs/ecma402-abstract@2.3.6':
     dependencies:

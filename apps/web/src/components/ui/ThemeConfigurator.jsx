@@ -23,12 +23,12 @@ const COLOR_PRESETS = [
 ];
 
 const FONT_OPTIONS = [
-  { label: 'Geist', value: "'Geist Variable', system-ui, sans-serif" },
-  { label: 'Inter', value: "'Inter', system-ui, sans-serif" },
-  { label: 'Roboto', value: "'Roboto', system-ui, sans-serif" },
-  { label: 'Open Sans', value: "'Open Sans', system-ui, sans-serif" },
-  { label: 'Montserrat', value: "'Montserrat', system-ui, sans-serif" },
-  { label: 'Poppins', value: "'Poppins', system-ui, sans-serif" },
+  { label: 'Geist', value: "'Geist Variable', 'Noto Sans Devanagari', system-ui, sans-serif" },
+  { label: 'Inter', value: "'Inter', 'Noto Sans Devanagari', system-ui, sans-serif" },
+  { label: 'Roboto', value: "'Roboto', 'Noto Sans Devanagari', system-ui, sans-serif" },
+  { label: 'Open Sans', value: "'Open Sans', 'Noto Sans Devanagari', system-ui, sans-serif" },
+  { label: 'Montserrat', value: "'Montserrat', 'Noto Sans Devanagari', system-ui, sans-serif" },
+  { label: 'Poppins', value: "'Poppins', 'Noto Sans Devanagari', system-ui, sans-serif" },
 ];
 
 const FONT_SIZE_OPTIONS = [12, 13, 14, 15, 16];
@@ -40,7 +40,7 @@ export const DEFAULT_CONFIG = {
   primaryColor: 'oklch(0.488 0.243 264.376)',
   primaryFg: 'oklch(0.985 0 0)',
   borderRadius: 0.625,
-  fontFamily: "'Geist Variable', system-ui, sans-serif",
+  fontFamily: "'Geist Variable', 'Noto Sans Devanagari', system-ui, sans-serif",
   fontSize: 14,
 };
 
