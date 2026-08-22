@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown } from 'lucide-react';
 import { ASSESSMENT_TYPES } from '@rooted/shared/constants';
 import api from '../../lib/api.js';
@@ -45,6 +46,7 @@ function AverageRing({ score }) {
 }
 
 export default function GradeReportPage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [sectionId, setSectionId] = useState(() => searchParams.get('sectionId') || '');
   const [subjectId, setSubjectId] = useState(() => searchParams.get('subjectId') || '');
@@ -136,12 +138,14 @@ export default function GradeReportPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">Grade Report</h1>
+      <h1 className="text-2xl font-semibold">{t('academic.gradeReport.title')}</h1>
 
       <div className="flex flex-wrap items-center gap-2">
         <DropdownMenu>
           <Chip>
-            {currentSection ? `${currentSection.className}-${currentSection.name}` : 'Section'}
+            {currentSection
+              ? `${currentSection.className}-${currentSection.name}`
+              : t('academic.students.section')}
           </Chip>
           <DropdownMenuContent align="start">
             {classes.map((c) => (
@@ -158,7 +162,7 @@ export default function GradeReportPage() {
         </DropdownMenu>
 
         <DropdownMenu>
-          <Chip disabled={!sectionId}>{currentSubject?.name ?? 'Subject'}</Chip>
+          <Chip disabled={!sectionId}>{currentSubject?.name ?? t('common.subject')}</Chip>
           <DropdownMenuContent align="start">
             {subjects.map((sub) => (
               <DropdownMenuItem key={sub._id} onClick={() => selectSubject(sub._id)}>
@@ -169,11 +173,11 @@ export default function GradeReportPage() {
         </DropdownMenu>
 
         <DropdownMenu>
-          <Chip>{currentTerm?.name ?? 'Term'}</Chip>
+          <Chip>{currentTerm?.name ?? t('academic.grades.term')}</Chip>
           <DropdownMenuContent align="start">
-            {terms.map((t) => (
-              <DropdownMenuItem key={t._id} onClick={() => selectTerm(t._id)}>
-                {t.name}
+            {terms.map((term) => (
+              <DropdownMenuItem key={term._id} onClick={() => selectTerm(term._id)}>
+                {term.name}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -182,25 +186,31 @@ export default function GradeReportPage() {
         <DropdownMenu>
           <Chip>
             {assessmentType
-              ? assessmentType[0].toUpperCase() + assessmentType.slice(1)
-              : 'All types'}
+              ? t(`academic.assessmentTypes.${assessmentType}`)
+              : t('academic.gradeReport.allTypes')}
           </Chip>
           <DropdownMenuContent align="start">
             <DropdownMenuItem onClick={() => selectAssessmentType('')}>
-              All (blended)
+              {t('academic.gradeReport.allBlended')}
             </DropdownMenuItem>
-            {ASSESSMENT_TYPES.map((t) => (
-              <DropdownMenuItem key={t} onClick={() => selectAssessmentType(t)}>
-                {t[0].toUpperCase() + t.slice(1)}
+            {ASSESSMENT_TYPES.map((type) => (
+              <DropdownMenuItem key={type} onClick={() => selectAssessmentType(type)}>
+                {t(`academic.assessmentTypes.${type}`)}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      {!ready && <EmptyState title="Select section, subject, and term to view the report" />}
-      {isLoading && <p className="text-sm text-muted-foreground">Loading report…</p>}
-      {isError && <p className="text-sm text-destructive">Failed to load grade report</p>}
+      {!ready && <EmptyState title={t('academic.gradeReport.selectToView')} />}
+      {isLoading && (
+        <p className="text-sm text-muted-foreground">
+          {t('academic.attendanceReport.loadingReport')}
+        </p>
+      )}
+      {isError && (
+        <p className="text-sm text-destructive">{t('academic.gradeReport.loadFailed')}</p>
+      )}
 
       {report && (
         <>
@@ -212,8 +222,14 @@ export default function GradeReportPage() {
           >
             <AverageRing score={report.classAverageScore} />
             <div className="text-sm text-muted-foreground">
-              <p className="font-medium text-foreground">Class average</p>
-              <p>{passRate === null ? 'No scores yet' : `Pass rate ${passRate}%`}</p>
+              <p className="font-medium text-foreground">
+                {t('academic.gradeReport.classAverage')}
+              </p>
+              <p>
+                {passRate === null
+                  ? t('academic.gradeReport.noScoresYet')
+                  : t('academic.gradeReport.passRate', { pct: passRate })}
+              </p>
             </div>
           </div>
 
@@ -227,19 +243,24 @@ export default function GradeReportPage() {
 
           <p className="text-sm font-medium text-muted-foreground">
             {bandFilter
-              ? `Grade ${bandFilter} · ${filteredStudents.length} student${filteredStudents.length === 1 ? '' : 's'}`
-              : `All students · ${filteredStudents.length}`}
+              ? t('academic.gradeReport.gradeBandCount', {
+                  band: bandFilter,
+                  count: filteredStudents.length,
+                })
+              : t('academic.gradeReport.allStudentsCount', { count: filteredStudents.length })}
           </p>
 
           {report.students.length === 0 ? (
-            <EmptyState title="No active students in this section" />
+            <EmptyState title={t('academic.attendanceReport.noActiveStudents')} />
           ) : scoredCount === 0 ? (
             <EmptyState
-              title="No scores yet"
-              description="Enter marks for this term to see the report."
+              title={t('academic.gradeReport.noScoresYet')}
+              description={t('academic.gradeReport.enterMarksDescription')}
             />
           ) : filteredStudents.length === 0 ? (
-            <EmptyState title={`No students with grade ${bandFilter}`} />
+            <EmptyState
+              title={t('academic.gradeReport.noStudentsWithGrade', { band: bandFilter })}
+            />
           ) : (
             <div className="flex flex-col divide-y divide-border rounded-lg border border-border">
               {filteredStudents.map((s) => (

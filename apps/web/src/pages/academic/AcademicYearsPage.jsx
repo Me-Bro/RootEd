@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Button } from '../../components/ui/Button.jsx';
@@ -22,6 +23,7 @@ import ActivateConfirm from '../../components/academic-years/ActivateConfirm.jsx
 // one transaction-less updateMany-then-create), so the dialog says so up front
 // instead of surprising the admin after the fact.
 function CreateYearModal({ open, onOpenChange, currentActiveName }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [form, setForm] = useState({ name: '', startDate: '', endDate: '' });
   const [error, setError] = useState('');
@@ -34,7 +36,7 @@ function CreateYearModal({ open, onOpenChange, currentActiveName }) {
       setForm({ name: '', startDate: '', endDate: '' });
       setError('');
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to create year'),
+    onError: (err) => setError(err.response?.data?.error || t('academic.years.createFailed')),
   });
 
   function update(field) {
@@ -45,7 +47,7 @@ function CreateYearModal({ open, onOpenChange, currentActiveName }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>New Academic Year</DialogTitle>
+          <DialogTitle>{t('academic.years.modalTitle')}</DialogTitle>
         </DialogHeader>
         <form
           id="create-year"
@@ -56,38 +58,41 @@ function CreateYearModal({ open, onOpenChange, currentActiveName }) {
           className="flex flex-col gap-4"
         >
           <Input
-            label="Name"
+            label={t('common.name')}
             value={form.name}
             onChange={update('name')}
             required
             placeholder="2025–26"
           />
           <Input
-            label="Start Date"
+            label={t('academic.years.startDate')}
             type="date"
             value={form.startDate}
             onChange={update('startDate')}
             required
           />
           <Input
-            label="End Date"
+            label={t('academic.years.endDate')}
             type="date"
             value={form.endDate}
             onChange={update('endDate')}
             required
           />
           <p className="text-xs text-muted-foreground">
-            This year becomes active immediately
-            {currentActiveName ? `, replacing ${currentActiveName}` : ''}.
+            {t('academic.years.activateNotice', {
+              replacing: currentActiveName
+                ? t('academic.years.replacingSuffix', { name: currentActiveName })
+                : '',
+            })}
           </p>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="submit" form="create-year" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Creating…' : 'Create'}
+            {mutation.isPending ? t('academic.years.creating') : t('common.create')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -96,6 +101,7 @@ function CreateYearModal({ open, onOpenChange, currentActiveName }) {
 }
 
 export default function AcademicYearsPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const canWrite = (user?.permissions ?? []).includes('tenant:admin');
   const queryClient = useQueryClient();
@@ -164,19 +170,23 @@ export default function AcademicYearsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Academic Years"
-        description={`${years.length} year${years.length === 1 ? '' : 's'} · ${allTerms.length} term${allTerms.length === 1 ? '' : 's'}`}
-        action={canWrite && <Button onClick={() => setShowCreate(true)}>New Year</Button>}
+        title={t('academic.years.title')}
+        description={`${t('academic.years.yearCount', { count: years.length })} · ${t('academic.years.termCount', { count: allTerms.length })}`}
+        action={
+          canWrite && (
+            <Button onClick={() => setShowCreate(true)}>{t('academic.years.newYear')}</Button>
+          )
+        }
       />
 
-      {yearsError && <p className="text-sm text-destructive">Failed to load academic years</p>}
+      {yearsError && <p className="text-sm text-destructive">{t('academic.years.loadError')}</p>}
 
-      {yearsLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
+      {yearsLoading && <p className="text-sm text-muted-foreground">{t('common.loading')}</p>}
 
       {!yearsLoading && !yearsError && years.length === 0 && (
         <EmptyState
-          title="No academic years yet"
-          description={canWrite ? 'Create the first academic year to get started.' : undefined}
+          title={t('academic.years.emptyTitle')}
+          description={canWrite ? t('academic.years.emptyDescription') : undefined}
         />
       )}
 

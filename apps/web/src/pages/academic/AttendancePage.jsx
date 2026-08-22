@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, Zap } from 'lucide-react';
 import { Button } from '../../components/ui/Button.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
@@ -40,6 +41,7 @@ function PctBadge({ pct }) {
 }
 
 export default function AttendancePage() {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [sectionId, setSectionId] = useState(() => searchParams.get('sectionId') || '');
@@ -89,7 +91,7 @@ export default function AttendancePage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Attendance</h1>
+          <h1 className="text-2xl font-semibold">{t('academic.attendance.title')}</h1>
           {currentSection && (
             <p className="text-sm text-muted-foreground">
               {currentSection.className} - {currentSection.name}
@@ -101,7 +103,7 @@ export default function AttendancePage() {
             to={`/academic/attendance/report?sectionId=${sectionId}`}
             className="text-sm font-medium text-primary hover:underline"
           >
-            View Report →
+            {t('academic.attendance.viewReport')}
           </Link>
         )}
       </div>
@@ -111,7 +113,7 @@ export default function AttendancePage() {
           <DropdownMenuTrigger className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium">
             {currentSection
               ? `${currentSection.className}-${currentSection.name}`
-              : 'Select section'}
+              : t('academic.attendance.selectSection')}
             <ChevronDown size={14} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
@@ -136,20 +138,22 @@ export default function AttendancePage() {
         />
 
         {rows.length > 0 && (
-          <span className="text-xs text-muted-foreground">{rows.length} students</span>
+          <span className="text-xs text-muted-foreground">
+            {t('academic.attendance.studentsCount', { count: rows.length })}
+          </span>
         )}
       </div>
 
-      {!sectionId && <EmptyState title="Select a section to mark attendance" />}
+      {!sectionId && <EmptyState title={t('academic.attendance.selectSectionEmpty')} />}
 
       {sectionId && reportError && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          Attendance % unavailable — retry. Marking is still available below.
+          {t('academic.attendance.reportUnavailable')}
         </div>
       )}
 
       {sectionId && !reportLoading && rows.length === 0 && (
-        <EmptyState title="No active students in this section." />
+        <EmptyState title={t('academic.attendance.noActiveStudents')} />
       )}
 
       {sectionId && rows.length > 0 && (
@@ -164,7 +168,10 @@ export default function AttendancePage() {
           <div className="rounded-lg border border-border bg-card p-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold">
-                Marked {markedCount} of {rows.length}
+                {t('academic.attendance.markedOfTotal', {
+                  marked: markedCount,
+                  total: rows.length,
+                })}
               </span>
               <div className="flex gap-1.5">
                 <Badge variant="success">{statusCounts.present} P</Badge>
@@ -182,7 +189,7 @@ export default function AttendancePage() {
 
           {filteredRows.length === 0 && (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              No student matches &lsquo;{searchQuery}&rsquo;
+              {t('academic.attendance.noMatch', { query: searchQuery })}
             </p>
           )}
 
@@ -203,7 +210,9 @@ export default function AttendancePage() {
                     {r.secondConsecutiveAbsence && (
                       <>
                         <span>·</span>
-                        <span className="font-medium text-destructive">2nd day absent</span>
+                        <span className="font-medium text-destructive">
+                          {t('academic.attendance.secondDayAbsent')}
+                        </span>
                       </>
                     )}
                   </p>
@@ -234,7 +243,7 @@ export default function AttendancePage() {
           )}
           {saveMutation.isError && (
             <p className="mb-2 text-center text-sm text-destructive">
-              Failed to save attendance — nothing was lost, tap Save to retry.
+              {t('academic.attendance.saveFailed')}
             </p>
           )}
           <div className="mx-auto flex max-w-3xl gap-2">
@@ -245,10 +254,12 @@ export default function AttendancePage() {
               onClick={markRestPresent}
             >
               <Zap size={14} />
-              Mark rest present
+              {t('academic.attendance.markRestPresent')}
             </Button>
             <Button className="flex-1" onClick={handleSaveTap} disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? 'Saving…' : `Save · ${markedCount} of ${rows.length}`}
+              {saveMutation.isPending
+                ? t('common.saving')
+                : t('academic.attendance.saveOfTotal', { marked: markedCount, total: rows.length })}
             </Button>
           </div>
         </div>
@@ -281,7 +292,7 @@ export default function AttendancePage() {
                 setMoreSheetFor(null);
               }}
             >
-              Late
+              {t('academic.attendance.late')}
             </Button>
             <Button
               variant="outline"
@@ -291,7 +302,7 @@ export default function AttendancePage() {
                 setMoreSheetFor(null);
               }}
             >
-              Excused
+              {t('academic.attendance.excused')}
             </Button>
           </div>
         </SheetContent>

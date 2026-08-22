@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Button } from '../../components/ui/Button.jsx';
@@ -18,6 +19,7 @@ function attendanceLink(entry) {
 }
 
 function ScheduleCell({ day, entry, isCurrent }) {
+  const { t } = useTranslation();
   if (!entry) return <span className="text-xs text-muted-foreground">—</span>;
 
   const body = (
@@ -38,7 +40,7 @@ function ScheduleCell({ day, entry, isCurrent }) {
     <Link
       to={attendanceLink(entry)}
       className={`block rounded ${isCurrent ? 'ring-2 ring-primary' : ''}`}
-      title="Take attendance for this class"
+      title={t('academic.mySchedule.takeAttendanceTooltip')}
     >
       {body}
     </Link>
@@ -46,6 +48,7 @@ function ScheduleCell({ day, entry, isCurrent }) {
 }
 
 export default function MySchedulePage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [yearId, setYearId] = useState('');
 
@@ -73,10 +76,10 @@ export default function MySchedulePage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between gap-4 print:hidden">
-        <PageHeader title="My Schedule" />
+        <PageHeader title={t('academic.mySchedule.title')} />
         {effectiveYearId && (
           <Button variant="outline" size="sm" onClick={() => window.print()}>
-            Print
+            {t('academic.mySchedule.print')}
           </Button>
         )}
       </div>
@@ -86,7 +89,7 @@ export default function MySchedulePage() {
         onChange={(e) => setYearId(e.target.value)}
         className="h-9 w-fit rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 print:hidden"
       >
-        <option value="">— Academic Year —</option>
+        <option value="">{t('academic.timetable.academicYearPlaceholder')}</option>
         {years.map((y) => (
           <option key={y._id} value={y._id}>
             {y.name}
@@ -95,12 +98,12 @@ export default function MySchedulePage() {
       </select>
 
       {!effectiveYearId && (
-        <p className="text-muted-foreground text-sm">
-          Select an academic year to view your schedule.
-        </p>
+        <p className="text-muted-foreground text-sm">{t('academic.mySchedule.selectYearPrompt')}</p>
       )}
 
-      {effectiveYearId && isLoading && <p className="text-muted-foreground text-sm">Loading…</p>}
+      {effectiveYearId && isLoading && (
+        <p className="text-muted-foreground text-sm">{t('common.loading')}</p>
+      )}
 
       {effectiveYearId && !isLoading && (
         <>
@@ -119,17 +122,19 @@ export default function MySchedulePage() {
                   className={`rounded-lg border border-border p-3 ${today ? 'border-primary' : ''}`}
                 >
                   <p className="font-medium text-sm mb-2">
-                    {day}
-                    {today ? ' · Today' : ''}
+                    {t(`common.weekdays.${day.toLowerCase()}`)}
+                    {today ? t('academic.mySchedule.todaySuffix') : ''}
                   </p>
                   {dayEntries.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No classes</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t('academic.mySchedule.noClasses')}
+                    </p>
                   ) : (
                     <div className="flex flex-col gap-2">
                       {dayEntries.map(({ period, entry }) => (
                         <div key={period} className="flex items-start gap-2 text-sm">
                           <span className="text-xs text-muted-foreground w-14 shrink-0">
-                            Period {period}
+                            {t('academic.mySchedule.periodNumber', { period })}
                           </span>
                           <ScheduleCell
                             day={day}
@@ -151,7 +156,7 @@ export default function MySchedulePage() {
               <thead className="bg-muted/50">
                 <tr>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground w-16">
-                    Period
+                    {t('academic.timetable.period')}
                   </th>
                   {DAYS.map((d) => (
                     <th
@@ -160,7 +165,7 @@ export default function MySchedulePage() {
                         isTodayColumn(d) ? 'text-foreground bg-primary/10' : 'text-muted-foreground'
                       }`}
                     >
-                      {d}
+                      {t(`common.weekdays.${d.toLowerCase()}`)}
                     </th>
                   ))}
                 </tr>

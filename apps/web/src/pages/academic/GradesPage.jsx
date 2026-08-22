@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, Lock } from 'lucide-react';
 import { scoreToLetter } from '@rooted/shared/utils';
 import { ASSESSMENT_TYPES } from '@rooted/shared/constants';
@@ -21,10 +22,6 @@ import DockedKeypad from '../../components/grades/DockedKeypad.jsx';
 import MarkRow from '../../components/grades/MarkRow.jsx';
 
 const EMPTY_ARRAY = [];
-
-function assessmentLabel(type) {
-  return type[0].toUpperCase() + type.slice(1);
-}
 
 const CHIP_TRIGGER_CLASS =
   'flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium';
@@ -51,6 +48,7 @@ function nextUnmarkedId(students, map, afterId) {
 }
 
 export default function GradesPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const permissions = user?.permissions ?? [];
@@ -283,7 +281,7 @@ export default function GradesPage() {
     currentSection && `${currentSection.className}-${currentSection.name}`,
     selectedSubject?.name,
     selectedTerm?.name,
-    gradesReady && assessmentLabel(assessmentType),
+    gradesReady && t(`academic.assessmentTypes.${assessmentType}`),
   ]
     .filter(Boolean)
     .join(' · ');
@@ -292,7 +290,7 @@ export default function GradesPage() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Grades</h1>
+          <h1 className="text-2xl font-semibold">{t('academic.grades.title')}</h1>
           {scopeLabel && <p className="text-sm text-muted-foreground">{scopeLabel}</p>}
         </div>
         <div className="flex items-center gap-4">
@@ -301,7 +299,7 @@ export default function GradesPage() {
               to={`/academic/grades/report?sectionId=${sectionId}`}
               className="text-sm font-medium text-primary hover:underline"
             >
-              View Report →
+              {t('academic.grades.viewReport')}
             </Link>
           )}
           <Button
@@ -309,7 +307,9 @@ export default function GradesPage() {
             onClick={() => fileRef.current?.click()}
             disabled={!gradesReady || locked || importMutation.isPending}
           >
-            {importMutation.isPending ? 'Importing…' : 'Import CSV'}
+            {importMutation.isPending
+              ? t('academic.students.importing')
+              : t('academic.students.importCsv')}
           </Button>
           <input
             ref={fileRef}
@@ -329,7 +329,7 @@ export default function GradesPage() {
           <DropdownMenuTrigger className={CHIP_TRIGGER_CLASS}>
             {currentSection
               ? `${currentSection.className}-${currentSection.name}`
-              : 'Select section'}
+              : t('academic.grades.selectSection')}
             <ChevronDown size={14} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
@@ -348,13 +348,13 @@ export default function GradesPage() {
 
         <DropdownMenu>
           <DropdownMenuTrigger className={CHIP_TRIGGER_CLASS}>
-            {selectedTerm ? selectedTerm.name : 'Term'}
+            {selectedTerm ? selectedTerm.name : t('academic.grades.term')}
             <ChevronDown size={14} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            {terms.map((t) => (
-              <DropdownMenuItem key={t._id} onClick={() => setTermId(t._id)}>
-                {t.name}
+            {terms.map((term) => (
+              <DropdownMenuItem key={term._id} onClick={() => setTermId(term._id)}>
+                {term.name}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -362,7 +362,7 @@ export default function GradesPage() {
 
         <DropdownMenu>
           <DropdownMenuTrigger className={CHIP_TRIGGER_CLASS}>
-            {selectedSubject ? selectedSubject.name : 'Subject'}
+            {selectedSubject ? selectedSubject.name : t('common.subject')}
             <ChevronDown size={14} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
@@ -376,28 +376,31 @@ export default function GradesPage() {
 
         <DropdownMenu>
           <DropdownMenuTrigger className={CHIP_TRIGGER_CLASS}>
-            {assessmentLabel(assessmentType)}
+            {t(`academic.assessmentTypes.${assessmentType}`)}
             <ChevronDown size={14} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            {ASSESSMENT_TYPES.map((t) => (
-              <DropdownMenuItem key={t} onClick={() => setAssessmentType(t)}>
-                {assessmentLabel(t)}
+            {ASSESSMENT_TYPES.map((type) => (
+              <DropdownMenuItem key={type} onClick={() => setAssessmentType(type)}>
+                {t(`academic.assessmentTypes.${type}`)}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
 
         {students.length > 0 && (
-          <span className="text-xs text-muted-foreground">{students.length} students</span>
+          <span className="text-xs text-muted-foreground">
+            {t('academic.attendance.studentsCount', { count: students.length })}
+          </span>
         )}
       </div>
 
       {importResult && (
         <div className="flex items-center justify-between rounded-md border border-border bg-muted px-4 py-2 text-sm">
           <span>
-            Imported {importResult.saved} grade{importResult.saved === 1 ? '' : 's'}
-            {importResult.errors?.length > 0 && `, ${importResult.errors.length} error(s)`}
+            {t('academic.grades.importedCount', { count: importResult.saved })}
+            {importResult.errors?.length > 0 &&
+              t('academic.grades.importedErrorsSuffix', { count: importResult.errors.length })}
           </span>
           <button
             type="button"
@@ -409,17 +412,17 @@ export default function GradesPage() {
         </div>
       )}
 
-      {!sectionId && <EmptyState title="Select section, term, and subject to enter grades" />}
+      {!sectionId && <EmptyState title={t('academic.grades.selectToEnter')} />}
 
       {sectionId && !studentsLoading && gradesReady && students.length === 0 && (
-        <EmptyState title="No active students in this section." />
+        <EmptyState title={t('academic.grades.noActiveStudents')} />
       )}
 
       {gradesReady && locked && (
         <div className="sticky top-0 z-10 -mx-6 -mt-6 flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
           <Lock size={16} className="shrink-0" />
           <span>
-            Grades are locked for this selection. {canPublish ? 'Unlock to make changes.' : ''}
+            {t('academic.grades.lockedNotice')} {canPublish ? t('academic.grades.unlockHint') : ''}
           </span>
         </div>
       )}
@@ -427,10 +430,13 @@ export default function GradesPage() {
       {ready && (
         <div className="rounded-lg border border-border bg-card px-4 py-2.5 text-sm">
           <span className="font-semibold">
-            {enteredCount} of {students.length} entered
+            {t('academic.grades.enteredOfTotal', { entered: enteredCount, total: students.length })}
           </span>
           {liveAverage != null && (
-            <span className="text-muted-foreground"> · class avg so far {liveAverage}</span>
+            <span className="text-muted-foreground">
+              {' '}
+              {t('academic.grades.classAvgSoFar', { avg: liveAverage })}
+            </span>
           )}
         </div>
       )}
@@ -458,10 +464,12 @@ export default function GradesPage() {
       {ready && (
         <div className="sticky bottom-0 z-10 -mx-6 flex flex-col gap-2 border-t border-border bg-card p-3">
           {saveMutation.isSuccess && (
-            <p className="text-center text-sm text-green-600">Grades saved</p>
+            <p className="text-center text-sm text-green-600">{t('academic.grades.gradesSaved')}</p>
           )}
           {saveMutation.isError && (
-            <p className="text-center text-sm text-destructive">Save failed</p>
+            <p className="text-center text-sm text-destructive">
+              {t('academic.grades.saveFailed')}
+            </p>
           )}
 
           {locked && <DockedKeypad value="" onKey={() => {}} onNext={() => {}} disabled />}
@@ -469,7 +477,9 @@ export default function GradesPage() {
             <DockedKeypad value={draft} onKey={keypadPress} onNext={commitDraftAndAdvance} />
           )}
           {!locked && !focusedId && (
-            <p className="text-center text-sm text-muted-foreground">All students marked</p>
+            <p className="text-center text-sm text-muted-foreground">
+              {t('academic.grades.allStudentsMarked')}
+            </p>
           )}
 
           <div className="flex gap-2">
@@ -479,7 +489,7 @@ export default function GradesPage() {
                 onClick={() => lockMutation.mutate(locked ? 'unlock' : 'lock')}
                 disabled={lockMutation.isPending}
               >
-                {locked ? 'Unlock' : 'Lock'} Grades
+                {locked ? t('academic.grades.unlockGrades') : t('academic.grades.lockGrades')}
               </Button>
             )}
             <Button
@@ -487,7 +497,7 @@ export default function GradesPage() {
               onClick={handleSave}
               disabled={saveMutation.isPending || locked}
             >
-              {saveMutation.isPending ? 'Saving…' : 'Save Grades'}
+              {saveMutation.isPending ? t('common.saving') : t('academic.grades.saveGrades')}
             </Button>
           </div>
         </div>
