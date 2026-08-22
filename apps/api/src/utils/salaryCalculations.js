@@ -4,13 +4,26 @@ export class SalaryComponentError extends Error {}
  * Resolves a SalaryStructure's raw components into concrete amounts.
  * Fixed components resolve to their own amount; percentage components
  * resolve against a non-percentage sibling's amount via baseRef.
+ *
+ * Matching is by each component's stable `id`, not its `label` — labels
+ * are freely editable display text, so keying resolution off them would
+ * silently orphan a percentage component whenever its base gets renamed.
  */
 export function resolveComponents(components) {
+  for (const comp of components) {
+    if (!comp.id) {
+      throw new SalaryComponentError(
+        `Component "${comp.label}" is missing a stable id — this structure needs the id-backfill migration run before slips can be generated`
+      );
+    }
+  }
+
+  const labelById = new Map(components.map((c) => [c.id, c.label]));
   const fixedMap = {};
-  const percentageLabels = new Set(components.filter((c) => c.isPercentage).map((c) => c.label));
+  const percentageIds = new Set(components.filter((c) => c.isPercentage).map((c) => c.id));
 
   for (const comp of components) {
-    if (!comp.isPercentage) fixedMap[comp.label] = comp.amount;
+    if (!comp.isPercentage) fixedMap[comp.id] = comp.amount;
   }
 
   const resolved = [];
@@ -25,9 +38,9 @@ export function resolveComponents(components) {
         `Component "${comp.label}" is a percentage component but has no baseRef`
       );
     }
-    if (percentageLabels.has(comp.baseRef)) {
+    if (percentageIds.has(comp.baseRef)) {
       throw new SalaryComponentError(
-        `Component "${comp.label}" references "${comp.baseRef}", which is itself a percentage component — percentage-of-percentage is not supported`
+        `Component "${comp.label}" references "${labelById.get(comp.baseRef) ?? comp.baseRef}", which is itself a percentage component — percentage-of-percentage is not supported`
       );
     }
     if (!(comp.baseRef in fixedMap)) {

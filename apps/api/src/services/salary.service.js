@@ -32,6 +32,7 @@ export function decryptComponents(components, tenantId) {
 
 export function encryptComponents(components, tenantId) {
   return (components ?? []).map((c) => ({
+    id: c.id,
     label: c.label,
     type: c.type,
     isPercentage: c.isPercentage,
