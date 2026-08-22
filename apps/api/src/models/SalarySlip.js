@@ -1,11 +1,14 @@
 import mongoose from 'mongoose';
 import { tenantScopePlugin } from './plugins/tenantScope.js';
 
-const resolvedComponentSchema = new mongoose.Schema({
-  label: { type: String },
-  type: { type: String, enum: ['earning', 'deduction'] },
-  amount: { type: Number },
-}, { _id: false });
+const resolvedComponentSchema = new mongoose.Schema(
+  {
+    label: { type: String },
+    type: { type: String, enum: ['earning', 'deduction'] },
+    amount: { type: String }, // AES-256-GCM ciphertext, see services/salary.service.js
+  },
+  { _id: false }
+);
 
 const salarySlipSchema = new mongoose.Schema(
   {
@@ -14,11 +17,19 @@ const salarySlipSchema = new mongoose.Schema(
     month: { type: Number, min: 1, max: 12, required: true },
     year: { type: Number, required: true },
     components: [resolvedComponentSchema],
-    grossEarnings: { type: Number, default: 0 },
-    totalDeductions: { type: Number, default: 0 },
-    netPay: { type: Number, default: 0 },
-    status: { type: String, enum: ['draft', 'generated', 'paid'], default: 'draft' },
+    grossEarnings: { type: String, default: null }, // ciphertext
+    totalDeductions: { type: String, default: null }, // ciphertext
+    netPay: { type: String, default: null }, // ciphertext
+    status: {
+      type: String,
+      enum: ['draft', 'queued', 'generated', 'failed', 'paid'],
+      default: 'draft',
+    },
     pdfKey: { type: String },
+    jobId: { type: String },
+    error: { type: String },
+    paidOn: { type: Date },
+    paidBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
 );
