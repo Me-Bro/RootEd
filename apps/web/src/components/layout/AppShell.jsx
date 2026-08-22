@@ -264,10 +264,10 @@ export default function AppShell() {
     .filter((g) => g.items.length > 0);
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       <aside
         className={cn(
-          'flex flex-col border-r border-border bg-card transition-all duration-200',
+          'flex h-full shrink-0 flex-col border-r border-border bg-card transition-all duration-200',
           collapsed ? 'w-16' : 'w-64'
         )}
       >
@@ -283,7 +283,7 @@ export default function AppShell() {
           </button>
         </div>
 
-        <nav className="flex flex-col gap-1 p-2 flex-1 overflow-y-auto">
+        <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-2">
           {navGroups.map((group, i) => (
             <div key={i}>
               {group.label && !collapsed && (
@@ -300,7 +300,7 @@ export default function AppShell() {
         </nav>
       </aside>
 
-      <div className="flex flex-1 flex-col min-w-0">
+      <div className="flex h-full min-w-0 min-h-0 flex-1 flex-col">
         {isImpersonating && (
           <div className="flex items-center justify-between gap-3 bg-amber-500/15 px-6 py-2 text-sm text-amber-800 dark:text-amber-300">
             <span>
