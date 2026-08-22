@@ -1,8 +1,10 @@
 import { NavLink } from 'react-router-dom';
 import { Menu } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils.js';
 
 export default function MobileBottomBar({ navGroups, onOpenMenu }) {
+  const { t } = useTranslation();
   const primaryTabs = navGroups
     .map((group) => group.items[0])
     .filter(Boolean)
@@ -31,7 +33,7 @@ export default function MobileBottomBar({ navGroups, onOpenMenu }) {
         className="flex flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium text-muted-foreground"
       >
         <Menu size={20} />
-        <span>Menu</span>
+        <span>{t('nav.menu')}</span>
       </button>
     </nav>
   );

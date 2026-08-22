@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/useAuth.js';
 import {
   Card,
@@ -9,8 +10,10 @@ import {
   CardDescription,
 } from '../../components/ui/Card.jsx';
 import { Button } from '../../components/ui/Button.jsx';
+import { LanguageSwitcherTrigger } from '../../components/ui/LanguageSwitcher.jsx';
 
 export default function SelectTenantPage() {
+  const { t } = useTranslation();
   const { tenants, selectTenant } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
@@ -27,7 +30,7 @@ export default function SelectTenantPage() {
       await selectTenant(tenantId);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.error || err.message || 'Could not activate tenant');
+      setError(err.response?.data?.error || err.message || t('auth.couldNotActivateTenant'));
     } finally {
       setPendingId(null);
     }
@@ -38,6 +41,10 @@ export default function SelectTenantPage() {
       role="main"
       className="relative flex min-h-screen items-center justify-center bg-background px-4 overflow-hidden"
     >
+      <div className="absolute right-4 top-4 z-20">
+        <LanguageSwitcherTrigger />
+      </div>
+
       <div className="relative z-10 flex w-full max-w-sm flex-col items-center gap-6">
         <div className="flex items-center gap-3">
           <img src="/favicon.svg" alt="RootEd logo" width={36} height={34} />
@@ -46,8 +53,8 @@ export default function SelectTenantPage() {
 
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>Choose an organization</CardTitle>
-            <CardDescription>You belong to more than one — pick one to continue</CardDescription>
+            <CardTitle>{t('auth.chooseOrganization')}</CardTitle>
+            <CardDescription>{t('auth.chooseOrganizationDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-2">
@@ -61,7 +68,7 @@ export default function SelectTenantPage() {
                   onClick={() => handleSelect(tenant._id)}
                   className="w-full justify-start"
                 >
-                  {pendingId === tenant._id ? 'Entering…' : tenant.name}
+                  {pendingId === tenant._id ? t('auth.entering') : tenant.name}
                 </Button>
               ))}
               {error && <p className="text-sm text-destructive">{error}</p>}

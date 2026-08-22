@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import {
   LayoutDashboard,
@@ -30,116 +31,149 @@ import {
 import { useAuth } from '../../contexts/useAuth.js';
 import { Button } from '../ui/Button.jsx';
 import { ThemeConfiguratorTrigger } from '../ui/ThemeConfigurator.jsx';
+import { LanguageSwitcherTrigger } from '../ui/LanguageSwitcher.jsx';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../ui/sheet.jsx';
 import NavList from './NavList.jsx';
 import MobileBottomBar from './MobileBottomBar.jsx';
 import { cn } from '../../lib/utils.js';
 import api from '../../lib/api.js';
 
-const NAV_GROUPS = [
-  {
-    label: null,
-    items: [{ to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }],
-  },
-  {
-    label: null,
-    superAdminOnly: true,
-    items: [
-      { to: '/tenants', label: 'Tenants', icon: Building2 },
-      { to: '/audit', label: 'Audit Log', icon: ScrollText },
-      { to: '/flags', label: 'Feature Flags', icon: ToggleLeft },
-    ],
-  },
-  {
-    label: 'Academic',
-    items: [
-      {
-        to: '/academic/years',
-        label: 'Academic Years',
-        icon: CalendarDays,
-        permission: 'students:read',
-      },
-      { to: '/academic/students', label: 'Students', icon: Users, permission: 'students:read' },
-      {
-        to: '/academic/attendance',
-        label: 'Attendance',
-        icon: ClipboardList,
-        permission: 'attendance:read',
-      },
-      {
-        to: '/academic/attendance/report',
-        label: 'Attendance Report',
-        icon: BarChart2,
-        permission: 'attendance:read',
-      },
-      { to: '/academic/grades', label: 'Grades', icon: BookOpen, permission: 'grades:read' },
-      {
-        to: '/academic/grades/report',
-        label: 'Grade Report',
-        icon: BarChart2,
-        permission: 'grades:read',
-      },
-      { to: '/academic/timetable', label: 'Timetable', icon: Grid, permission: 'students:read' },
-      {
-        to: '/academic/my-timetable',
-        label: 'My Schedule',
-        icon: CalendarDays,
-        permission: 'students:read',
-      },
-      {
-        to: '/academic/report-cards',
-        label: 'Report Cards',
-        icon: FileText,
-        permission: 'grades:read',
-      },
-    ],
-  },
-  {
-    label: 'Staff',
-    items: [
-      { to: '/staff', label: 'Staff Directory', icon: Briefcase, permission: 'staff:read' },
-      {
-        to: '/staff/leaves',
-        label: 'Leave Requests',
-        icon: CalendarCheck,
-        permission: 'leave:read',
-      },
-      { to: '/staff/salary', label: 'Salary', icon: Wallet, permission: 'payroll:read' },
-      {
-        to: '/staff/salary-structures',
-        label: 'Salary Structures',
-        icon: Settings2,
-        permission: 'payroll:read',
-      },
-    ],
-  },
-  {
-    label: 'Expense',
-    items: [
-      { to: '/expense', label: 'Expenses', icon: DollarSign, permission: 'expense:read' },
-      { to: '/expense/budgets', label: 'Budgets', icon: PieChart, permission: 'expense:read' },
-    ],
-  },
-  {
-    label: 'Fees',
-    items: [
-      { to: '/fee/structures', label: 'Fee Structures', icon: CreditCard, permission: 'fees:read' },
-      { to: '/fee', label: 'Fee Collection', icon: Wallet, permission: 'fees:read' },
-    ],
-  },
-  {
-    label: 'Inventory',
-    items: [
-      { to: '/inventory', label: 'Inventory', icon: Archive, permission: 'inventory:read' },
-      {
-        to: '/inventory/depreciation',
-        label: 'Depreciation',
-        icon: BarChart2,
-        permission: 'inventory:read',
-      },
-    ],
-  },
-];
+function getNavGroups(t) {
+  return [
+    {
+      label: null,
+      items: [{ to: '/dashboard', label: t('nav.dashboard'), icon: LayoutDashboard }],
+    },
+    {
+      label: null,
+      superAdminOnly: true,
+      items: [
+        { to: '/tenants', label: t('nav.tenants'), icon: Building2 },
+        { to: '/audit', label: t('nav.audit'), icon: ScrollText },
+        { to: '/flags', label: t('nav.flags'), icon: ToggleLeft },
+      ],
+    },
+    {
+      label: t('nav.academic'),
+      items: [
+        {
+          to: '/academic/years',
+          label: t('nav.academicYears'),
+          icon: CalendarDays,
+          permission: 'students:read',
+        },
+        {
+          to: '/academic/students',
+          label: t('nav.students'),
+          icon: Users,
+          permission: 'students:read',
+        },
+        {
+          to: '/academic/attendance',
+          label: t('nav.attendance'),
+          icon: ClipboardList,
+          permission: 'attendance:read',
+        },
+        {
+          to: '/academic/attendance/report',
+          label: t('nav.attendanceReport'),
+          icon: BarChart2,
+          permission: 'attendance:read',
+        },
+        {
+          to: '/academic/grades',
+          label: t('nav.grades'),
+          icon: BookOpen,
+          permission: 'grades:read',
+        },
+        {
+          to: '/academic/grades/report',
+          label: t('nav.gradeReport'),
+          icon: BarChart2,
+          permission: 'grades:read',
+        },
+        {
+          to: '/academic/timetable',
+          label: t('nav.timetable'),
+          icon: Grid,
+          permission: 'students:read',
+        },
+        {
+          to: '/academic/my-timetable',
+          label: t('nav.mySchedule'),
+          icon: CalendarDays,
+          permission: 'students:read',
+        },
+        {
+          to: '/academic/report-cards',
+          label: t('nav.reportCards'),
+          icon: FileText,
+          permission: 'grades:read',
+        },
+      ],
+    },
+    {
+      label: t('nav.staff'),
+      items: [
+        { to: '/staff', label: t('nav.staffDirectory'), icon: Briefcase, permission: 'staff:read' },
+        {
+          to: '/staff/leaves',
+          label: t('nav.leaves'),
+          icon: CalendarCheck,
+          permission: 'leave:read',
+        },
+        { to: '/staff/salary', label: t('nav.salary'), icon: Wallet, permission: 'payroll:read' },
+        {
+          to: '/staff/salary-structures',
+          label: t('nav.salaryStructures'),
+          icon: Settings2,
+          permission: 'payroll:read',
+        },
+      ],
+    },
+    {
+      label: t('nav.expenses'),
+      items: [
+        { to: '/expense', label: t('nav.expenses'), icon: DollarSign, permission: 'expense:read' },
+        {
+          to: '/expense/budgets',
+          label: t('nav.budgets'),
+          icon: PieChart,
+          permission: 'expense:read',
+        },
+      ],
+    },
+    {
+      label: t('nav.fees'),
+      items: [
+        {
+          to: '/fee/structures',
+          label: t('nav.feeStructures'),
+          icon: CreditCard,
+          permission: 'fees:read',
+        },
+        { to: '/fee', label: t('nav.feeCollection'), icon: Wallet, permission: 'fees:read' },
+      ],
+    },
+    {
+      label: t('nav.inventory'),
+      items: [
+        {
+          to: '/inventory',
+          label: t('nav.inventory'),
+          icon: Archive,
+          permission: 'inventory:read',
+        },
+        {
+          to: '/inventory/depreciation',
+          label: t('nav.depreciation'),
+          icon: BarChart2,
+          permission: 'inventory:read',
+        },
+      ],
+    },
+  ];
+}
 
 function NotificationBell() {
   const [open, setOpen] = useState(false);
@@ -226,6 +260,7 @@ function NotificationBell() {
 }
 
 export default function AppShell() {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -236,9 +271,8 @@ export default function AppShell() {
   // while impersonating, per GET /auth/me) — a bare super_admin token grants none.
   const hasPermission = (permission) => !permission || permissions.includes(permission);
 
-  const navGroups = NAV_GROUPS.filter(
-    (g) => !g.superAdminOnly || (isSuperAdmin && !isImpersonating)
-  )
+  const navGroups = getNavGroups(t)
+    .filter((g) => !g.superAdminOnly || (isSuperAdmin && !isImpersonating))
     // A super_admin with no active impersonation has no tenant context — hide
     // tenant modules (Academic/Staff/Expense/Fees/Inventory) entirely rather
     // than showing links that 404 against /tenant/* endpoints. Once impersonating
@@ -273,7 +307,7 @@ export default function AppShell() {
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto md:hidden">
           <SheetHeader>
-            <SheetTitle>Menu</SheetTitle>
+            <SheetTitle>{t('nav.menu')}</SheetTitle>
           </SheetHeader>
           <NavList navGroups={navGroups} onNavigate={() => setMenuOpen(false)} />
         </SheetContent>
@@ -282,27 +316,26 @@ export default function AppShell() {
       <div className="flex h-full min-w-0 min-h-0 flex-1 flex-col">
         {isImpersonating && (
           <div className="flex items-center justify-between gap-3 bg-amber-500/15 px-6 py-2 text-sm text-amber-800 dark:text-amber-300">
-            <span>
-              Impersonating this tenant as tenant admin — session ends when the token expires.
-            </span>
+            <span>{t('auth.impersonating')}</span>
             <Button
               variant="outline"
               size="sm"
               onClick={logout}
               className="border-amber-600 text-amber-700 dark:text-amber-300"
             >
-              Exit impersonation
+              {t('auth.exitImpersonation')}
             </Button>
           </div>
         )}
         <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-card md:px-6">
           <span className="text-sm text-muted-foreground">{user?.email ?? ''}</span>
           <div className="flex items-center gap-2">
+            <LanguageSwitcherTrigger />
             <ThemeConfiguratorTrigger />
             {(!isSuperAdmin || isImpersonating) && <NotificationBell />}
             <Button variant="ghost" size="sm" onClick={logout} className="gap-1.5">
               <LogOut size={15} />
-              Logout
+              {t('auth.logout')}
             </Button>
           </div>
         </header>
