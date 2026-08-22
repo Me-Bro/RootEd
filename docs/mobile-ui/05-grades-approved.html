@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Enter Marks — 2 mockups + approved spec · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page wide">
+  <p class="crumbs"><a href="index.html">← All modules</a> · Academic · <code>GradesPage.jsx</code></p>
+
+  <div class="approved-band">
+    <span class="seal">✅ APPROVED FOR BUILD</span>
+    <span class="txt">Module 5 of 18, lightweight process: understand the real desktop screen → exactly <b>2 mobile mockups</b> (simple, then smart) → approve one → write the full build spec.</span>
+  </div>
+
+  <h1 class="page-title">Enter Marks — mobile mock</h1>
+  <p class="page-sub">Real data: Grade 5-A, Maths, Term 1 final — class average 69, Kartik Dutta the lowest at 60.</p>
+
+  <div class="statrow" style="max-width:900px">
+    <div class="s"><div class="n">2</div><div class="l">Mockups made</div></div>
+    <div class="s hot"><div class="n">1</div><div class="l">Approved</div></div>
+    
+  </div>
+
+  <div class="toc">
+    <a href="#current"><b>0</b> · What the desktop does today</a>
+    <a href="#mocks"><b>1</b> · The 2 mockups</a>
+    <a href="#wiring"><b>2</b> · API contracts</a>
+    <a href="#state"><b>3</b> · State &amp; logic</a>
+    <a href="#components"><b>4</b> · File &amp; component plan</a>
+    <a href="#edge"><b>5</b> · Errors, empty, a11y</a>
+    <a href="#dod"><b>6</b> · Definition of done</a>
+    <a href="#signoff"><b>7</b> · Sign-off</a>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:34px" id="current">0 · What the desktop does today <span style="color:#6e7a8a;font-size:13px;font-weight:400">— read from the real code, not assumed</span></h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Behaviour</th><th>Where it lives</th></tr></thead>
+      <tbody>
+        <tr><td>4 selects (section/term/subject/assessment) gate a table of <code>&lt;input type=number&gt;</code></td><td>GradesPage.jsx</td></tr>
+        <tr><td>OS numeric keyboard covers ~45% of the screen on entry</td><td>inherent to native number inputs on mobile</td></tr>
+        <tr><td>Lock banner shown as a text line above a potentially long table</td><td>same file</td></tr>
+        <tr><td><code>GET /academic/terms</code> called without <code>?yearId</code> — 6 near-identical options with 3 years seeded</td><td>confirmed bug, flagged in the plan</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="mocks">1 · The 2 mockups</h2>
+
+  <div class="rail">
+    <div class="variant">
+      <div class="variant-head">
+        <span class="statechip" style="background:#3a4152;color:#e2e7ee">MOCK 1 · SIMPLE</span>
+        <div class="variant-title">Mirrors the desktop, exactly</div>
+        <p class="variant-for">4 selects (section/term/subject/assessment) gate a list of number inputs, one per student. Same fields, same OS keyboard, mobile-shaped.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Grades</h2></div></div>
+            <div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap"><div class="chip on">5-A ▾</div><div class="chip">Term 1 ▾</div><div class="chip">Maths ▾</div><div class="chip">Final ▾</div></div>
+          </div>
+          <div class="body">
+            <div class="list">
+              <div class="li"><div class="grow"><div class="nm">Rohit Banerjee</div><div class="meta">GPS/2026/0406</div></div><input class="chip" style="width:56px;text-align:center;border:1px solid var(--line)" value="74"><span class="badge ok" style="margin-left:6px">B</span></div>
+              <div class="li"><div class="grow"><div class="nm">Chetan Chatterjee</div><div class="meta">GPS/2026/0414</div></div><input class="chip" style="width:56px;text-align:center;border:1px solid var(--line)" value="70"><span class="badge" style="margin-left:6px">C</span></div>
+              <div class="li"><div class="grow"><div class="nm">Kartik Dutta</div><div class="meta">GPS/2026/0402</div></div><input class="chip" style="width:56px;text-align:center;border:1px solid var(--line)" value="60"><span class="badge warn" style="margin-left:6px">D</span></div>
+            </div>
+          </div>
+          <div class="stickybar"><div class="btn">Save Grades</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant" style="position:relative">
+      <div class="variant-head">
+        <span class="statechip">MOCK 2 · SMART <span style="margin-left:6px">✅ APPROVED</span></span>
+        <div class="variant-title">Docked keypad, list stays visible</div>
+        <p class="variant-for">The OS number keyboard covers ~45% of the screen on Mock 1 — every tap is tap→type→dismiss. A custom docked keypad drives the highlighted row and auto-advances, so the roster never scrolls out of view. This is the same pattern already approved for Enter Marks in the earlier exploration (concept 2).</p>
+      </div>
+      <div class="phone">
+        <div class="redline-dot" style="left:200px;top:270px">1</div>
+        <div class="redline-dot" style="left:200px;top:600px">2</div>
+        <div class="redline-dot" style="left:70px;top:640px">3</div>
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Enter Marks</h2><p class="sub">5-A · Maths · Term 1 final</p></div></div>
+            <div class="banner ok" style="margin:8px 12px 0">✓<div>12 of 21 entered · class avg so far 71</div></div>
+          </div>
+          <div class="body" style="padding-bottom:6px">
+            <div class="list">
+              <div class="li"><div class="avatar g">RB</div><div class="grow"><div class="nm">Rohit Banerjee</div></div><span class="badge ok">B</span><span style="font-weight:700;width:30px;text-align:right">74</span></div>
+              <div class="li" style="background:var(--accent-soft);border-left:3px solid var(--accent)"><div class="avatar">KD</div><div class="grow"><div class="nm">Kartik Dutta</div><div class="tiny muted">typing…</div></div><span class="badge warn">D</span><span style="font-weight:700;width:40px;text-align:right;font-size:19px">6<span style="opacity:.4">_</span></span></div>
+              <div class="li"><div class="avatar">DG</div><div class="grow"><div class="nm">Divya Ghosh</div></div><span class="tiny muted">—</span><span class="tiny muted" style="width:30px;text-align:right">··</span></div>
+            </div>
+          </div>
+          <div class="sheet" style="padding:8px 12px 18px">
+            <div class="keypad" style="gap:6px">
+              <div class="key" style="height:44px">1</div><div class="key" style="height:44px">2</div><div class="key" style="height:44px">3</div>
+              <div class="key" style="height:44px">4</div><div class="key" style="height:44px">5</div><div class="key" style="height:44px">6</div>
+              <div class="key" style="height:44px">7</div><div class="key" style="height:44px">8</div><div class="key" style="height:44px">9</div>
+              <div class="key soft" style="height:44px">AB</div><div class="key" style="height:44px">0</div><div class="key soft" style="height:44px">⌫</div>
+            </div>
+            <div class="btn" style="margin-top:8px;height:44px">Next student ›</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div style="max-width:280px;padding-top:52px">
+      <ol class="speclist">
+        <li><b>Live class average</b> updates as marks are entered — feedback the OS-keyboard version never gave.</li>
+        <li><b>Docked keypad.</b> Custom, not the OS keyboard — the roster above never gets covered.</li>
+        <li><b>AB = absent</b> for this assessment; auto-advances to the next unmarked row on submit.</li>
+      </ol>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="border-color:#2f5c4a;background:#12211b">
+    <b>Why Mock 2 is approved:</b> this exact pattern was already validated in the earlier exploration (<a href="05-grades.html#v2" style="color:#9fe3c6">concept 2, ★ recommended</a>) — the docked keypad is the single highest-value fix for this screen because the OS keyboard problem is universal across every phone, not a judgment call. This spec formalizes it with real API contracts and a Definition of Done.
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="wiring">2 · API contracts <span style="color:#6e7a8a;font-size:13px;font-weight:400">— every one of these already exists</span></h2>
+  <div class="subhead">Unchanged endpoints — only the input UI changes</div>
+  <div class="codeblock"><span class="k">GET</span>  /academic/grades?sectionId=&termId=&subjectId=&assessmentType=
+<span class="k">POST</span> /academic/grades   {{ <span class="s">"grades"</span>:[{{ <span class="s">"studentId"</span>,<span class="s">"sectionId"</span>,<span class="s">"subjectId"</span>,<span class="s">"termId"</span>,<span class="s">"academicYearId"</span>,<span class="s">"assessmentType"</span>,<span class="s">"score"</span> }}] }}
+<span class="k">GET</span>  /academic/grades/lock?...   <span class="c1">// unchanged — locked assessments still block Save the same way</span></div>
+  <div class="notebox warn"><b>Known bug carried over, not fixed by this spec:</b> <code>GradesPage.jsx</code> calls <code>GET /academic/terms</code> without <code>?yearId</code> — with 3 seeded years that renders 6 near-identical term options. Fix is one line (<code>?yearId=activeYearId</code>) but is out of scope for this UI-only spec; flagging so it isn't missed.</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="state">3 · State &amp; logic</h2>
+  <div class="codeblock"><span class="k">const</span> [focusedId, setFocusedId] = useState(firstUnmarkedStudentId);
+<span class="k">const</span> [draft, setDraft] = useState(<span class="s">''</span>);  <span class="c1">// the digits typed on the docked keypad, not yet committed</span>
+
+<span class="k">function</span> keypadPress(key) {
+  <span class="k">if</span> (key === <span class="s">'⌫'</span>) <span class="k">return</span> setDraft(d => d.slice(<span class="k">0</span>, -<span class="k">1</span>));
+  <span class="k">if</span> (key === <span class="s">'AB'</span>) <span class="k">return</span> commitAndAdvance(<span class="k">null</span>);  <span class="c1">// absent for this assessment</span>
+  <span class="k">const</span> next = draft + key;
+  <span class="k">if</span> (Number(next) <= <span class="k">100</span>) setDraft(next);
+}
+<span class="k">function</span> commitAndAdvance(score) {
+  setScoreMap(m => ({{ ...m, [focusedId]: score }}));
+  setDraft(<span class="s">''</span>);
+  setFocusedId(nextUnmarkedId(focusedId));  <span class="c1">// roster order, wraps to the guard sheet when all are marked</span>
+}
+<span class="k">const</span> liveAverage = Object.values(scoreMap).filter(Boolean).reduce(avg, <span class="k">0</span>);</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="components">4 · File &amp; component plan</h2>
+  <div class="rail" style="gap:16px">
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Files</div></div>
+      <div class="codeblock filetree" style="width:100%;box-sizing:border-box"><span class="new">A</span> apps/web/src/components/grades/DockedKeypad.jsx
+<span class="new">A</span> apps/web/src/components/grades/MarkRow.jsx
+<span class="mod">M</span> apps/web/src/pages/academic/GradesPage.jsx</div>
+    </div>
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Component contracts</div></div>
+      <div class="card" style="width:100%">
+        <div class="kv"><span class="k">DockedKeypad</span><span class="v">{ value, onKey, onNext }</span></div>
+        <div class="kv"><span class="k">MarkRow</span><span class="v">{ student, score, letterGrade, focused }</span></div>
+        <div class="kv"><span class="k">Reuse as-is</span><span class="v"><code>scoreToLetter</code> from <code>@rooted/shared/utils</code>, existing lock-banner logic</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="edge">5 · Errors, empty states, accessibility</h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Situation</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td><b>Assessment is locked</b></td><td>keypad disables entirely, sticky banner explains why, matching today's lock message</td></tr>
+        <tr><td><b>Score > 100 typed</b></td><td>keypad simply refuses the digit — the total never exceeds 100 to begin with</td></tr>
+        <tr><td><b>Network fails mid-entry</b></td><td>scoreMap stays in memory; Save retries the same payload, nothing is lost</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="dod">6 · Definition of done</h2>
+  <div class="painbox" style="max-width:900px">
+    <ul class="checklist">
+      <li>Docked custom keypad replaces the OS number keyboard entirely</li>
+      <li>Live class average updates as each mark is entered</li>
+      <li>AB marks a student absent for this one assessment and auto-advances</li>
+      <li>Roster list never scrolls out of view while the keypad is open</li>
+      <li>Lock banner behaves identically to today's desktop lock state</li>
+    </ul>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="signoff">7 · Sign-off</h2>
+  <div class="painbox" style="max-width:900px">
+    <div class="signoff">
+      <div class="field"><div class="l">Approved by</div><div class="v"></div></div>
+      <div class="field"><div class="l">Date</div><div class="v"></div></div>
+      <div class="field"><div class="l">Spec version</div><div class="v">v1.0 · 22 Aug 2026</div></div>
+      <div class="field"><div class="l">Module</div><div class="v">Academic · 5 of 18</div></div>
+    </div>
+  </div>
+
+</div>
+<nav class="reviewnav" title="← → move between screens · I gallery">
+  <a class="rn-btn" href="04-attendance-report-approved.html" data-nav="prev">‹ <span class="rn-lbl">Attendance Report</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">APPROVED</span><span class="rn-title">Enter Marks · 5 of 18</span></a>
+  <a class="rn-btn" href="06-grade-report-approved.html" data-nav="next"><span class="rn-lbl">Grade Report</span> ›</a>
+  <span class="rn-keys">← →  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

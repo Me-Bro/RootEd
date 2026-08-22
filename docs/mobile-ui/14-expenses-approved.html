@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Expenses — 2 mockups + approved spec · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page wide">
+  <p class="crumbs"><a href="index.html">← All modules</a> · Expense · <code>ExpensesPage.jsx</code></p>
+
+  <div class="approved-band">
+    <span class="seal">✅ APPROVED FOR BUILD</span>
+    <span class="txt">Module 13 of 18, lightweight process: understand the real desktop screen → exactly <b>2 mobile mockups</b> (simple, then smart) → approve one → write the full build spec.</span>
+  </div>
+
+  <h1 class="page-title">Expenses — mobile mock</h1>
+  <p class="page-sub">Real data: 13 pending expenses worth ₹5.27L; Transport cost center at 84% of its ₹16L annual budget.</p>
+
+  <div class="statrow" style="max-width:900px">
+    <div class="s"><div class="n">2</div><div class="l">Mockups made</div></div>
+    <div class="s hot"><div class="n">1</div><div class="l">Approved</div></div>
+    
+  </div>
+
+  <div class="toc">
+    <a href="#current"><b>0</b> · What the desktop does today</a>
+    <a href="#mocks"><b>1</b> · The 2 mockups</a>
+    <a href="#wiring"><b>2</b> · API contracts</a>
+    <a href="#state"><b>3</b> · State &amp; logic</a>
+    <a href="#components"><b>4</b> · File &amp; component plan</a>
+    <a href="#edge"><b>5</b> · Errors, empty, a11y</a>
+    <a href="#dod"><b>6</b> · Definition of done</a>
+    <a href="#signoff"><b>7</b> · Sign-off</a>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:34px" id="current">0 · What the desktop does today <span style="color:#6e7a8a;font-size:13px;font-weight:400">— read from the real code, not assumed</span></h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Behaviour</th><th>Where it lives</th></tr></thead>
+      <tbody>
+        <tr><td>Status tabs + cost-center/date filters, 8-column table, inline Approve/Reject</td><td>ExpensesPage.jsx</td></tr>
+        <tr><td>"New Expense" attaches a file via a separate upload call after creation</td><td>same file</td></tr>
+        <tr><td>No budget context shown anywhere on this screen — Budgets is a separate page</td><td>confirmed gap</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="mocks">1 · The 2 mockups</h2>
+
+  <div class="rail">
+    <div class="variant">
+      <div class="variant-head">
+        <span class="statechip" style="background:#3a4152;color:#e2e7ee">MOCK 1 · SIMPLE</span>
+        <div class="variant-title">Mirrors the desktop, exactly</div>
+        <p class="variant-for">Status tabs (All/Pending/Approved/Rejected/Paid), cost-center + date filters, an 8-column table with inline Approve/Reject. Same fields, mobile-shaped.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Expenses</h2></div><div class="iconbtn">＋</div></div>
+            <div class="chiprow" style="margin-top:10px"><div class="chip on">All</div><div class="chip">Pending · 13</div><div class="chip">Approved</div><div class="chip">Paid</div></div>
+          </div>
+          <div class="body">
+            <div class="list">
+              <div class="li"><div class="grow"><div class="nm">School bus diesel — Aug #31</div><div class="meta">₹56,227 · Transport</div></div><span class="badge warn">pending</span></div>
+              <div class="li" style="padding-top:0"><div class="row" style="gap:8px;width:100%"><div class="btn sm grow">Approve</div><div class="btn sec sm grow">Reject</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant" style="position:relative">
+      <div class="variant-head">
+        <span class="statechip">MOCK 2 · SMART <span style="margin-left:6px">✅ APPROVED</span></span>
+        <div class="variant-title">Approval queue, budget context on the card</div>
+        <p class="variant-for">Same one-at-a-time queue pattern approved for Leave Requests, adapted here with the one context that actually matters for an expense decision: how much of this cost center's budget is already spent. Transport is at 84% — that's the fact that should drive the approve/reject decision, not a bare amount.</p>
+      </div>
+      <div class="phone">
+        <div class="redline-dot" style="left:200px;top:200px">1</div>
+        <div class="redline-dot" style="left:200px;top:420px">2</div>
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="grow"><h2>Approval queue</h2><p class="sub">13 pending · ₹5.27L</p></div></div></div>
+          <div class="body">
+            <div class="card">
+              <div class="between"><span style="font-weight:650">School bus diesel — Aug #31</span><span style="font-weight:700">₹56,227</span></div>
+              <div class="tiny muted" style="margin-top:2px">Transport · Bharat Fuels · submitted by Krishna Rathore</div>
+              <div class="card tight" style="margin-top:10px;border-color:var(--late)">
+                <div class="between"><span class="small">Transport budget</span><span class="badge warn">84% spent</span></div>
+                <div class="bar" style="margin-top:6px"><span class="a" style="width:84%"></span></div>
+                <div class="tiny muted" style="margin-top:4px">₹13.4L of ₹16L annual cap · this expense pushes it to 87%</div>
+              </div>
+              <div class="row" style="gap:8px;margin-top:12px"><div class="btn accent grow">Approve</div><div class="btn sec grow">Reject</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div style="max-width:280px;padding-top:52px">
+      <ol class="speclist">
+        <li><b>Queue, not table</b> — same pattern as Leave Requests, one decision at a time.</li>
+        <li><b>Budget-in-context.</b> Shows the cost center's spend-to-date and what this expense would push it to — the actual decision-relevant number, computed from data that already exists on <code>Budget</code>.</li>
+      </ol>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="border-color:#2f5c4a;background:#12211b">
+    <b>Why Mock 2 is approved:</b> an approver's real question is "does this fit the budget", and today's screen makes them open Budgets separately to find out. Joining <code>GET /expense/budgets</code> onto the queue card answers it without a second screen.
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="wiring">2 · API contracts <span style="color:#6e7a8a;font-size:13px;font-weight:400">— every one of these already exists</span></h2>
+  <div class="codeblock"><span class="k">GET</span> /expense/entries?status=pending
+<span class="k">GET</span> /expense/budgets?year=<span class="s">{{y}}</span>              <span class="c1">// joined client-side by costCenterId to show spend-to-date</span>
+<span class="k">PATCH</span> /expense/entries/<span class="s">{{id}}</span>/approve
+<span class="k">PATCH</span> /expense/entries/<span class="s">{{id}}</span>/reject   {{ <span class="s">"comment"</span> }}</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="state">3 · State &amp; logic</h2>
+  <div class="codeblock"><span class="k">const</span> budgetFor = (costCenterId) => budgets.find(b => b.costCenterId === costCenterId && b.period === <span class="s">'annual'</span>);
+<span class="k">const</span> projectedPct = (budget, amount) => Math.round((budget.spent + amount) / budget.cap * <span class="k">100</span>);</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="components">4 · File &amp; component plan</h2>
+  <div class="rail" style="gap:16px">
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Files</div></div>
+      <div class="codeblock filetree" style="width:100%;box-sizing:border-box"><span class="new">A</span> apps/web/src/components/expense/ApprovalQueueCard.jsx
+<span class="new">A</span> apps/web/src/components/expense/BudgetContextBar.jsx
+<span class="mod">M</span> apps/web/src/pages/expense/ExpensesPage.jsx</div>
+    </div>
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Component contracts</div></div>
+      <div class="card" style="width:100%">
+        <div class="kv"><span class="k">ApprovalQueueCard</span><span class="v">{ entry, budget, onApprove, onReject }</span></div>
+        <div class="kv"><span class="k">BudgetContextBar</span><span class="v">{ budget, projectedAmount }</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="edge">5 · Errors, empty states, accessibility</h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Situation</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td><b>No budget set for the cost center</b></td><td>context card hides; approve/reject still works without it</td></tr>
+        <tr><td><b>Expense has no cost center</b></td><td>same — context card only renders when there's something to show</td></tr>
+        <tr><td><b>Attachment present</b></td><td>thumbnail/link shown on the card, tapping opens it exactly as today</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="dod">6 · Definition of done</h2>
+  <div class="painbox" style="max-width:900px">
+    <ul class="checklist">
+      <li>Pending expenses work through as a one-at-a-time queue</li>
+      <li>Budget spend-to-date and projected-after-approval % shown on the card when available</li>
+      <li>Approve/reject behave identically to today's mutations</li>
+      <li>Missing budget data degrades gracefully, never blocks the decision</li>
+    </ul>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="signoff">7 · Sign-off</h2>
+  <div class="painbox" style="max-width:900px">
+    <div class="signoff">
+      <div class="field"><div class="l">Approved by</div><div class="v"></div></div>
+      <div class="field"><div class="l">Date</div><div class="v"></div></div>
+      <div class="field"><div class="l">Spec version</div><div class="v">v1.0 · 22 Aug 2026</div></div>
+      <div class="field"><div class="l">Module</div><div class="v">Expense · 13 of 18</div></div>
+    </div>
+  </div>
+
+</div>
+<nav class="reviewnav" title="← → move between screens · I gallery">
+  <a class="rn-btn" href="13-salary-approved.html" data-nav="prev">‹ <span class="rn-lbl">Salary</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">APPROVED</span><span class="rn-title">Expenses · 13 of 18</span></a>
+  <a class="rn-btn" href="15-budgets-approved.html" data-nav="next"><span class="rn-lbl">Budgets</span> ›</a>
+  <span class="rn-keys">← →  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

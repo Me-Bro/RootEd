@@ -57,7 +57,22 @@ pnpm --filter web test:snapshot:restore
 
 # Bootstrap a super_admin user against whatever MONGODB_URI is active
 node apps/api/src/scripts/seed-super-admin.js --email=admin@rooted.app --password=SecurePass123
+
+# Seed a full-scale realistic school (1000 students, 74 staff, real Indian names)
+# into the dev DB. Run INSIDE the api container: the Mongo replica set advertises
+# itself as `mongo:27017`, so a host-side connection dies after the handshake.
+docker exec -w /app/apps/api rooted-api-1 node src/scripts/seed-bulk-data.js --reset
+docker exec -w /app/apps/api rooted-api-1 node src/scripts/seed-bulk-data.js --students=250 --attendance-days=10 --reset
 ```
+
+`seed-bulk-data.js` flags: `--students=N` (default 1000), `--tenant=<subdomain>`,
+`--attendance-days=N` (default 20), `--today=YYYY-MM-DD`, `--reset` (purge the
+tenant's data first, keeping the tenant, roles and the canonical login users).
+Without `--reset` every write is an upsert keyed on the model's unique index, so
+re-runs are idempotent. It seeds Grade 1-10 x sections A-D (40 sections), 8
+subjects per class, a conflict-free 1600-slot timetable, ~20k attendance records,
+4 assessment rounds of grades (~31k), fees/payroll/leave/expense/inventory. All
+seeded users share password `TestPass123!`.
 
 ## Architecture
 

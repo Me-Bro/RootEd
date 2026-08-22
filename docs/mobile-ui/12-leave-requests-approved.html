@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Leave Requests — 2 mockups + approved spec · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page wide">
+  <p class="crumbs"><a href="index.html">← All modules</a> · Staff · <code>LeaveRequestsPage.jsx</code></p>
+
+  <div class="approved-band">
+    <span class="seal">✅ APPROVED FOR BUILD</span>
+    <span class="txt">Module 11 of 18, lightweight process: understand the real desktop screen → exactly <b>2 mobile mockups</b> (simple, then smart) → approve one → write the full build spec.</span>
+  </div>
+
+  <h1 class="page-title">Leave Requests — mobile mock</h1>
+  <p class="page-sub">Real data: 80 leave requests total (36 pending, 27 approved, 7 rejected, 10 cancelled), 4 leave types (Casual 12d, Sick 10d, Earned 15d, Unpaid 30d).</p>
+
+  <div class="statrow" style="max-width:900px">
+    <div class="s"><div class="n">2</div><div class="l">Mockups made</div></div>
+    <div class="s hot"><div class="n">1</div><div class="l">Approved</div></div>
+    
+  </div>
+
+  <div class="toc">
+    <a href="#current"><b>0</b> · What the desktop does today</a>
+    <a href="#mocks"><b>1</b> · The 2 mockups</a>
+    <a href="#wiring"><b>2</b> · API contracts</a>
+    <a href="#state"><b>3</b> · State &amp; logic</a>
+    <a href="#components"><b>4</b> · File &amp; component plan</a>
+    <a href="#edge"><b>5</b> · Errors, empty, a11y</a>
+    <a href="#dod"><b>6</b> · Definition of done</a>
+    <a href="#signoff"><b>7</b> · Sign-off</a>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:34px" id="current">0 · What the desktop does today <span style="color:#6e7a8a;font-size:13px;font-weight:400">— read from the real code, not assumed</span></h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Behaviour</th><th>Where it lives</th></tr></thead>
+      <tbody>
+        <tr><td>All/Pending tabs, status+date filters, a 7-column table with inline Approve/Reject</td><td>LeaveRequestsPage.jsx</td></tr>
+        <tr><td>Reject opens a small comment modal</td><td>same file</td></tr>
+        <tr><td>Leave type management + "Apply for Leave" self-service also live on this page</td><td>same file — unchanged in both mocks</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="mocks">1 · The 2 mockups</h2>
+
+  <div class="rail">
+    <div class="variant">
+      <div class="variant-head">
+        <span class="statechip" style="background:#3a4152;color:#e2e7ee">MOCK 1 · SIMPLE</span>
+        <div class="variant-title">Mirrors the desktop, exactly</div>
+        <p class="variant-for">All/Pending tabs, status+date filters, a 7-column table with Approve/Reject per row. Same fields as today.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Leave Requests</h2></div></div>
+            <div class="seg" style="margin-top:10px"><div class="on">All · 80</div><div>Pending · 36</div></div>
+          </div>
+          <div class="body">
+            <div class="list">
+              <div class="li"><div class="grow"><div class="nm">Shalini Pereira</div><div class="meta">Unpaid · 14–16 Jun · 3d</div></div><span class="badge warn">pending</span></div>
+              <div class="li" style="padding-top:0"><div class="row" style="gap:8px;width:100%"><div class="btn sm grow">Approve</div><div class="btn sec sm grow">Reject</div></div></div>
+              <div class="li"><div class="grow"><div class="nm">Alok Biswas</div><div class="meta">Casual · 16–18 Jun · 3d</div></div><span class="badge warn">pending</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant" style="position:relative">
+      <div class="variant-head">
+        <span class="statechip">MOCK 2 · SMART <span style="margin-left:6px">✅ APPROVED</span></span>
+        <div class="variant-title">Approval queue, one card at a time</div>
+        <p class="variant-for">36 pending requests as a table means scanning and hunting for the Approve button 36 times. As a queue — one request, full context, decide, next — the approver works through all 36 without losing their place. Reason and leave-balance context sit right on the card instead of requiring a click-through.</p>
+      </div>
+      <div class="phone">
+        <div class="redline-dot" style="left:200px;top:180px">1</div>
+        <div class="redline-dot" style="left:200px;top:340px">2</div>
+        <div class="redline-dot" style="left:200px;top:560px">3</div>
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="grow"><h2>Approval queue</h2><p class="sub">36 pending</p></div></div>
+            <div class="bar" style="margin:10px 12px 0"><span class="g" style="width:3%"></span></div>
+          </div>
+          <div class="body">
+            <div class="card">
+              <div class="row"><div class="avatar">SP</div><div class="grow"><div style="font-weight:650">Shalini Pereira</div><div class="tiny muted">Social Studies · GPS-0034</div></div></div>
+              <div class="kv"><span class="k">Leave type</span><span class="v">Unpaid</span></div>
+              <div class="kv"><span class="k">Dates</span><span class="v">14–16 Jun 2026 (3 days)</span></div>
+              <div class="kv"><span class="k">Reason</span><span class="v">Exam duty at another centre</span></div>
+              <div class="kv"><span class="k">Balance after</span><span class="v">27 of 30 unpaid days left</span></div>
+              <div class="row" style="gap:8px;margin-top:12px"><div class="btn accent grow">✓ Approve</div><div class="btn sec grow">Reject</div></div>
+            </div>
+            <div class="tiny muted" style="text-align:center">1 of 36 · swipe or tap to decide</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div style="max-width:280px;padding-top:52px">
+      <ol class="speclist">
+        <li><b>One request, full context</b> — reason and remaining balance visible without a click-through.</li>
+        <li><b>Progress bar.</b> "1 of 36" makes the size of the queue honest instead of an endless table.</li>
+        <li><b>Approve/Reject</b> advance to the next card automatically — no re-navigating to the list.</li>
+      </ol>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="border-color:#2f5c4a;background:#12211b">
+    <b>Why Mock 2 is approved:</b> 36 pending requests is exactly the size where a table forces re-scanning after every action. The queue pattern mirrors the already-approved Attendance Report follow-up queue (concept 4) — same shape, different domain: one item, full context, act, advance.
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="wiring">2 · API contracts <span style="color:#6e7a8a;font-size:13px;font-weight:400">— every one of these already exists</span></h2>
+  <div class="codeblock"><span class="k">GET</span> /staff/leave-requests?status=pending&page=<span class="k">1</span>
+<span class="c1">// unchanged — client renders one request at a time from the array instead of a table</span>
+<span class="k">PATCH</span> /staff/leave-requests/<span class="s">{{id}}</span>/approve
+<span class="k">PATCH</span> /staff/leave-requests/<span class="s">{{id}}</span>/reject   {{ <span class="s">"comment"</span> }}
+<span class="c1">// unchanged — both advance the queue to the next card on success</span></div>
+  <div class="notebox"><b>"Balance after" needs one extra fetch</b> per card: <code>GET /staff/leave-balances?staffId={{id}}</code>, already used elsewhere (<code>LeaveRequestsPage.jsx</code>'s own balance strip for "my requests"). Fire it lazily for the card in view, not all 36 up front.</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="state">3 · State &amp; logic</h2>
+  <div class="codeblock"><span class="k">const</span> [queueIndex, setQueueIndex] = useState(<span class="k">0</span>);
+<span class="k">const</span> current = pendingRequests[queueIndex];
+<span class="k">function</span> decide(action) {{  <span class="c1">// action: 'approve' | 'reject'</span>
+  mutate(action, current._id, {{ onSuccess: () => setQueueIndex(i => i + <span class="k">1</span>) }});
+}}</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="components">4 · File &amp; component plan</h2>
+  <div class="rail" style="gap:16px">
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Files</div></div>
+      <div class="codeblock filetree" style="width:100%;box-sizing:border-box"><span class="new">A</span> apps/web/src/components/leave/ApprovalQueueCard.jsx
+<span class="mod">M</span> apps/web/src/pages/staff/LeaveRequestsPage.jsx</div>
+    </div>
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Component contracts</div></div>
+      <div class="card" style="width:100%">
+        <div class="kv"><span class="k">ApprovalQueueCard</span><span class="v">{ request, balance, onApprove, onReject }</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="edge">5 · Errors, empty states, accessibility</h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Situation</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td><b>Reject needs a comment</b></td><td>opens the existing small comment sheet before advancing, unchanged from desktop</td></tr>
+        <tr><td><b>Queue reaches the end</b></td><td>"All caught up" replaces the card — matches the empty state pattern used elsewhere</td></tr>
+        <tr><td><b>Timetable conflict flag present</b></td><td>shown as a warning line on the card, same badge as today's <code>ConflictBadge</code></td></tr>
+        <tr><td><b>Non-approver viewing "my requests"</b></td><td>the queue view doesn't apply — falls back to Mock 1's list, which already serves that case</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="dod">6 · Definition of done</h2>
+  <div class="painbox" style="max-width:900px">
+    <ul class="checklist">
+      <li>Pending requests work through as a one-at-a-time queue, not a table</li>
+      <li>Reason, leave type and remaining balance are visible without a click-through</li>
+      <li>Approve/Reject auto-advance to the next request</li>
+      <li>Reject-with-comment behaves identically to today</li>
+      <li>Queue view only replaces the approver's pending list, not "my requests"</li>
+    </ul>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="signoff">7 · Sign-off</h2>
+  <div class="painbox" style="max-width:900px">
+    <div class="signoff">
+      <div class="field"><div class="l">Approved by</div><div class="v"></div></div>
+      <div class="field"><div class="l">Date</div><div class="v"></div></div>
+      <div class="field"><div class="l">Spec version</div><div class="v">v1.0 · 22 Aug 2026</div></div>
+      <div class="field"><div class="l">Module</div><div class="v">Staff · 11 of 18</div></div>
+    </div>
+  </div>
+
+</div>
+<nav class="reviewnav" title="← → move between screens · I gallery">
+  <a class="rn-btn" href="11-staff-directory-approved.html" data-nav="prev">‹ <span class="rn-lbl">Staff Directory</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">APPROVED</span><span class="rn-title">Leave Requests · 11 of 18</span></a>
+  <a class="rn-btn" href="13-salary-approved.html" data-nav="next"><span class="rn-lbl">Salary</span> ›</a>
+  <span class="rn-keys">← →  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

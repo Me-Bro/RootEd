@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RootEd mobile UI — module tracker</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page wide">
+  <p class="crumbs">RootEd · design review · August 2026 · <b>one page, everything linked</b></p>
+  <h1 class="page-title">Mobile UI — module tracker</h1>
+  <p class="page-sub">Every module across the app, one screen at a time. <b>18 of 18 screens approved.</b> All mockups use the real seeded dataset — 1000 students, 74 staff, Grade 1–10 × sections A–D, academic year 2026-27 — so names, admission numbers and figures match what the app actually returns.</p>
+
+  <div class="approved-band">
+    <span class="seal">✅ ALL 18 APPROVED</span>
+    <span class="txt">Every screen across Academic, Staff, Expense, Fee and Inventory now has an approved build spec: what the real desktop does today, 2 mockups (simple + smart — smart only where the actual data justifies it, never by default), why one was chosen, real API contracts, state &amp; logic, a file/component plan, error &amp; accessibility states, and a Definition of Done.</span>
+  </div>
+
+  <div class="statrow">
+    <div class="s hot" style="border-color:#6b5a1f;background:#1a1710"><div class="n" style="color:#e3c25c">18</div><div class="l">Approved ✅</div></div>
+    <div class="s"><div class="n">18</div><div class="l">Screens total</div></div>
+    <div class="s"><div class="n">5</div><div class="l">Modules</div></div>
+    <div class="s"><div class="n">36</div><div class="l">Mockups (2 per screen)</div></div>
+    <div class="s"><div class="n">3</div><div class="l">New endpoints needed <span style="font-weight:400">(rest: 0 new)</span></div></div>
+  </div>
+
+  <div class="toc">
+    <a href="#tracker"><b>1</b> · Module tracker</a>
+    <a href="#flows"><b>2</b> · Attendance workflows</a>
+    <a href="#legacy"><b>3</b> · Legacy 5-variant exploration</a>
+    <a href="plan.html"><b>4</b> · Written plan</a>
+    <a href="#data"><b>5</b> · Data &amp; logins</a>
+  </div>
+
+  <div class="painbox">
+    <b>How to read the tracker:</b> every row is now ✅ <b>Approved</b> — a real build spec exists at the "Approved spec" link. Where a screen also had the earlier 5-variant exploration, that link is kept for reference (the exploration is research; the approved spec is the thing to build). Rule 1 in practice: most screens' "smart" mockup adds one focused accelerator justified by the real data shape — several explicitly added <b>no</b> filter/search/sort because the dataset (3 academic years, 6 cost centers, 3 fee structures) is too small to need one.
+  </div>
+
+  <h2 class="page-title" style="font-size:22px;margin-top:38px" id="tracker">1 · Module tracker <span style="color:#6e7a8a;font-size:14px;font-weight:400">— all 18 screens, grouped as they appear in the app's sidebar</span></h2>
+  <table class="invtable modtracker">
+    <thead><tr><th>#</th><th>Screen</th><th>Status</th><th>Open</th></tr></thead>
+    <tbody>
+<tr class="modgrp-row"><td colspan="4">Academic · 9 screens</td></tr>
+        <tr>
+          <td class="num">01</td>
+          <td><b style="color:#f2f4f7">Academic Years</b><span class="src">AcademicYearsPage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="10-academic-years-approved.html">✅ Approved spec</a><a href="10-academic-years.html">5-variant exploration</a></div></td>
+        </tr>
+        <tr>
+          <td class="num">02</td>
+          <td><b style="color:#f2f4f7">Students</b><span class="src">StudentsPage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="01-students-approved.html">✅ Approved spec</a><a href="01-students.html">5-variant exploration</a></div></td>
+        </tr>
+        <tr>
+          <td class="num">03</td>
+          <td><b style="color:#f2f4f7">Attendance</b><span class="src">AttendancePage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="03-attendance-approved.html">✅ Approved spec</a><a href="03-attendance.html">7-variant exploration</a><a href="03-attendance-flow.html">7 workflows</a></div></td>
+        </tr>
+        <tr>
+          <td class="num">04</td>
+          <td><b style="color:#f2f4f7">Attendance Report</b><span class="src">AttendanceReportPage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="04-attendance-report-approved.html">✅ Approved spec</a><a href="04-attendance-report.html">5-variant exploration</a></div></td>
+        </tr>
+        <tr>
+          <td class="num">05</td>
+          <td><b style="color:#f2f4f7">Grades</b><span class="src">GradesPage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="05-grades-approved.html">✅ Approved spec</a><a href="05-grades.html">5-variant exploration</a></div></td>
+        </tr>
+        <tr>
+          <td class="num">06</td>
+          <td><b style="color:#f2f4f7">Grade Report</b><span class="src">GradeReportPage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="06-grade-report-approved.html">✅ Approved spec</a><a href="06-grade-report.html">5-variant exploration</a></div></td>
+        </tr>
+        <tr>
+          <td class="num">07</td>
+          <td><b style="color:#f2f4f7">Timetable</b><span class="src">TimetablePage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="07-timetable-approved.html">✅ Approved spec</a><a href="07-timetable.html">5-variant exploration</a></div></td>
+        </tr>
+        <tr>
+          <td class="num">08</td>
+          <td><b style="color:#f2f4f7">My Schedule</b><span class="src">MySchedulePage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="08-my-schedule-approved.html">✅ Approved spec</a><a href="08-my-schedule.html">5-variant exploration</a></div></td>
+        </tr>
+        <tr>
+          <td class="num">09</td>
+          <td><b style="color:#f2f4f7">Report Cards</b><span class="src">ReportCardPage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="09-report-cards-approved.html">✅ Approved spec</a><a href="09-report-cards.html">5-variant exploration</a></div></td>
+        </tr>
+<tr class="modgrp-row"><td colspan="4">Staff · 3 screens</td></tr>
+        <tr>
+          <td class="num">10</td>
+          <td><b style="color:#f2f4f7">Staff Directory</b><span class="src">StaffPage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="11-staff-directory-approved.html">✅ Approved spec</a></div></td>
+        </tr>
+        <tr>
+          <td class="num">11</td>
+          <td><b style="color:#f2f4f7">Leave Requests</b><span class="src">LeaveRequestsPage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="12-leave-requests-approved.html">✅ Approved spec</a></div></td>
+        </tr>
+        <tr>
+          <td class="num">12</td>
+          <td><b style="color:#f2f4f7">Salary</b><span class="src">SalaryPage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="13-salary-approved.html">✅ Approved spec</a></div></td>
+        </tr>
+<tr class="modgrp-row"><td colspan="4">Expense · 2 screens</td></tr>
+        <tr>
+          <td class="num">13</td>
+          <td><b style="color:#f2f4f7">Expenses</b><span class="src">ExpensesPage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="14-expenses-approved.html">✅ Approved spec</a></div></td>
+        </tr>
+        <tr>
+          <td class="num">14</td>
+          <td><b style="color:#f2f4f7">Budgets</b><span class="src">BudgetsPage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="15-budgets-approved.html">✅ Approved spec</a></div></td>
+        </tr>
+<tr class="modgrp-row"><td colspan="4">Fee · 2 screens</td></tr>
+        <tr>
+          <td class="num">15</td>
+          <td><b style="color:#f2f4f7">Fee Structures</b><span class="src">FeeStructuresPage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="16-fee-structures-approved.html">✅ Approved spec</a></div></td>
+        </tr>
+        <tr>
+          <td class="num">16</td>
+          <td><b style="color:#f2f4f7">Fee Collection</b><span class="src">FeesPage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="17-fee-collection-approved.html">✅ Approved spec</a></div></td>
+        </tr>
+<tr class="modgrp-row"><td colspan="4">Inventory · 2 screens</td></tr>
+        <tr>
+          <td class="num">17</td>
+          <td><b style="color:#f2f4f7">Inventory</b><span class="src">InventoryPage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="18-inventory-approved.html">✅ Approved spec</a></div></td>
+        </tr>
+        <tr>
+          <td class="num">18</td>
+          <td><b style="color:#f2f4f7">Depreciation</b><span class="src">DepreciationPage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="19-depreciation-approved.html">✅ Approved spec</a></div></td>
+        </tr>
+    </tbody>
+  </table>
+
+  <h2 class="page-title" style="font-size:22px;margin-top:44px" id="flows">2 · Attendance workflows <span style="color:#6e7a8a;font-size:14px;font-weight:400">— 7 journeys, 41 screens, the deep dive behind the Attendance approval</span></h2>
+  <p class="page-sub" style="margin-bottom:12px">The same real morning — <b>Friday 21 August 2026, Grade 5-A</b> — played out seven times end to end, then scored side by side. This is research, not something to build directly; <a href="03-attendance-approved.html" style="color:#9fd3bf">the approved spec</a> is what synthesizes it.</p>
+  <div class="gallery">
+    <a class="gcard" href="03-attendance-flow.html">
+      <div class="n">7 JOURNEYS · 41 SCREENS</div>
+      <h3>Open the workflow storyboards</h3>
+      <p>Default-present · swipe roll call · class tiles · absent-only · period-aware · desktop console · simple list — each played out with real data, offline and mistake cases included, then a verdict table.</p>
+    </a>
+  </div>
+
+  <h2 class="page-title" style="font-size:22px;margin-top:44px" id="legacy">3 · Legacy 5-variant exploration <span style="color:#6e7a8a;font-size:14px;font-weight:400">— research behind 7 of the approved specs above</span></h2>
+  <p class="page-sub" style="margin-bottom:12px">Before the lighter 2-mock process, each screen got 5 full interaction-model variants. These 7 Academic screens' approved specs above were synthesized from this exploration — concept chips jump straight into a specific frame.</p>
+  <table class="invtable">
+    <thead><tr><th>Screen</th><th>5 concepts — click to open the frame</th></tr></thead>
+    <tbody>
+      <tr><td><a class="scr" href="01-students.html">Students</a></td><td><div class="vchips"><a class="vchip ship" href="01-students.html#v2">2 Class drill-down ★</a><a class="vchip ship" href="01-students.html#v3">3 Search palette ★</a><a class="vchip" href="01-students.html#v1">1 A–Z index</a><a class="vchip" href="01-students.html#v4">4 Saved segments</a><a class="vchip" href="01-students.html#v5">5 Swipe actions</a></div></td></tr>
+      <tr><td><a class="scr" href="02-student-detail.html">Student 360</a></td><td><div class="vchips"><a class="vchip ship" href="02-student-detail.html#v1">1 Hero + KPIs ★</a><a class="vchip ship" href="02-student-detail.html#v4">4 Parent card ★</a><a class="vchip" href="02-student-detail.html#v2">2 Timeline</a><a class="vchip" href="02-student-detail.html#v3">3 Action-first</a><a class="vchip" href="02-student-detail.html#v5">5 Trends</a></div></td></tr>
+      <tr><td><a class="scr" href="04-attendance-report.html">Attendance Report</a></td><td><div class="vchips"><a class="vchip ship" href="04-attendance-report.html#v1">1 Traffic-light ★</a><a class="vchip ship" href="04-attendance-report.html#v4">4 Follow-up queue ★</a><a class="vchip" href="04-attendance-report.html#v2">2 Month heatmap</a><a class="vchip" href="04-attendance-report.html#v3">3 Cohort tabs</a><a class="vchip" href="04-attendance-report.html#v5">5 Share card</a></div></td></tr>
+      <tr><td><a class="scr" href="05-grades.html">Enter Marks</a></td><td><div class="vchips"><a class="vchip ship" href="05-grades.html#v2">2 Docked keypad ★</a><a class="vchip" href="05-grades.html#v1">1 Keypad focus</a><a class="vchip" href="05-grades.html#v3">3 Grade bands</a><a class="vchip" href="05-grades.html#v4">4 Mark-sheet OCR</a><a class="vchip" href="05-grades.html#v5">5 Baseline+outliers</a></div></td></tr>
+      <tr><td><a class="scr" href="06-grade-report.html">Grade Report</a></td><td><div class="vchips"><a class="vchip ship" href="06-grade-report.html#v1">1 Distribution ★</a><a class="vchip ship" href="06-grade-report.html#v2">2 Top/needs help ★</a><a class="vchip" href="06-grade-report.html#v3">3 Student vs class</a><a class="vchip" href="06-grade-report.html#v4">4 Scorecards</a><a class="vchip" href="06-grade-report.html#v5">5 Auto-narrative</a></div></td></tr>
+      <tr><td><a class="scr" href="07-timetable.html">Timetable Builder</a></td><td><div class="vchips"><a class="vchip ship" href="07-timetable.html#v1">1 Day column ★</a><a class="vchip ship" href="07-timetable.html#v4">4 Copy-and-diff ★</a><a class="vchip ship" href="07-timetable.html#v5">5 Teacher load ★</a><a class="vchip" href="07-timetable.html#v2">2 Time-rail drag</a><a class="vchip" href="07-timetable.html#v3">3 Palette stamping</a></div></td></tr>
+      <tr><td><a class="scr" href="08-my-schedule.html">My Schedule</a></td><td><div class="vchips"><a class="vchip ship" href="08-my-schedule.html#v1">1 Now/Next ★</a><a class="vchip" href="08-my-schedule.html#v2">2 Day agenda</a><a class="vchip" href="08-my-schedule.html#v3">3 Week grid</a><a class="vchip" href="08-my-schedule.html#v4">4 My classes</a><a class="vchip" href="08-my-schedule.html#v5">5 Glance widget</a></div></td></tr>
+      <tr><td><a class="scr" href="09-report-cards.html">Report Cards</a></td><td><div class="vchips"><a class="vchip ship" href="09-report-cards.html#v1">1 Job + push ★</a><a class="vchip ship" href="09-report-cards.html#v4">4 Distribute ★</a><a class="vchip ship" href="09-report-cards.html#v5">5 Pre-flight ★</a><a class="vchip" href="09-report-cards.html#v2">2 Batch queue</a><a class="vchip" href="09-report-cards.html#v3">3 Preview first</a></div></td></tr>
+    </tbody>
+  </table>
+
+  <h2 class="page-title" style="font-size:22px;margin-top:44px" id="data">5 · Data, plan and logins</h2>
+  <div class="gallery">
+    <a class="gcard" href="plan.html">
+      <div class="n">DOCUMENT</div>
+      <h3>The written plan</h3>
+      <p>Personas, the pain audit, 12 design rules (rule 1: start plain, earn every extra), success metrics, and the bugs found while auditing.</p>
+      <div class="pain">plan.html · rendered from PLAN.md</div>
+    </a>
+    <div class="gcard" style="cursor:default">
+      <div class="n">DATASET</div>
+      <h3>What the mockups are made of</h3>
+      <p>1000 students · 74 staff · 40 sections · 80 subjects · 1600 timetable slots · 19 610 attendance records · 30 784 marks · 985 fee assignments · 1967 payments · 70 inventory items · 74 salary slips/month.</p>
+      <div class="pain">apps/api/src/scripts/seed-bulk-data.js</div>
+    </div>
+    <div class="gcard" style="cursor:default">
+      <div class="n">RESEED</div>
+      <h3>Reproduce it in 27 seconds</h3>
+      <p><code>docker exec -w /app/apps/api rooted-api-1 node src/scripts/seed-bulk-data.js --reset</code></p>
+      <div class="pain">Deterministic · idempotent without --reset</div>
+    </div>
+    <div class="gcard" style="cursor:default">
+      <div class="n">LOGINS</div>
+      <h3>All share TestPass123!</h3>
+      <p><code>tadmin@testschool.local</code> — Krishna Rathore, admin officer<br><code>teacher@testschool.local</code> — class teacher, Grade 1-A<br><code>principal@testschool.local</code> — Heena Mukherjee<br><code>admin@test.local</code> — super admin</p>
+      <div class="pain">Attendance cast: Dinesh Kurup (5-A), Mitali Sinha (Maths)</div>
+    </div>
+  </div>
+
+  <div class="painbox" style="border-color:#3a4152">
+    <b>3 small backend additions found while speccing</b> (everything else needs zero backend change): <code>AttendanceReportPage</code>'s guardian-call chip needs <code>parentContacts</code> added to the report projection · Inventory's "not returned" count needs a <code>returned=false</code> query param on <code>GET /inventory/movements</code> · Report Cards' push notification needs a completion hook in <code>reportCard.worker.js</code> (infra decision, not solved in this UI spec). Each is called out on its own approved page.
+  </div>
+</div>
+<nav class="reviewnav" title="Start the review · I gallery">
+  <span class="rn-btn off">‹ <span class="rn-lbl">tracker</span></span>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">18 / 18</span><span class="rn-title">all screens approved</span></a>
+  <a class="rn-btn" href="10-academic-years-approved.html" data-nav="next"><span class="rn-lbl">Academic Years</span> ›</a>
+  <span class="rn-keys">I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

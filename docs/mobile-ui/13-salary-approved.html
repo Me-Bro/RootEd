@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Salary — 2 mockups + approved spec · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page wide">
+  <p class="crumbs"><a href="index.html">← All modules</a> · Staff · <code>SalaryPage.jsx</code></p>
+
+  <div class="approved-band">
+    <span class="seal">✅ APPROVED FOR BUILD</span>
+    <span class="txt">Module 12 of 18, lightweight process: understand the real desktop screen → exactly <b>2 mobile mockups</b> (simple, then smart) → approve one → write the full build spec.</span>
+  </div>
+
+  <h1 class="page-title">Salary — mobile mock</h1>
+  <p class="page-sub">Real data: August 2026 payroll, 74 staff, all slips generated — net pay ranging ₹43,520 to ₹51,200+ for teaching staff.</p>
+
+  <div class="statrow" style="max-width:900px">
+    <div class="s"><div class="n">2</div><div class="l">Mockups made</div></div>
+    <div class="s hot"><div class="n">1</div><div class="l">Approved</div></div>
+    
+  </div>
+
+  <div class="toc">
+    <a href="#current"><b>0</b> · What the desktop does today</a>
+    <a href="#mocks"><b>1</b> · The 2 mockups</a>
+    <a href="#wiring"><b>2</b> · API contracts</a>
+    <a href="#state"><b>3</b> · State &amp; logic</a>
+    <a href="#components"><b>4</b> · File &amp; component plan</a>
+    <a href="#edge"><b>5</b> · Errors, empty, a11y</a>
+    <a href="#dod"><b>6</b> · Definition of done</a>
+    <a href="#signoff"><b>7</b> · Sign-off</a>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:34px" id="current">0 · What the desktop does today <span style="color:#6e7a8a;font-size:13px;font-weight:400">— read from the real code, not assumed</span></h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Behaviour</th><th>Where it lives</th></tr></thead>
+      <tbody>
+        <tr><td>Month/year selects, "Generate All Slips" loops <code>POST /staff/salary-slips/generate</code> once per staff member client-side</td><td>SalaryPage.jsx</td></tr>
+        <tr><td>No feedback during the loop — the button just says "Generating…" until all 74 resolve</td><td>same file</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="mocks">1 · The 2 mockups</h2>
+
+  <div class="rail">
+    <div class="variant">
+      <div class="variant-head">
+        <span class="statechip" style="background:#3a4152;color:#e2e7ee">MOCK 1 · SIMPLE</span>
+        <div class="variant-title">Mirrors the desktop, exactly</div>
+        <p class="variant-for">Month/year pickers, "Generate All Slips" (loops one API call per staff member client-side), a table of 74 rows. Same behaviour, mobile-shaped.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Salary Slips</h2></div></div>
+            <div class="row" style="margin-top:10px;gap:6px"><div class="chip on">August ▾</div><div class="chip">2026 ▾</div></div>
+          </div>
+          <div class="body">
+            <div class="btn">Generate All Slips</div>
+            <div class="list">
+              <div class="li"><div class="grow"><div class="nm">Mitali Sinha</div><div class="meta">Net ₹47,360</div></div><span class="badge warn">generated</span></div>
+              <div class="li"><div class="grow"><div class="nm">Gargi Iyer</div><div class="meta">Net ₹49,280</div></div><span class="badge warn">generated</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant" style="position:relative">
+      <div class="variant-head">
+        <span class="statechip">MOCK 2 · SMART <span style="margin-left:6px">✅ APPROVED</span></span>
+        <div class="variant-title">Progress while generating, totals up front</div>
+        <p class="variant-for">"Generate All" today fires 74 sequential requests with no feedback until they're all done — a real risk on a flaky connection. A progress bar plus a payroll-total summary card turns a silent multi-second wait into something visible and trustworthy.</p>
+      </div>
+      <div class="phone">
+        <div class="redline-dot" style="left:200px;top:200px">1</div>
+        <div class="redline-dot" style="left:200px;top:340px">2</div>
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="grow"><h2>Salary Slips</h2><p class="sub">August 2026</p></div></div></div>
+          <div class="body">
+            <div class="card tight"><div class="between"><span class="small">Total payroll</span><span style="font-weight:700">₹34.2L</span></div><div class="tiny muted" style="margin-top:4px">74 staff · net after deductions</div></div>
+            <div class="card tight" style="border-color:var(--accent)">
+              <div class="between"><span class="small" style="font-weight:600">Generating…</span><span class="tiny muted">58 of 74</span></div>
+              <div class="bar thick" style="margin-top:8px"><span class="g" style="width:78%"></span></div>
+            </div>
+            <div class="list">
+              <div class="li"><div class="grow"><div class="nm">Mitali Sinha</div></div><span class="badge ok">✓ ₹47,360</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div style="max-width:280px;padding-top:52px">
+      <ol class="speclist">
+        <li><b>Total payroll</b> at a glance — the number a principal or accountant actually wants first.</li>
+        <li><b>Progress bar</b> for the 74-request batch — visible instead of a silent multi-second wait.</li>
+      </ol>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="border-color:#2f5c4a;background:#12211b">
+    <b>Why Mock 2 is approved:</b> the existing "Generate All" already loops sequentially client-side (<code>for (const m of members) await generateMutation.mutateAsync(...)</code>) — the change is surfacing that loop's progress, not restructuring it. Zero new backend work.
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="wiring">2 · API contracts <span style="color:#6e7a8a;font-size:13px;font-weight:400">— every one of these already exists</span></h2>
+  <div class="codeblock"><span class="k">GET</span>  /staff/salary-slips?month=&year=
+<span class="k">POST</span> /staff/salary-slips/generate   {{ <span class="s">"staffId"</span>, <span class="s">"month"</span>, <span class="s">"year"</span> }}
+<span class="c1">// unchanged — called once per staff member, same as today; only the UI now</span>
+<span class="c1">// reports (completed / total) after each resolves instead of waiting silently</span></div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="state">3 · State &amp; logic</h2>
+  <div class="codeblock"><span class="k">const</span> [progress, setProgress] = useState({{ done: <span class="k">0</span>, total: <span class="k">0</span> }});
+<span class="k">async function</span> generateAll() {{
+  <span class="k">const</span> eligible = members.filter(m => m.salaryStructureId);
+  setProgress({{ done: <span class="k">0</span>, total: eligible.length }});
+  <span class="k">for</span> (<span class="k">const</span> m <span class="k">of</span> eligible) {{
+    <span class="k">await</span> generateMutation.mutateAsync(m._id).catch(() => {{}});
+    setProgress(p => ({{ ...p, done: p.done + <span class="k">1</span> }}));  <span class="c1">// same loop as today, now observable</span>
+  }}
+}}</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="components">4 · File &amp; component plan</h2>
+  <div class="rail" style="gap:16px">
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Files</div></div>
+      <div class="codeblock filetree" style="width:100%;box-sizing:border-box"><span class="new">A</span> apps/web/src/components/salary/PayrollTotalCard.jsx
+<span class="new">A</span> apps/web/src/components/salary/GenerateProgress.jsx
+<span class="mod">M</span> apps/web/src/pages/staff/SalaryPage.jsx</div>
+    </div>
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Component contracts</div></div>
+      <div class="card" style="width:100%">
+        <div class="kv"><span class="k">PayrollTotalCard</span><span class="v">{ slips }  — sums netPay client-side</span></div>
+        <div class="kv"><span class="k">GenerateProgress</span><span class="v">{ done, total }</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="edge">5 · Errors, empty states, accessibility</h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Situation</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td><b>One slip fails mid-batch (e.g. missing salary structure)</b></td><td>loop continues (already the case today — <code>.catch(() => {{}})</code>); progress bar still reaches 100% by row count, not silently by success count</td></tr>
+        <tr><td><b>Slip has no PDF yet</b></td><td>Download button stays disabled, unchanged from desktop</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="dod">6 · Definition of done</h2>
+  <div class="painbox" style="max-width:900px">
+    <ul class="checklist">
+      <li>Total payroll amount shown before generating anything</li>
+      <li>Generate All shows a live progress bar, not a silent wait</li>
+      <li>Per-row status still shows generated/paid exactly as today</li>
+    </ul>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="signoff">7 · Sign-off</h2>
+  <div class="painbox" style="max-width:900px">
+    <div class="signoff">
+      <div class="field"><div class="l">Approved by</div><div class="v"></div></div>
+      <div class="field"><div class="l">Date</div><div class="v"></div></div>
+      <div class="field"><div class="l">Spec version</div><div class="v">v1.0 · 22 Aug 2026</div></div>
+      <div class="field"><div class="l">Module</div><div class="v">Staff · 12 of 18</div></div>
+    </div>
+  </div>
+
+</div>
+<nav class="reviewnav" title="← → move between screens · I gallery">
+  <a class="rn-btn" href="12-leave-requests-approved.html" data-nav="prev">‹ <span class="rn-lbl">Leave Requests</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">APPROVED</span><span class="rn-title">Salary · 12 of 18</span></a>
+  <a class="rn-btn" href="14-expenses-approved.html" data-nav="next"><span class="rn-lbl">Expenses</span> ›</a>
+  <span class="rn-keys">← →  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

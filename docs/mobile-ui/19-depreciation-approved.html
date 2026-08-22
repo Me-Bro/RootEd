@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Depreciation — 2 mockups + approved spec · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page wide">
+  <p class="crumbs"><a href="index.html">← All modules</a> · Inventory · <code>DepreciationPage.jsx</code></p>
+
+  <div class="approved-band">
+    <span class="seal">✅ APPROVED FOR BUILD</span>
+    <span class="txt">Module 18 of 18, lightweight process: understand the real desktop screen → exactly <b>2 mobile mockups</b> (simple, then smart) → approve one → write the full build spec.</span>
+  </div>
+
+  <h1 class="page-title">Depreciation — mobile mock</h1>
+  <p class="page-sub">Real data: 30 fixed assets, ₹46.1L original cost, ₹24.2L current value (53%) — Network Switch 24-port down to 5% of cost after 6.8 years.</p>
+
+  <div class="statrow" style="max-width:900px">
+    <div class="s"><div class="n">2</div><div class="l">Mockups made</div></div>
+    <div class="s hot"><div class="n">1</div><div class="l">Approved</div></div>
+    
+  </div>
+
+  <div class="toc">
+    <a href="#current"><b>0</b> · What the desktop does today</a>
+    <a href="#mocks"><b>1</b> · The 2 mockups</a>
+    <a href="#wiring"><b>2</b> · API contracts</a>
+    <a href="#state"><b>3</b> · State &amp; logic</a>
+    <a href="#components"><b>4</b> · File &amp; component plan</a>
+    <a href="#edge"><b>5</b> · Errors, empty, a11y</a>
+    <a href="#dod"><b>6</b> · Definition of done</a>
+    <a href="#signoff"><b>7</b> · Sign-off</a>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:34px" id="current">0 · What the desktop does today <span style="color:#6e7a8a;font-size:13px;font-weight:400">— read from the real code, not assumed</span></h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Behaviour</th><th>Where it lives</th></tr></thead>
+      <tbody>
+        <tr><td>Year select, CSV export, a 6-column table of all fixed assets</td><td>DepreciationPage.jsx</td></tr>
+        <tr><td>No fleet-level total shown anywhere — has to be computed by exporting the CSV</td><td>confirmed gap</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="mocks">1 · The 2 mockups</h2>
+
+  <div class="rail">
+    <div class="variant">
+      <div class="variant-head">
+        <span class="statechip" style="background:#3a4152;color:#e2e7ee">MOCK 1 · SIMPLE</span>
+        <div class="variant-title">Mirrors the desktop, exactly</div>
+        <p class="variant-for">Year select, CSV export, a 6-column table of 30 fixed assets. Same data, list instead of table.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Depreciation</h2></div></div>
+            <div class="row" style="margin-top:10px;gap:6px"><div class="chip on">2026 ▾</div><div class="chip">⇩ CSV</div></div>
+          </div>
+          <div class="body">
+            <div class="list">
+              <div class="li"><div class="grow"><div class="nm">Interactive Projector</div><div class="meta">FA-2001 · WDV</div></div><span style="font-weight:700">₹53,399</span></div>
+              <div class="li"><div class="grow"><div class="nm">Desktop Computer i5</div><div class="meta">FA-2002 · SLM</div></div><span style="font-weight:700">₹13,540</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant" style="position:relative">
+      <div class="variant-head">
+        <span class="statechip">MOCK 2 · SMART <span style="margin-left:6px">✅ APPROVED</span></span>
+        <div class="variant-title">Fleet total up front, near-zero flagged</div>
+        <p class="variant-for">The one number an accountant actually wants first — total current value vs. original cost across the whole fleet — sits above the list instead of requiring a spreadsheet import of the CSV export. Assets under 10% of original value get flagged since they're candidates for write-off/replacement decisions.</p>
+      </div>
+      <div class="phone">
+        <div class="redline-dot" style="left:200px;top:190px">1</div>
+        <div class="redline-dot" style="left:200px;top:400px">2</div>
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="grow"><h2>Depreciation</h2><p class="sub">2026 · 30 fixed assets</p></div><div class="iconbtn">⇩</div></div></div>
+          <div class="body">
+            <div class="card tight"><div class="between"><span class="small">Fleet value</span><span style="font-weight:700">₹24.2L of ₹46.1L</span></div><div class="bar thick" style="margin-top:8px"><span class="g" style="width:53%"></span></div></div>
+            <p class="sectionlabel">Near write-off · &lt;10% of original value</p>
+            <div class="list">
+              <div class="li" style="background:var(--absent-bg)"><div class="grow"><div class="nm">Network Switch 24-port</div><div class="meta">FA-2004 · WDV · 6.8y old</div></div><span class="badge bad">₹900 (5%)</span></div>
+            </div>
+            <p class="sectionlabel">All assets</p>
+            <div class="list"><div class="li"><div class="grow"><div class="nm">Interactive Projector</div></div><span style="font-weight:700">₹53,399</span></div></div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div style="max-width:280px;padding-top:52px">
+      <ol class="speclist">
+        <li><b>Fleet total.</b> Sum of <code>currentValue</code> vs. <code>unitCost</code> across all assets — no new field, just an aggregate the client already has enough data to compute.</li>
+        <li><b>Near-write-off flag.</b> Assets under 10% of original cost, surfaced for replacement planning instead of buried in a full list sorted by name.</li>
+      </ol>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="border-color:#2f5c4a;background:#12211b">
+    <b>Why Mock 2 is approved:</b> both additions are pure client-side aggregation over data the endpoint already returns (<code>currentValue</code>, and original cost via <code>item.unitCost</code>) — zero backend change, and the fleet-total number is the one an accountant reaches for the CSV export today just to compute by hand.
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="wiring">2 · API contracts <span style="color:#6e7a8a;font-size:13px;font-weight:400">— every one of these already exists</span></h2>
+  <div class="codeblock"><span class="k">GET</span> /inventory/depreciation?year=<span class="s">{{y}}</span>
+<span class="c1">// unchanged — { item: { name, sku, unitCost, depreciationMethod }, currentValue, annualDepreciation }[]</span>
+<span class="c1">// fleet total = sum(currentValue) vs sum(item.unitCost), computed client-side</span></div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="state">3 · State &amp; logic</h2>
+  <div class="codeblock"><span class="k">const</span> fleetTotal = records.reduce((s, r) => s + r.currentValue, <span class="k">0</span>);
+<span class="k">const</span> fleetOriginal = records.reduce((s, r) => s + (r.item?.unitCost || <span class="k">0</span>), <span class="k">0</span>);
+<span class="k">const</span> nearWriteOff = records.filter(r => r.item?.unitCost > <span class="k">0</span> && r.currentValue / r.item.unitCost < <span class="k">0.1</span>);</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="components">4 · File &amp; component plan</h2>
+  <div class="rail" style="gap:16px">
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Files</div></div>
+      <div class="codeblock filetree" style="width:100%;box-sizing:border-box"><span class="new">A</span> apps/web/src/components/depreciation/FleetTotalCard.jsx
+<span class="mod">M</span> apps/web/src/pages/inventory/DepreciationPage.jsx</div>
+    </div>
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Component contracts</div></div>
+      <div class="card" style="width:100%">
+        <div class="kv"><span class="k">FleetTotalCard</span><span class="v">{ currentTotal, originalTotal }</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="edge">5 · Errors, empty states, accessibility</h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Situation</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td><b>No fixed assets exist</b></td><td>existing "No fixed assets found" empty state, fleet card hides</td></tr>
+        <tr><td><b>CSV export</b></td><td>unchanged, stays available from the header icon</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="dod">6 · Definition of done</h2>
+  <div class="painbox" style="max-width:900px">
+    <ul class="checklist">
+      <li>Fleet current-value vs. original-cost total shown above the list</li>
+      <li>Assets under 10% of original value flagged in a dedicated section</li>
+      <li>CSV export behaves identically to today</li>
+    </ul>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="signoff">7 · Sign-off</h2>
+  <div class="painbox" style="max-width:900px">
+    <div class="signoff">
+      <div class="field"><div class="l">Approved by</div><div class="v"></div></div>
+      <div class="field"><div class="l">Date</div><div class="v"></div></div>
+      <div class="field"><div class="l">Spec version</div><div class="v">v1.0 · 22 Aug 2026</div></div>
+      <div class="field"><div class="l">Module</div><div class="v">Inventory · 18 of 18</div></div>
+    </div>
+  </div>
+
+</div>
+<nav class="reviewnav" title="← → move between screens · I gallery">
+  <a class="rn-btn" href="18-inventory-approved.html" data-nav="prev">‹ <span class="rn-lbl">Inventory</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">APPROVED</span><span class="rn-title">Depreciation · 18 of 18</span></a>
+  <a class="rn-btn" href="index.html" data-nav="next"><span class="rn-lbl">Back to tracker</span> ›</a>
+  <span class="rn-keys">← →  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

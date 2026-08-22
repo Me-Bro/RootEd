@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Student detail — 5 mobile concepts · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page">
+  <p class="crumbs"><a href="index.html">← All screens</a> · Academic · <code>StudentDetailPage.jsx</code></p>
+  <h1 class="page-title">2 · Student 360</h1>
+  <p class="page-sub">Opened mid-conversation: a parent is on the phone, or standing at the counter. The winning design answers "how is my child doing, and what do I owe" without a single scroll.</p>
+
+  <div class="painbox">
+    <b>Pain today:</b> the page stacks a header, a status row, guardian contacts and three summary cards (<code>sm:grid-cols-2</code> collapses to one column) into roughly a <b>2400&nbsp;px scroll</b> on a phone — and the number people call about, the <b>fee balance</b>, is last. Editing opens a modal containing a repeatable parent-contact sub-form, which the keyboard covers.
+  </div>
+
+  <input type="checkbox" id="fit" class="vis-hidden">
+  <div class="zoombar"><label for="fit">▣ Fit all five on one screen (toggle)</label> · real data: Kartik Dutta, GPS/2026/0402, Grade 5-A</div>
+
+  <div class="rail">
+
+    <!-- V1 -->
+    <div class="variant" id="v1">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 1</span>
+        <div class="variant-title">Hero + KPI trio + sticky tabs <span class="rec">SHIP</span></div>
+        <p class="variant-for"><b>Optimises:</b> orientation. The three numbers that matter are above the fold; everything else is one tab away instead of 2000 px down.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"></div><div class="iconbtn">✎</div><div class="iconbtn">⋯</div></div>
+            <div class="row" style="margin-top:6px">
+              <div class="avatar lg r">KD</div>
+              <div class="grow">
+                <div style="font-size:20px;font-weight:680;letter-spacing:-.02em">Kartik Dutta</div>
+                <div class="small muted">GPS/2026/0402 · Grade 5-A · Roll 5</div>
+                <div class="row" style="gap:5px;margin-top:6px"><span class="badge ok">Active</span><span class="badge bad">Attendance risk</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="body" style="padding-top:0">
+            <div class="seg" style="position:sticky;top:0;z-index:5;margin:10px 0 2px"><div class="on">Overview</div><div>Attendance</div><div>Marks</div><div>Fees</div></div>
+            <div class="stat3">
+              <div class="stat r"><div class="n">60%</div><div class="l">Attendance</div></div>
+              <div class="stat a"><div class="n">63</div><div class="l">Avg score</div></div>
+              <div class="stat r"><div class="n">₹40.5k</div><div class="l">Due</div></div>
+            </div>
+            <div class="card tight">
+              <div class="card-title">Guardian</div>
+              <div class="between"><div><div class="nm" style="font-weight:600">Rhea Dutta</div><div class="tiny muted">Mother · +91 97100 36491</div></div>
+                <div class="row" style="gap:6px"><span class="chip soft">☎</span><span class="chip soft">✆</span></div></div>
+            </div>
+            <div class="card tight">
+              <div class="between"><span class="card-title" style="margin:0">Attendance · last 20 days</span><span class="badge bad">8 absent</span></div>
+              <div class="heat" style="margin-top:10px">
+                <i></i><i></i><i class="a"></i><i></i><i></i><i class="l"></i><i></i><i class="a"></i><i></i><i></i>
+                <i class="a"></i><i></i><i></i><i class="a"></i><i class="e"></i><i></i><i class="a"></i><i></i><i class="a"></i><i class="a"></i>
+              </div>
+              <div class="tiny muted" style="margin-top:8px">Pattern: 5 of 8 absences fall on a Monday</div>
+            </div>
+            <div class="card tight">
+              <div class="card-title">Term 1 marks</div>
+              <div class="stack" style="gap:7px">
+                <div class="row"><span class="small grow">Mathematics</span><div class="bar grow" style="max-width:110px"><span class="a" style="width:60%"></span></div><span class="small" style="width:26px;text-align:right">60</span></div>
+                <div class="row"><span class="small grow">English</span><div class="bar grow" style="max-width:110px"><span class="g" style="width:71%"></span></div><span class="small" style="width:26px;text-align:right">71</span></div>
+                <div class="row"><span class="small grow">Science</span><div class="bar grow" style="max-width:110px"><span class="a" style="width:64%"></span></div><span class="small" style="width:26px;text-align:right">64</span></div>
+                <div class="row"><span class="small grow">Social Studies</span><div class="bar grow" style="max-width:110px"><span class="r" style="width:55%"></span></div><span class="small" style="width:26px;text-align:right">55</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="stickybar"><div class="row" style="gap:8px"><div class="btn sec grow">Share summary</div><div class="btn grow">Call guardian</div></div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V2 -->
+    <div class="variant" id="v2">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 2</span>
+        <div class="variant-title">Timeline feed</div>
+        <p class="variant-for"><b>Optimises:</b> "what has been happening". One chronological stream of attendance, marks, fees and notes — the shape a counsellor or class teacher thinks in.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="avatar r">KD</div><div class="grow"><h2 style="font-size:17px">Kartik Dutta</h2><p class="sub">Grade 5-A · timeline</p></div><div class="iconbtn">✎</div></div>
+            <div class="chiprow" style="margin-top:10px"><div class="chip on">All</div><div class="chip">Attendance</div><div class="chip">Marks</div><div class="chip">Fees</div><div class="chip">Notes</div></div>
+          </div>
+          <div class="body">
+            <p class="sectionlabel">Today · Fri 21 Aug</p>
+            <div class="card tight timeline">
+              <div class="ev r"><div class="small"><b>Absent</b> · daily roll</div><div class="tiny muted">Marked by Dinesh Kurup · 08:05</div></div>
+              <div class="ev"><div class="small">Guardian called — no answer</div><div class="tiny muted">Front desk · 09:20</div></div>
+            </div>
+            <p class="sectionlabel">This week</p>
+            <div class="card tight timeline">
+              <div class="ev r"><div class="small"><b>Absent</b> · Mon 17 Aug</div><div class="tiny muted">3rd Monday in a row</div></div>
+              <div class="ev g"><div class="small">Mathematics quiz · <b>60</b> (class avg 69)</div><div class="tiny muted">Mitali Sinha · Tue 18 Aug</div></div>
+              <div class="ev"><div class="small">Late arrival · 08:22</div><div class="tiny muted">Wed 19 Aug</div></div>
+            </div>
+            <p class="sectionlabel">August</p>
+            <div class="card tight timeline">
+              <div class="ev r"><div class="small"><b>Fee overdue</b> · Term 1 ₹40,500</div><div class="tiny muted">Due 30 Apr · late fee ₹500 applied</div></div>
+              <div class="ev g"><div class="small">Term 1 finals published</div><div class="tiny muted">Avg 63 · rank 19 of 21</div></div>
+              <div class="ev"><div class="small">Counsellor note added</div><div class="tiny muted">"Transport issue on Mondays" — Faizan Rodrigues</div></div>
+            </div>
+          </div>
+          <div class="stickybar"><div class="btn">＋ Add a note</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V3 -->
+    <div class="variant" id="v3">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 3</span>
+        <div class="variant-title">Action-first stack</div>
+        <p class="variant-for"><b>Optimises:</b> front-desk throughput. The four things people do (call, collect fee, log leave, print) sit at the top; data is behind accordions.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Kartik Dutta</h2><p class="sub">GPS/2026/0402 · Grade 5-A</p></div><div class="iconbtn">⋯</div></div>
+          </div>
+          <div class="body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div class="card tight" style="text-align:center"><div style="font-size:20px">☎</div><div class="small" style="font-weight:600;margin-top:4px">Call mother</div><div class="tiny muted">Rhea Dutta</div></div>
+              <div class="card tight" style="text-align:center"><div style="font-size:20px">₹</div><div class="small" style="font-weight:600;margin-top:4px">Collect fee</div><div class="tiny muted">₹40,500 due</div></div>
+              <div class="card tight" style="text-align:center"><div style="font-size:20px">✎</div><div class="small" style="font-weight:600;margin-top:4px">Log leave</div><div class="tiny muted">Today</div></div>
+              <div class="card tight" style="text-align:center"><div style="font-size:20px">⎙</div><div class="small" style="font-weight:600;margin-top:4px">Report card</div><div class="tiny muted">Term 1</div></div>
+            </div>
+            <div class="banner bad">!<div><b>Attendance 60%</b> — below the 75% board threshold. 8 absences in 20 days.</div></div>
+            <div class="list">
+              <div class="li"><div class="grow"><div class="nm">Attendance</div><div class="tiny muted">60% · 12 of 20 days</div></div><span class="badge bad">Risk</span><span class="tiny muted">⌄</span></div>
+              <div class="li"><div class="grow"><div class="nm">Marks</div><div class="tiny muted">Term 1 avg 63 · rank 19/21</div></div><span class="badge warn">D</span><span class="tiny muted">⌄</span></div>
+              <div class="li"><div class="grow"><div class="nm">Fees</div><div class="tiny muted">₹40,500 outstanding · overdue</div></div><span class="badge bad">Unpaid</span><span class="tiny muted">⌃</span></div>
+              <div class="li" style="background:var(--surface-2)">
+                <div class="grow stack" style="gap:4px">
+                  <div class="kv"><span class="k">Term 1 · due 30 Apr</span><span class="v">₹16,200</span></div>
+                  <div class="kv"><span class="k">Term 2 · due 15 Sep</span><span class="v">₹12,150</span></div>
+                  <div class="kv"><span class="k">Term 3 · due 15 Jan</span><span class="v">₹12,150</span></div>
+                  <div class="kv"><span class="k">Late fee</span><span class="v">₹500</span></div>
+                </div>
+              </div>
+              <div class="li"><div class="grow"><div class="nm">Guardians</div><div class="tiny muted">Rhea Dutta (Mother) · only number on file</div></div><span class="tiny muted">⌄</span></div>
+              <div class="li"><div class="grow"><div class="nm">Profile</div><div class="tiny muted">DOB 14 Mar 2015 · Male</div></div><span class="tiny muted">⌄</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V4 -->
+    <div class="variant" id="v4">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 4</span>
+        <div class="variant-title">Parent-conversation card <span class="rec">SHIP as “Share”</span></div>
+        <p class="variant-for"><b>Optimises:</b> the actual phone call and the WhatsApp follow-up. Traffic-light numbers, plain sentences, one tap to send the same card to the guardian.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Share summary</h2><p class="sub">Term 1 · as of 21 Aug 2026</p></div><div class="iconbtn">⎙</div></div></div>
+          <div class="body">
+            <div class="card" style="border-width:2px">
+              <div class="row"><div class="avatar lg r">KD</div><div class="grow"><div style="font-size:18px;font-weight:680">Kartik Dutta</div><div class="small muted">Grade 5-A · GPS/2026/0402</div></div></div>
+              <div style="height:1px;background:var(--line);margin:14px 0"></div>
+              <div class="stack" style="gap:14px">
+                <div>
+                  <div class="between"><span class="small" style="font-weight:600">Attendance</span><span class="badge bad">Needs attention</span></div>
+                  <div class="row" style="margin-top:6px"><div class="big" style="color:var(--absent)">60%</div><div class="tiny muted grow">12 of 20 days present<br>School expects 75% or more</div></div>
+                </div>
+                <div>
+                  <div class="between"><span class="small" style="font-weight:600">Marks</span><span class="badge warn">Grade D</span></div>
+                  <div class="row" style="margin-top:6px"><div class="big" style="color:var(--late)">63</div><div class="tiny muted grow">Class average 69<br>Strongest: English 71 · Weakest: Social Studies 55</div></div>
+                </div>
+                <div>
+                  <div class="between"><span class="small" style="font-weight:600">Fees</span><span class="badge bad">Overdue</span></div>
+                  <div class="row" style="margin-top:6px"><div class="big" style="color:var(--absent)">₹40,500</div><div class="tiny muted grow">Term 1 unpaid since 30 Apr<br>₹500 late fee applied</div></div>
+                </div>
+              </div>
+              <div style="height:1px;background:var(--line);margin:14px 0"></div>
+              <div class="tiny muted">Greenwood Public School · shared by Dinesh Kurup, class teacher</div>
+            </div>
+            <div class="banner info">ⓘ<div>Sends as an image + PDF. Guardian numbers on file: <b>1</b> — Rhea Dutta (Mother).</div></div>
+          </div>
+          <div class="stickybar"><div class="row" style="gap:8px"><div class="btn sec grow">Copy text</div><div class="btn accent grow">✆ Send to guardian</div></div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V5 -->
+    <div class="variant" id="v5">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 5</span>
+        <div class="variant-title">Trend dashboard</div>
+        <p class="variant-for"><b>Optimises:</b> spotting direction, not state. Sparklines for attendance, score and payment behaviour across terms — the principal's view before a parent meeting.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="avatar r">KD</div><div class="grow"><h2 style="font-size:17px">Kartik Dutta</h2><p class="sub">Trends · 2026-27</p></div><div class="iconbtn">⇩</div></div></div>
+          <div class="body">
+            <div class="card tight">
+              <div class="between"><span class="card-title" style="margin:0">Attendance by month</span><span class="badge bad">▼ 18 pts</span></div>
+              <div class="vbars" style="height:88px;margin-top:10px">
+                <div><div class="col g" style="height:88%"></div><div class="lbl">Apr</div></div>
+                <div><div class="col g" style="height:82%"></div><div class="lbl">May</div></div>
+                <div><div class="col a" style="height:74%"></div><div class="lbl">Jun</div></div>
+                <div><div class="col a" style="height:70%"></div><div class="lbl">Jul</div></div>
+                <div><div class="col r" style="height:60%"></div><div class="lbl">Aug</div></div>
+              </div>
+            </div>
+            <div class="card tight">
+              <div class="between"><span class="card-title" style="margin:0">Score by assessment</span><span class="badge warn">flat</span></div>
+              <div class="stack" style="gap:9px;margin-top:8px">
+                <div class="row"><span class="tiny muted" style="width:52px">Quiz</span><div class="bar grow"><span class="a" style="width:64%"></span></div><span class="small" style="width:24px;text-align:right">64</span></div>
+                <div class="row"><span class="tiny muted" style="width:52px">Midterm</span><div class="bar grow"><span class="a" style="width:61%"></span></div><span class="small" style="width:24px;text-align:right">61</span></div>
+                <div class="row"><span class="tiny muted" style="width:52px">Final</span><div class="bar grow"><span class="a" style="width:63%"></span></div><span class="small" style="width:24px;text-align:right">63</span></div>
+              </div>
+            </div>
+            <div class="stat3">
+              <div class="stat"><div class="n">19<span class="tiny muted">/21</span></div><div class="l">Class rank</div></div>
+              <div class="stat r"><div class="n">5</div><div class="l">Mon absences</div></div>
+              <div class="stat a"><div class="n">112</div><div class="l">Days overdue</div></div>
+            </div>
+            <div class="card tight">
+              <div class="card-title">Subject vs class average</div>
+              <div class="stack" style="gap:8px">
+                <div class="row"><span class="tiny grow">Mathematics</span><span class="badge bad">−9</span><div class="spark grow" style="max-width:88px"><i style="height:40%"></i><i style="height:52%"></i><i class="on" style="height:46%"></i><i style="height:44%"></i></div></div>
+                <div class="row"><span class="tiny grow">English</span><span class="badge ok">+2</span><div class="spark grow" style="max-width:88px"><i style="height:50%"></i><i style="height:62%"></i><i class="on" style="height:70%"></i><i style="height:68%"></i></div></div>
+                <div class="row"><span class="tiny grow">Social Studies</span><span class="badge bad">−14</span><div class="spark grow" style="max-width:88px"><i style="height:60%"></i><i style="height:44%"></i><i class="on" style="height:36%"></i><i style="height:34%"></i></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="margin-top:8px">
+    <b>Recommendation:</b> <b>V1</b> as the page (hero, three KPIs, sticky tabs) with <b>V4 wired to the "Share summary" button</b> — that pairing answers the parent question in zero scrolls and ends in the channel parents actually use. V3's action grid is the right variant for a dedicated front-desk role; V2 and V5 are worth it once counselling and principal workflows get their own entry points.
+  </div>
+</div>
+
+<nav class="reviewnav" title="← → move between screens · F fit all five · I gallery">
+  <a class="rn-btn" href="01-students.html" data-nav="prev">‹ <span class="rn-lbl">Students</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index">
+    <span class="rn-count">2 / 10</span>
+    <span class="rn-title">Student 360</span>
+  </a>
+  <div class="rn-dots"><a class="rn-dot" href="01-students.html" title="1. Students"></a><a class="rn-dot on" href="02-student-detail.html" title="2. Student 360"></a><a class="rn-dot" href="03-attendance.html" title="3. Mark Attendance"></a><a class="rn-dot" href="04-attendance-report.html" title="4. Attendance Report"></a><a class="rn-dot" href="05-grades.html" title="5. Enter Marks"></a><a class="rn-dot" href="06-grade-report.html" title="6. Grade Report"></a><a class="rn-dot" href="07-timetable.html" title="7. Timetable Builder"></a><a class="rn-dot" href="08-my-schedule.html" title="8. My Schedule"></a><a class="rn-dot" href="09-report-cards.html" title="9. Report Cards"></a><a class="rn-dot" href="10-academic-years.html" title="10. Years & Terms"></a></div>
+  <a class="rn-btn" href="03-attendance.html" data-nav="next"><span class="rn-lbl">Mark Attendance</span> ›</a>
+  <span class="rn-keys">← →  ·  F fit  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

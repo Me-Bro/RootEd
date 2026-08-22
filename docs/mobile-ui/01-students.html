@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Students — 5 mobile concepts · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page">
+  <p class="crumbs"><a href="index.html">← All screens</a> · Academic · <code>StudentsPage.jsx</code></p>
+  <h1 class="page-title">1 · Students</h1>
+  <p class="page-sub">1000 students, 40 sections. Two completely different jobs share this screen: <em>find one child fast</em> (front desk, parent on the phone) and <em>work through a cohort</em> (admin, class teacher).</p>
+
+  <div class="painbox">
+    <b>Pain today:</b> a 4-column table plus <code>Previous</code>/<code>Next</code> paging at 20 rows a page — <b>50 pages</b> for this dataset. The section filter is a <code>&lt;select&gt;</code> with 40 optgrouped options (the same control is repeated in 5 places, and it never remembers your last choice). The <code>Status</code> column clips at 390&nbsp;px, and <code>Add Student</code> opens a 6-field modal that a phone keyboard covers.
+  </div>
+
+  <input type="checkbox" id="fit" class="vis-hidden">
+  <div class="zoombar"><label for="fit">▣ Fit all five on one screen (toggle)</label> · real data: 1000 students, Grade 1–10 × A–D</div>
+
+  <div class="rail">
+
+    <!-- V1 -->
+    <div class="variant" id="v1">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 1</span>
+        <div class="variant-title">A–Z index roster</div>
+        <p class="variant-for"><b>Optimises:</b> you know the name. Sticky search, letter rail on the thumb side, alphabetical groups, infinite scroll — the 50-page pager disappears.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="grow"><h2>Students</h2><p class="sub">962 active · 38 inactive</p></div><div class="iconbtn">⇩</div><div class="iconbtn">＋</div></div>
+            <div class="searchbar" style="margin-top:10px">🔍 <span class="muted">Name, admission no or phone</span></div>
+          </div>
+          <div class="body" style="padding-right:26px">
+            <p class="sectionlabel">A</p>
+            <div class="list">
+              <div class="li"><div class="avatar">SA</div><div class="grow"><div class="nm">Sneha Ahuja</div><div class="meta">GPS/2026/0416 · Grade 5-A</div></div><span class="tiny muted">›</span></div>
+            </div>
+            <p class="sectionlabel">B</p>
+            <div class="list">
+              <div class="li"><div class="avatar">RB</div><div class="grow"><div class="nm">Rohit Banerjee</div><div class="meta">GPS/2026/0406 · Grade 5-A</div></div><span class="tiny muted">›</span></div>
+              <div class="li"><div class="avatar">AB</div><div class="grow"><div class="nm">Aarav Barua</div><div class="meta">GPS/2026/0731 · Grade 8-C</div></div><span class="tiny muted">›</span></div>
+              <div class="li"><div class="avatar">KB</div><div class="grow"><div class="nm">Kashvi Bose</div><div class="meta">GPS/2026/0208 · Grade 3-B</div></div><span class="tiny muted">›</span></div>
+            </div>
+            <p class="sectionlabel">C</p>
+            <div class="list">
+              <div class="li"><div class="avatar">BC</div><div class="grow"><div class="nm">Bhumika Chatterjee</div><div class="meta">GPS/2026/0423 · Grade 5-A</div></div><span class="tiny muted">›</span></div>
+              <div class="li"><div class="avatar">CC</div><div class="grow"><div class="nm">Chetan Chatterjee</div><div class="meta">GPS/2026/0414 · Grade 5-A</div></div><span class="tiny muted">›</span></div>
+              <div class="li"><div class="avatar">NC</div><div class="grow"><div class="nm">Neha Chopra</div><div class="meta">GPS/2026/0413 · Grade 5-A</div></div><span class="tiny muted">›</span></div>
+              <div class="li"><div class="avatar">DC</div><div class="grow"><div class="nm">Drishti Choudhury</div><div class="meta">GPS/2026/0902 · Grade 10-A</div></div><span class="tiny muted">›</span></div>
+            </div>
+            <p class="sectionlabel">D</p>
+            <div class="list">
+              <div class="li"><div class="avatar">BD</div><div class="grow"><div class="nm">Bhuvan D'Souza</div><div class="meta">GPS/2026/0401 · Grade 5-A</div></div><span class="tiny muted">›</span></div>
+            </div>
+          </div>
+          <div style="position:absolute;right:6px;top:120px;bottom:96px;display:flex;flex-direction:column;justify-content:space-between;font-size:10px;font-weight:700;color:var(--ink-4);z-index:20">
+            <span style="color:var(--accent)">A</span><span>B</span><span style="color:var(--accent)">C</span><span>D</span><span>G</span><span>I</span><span>K</span><span>M</span><span>N</span><span>P</span><span>R</span><span>S</span><span>T</span><span>V</span><span>Y</span>
+          </div>
+          <div class="tabbar"><div><span class="ic">◧</span>Today</div><div class="on"><span class="ic">⌗</span>Students</div><div><span class="ic">☑</span>Attendance</div><div><span class="ic">✎</span>Marks</div><div><span class="ic">☰</span>More</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V2 -->
+    <div class="variant" id="v2">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 2</span>
+        <div class="variant-title">Class-first drill-down <span class="rec">SHIP</span></div>
+        <p class="variant-for"><b>Optimises:</b> the teacher's mental model — grade, then section, then children. Replaces the 40-option select with two tap layers and remembers where you were.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="grow"><h2>Students</h2><p class="sub">Pick a class · 2026-27</p></div><div class="iconbtn">🔍</div></div>
+            <div class="chiprow" style="margin-top:10px"><div class="chip soft">↩ Grade 5-A</div><div class="chip">Grade 8-C</div><div class="chip">Grade 10-A</div></div>
+          </div>
+          <div class="body">
+            <p class="sectionlabel">Recently used</p>
+            <div class="card tight">
+              <div class="between"><div><div class="nm" style="font-weight:600">Grade 5-A</div><div class="tiny muted">21 active · Dinesh Kurup</div></div><span class="badge ok">94% att.</span></div>
+            </div>
+            <p class="sectionlabel">All classes</p>
+            <div class="list">
+              <div class="li"><div class="avatar sm">1</div><div class="grow"><div class="nm">Grade 1</div><div class="tiny muted">A · B · C · D</div></div><span class="tiny muted">100 ›</span></div>
+              <div class="li"><div class="avatar sm">2</div><div class="grow"><div class="nm">Grade 2</div><div class="tiny muted">A · B · C · D</div></div><span class="tiny muted">100 ›</span></div>
+              <div class="li"><div class="avatar sm">3</div><div class="grow"><div class="nm">Grade 3</div><div class="tiny muted">A · B · C · D</div></div><span class="tiny muted">100 ›</span></div>
+              <div class="li"><div class="avatar sm">4</div><div class="grow"><div class="nm">Grade 4</div><div class="tiny muted">A · B · C · D</div></div><span class="tiny muted">100 ›</span></div>
+            </div>
+            <div class="card" style="padding:0;overflow:hidden">
+              <div class="li" style="background:var(--surface-2)"><div class="avatar sm" style="background:var(--ink);color:#fff">5</div><div class="grow"><div class="nm">Grade 5</div></div><span class="tiny muted">100</span></div>
+              <div style="padding:12px 13px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+                <div class="chip on" style="text-align:center">A · 21</div>
+                <div class="chip" style="text-align:center">B · 25</div>
+                <div class="chip" style="text-align:center">C · 24</div>
+                <div class="chip" style="text-align:center">D · 25</div>
+              </div>
+              <div class="list plain">
+                <div class="li"><div class="avatar g">RB</div><div class="grow"><div class="nm">Rohit Banerjee</div><div class="meta">GPS/2026/0406</div></div><span class="tiny muted">›</span></div>
+                <div class="li"><div class="avatar g">CC</div><div class="grow"><div class="nm">Chetan Chatterjee</div><div class="meta">GPS/2026/0414</div></div><span class="tiny muted">›</span></div>
+                <div class="li"><div class="avatar r">KD</div><div class="grow"><div class="nm">Kartik Dutta</div><div class="meta">GPS/2026/0402 · 60% att.</div></div><span class="tiny muted">›</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="fab">＋</div>
+          <div class="tabbar"><div><span class="ic">◧</span>Today</div><div class="on"><span class="ic">⌗</span>Students</div><div><span class="ic">☑</span>Attendance</div><div><span class="ic">✎</span>Marks</div><div><span class="ic">☰</span>More</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V3 -->
+    <div class="variant" id="v3">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 3</span>
+        <div class="variant-title">Search-first palette <span class="rec">SHIP</span></div>
+        <p class="variant-for"><b>Optimises:</b> a parent standing at the counter. One field matches name, admission number, parent phone; results are grouped and labelled with why they matched.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><div class="searchbar">🔍 <span>malh</span><span style="color:var(--ink-4)">|</span></div></div></div>
+          </div>
+          <div class="body">
+            <p class="sectionlabel">Students · 2 matches</p>
+            <div class="list">
+              <div class="li"><div class="avatar">HM</div><div class="grow"><div class="nm">Heena <b>Malh</b>otra</div><div class="meta">GPS/2026/0411 · Grade 5-A</div></div><span class="badge ok">100%</span></div>
+              <div class="li"><div class="avatar">RM</div><div class="grow"><div class="nm">Rishi <b>Malh</b>otra</div><div class="meta">GPS/2026/0419 · Grade 5-A</div></div><span class="badge ok">100%</span></div>
+            </div>
+            <p class="sectionlabel">Guardians · 1 match</p>
+            <div class="list">
+              <div class="li"><div class="avatar b">☎</div><div class="grow"><div class="nm">Keshav <b>Malh</b>otra</div><div class="tiny muted">Father of Heena · +91 97100 34119</div></div><span class="badge info">Call</span></div>
+            </div>
+            <p class="sectionlabel">Recent</p>
+            <div class="list">
+              <div class="li"><div class="avatar sm">KD</div><div class="grow"><div class="nm">Kartik Dutta</div><div class="meta">GPS/2026/0402</div></div><span class="tiny muted">2m ago</span></div>
+              <div class="li"><div class="avatar sm">MV</div><div class="grow"><div class="nm">Myra Verma</div><div class="meta">GPS/2026/0405</div></div><span class="tiny muted">Today</span></div>
+            </div>
+            <p class="sectionlabel">Try</p>
+            <div class="row" style="flex-wrap:wrap;gap:6px">
+              <span class="chip">GPS/2026/…</span><span class="chip">+91 97…</span><span class="chip">Grade 7-B</span><span class="chip">fee: unpaid</span>
+            </div>
+          </div>
+          <div class="sheet" style="padding-bottom:16px">
+            <div class="keypad" style="grid-template-columns:repeat(10,1fr);gap:4px">
+              <div class="key soft" style="height:38px;font-size:14px">q</div><div class="key soft" style="height:38px;font-size:14px">w</div><div class="key soft" style="height:38px;font-size:14px">e</div><div class="key soft" style="height:38px;font-size:14px">r</div><div class="key soft" style="height:38px;font-size:14px">t</div><div class="key soft" style="height:38px;font-size:14px">y</div><div class="key soft" style="height:38px;font-size:14px">u</div><div class="key soft" style="height:38px;font-size:14px">i</div><div class="key soft" style="height:38px;font-size:14px">o</div><div class="key soft" style="height:38px;font-size:14px">p</div>
+            </div>
+            <div class="tiny muted" style="text-align:center;margin-top:8px">Keyboard opens with the screen — search is the screen</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V4 -->
+    <div class="variant" id="v4">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 4</span>
+        <div class="variant-title">Saved segments + filter sheet</div>
+        <p class="variant-for"><b>Optimises:</b> admin cohort work. The questions people actually ask ("who hasn't paid?", "who joined this term?") become one-tap segments; the multi-filter lives in a bottom sheet, not a top row.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="grow"><h2>Students</h2><p class="sub">Segment: Fee unpaid · 163 students</p></div><div class="iconbtn">⇩</div></div>
+            <div class="chiprow" style="margin-top:10px">
+              <div class="chip on">Fee unpaid · 163</div><div class="chip">Below 75% · 58</div><div class="chip">New this term · 44</div><div class="chip">Withdrawn · 19</div>
+            </div>
+          </div>
+          <div class="body">
+            <div class="card tight">
+              <div class="between"><span class="small"><b>163</b> students · ₹47.2L outstanding</span><span class="chip soft">Export</span></div>
+            </div>
+            <div class="list">
+              <div class="li"><div class="avatar r">KD</div><div class="grow"><div class="nm">Kartik Dutta</div><div class="meta">Grade 5-A · ₹40,500 due</div></div><span class="badge bad">Unpaid</span></div>
+              <div class="li"><div class="avatar r">AN</div><div class="grow"><div class="nm">Avni Naidu</div><div class="meta">Grade 5-A · ₹40,500 due</div></div><span class="badge bad">Unpaid</span></div>
+              <div class="li"><div class="avatar a">HP</div><div class="grow"><div class="nm">Hemant Pereira</div><div class="meta">Grade 5-A · ₹16,200 due</div></div><span class="badge warn">Partial</span></div>
+              <div class="li"><div class="avatar r">DC</div><div class="grow"><div class="nm">Drishti Choudhury</div><div class="meta">Grade 10-A · ₹62,000 due</div></div><span class="badge bad">Unpaid</span></div>
+              <div class="li"><div class="avatar a">AB</div><div class="grow"><div class="nm">Aarav Barua</div><div class="meta">Grade 8-C · ₹19,800 due</div></div><span class="badge warn">Partial</span></div>
+            </div>
+          </div>
+          <div class="scrim"></div>
+          <div class="sheet">
+            <div class="grab"></div>
+            <div class="between"><span style="font-weight:650">Filters</span><span class="tiny muted">Reset</span></div>
+            <p class="sectionlabel">Class</p>
+            <div class="chiprow"><div class="chip">All</div><div class="chip on">Grade 5</div><div class="chip">Grade 6</div><div class="chip">Grade 7</div></div>
+            <p class="sectionlabel">Section</p>
+            <div class="chiprow"><div class="chip on">A</div><div class="chip">B</div><div class="chip">C</div><div class="chip">D</div></div>
+            <p class="sectionlabel">Status</p>
+            <div class="chiprow"><div class="chip on">Active</div><div class="chip">Graduated</div><div class="chip">Withdrawn</div></div>
+            <p class="sectionlabel">Attendance</p>
+            <div class="chiprow"><div class="chip">Any</div><div class="chip on">Below 75%</div><div class="chip">Below 60%</div></div>
+            <div class="btn" style="margin-top:14px">Show 163 students</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V5 -->
+    <div class="variant" id="v5">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 5</span>
+        <div class="variant-title">Swipe actions + multi-select</div>
+        <p class="variant-for"><b>Optimises:</b> acting, not browsing. Swipe a row to call or WhatsApp the guardian; long-press to select several and act in bulk. Turns a read-only list into a work queue.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">✕</div><div class="grow"><h2>3 selected</h2><p class="sub">Grade 5-A</p></div><div class="iconbtn">⋯</div></div>
+          </div>
+          <div class="body">
+            <div class="list">
+              <div class="li" style="background:var(--accent-soft)"><div class="avatar" style="background:var(--accent);color:#fff">✓</div><div class="grow"><div class="nm">Rohit Banerjee</div><div class="meta">GPS/2026/0406</div></div></div>
+              <div class="li" style="background:var(--accent-soft)"><div class="avatar" style="background:var(--accent);color:#fff">✓</div><div class="grow"><div class="nm">Chetan Chatterjee</div><div class="meta">GPS/2026/0414</div></div></div>
+              <div class="li"><div class="avatar">NC</div><div class="grow"><div class="nm">Neha Chopra</div><div class="meta">GPS/2026/0413</div></div></div>
+            </div>
+            <div class="card" style="padding:0;overflow:hidden">
+              <div style="display:flex">
+                <div style="flex:1 1 0;background:var(--present-bg);color:var(--present);display:grid;place-items:center;font-size:12px;font-weight:700;padding:14px 0">☎ Call</div>
+                <div style="flex:1 1 0;background:var(--excused-bg);color:var(--excused);display:grid;place-items:center;font-size:12px;font-weight:700">✆ WhatsApp</div>
+                <div style="flex:0 0 130px;background:var(--surface)">
+                  <div class="li" style="border:0;min-height:52px"><div class="avatar r">KD</div><div class="grow"><div class="nm" style="font-size:13px">Kartik…</div></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="tiny muted" style="text-align:center">Swipe any row left for guardian actions</div>
+            <div class="list">
+              <div class="li" style="background:var(--accent-soft)"><div class="avatar" style="background:var(--accent);color:#fff">✓</div><div class="grow"><div class="nm">Divya Ghosh</div><div class="meta">GPS/2026/0421</div></div></div>
+              <div class="li"><div class="avatar">DG</div><div class="grow"><div class="nm">Deepak Gowda</div><div class="meta">GPS/2026/0404</div></div></div>
+              <div class="li"><div class="avatar">HM</div><div class="grow"><div class="nm">Heena Malhotra</div><div class="meta">GPS/2026/0411</div></div></div>
+            </div>
+          </div>
+          <div class="stickybar">
+            <div class="row" style="gap:8px">
+              <div class="btn sec grow">Move section</div>
+              <div class="btn grow">Message guardians</div>
+            </div>
+            <div class="hint">Bulk: move · message · mark withdrawn · export</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="margin-top:8px">
+    <b>Recommendation:</b> ship <b>V2 as the browse path</b> and <b>V3 as the jump path</b> (one shared component: recents → drill-down → search). Together they retire the 40-option select from all five screens that copy it, and the 50-page pager disappears with infinite scroll from V1. V4's segments are the natural home for the fee/attendance cross-module questions; V5's swipe actions layer on later.
+  </div>
+</div>
+
+<nav class="reviewnav" title="← → move between screens · F fit all five · I gallery">
+  <span class="rn-btn off">‹ <span class="rn-lbl">start</span></span>
+  <a class="rn-mid" href="index.html" data-nav="index">
+    <span class="rn-count">1 / 10</span>
+    <span class="rn-title">Students</span>
+  </a>
+  <div class="rn-dots"><a class="rn-dot on" href="01-students.html" title="1. Students"></a><a class="rn-dot" href="02-student-detail.html" title="2. Student 360"></a><a class="rn-dot" href="03-attendance.html" title="3. Mark Attendance"></a><a class="rn-dot" href="04-attendance-report.html" title="4. Attendance Report"></a><a class="rn-dot" href="05-grades.html" title="5. Enter Marks"></a><a class="rn-dot" href="06-grade-report.html" title="6. Grade Report"></a><a class="rn-dot" href="07-timetable.html" title="7. Timetable Builder"></a><a class="rn-dot" href="08-my-schedule.html" title="8. My Schedule"></a><a class="rn-dot" href="09-report-cards.html" title="9. Report Cards"></a><a class="rn-dot" href="10-academic-years.html" title="10. Years & Terms"></a></div>
+  <a class="rn-btn" href="02-student-detail.html" data-nav="next"><span class="rn-lbl">Student 360</span> ›</a>
+  <span class="rn-keys">← →  ·  F fit  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

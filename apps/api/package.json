@@ -10,7 +10,9 @@
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "lint": "eslint src --ext .js",
     "seed:test": "node --env-file=.env.test src/scripts/seed-test-data.js",
-    "seed:test:clean": "node --env-file=.env.test src/scripts/seed-test-data.js --clean"
+    "seed:test:clean": "node --env-file=.env.test src/scripts/seed-test-data.js --clean",
+    "seed:bulk": "node --env-file=.env src/scripts/seed-bulk-data.js",
+    "seed:bulk:reset": "node --env-file=.env src/scripts/seed-bulk-data.js --reset"
   },
   "dependencies": {
     "@rooted/shared": "workspace:*",

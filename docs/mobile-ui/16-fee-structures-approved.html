@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fee Structures — 2 mockups + approved spec · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page wide">
+  <p class="crumbs"><a href="index.html">← All modules</a> · Fee · <code>FeeStructuresPage.jsx</code></p>
+
+  <div class="approved-band">
+    <span class="seal">✅ APPROVED FOR BUILD</span>
+    <span class="txt">Module 15 of 18, lightweight process: understand the real desktop screen → exactly <b>2 mobile mockups</b> (simple, then smart) → approve one → write the full build spec.</span>
+  </div>
+
+  <h1 class="page-title">Fee Structures — mobile mock</h1>
+  <p class="page-sub">Real data: 3 active structures — Primary ₹40,500, Middle School ₹50,500, Secondary ₹62,000 — against 985 assignments and ₹31.18L collected.</p>
+
+  <div class="statrow" style="max-width:900px">
+    <div class="s"><div class="n">2</div><div class="l">Mockups made</div></div>
+    <div class="s hot"><div class="n">1</div><div class="l">Approved</div></div>
+    
+  </div>
+
+  <div class="toc">
+    <a href="#current"><b>0</b> · What the desktop does today</a>
+    <a href="#mocks"><b>1</b> · The 2 mockups</a>
+    <a href="#wiring"><b>2</b> · API contracts</a>
+    <a href="#state"><b>3</b> · State &amp; logic</a>
+    <a href="#components"><b>4</b> · File &amp; component plan</a>
+    <a href="#edge"><b>5</b> · Errors, empty, a11y</a>
+    <a href="#dod"><b>6</b> · Definition of done</a>
+    <a href="#signoff"><b>7</b> · Sign-off</a>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:34px" id="current">0 · What the desktop does today <span style="color:#6e7a8a;font-size:13px;font-weight:400">— read from the real code, not assumed</span></h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Behaviour</th><th>Where it lives</th></tr></thead>
+      <tbody>
+        <tr><td>Search + year/class filters, a card grid with components + total; collection summary is a separate fetch per card</td><td>FeeStructuresPage.jsx</td></tr>
+        <tr><td>Assign-to-Section, Edit, Activate/Deactivate all open modals</td><td>same file</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="mocks">1 · The 2 mockups</h2>
+
+  <div class="rail">
+    <div class="variant">
+      <div class="variant-head">
+        <span class="statechip" style="background:#3a4152;color:#e2e7ee">MOCK 1 · SIMPLE</span>
+        <div class="variant-title">Mirrors the desktop, exactly</div>
+        <p class="variant-for">Search + year/class filters, a grid of structure cards each with components, total, and a collected/outstanding summary. Same data, one column instead of three.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Fee Structures</h2></div><div class="iconbtn">＋</div></div>
+            <div class="searchbar" style="margin-top:10px">🔍 <span class="muted">Search structures…</span></div>
+          </div>
+          <div class="body">
+            <div class="card">
+              <div class="between"><span style="font-weight:650">Primary Fee (Grade 1-5)</span><span class="badge ok">Active</span></div>
+              <div class="tiny muted">2026-27</div>
+              <div class="kv"><span class="k">Tuition</span><span class="v">₹28,000</span></div>
+              <div class="kv"><span class="k">Transport</span><span class="v">₹9,000</span></div>
+              <div class="kv"><span class="k">Activity &amp; Lab</span><span class="v">₹3,500</span></div>
+              <div class="between" style="border-top:1px solid var(--line);padding-top:8px;margin-top:4px;font-weight:700"><span>Total</span><span>₹40,500</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant" style="position:relative">
+      <div class="variant-head">
+        <span class="statechip">MOCK 2 · SMART <span style="margin-left:6px">✅ APPROVED</span></span>
+        <div class="variant-title">Collection % on every card, no search needed</div>
+        <p class="variant-for">Only 3 structures exist — search is over-engineering for that (rule 1). The real accelerator is surfacing each structure's collection rate directly on the card, since "how much of the Primary Fee have we actually collected" is the question this screen exists to answer, and today it's one extra tap (Structure Summary) away.</p>
+      </div>
+      <div class="phone">
+        <div class="redline-dot" style="left:200px;top:290px">1</div>
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="grow"><h2>Fee Structures</h2><p class="sub">2026-27 · 3 structures</p></div><div class="iconbtn">＋</div></div></div>
+          <div class="body">
+            <div class="card">
+              <div class="between"><span style="font-weight:650">Primary Fee (Grade 1-5)</span><span class="badge ok">Active</span></div>
+              <div class="between" style="margin-top:4px"><span class="tiny muted">Total ₹40,500 · 500 assigned</span></div>
+              <div class="bar thick" style="margin-top:10px"><span class="g" style="width:71%"></span></div>
+              <div class="between" style="margin-top:6px"><span class="tiny muted">71% collected</span><span class="tiny muted">₹1.44Cr of ₹2.03Cr</span></div>
+              <div class="row" style="gap:8px;margin-top:10px"><div class="btn sec sm grow">Assign</div><div class="btn sec sm grow">Edit</div></div>
+            </div>
+            <div class="card tight"><div class="between"><span style="font-weight:600">Middle School Fee</span><span class="badge ok">Active</span></div><div class="bar" style="margin-top:8px"><span class="g" style="width:68%"></span></div></div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div style="max-width:280px;padding-top:52px">
+      <ol class="speclist">
+        <li><b>Collection bar</b> on every card — the summary that already exists behind one tap now needs zero taps.</li>
+      </ol>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="border-color:#2f5c4a;background:#12211b">
+    <b>Why Mock 2 is approved:</b> the data already exists — <code>GET /fee/structures/:id/summary</code> is called today, just behind an extra tap per card. Pulling it inline costs nothing new server-side. No search or filter was added; 3 structures don't need one.
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="wiring">2 · API contracts <span style="color:#6e7a8a;font-size:13px;font-weight:400">— every one of these already exists</span></h2>
+  <div class="codeblock"><span class="k">GET</span> /fee/structures?yearId=<span class="s">{{y}}</span>
+<span class="k">GET</span> /fee/structures/<span class="s">{{id}}</span>/summary   <span class="c1">// fired for every visible card instead of on-demand — only 3 calls</span>
+<span class="c1">// { assignedCount, collectedAmount, outstandingAmount }</span></div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="state">3 · State &amp; logic</h2>
+  <div class="codeblock"><span class="k">const</span> summaries = useQueries(structures.map(s => ({{ queryKey: [<span class="s">'fee-summary'</span>, s._id], queryFn: () => fetchSummary(s._id) }})));</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="components">4 · File &amp; component plan</h2>
+  <div class="rail" style="gap:16px">
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Files</div></div>
+      <div class="codeblock filetree" style="width:100%;box-sizing:border-box"><span class="mod">M</span> apps/web/src/pages/fee/FeeStructuresPage.jsx <span class="c1">— inline the summary fetch, no new components</span></div>
+    </div>
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Component contracts</div></div>
+      <div class="card" style="width:100%">
+        <div class="kv"><span class="k">Reuse as-is</span><span class="v">existing <code>Card</code>, <code>Badge</code>; the summary data already has a component (<code>StructureSummary</code>) — it moves up, doesn't get rebuilt</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="edge">5 · Errors, empty states, accessibility</h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Situation</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td><b>Summary fetch fails for one card</b></td><td>that card shows components/total only, others still show their bar — one failure doesn't block the list</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="dod">6 · Definition of done</h2>
+  <div class="painbox" style="max-width:900px">
+    <ul class="checklist">
+      <li>Collection % bar visible on every card without an extra tap</li>
+      <li>No search/filter added given only 3 structures exist</li>
+      <li>Assign/Edit/Deactivate actions unchanged from desktop</li>
+    </ul>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="signoff">7 · Sign-off</h2>
+  <div class="painbox" style="max-width:900px">
+    <div class="signoff">
+      <div class="field"><div class="l">Approved by</div><div class="v"></div></div>
+      <div class="field"><div class="l">Date</div><div class="v"></div></div>
+      <div class="field"><div class="l">Spec version</div><div class="v">v1.0 · 22 Aug 2026</div></div>
+      <div class="field"><div class="l">Module</div><div class="v">Fee · 15 of 18</div></div>
+    </div>
+  </div>
+
+</div>
+<nav class="reviewnav" title="← → move between screens · I gallery">
+  <a class="rn-btn" href="15-budgets-approved.html" data-nav="prev">‹ <span class="rn-lbl">Budgets</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">APPROVED</span><span class="rn-title">Fee Structures · 15 of 18</span></a>
+  <a class="rn-btn" href="17-fee-collection-approved.html" data-nav="next"><span class="rn-lbl">Fee Collection</span> ›</a>
+  <span class="rn-keys">← →  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Students — 2 mockups + approved spec · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page wide">
+  <p class="crumbs"><a href="index.html">← All modules</a> · Academic · <code>StudentsPage.jsx</code></p>
+
+  <div class="approved-band">
+    <span class="seal">✅ APPROVED FOR BUILD</span>
+    <span class="txt">Module 2 of 18, lightweight process: understand the real desktop screen → exactly <b>2 mobile mockups</b> (simple, then smart) → approve one → write the full build spec.</span>
+  </div>
+
+  <h1 class="page-title">Students — mobile mock</h1>
+  <p class="page-sub">Real data: 1000 students across 40 sections (Grade 1–10 × A–D). The desktop's 40-option section select and 50-page pager are the two loudest pain points flagged in the plan.</p>
+
+  <div class="statrow" style="max-width:900px">
+    <div class="s"><div class="n">2</div><div class="l">Mockups made</div></div>
+    <div class="s hot"><div class="n">1</div><div class="l">Approved</div></div>
+    
+  </div>
+
+  <div class="toc">
+    <a href="#current"><b>0</b> · What the desktop does today</a>
+    <a href="#mocks"><b>1</b> · The 2 mockups</a>
+    <a href="#wiring"><b>2</b> · API contracts</a>
+    <a href="#state"><b>3</b> · State &amp; logic</a>
+    <a href="#components"><b>4</b> · File &amp; component plan</a>
+    <a href="#edge"><b>5</b> · Errors, empty, a11y</a>
+    <a href="#dod"><b>6</b> · Definition of done</a>
+    <a href="#signoff"><b>7</b> · Sign-off</a>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:34px" id="current">0 · What the desktop does today <span style="color:#6e7a8a;font-size:13px;font-weight:400">— read from the real code, not assumed</span></h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Behaviour</th><th>Where it lives</th></tr></thead>
+      <tbody>
+        <tr><td>Search box (300ms debounce) + section <code>&lt;select&gt;</code> (40 options) filter a paginated table, 20/page</td><td>StudentsPage.jsx</td></tr>
+        <tr><td>"Add Student" opens a modal: admission no, name, section, DOB, gender</td><td>same file</td></tr>
+        <tr><td>"Import CSV" bulk-creates, shows created/skipped/error counts</td><td>same file, <code>POST /academic/students/import</code></td></tr>
+        <tr><td>At 1000 students / 20 per page, browsing to the end is <b>50 pages</b></td><td>confirmed — a real UX cost at this scale</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="mocks">1 · The 2 mockups</h2>
+
+  <div class="rail">
+    <div class="variant">
+      <div class="variant-head">
+        <span class="statechip" style="background:#3a4152;color:#e2e7ee">MOCK 1 · SIMPLE</span>
+        <div class="variant-title">Mirrors the desktop, exactly</div>
+        <p class="variant-for">Search box, section filter, a list instead of a table, Previous/Next paging. Same capability as today, mobile-shaped — including the 40-option section picker and the 50-page pager, both known pain points that Mock 2 fixes.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Students</h2><p class="sub">1000 total</p></div><div class="iconbtn">＋</div></div>
+            <div class="searchbar" style="margin-top:10px">🔍 <span class="muted">Search name or admission no.</span></div>
+          </div>
+          <div class="body">
+            <div class="chip soft" style="align-self:flex-start">All Sections ▾ <span class="tiny">(40 options)</span></div>
+            <div class="list">
+              <div class="li"><div class="avatar">AA</div><div class="grow"><div class="nm">Ahana Acharya</div><div class="meta">GPS/2026/0336 · Grade 4-B</div></div><span class="badge ok">active</span></div>
+              <div class="li"><div class="avatar">AA</div><div class="grow"><div class="nm">Ajay Acharya</div><div class="meta">GPS/2026/0122 · Grade 2-A</div></div><span class="badge ok">active</span></div>
+              <div class="li"><div class="avatar">GA</div><div class="grow"><div class="nm">Gita Acharya</div><div class="meta">GPS/2026/0286 · Grade 3-D</div></div><span class="badge ok">active</span></div>
+              <div class="li"><div class="avatar">HA</div><div class="grow"><div class="nm">Hansika Acharya</div><div class="meta">GPS/2026/0097 · Grade 1-D</div></div><span class="badge ok">active</span></div>
+              <div class="li"><div class="avatar">OA</div><div class="grow"><div class="nm">Ojas Acharya</div><div class="meta">GPS/2026/0769 · Grade 8-C</div></div><span class="badge ok">active</span></div>
+            </div>
+          </div>
+          <div class="stickybar"><div class="row" style="gap:8px"><div class="btn sec" style="flex:0 0 100px">‹ Prev</div><div class="tiny muted" style="align-self:center;flex:1;text-align:center">Page 1 of 50</div><div class="btn sec" style="flex:0 0 100px">Next ›</div></div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant" style="position:relative">
+      <div class="variant-head">
+        <span class="statechip">MOCK 2 · SMART <span style="margin-left:6px">✅ APPROVED</span></span>
+        <div class="variant-title">Class drill-down + infinite scroll</div>
+        <p class="variant-for">Grade cards → section chips → roster replaces the 40-option select (2 taps instead of a 40-item wheel). Infinite scroll on the roster replaces the 50-page pager. Search stays as a fast jump for when the name is already known.</p>
+      </div>
+      <div class="phone">
+        <div class="redline-dot" style="left:100px;top:210px">1</div>
+        <div class="redline-dot" style="left:280px;top:255px">2</div>
+        <div class="redline-dot" style="left:200px;top:340px">3</div>
+        <div class="redline-dot" style="left:363px;top:100px">4</div>
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="grow"><h2>Students</h2><p class="sub">Pick a class · 1000 total</p></div><div class="iconbtn">🔍</div></div>
+            <div class="chiprow" style="margin-top:10px"><div class="chip soft">↩ Grade 5-A</div><div class="chip">Grade 8-C</div><div class="chip">Grade 10-A</div></div>
+          </div>
+          <div class="body">
+            <p class="sectionlabel">Recently used</p>
+            <div class="card tight"><div class="between"><div><div class="nm" style="font-weight:600">Grade 5-A</div><div class="tiny muted">21 active</div></div><span class="tiny muted">›</span></div></div>
+            <p class="sectionlabel">All classes</p>
+            <div class="card" style="padding:0;overflow:hidden">
+              <div class="li" style="background:var(--surface-2)"><div class="avatar sm" style="background:var(--ink);color:#fff">5</div><div class="grow"><div class="nm">Grade 5</div></div><span class="tiny muted">100</span></div>
+              <div style="padding:12px 13px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+                <div class="chip on" style="text-align:center">A · 21</div><div class="chip" style="text-align:center">B · 25</div><div class="chip" style="text-align:center">C · 24</div><div class="chip" style="text-align:center">D · 25</div>
+              </div>
+              <div class="list plain">
+                <div class="li"><div class="avatar g">RB</div><div class="grow"><div class="nm">Rohit Banerjee</div><div class="meta">GPS/2026/0406</div></div><span class="tiny muted">›</span></div>
+                <div class="li"><div class="avatar g">CC</div><div class="grow"><div class="nm">Chetan Chatterjee</div><div class="meta">GPS/2026/0414</div></div><span class="tiny muted">›</span></div>
+                <div class="li"><div class="avatar r">KD</div><div class="grow"><div class="nm">Kartik Dutta</div><div class="meta">GPS/2026/0402 · 60% att.</div></div><span class="tiny muted">›</span></div>
+                <div class="li"><div class="avatar g">DG</div><div class="grow"><div class="nm">Divya Ghosh</div><div class="meta">GPS/2026/0421</div></div><span class="tiny muted">›</span></div>
+              </div>
+              <div class="tiny muted" style="text-align:center;padding:10px">scroll for the rest · no page numbers</div>
+            </div>
+          </div>
+          <div class="fab">＋</div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div style="max-width:280px;padding-top:52px">
+      <ol class="speclist">
+        <li><b>Class cards.</b> Tap a grade to reveal its 4 sections — replaces the 40-option native select entirely.</li>
+        <li><b>Section chips.</b> One more tap picks the section; the roster loads below in place.</li>
+        <li><b>Infinite scroll.</b> Roster loads 20 at a time on scroll — the "page 1 of 50" pager disappears.</li>
+        <li><b>🔍 Search</b> stays available in the header for the case where the name is already known — this doesn't replace drill-down, it's the fast path alongside it.</li>
+      </ol>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="border-color:#2f5c4a;background:#12211b">
+    <b>Why Mock 2 is the approved one:</b> the 40-option section select and the 50-page pager are the two most-cited pain points for this screen in the plan (§2, P8/P9). Drill-down plus infinite scroll fixes both with components that already exist elsewhere in the app (<code>useClassSections</code> already returns classes with nested sections — it's the data source, just presented as cards instead of a flat list).
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="wiring">2 · API contracts <span style="color:#6e7a8a;font-size:13px;font-weight:400">— every one of these already exists</span></h2>
+  <div class="subhead">1. Load classes + sections <span class="tag">existing hook, reused</span></div>
+  <div class="codeblock"><span class="k">GET</span> /academic/classes?includeSections=true
+<span class="c1">// 200 — already used by useClassSections; each class carries its sections nested</span>
+[{ <span class="s">"_id"</span>:<span class="s">"…"</span>, <span class="s">"name"</span>:<span class="s">"Grade 5"</span>, <span class="s">"gradeLevel"</span>:<span class="k">5</span>, <span class="s">"sections"</span>:[{ <span class="s">"_id"</span>:<span class="s">"…"</span>, <span class="s">"name"</span>:<span class="s">"A"</span> }, …] }]</div>
+
+  <div class="subhead">2. Load a section's roster, paged for infinite scroll</div>
+  <div class="codeblock"><span class="k">GET</span> /academic/students?sectionId=<span class="s">{id}</span>&page=<span class="k">1</span>&limit=<span class="k">20</span>
+<span class="c1">// 200 — unchanged shape; "infinite scroll" just means the client calls page+1</span>
+<span class="c1">// automatically near the bottom instead of showing Prev/Next buttons</span>
+{ <span class="s">"students"</span>:[…], <span class="s">"total"</span>:<span class="k">21</span>, <span class="s">"page"</span>:<span class="k">1</span>, <span class="s">"pages"</span>:<span class="k">2</span> }</div>
+
+  <div class="subhead">3. Search (unchanged) / Create / Import</div>
+  <div class="codeblock"><span class="k">GET</span>  /academic/students?search=<span class="s">{q}</span>&limit=<span class="k">20</span>   <span class="c1">// existing debounced search, still available from the header icon</span>
+<span class="k">POST</span> /academic/students        <span class="c1">// unchanged — admissionNo, firstName, lastName, sectionId, dateOfBirth, gender</span>
+<span class="k">POST</span> /academic/students/import <span class="c1">// unchanged — CSV multipart, same result modal</span></div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="state">3 · State &amp; logic</h2>
+  <div class="codeblock"><span class="k">const</span> [drillClassId, setDrillClassId] = useState(<span class="k">null</span>);
+<span class="k">const</span> [drillSectionId, setDrillSectionId] = useState(lastUsedSectionId);  <span class="c1">// remembered per device</span>
+<span class="k">const</span> { data, fetchNextPage, hasNextPage } = useInfiniteQuery({
+  queryKey: [<span class="s">'students'</span>, drillSectionId],
+  queryFn: ({ pageParam = <span class="k">1</span> }) => api.get(<span class="s">`/academic/students?sectionId=${{drillSectionId}}&page=${{pageParam}}&limit=20`</span>),
+  getNextPageParam: (last) => last.page < last.pages ? last.page + <span class="k">1</span> : <span class="k">undefined</span>,
+});
+<span class="c1">// IntersectionObserver on a sentinel row calls fetchNextPage() — no Prev/Next buttons</span></div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="components">4 · File &amp; component plan</h2>
+  <div class="rail" style="gap:16px">
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Files</div></div>
+      <div class="codeblock filetree" style="width:100%;box-sizing:border-box"><span class="new">A</span> apps/web/src/components/students/ClassGrid.jsx
+<span class="new">A</span> apps/web/src/components/students/SectionChips.jsx
+<span class="new">A</span> apps/web/src/components/students/RosterInfiniteList.jsx
+<span class="mod">M</span> apps/web/src/pages/academic/StudentsPage.jsx <span class="c1">— rewrite body</span></div>
+    </div>
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Component contracts</div></div>
+      <div class="card" style="width:100%">
+        <div class="kv"><span class="k">ClassGrid</span><span class="v">{ classes, expandedId, onExpand }</span></div>
+        <div class="kv"><span class="k">SectionChips</span><span class="v">{ sections, activeId, onSelect }</span></div>
+        <div class="kv"><span class="k">RosterInfiniteList</span><span class="v">{ sectionId }</span></div>
+        <div class="kv"><span class="k">Reuse as-is</span><span class="v"><code>useClassSections</code>, <code>Badge</code>, search icon button pattern from Attendance</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="edge">5 · Errors, empty states, accessibility</h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Situation</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td><b>Section has 0 students</b></td><td>"No students in this section yet" — Add Student stays available</td></tr>
+        <tr><td><b>Search active</b></td><td>drill-down UI hides; results render as a flat infinite list, same as today's search results</td></tr>
+        <tr><td><b>Scroll sentinel fails to trigger (slow network)</b></td><td>a manual "Load more" button appears after 3s as a fallback</td></tr>
+        <tr><td><b>Import CSV</b></td><td>unchanged — same result modal (created/skipped/errors)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="dod">6 · Definition of done</h2>
+  <div class="painbox" style="max-width:900px">
+    <ul class="checklist">
+      <li>Class cards replace the 40-option native select entirely</li>
+      <li>Infinite scroll replaces the "Page X of 50" pager; no page-number UI remains</li>
+      <li>Search from the header bypasses drill-down and shows a flat result list</li>
+      <li>Last-used section is remembered per device and pre-opened next visit</li>
+      <li>Add Student and Import CSV behave identically to today</li>
+      <li>Verified against the real 1000-student, 40-section dataset</li>
+    </ul>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="signoff">7 · Sign-off</h2>
+  <div class="painbox" style="max-width:900px">
+    <div class="signoff">
+      <div class="field"><div class="l">Approved by</div><div class="v"></div></div>
+      <div class="field"><div class="l">Date</div><div class="v"></div></div>
+      <div class="field"><div class="l">Spec version</div><div class="v">v1.0 · 22 Aug 2026</div></div>
+      <div class="field"><div class="l">Module</div><div class="v">Academic · 2 of 18</div></div>
+    </div>
+  </div>
+
+</div>
+<nav class="reviewnav" title="← → move between screens · I gallery">
+  <a class="rn-btn" href="10-academic-years-approved.html" data-nav="prev">‹ <span class="rn-lbl">Academic Years</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">APPROVED</span><span class="rn-title">Students · 2 of 18</span></a>
+  <a class="rn-btn" href="04-attendance-report-approved.html" data-nav="next"><span class="rn-lbl">Attendance Report</span> ›</a>
+  <span class="rn-keys">← →  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

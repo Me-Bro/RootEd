@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Academic Years — 2 mockups + approved spec · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page wide">
+  <p class="crumbs"><a href="index.html">← All modules</a> · Academic · <code>AcademicYearsPage.jsx</code> · <a href="10-academic-years.html">5-variant exploration (earlier pass)</a></p>
+
+  <div class="approved-band">
+    <span class="seal">✅ APPROVED FOR BUILD</span>
+    <span class="txt">Module 1 of 18 in the lightweight process: understand the real desktop screen → exactly <b>2 mobile mockups</b> (simple, then smart) → approve one → write the full build spec. No 5-variant exploration this time — this screen's data is small and bounded, so it doesn't need one.</span>
+  </div>
+
+  <h1 class="page-title">Academic Years — mobile mock</h1>
+  <p class="page-sub">The screen that sets context for every other Academic screen, redone in the lighter process. Real data: 3 years seeded (2024-25, 2025-26, <b>2026-27 active</b>), 2 terms each, today (22 Aug 2026) falls inside 2026-27's Term&nbsp;1.</p>
+
+  <div class="statrow" style="max-width:900px">
+    <div class="s"><div class="n">2</div><div class="l">Mockups made</div></div>
+    <div class="s hot"><div class="n">2</div><div class="l">Approved</div></div>
+    <div class="s"><div class="n">0</div><div class="l">New API endpoints</div></div>
+    <div class="s"><div class="n">1</div><div class="l">Real gap this closes (P14)</div></div>
+  </div>
+
+  <div class="toc">
+    <a href="#current"><b>0</b> · What the desktop does today</a>
+    <a href="#mocks"><b>1</b> · The 2 mockups</a>
+    <a href="#wiring"><b>2</b> · API contracts</a>
+    <a href="#state"><b>3</b> · State &amp; logic</a>
+    <a href="#components"><b>4</b> · File &amp; component plan</a>
+    <a href="#edge"><b>5</b> · Errors, empty, a11y</a>
+    <a href="#dod"><b>6</b> · Definition of done</a>
+    <a href="#signoff"><b>7</b> · Sign-off</a>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:34px" id="current">0 · What the desktop does today <span style="color:#6e7a8a;font-size:13px;font-weight:400">— read from the real code, not assumed</span></h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Behaviour</th><th>Where it lives</th></tr></thead>
+      <tbody>
+        <tr><td>Lists years in a 5-column table: Name, Start, End, Status, Actions</td><td><code>AcademicYearsPage.jsx</code></td></tr>
+        <tr><td>"New Year" opens a modal: Name, Start Date, End Date</td><td>same file, <code>CreateYearModal</code></td></tr>
+        <tr><td><b>Creating a year auto-activates it and deactivates every other year</b> — there's no separate "make active" step after create</td><td><code>POST /academic/years</code> route — <code>updateMany(isActive:false)</code> then create</td></tr>
+        <tr><td>"Activate" button per inactive row switches the active year</td><td><code>PATCH /academic/years/:id/activate</code></td></tr>
+        <tr><td><b>Terms have no UI at all.</b> The model, the routes (<code>POST/GET/PATCH /academic/terms</code>) all exist and work — Grades, Grade Report and Report Cards all filter by term — but nothing on this screen lets anyone see or create one</td><td>gap — flagged in the plan as P14</td></tr>
+        <tr><td>No delete for a year or a term anywhere in the API</td><td>confirmed absent from <code>academic.js</code> — neither mockup below adds one</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="mocks">1 · The 2 mockups</h2>
+
+  <div class="rail">
+    <div class="variant">
+      <div class="variant-head">
+        <span class="statechip" style="background:#3a4152;color:#e2e7ee">MOCK 1 · SIMPLE</span>
+        <div class="variant-title">Mirrors the desktop, exactly</div>
+        <p class="variant-for">Same capability as today, nothing added: a card per year instead of a table row, an Activate action, a create sheet instead of a modal. If this were the only thing shipped, nobody loses anything they have now.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Academic Years</h2><p class="sub">3 years</p></div><div class="iconbtn">＋</div></div></div>
+          <div class="body">
+            <div class="card">
+              <div class="between"><div><div style="font-size:17px;font-weight:680">2026-27</div><div class="tiny muted">1 Apr 2026 – 31 Mar 2027</div></div><span class="badge ok">Active</span></div>
+            </div>
+            <div class="card tight">
+              <div class="between"><div><div class="nm" style="font-weight:650">2025-26</div><div class="tiny muted">1 Apr 2025 – 31 Mar 2026</div></div><span class="chip">Activate</span></div>
+            </div>
+            <div class="card tight">
+              <div class="between"><div><div class="nm" style="font-weight:650">2024-25</div><div class="tiny muted">1 Apr 2024 – 31 Mar 2025</div></div><span class="chip">Activate</span></div>
+            </div>
+          </div>
+          <div class="scrim" style="opacity:0"></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant" style="position:relative">
+      <div class="variant-head">
+        <span class="statechip">MOCK 2 · SMART <span style="margin-left:6px">✅ APPROVED</span></span>
+        <div class="variant-title">Same list, terms made visible</div>
+        <p class="variant-for">Adds exactly two things, both justified by a real gap: <b>terms shown inline</b> (closing P14 — the data already exists and three other screens depend on it) and a <b>"current" tag</b> on today's term. No search, no filter, no sort — with 3 years and 6 terms total, that would be complexity with nothing to fix.</p>
+      </div>
+      <div class="phone">
+        <div class="redline-dot" style="left:110px;top:220px">1</div>
+        <div class="redline-dot" style="left:300px;top:262px">2</div>
+        <div class="redline-dot" style="left:200px;top:400px">3</div>
+        <div class="redline-dot" style="left:110px;top:340px">4</div>
+        <div class="redline-dot" style="left:355px;top:130px">5</div>
+        <div class="redline-dot" style="left:363px;top:100px">6</div>
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Academic Years</h2><p class="sub">3 years · 6 terms</p></div><div class="iconbtn">＋</div></div></div>
+          <div class="body">
+            <div class="card" style="border-color:var(--accent)">
+              <div class="between"><div><div style="font-size:17px;font-weight:680">2026-27</div><div class="tiny muted">1 Apr 2026 – 31 Mar 2027</div></div><span class="badge ok">● Active</span></div>
+              <div class="stack" style="margin-top:12px;gap:7px">
+                <div class="slot" style="padding:9px 11px"><div class="grow"><div class="subj" style="font-size:13px">Term 1</div><div class="who">1 Apr – 30 Sep</div></div><span class="badge ok">current</span></div>
+                <div class="slot" style="padding:9px 11px"><div class="grow"><div class="subj" style="font-size:13px">Term 2</div><div class="who">1 Oct – 31 Mar</div></div></div>
+                <div class="slot empty" style="padding:9px">＋ Add a term</div>
+              </div>
+            </div>
+            <div class="card tight">
+              <div class="between"><div><div class="nm" style="font-weight:650">2025-26</div><div class="tiny muted">1 Apr 2025 – 31 Mar 2026</div></div><div class="row" style="gap:6px"><span class="chip">Set active</span><span class="tiny muted">2 terms ▾</span></div></div>
+            </div>
+            <div class="card tight">
+              <div class="between"><div><div class="nm" style="font-weight:650">2024-25</div><div class="tiny muted">1 Apr 2024 – 31 Mar 2025</div></div><div class="row" style="gap:6px"><span class="chip">Set active</span><span class="tiny muted">2 terms ▾</span></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div style="max-width:300px;padding-top:52px">
+      <ol class="speclist">
+        <li><b>Active year card.</b> Its terms are always expanded — no reason to hide the context every other screen is currently using.</li>
+        <li><b>"current" tag.</b> The one term whose date range contains today. Pure date-range math, no new field.</li>
+        <li><b>Collapsed terms.</b> Inactive years show a count; tapping expands in place — no navigation away from the list.</li>
+        <li><b>＋ Add a term.</b> Opens a 3-field sheet (Name, Start, End) and calls the <code>POST /academic/terms</code> endpoint that already exists and has never had a UI.</li>
+        <li><b>Set active.</b> One tap, one confirm — this changes what every other screen defaults to, so a bare tap with no confirmation would be too easy to trigger by accident.</li>
+        <li><b>＋ New year.</b> Unchanged from today, except the confirm now says what actually happens: the new year becomes active immediately.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="painbox" style="border-color:#2f5c4a;background:#12211b">
+    <b>Why Mock 2 is the approved one, not Mock 1:</b> Mock 1 is a legitimate, shippable screen — it's exactly what exists today, just mobile-shaped. But three other approved/planned screens (Grades, Grade Report, Report Cards) already depend on terms existing, and right now nobody can see or create one without the API directly. Mock 2 costs two small additions and closes that gap for good. It does <b>not</b> add filter, search or sort — with 3 years and 6 terms, none of those would do anything useful, which is exactly the point of rule 1: add only what the data actually needs.
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="wiring">2 · API contracts <span style="color:#6e7a8a;font-size:13px;font-weight:400">— every one of these already exists</span></h2>
+
+  <div class="subhead">1. Load years and their terms <span class="tag">2 calls, both existing</span></div>
+  <div class="codeblock"><span class="k">GET</span> /academic/years
+<span class="c1">// 200 — sorted startDate desc, cached 300s server-side (withCache)</span>
+[
+  { <span class="s">"_id"</span>: <span class="s">"…128"</span>, <span class="s">"name"</span>: <span class="s">"2026-27"</span>, <span class="s">"startDate"</span>: <span class="s">"2026-04-01…"</span>, <span class="s">"endDate"</span>: <span class="s">"2027-03-31…"</span>, <span class="s">"isActive"</span>: <span class="k">true</span> },
+  { <span class="s">"_id"</span>: <span class="s">"…"</span>,    <span class="s">"name"</span>: <span class="s">"2025-26"</span>, …, <span class="s">"isActive"</span>: <span class="k">false</span> },
+  { <span class="s">"_id"</span>: <span class="s">"…"</span>,    <span class="s">"name"</span>: <span class="s">"2024-25"</span>, …, <span class="s">"isActive"</span>: <span class="k">false</span> }
+]
+
+<span class="k">GET</span> /academic/terms?yearId=<span class="s">{yearId}</span>
+<span class="c1">// 200 — sorted startDate asc. Fire once per expanded year, not all 3 up front.</span>
+[
+  { <span class="s">"_id"</span>: <span class="s">"…"</span>, <span class="s">"name"</span>: <span class="s">"Term 1"</span>, <span class="s">"startDate"</span>: <span class="s">"2026-04-01…"</span>, <span class="s">"endDate"</span>: <span class="s">"2026-09-30…"</span> },
+  { <span class="s">"_id"</span>: <span class="s">"…"</span>, <span class="s">"name"</span>: <span class="s">"Term 2"</span>, <span class="s">"startDate"</span>: <span class="s">"2026-10-01…"</span>, <span class="s">"endDate"</span>: <span class="s">"2027-03-31…"</span> }
+]</div>
+  <div class="notebox"><b>"current" is computed client-side:</b> the term where <code>startDate ≤ today ≤ endDate</code>. No new field, no new endpoint — the year list already tells you which one is active, and the date range tells you which term is current.</div>
+
+  <div class="subhead">2. Create a term <span class="tag">endpoint exists, never called from the UI until now</span></div>
+  <div class="codeblock"><span class="k">POST</span> /academic/terms
+{ <span class="s">"academicYearId"</span>: <span class="s">"…"</span>, <span class="s">"name"</span>: <span class="s">"Term 1"</span>, <span class="s">"startDate"</span>: <span class="s">"2027-04-01"</span>, <span class="s">"endDate"</span>: <span class="s">"2027-09-30"</span> }
+<span class="c1">// 201 → the created term. Permission: tenant:admin. No overlap validation server-side —</span>
+<span class="c1">// the form should warn (not block) if the new range overlaps an existing term.</span></div>
+
+  <div class="subhead">3. Create / activate a year <span class="tag">unchanged from today's code</span></div>
+  <div class="codeblock"><span class="k">POST</span> /academic/years   { <span class="s">"name"</span>, <span class="s">"startDate"</span>, <span class="s">"endDate"</span> }
+<span class="c1">// 201 — server deactivates every other year for this tenant FIRST, then creates this</span>
+<span class="c1">// one as active. The confirm dialog before this call must say so explicitly.</span>
+
+<span class="k">PATCH</span> /academic/years/<span class="s">{id}</span>/activate
+<span class="c1">// 200 — same deactivate-then-activate; invalidates the 300s years cache server-side</span></div>
+  <div class="notebox warn"><b>Both writes are tenant-admin only.</b> A user with only <code>students:read</code> (most staff) sees this whole screen read-only — the ＋ New year button, Set active chip, and ＋ Add a term all need to check <code>permissions.includes('tenant:admin')</code> and simply not render if absent, exactly like <code>TimetablePage.jsx</code> already does for its admin-only actions.</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="state">3 · State &amp; logic</h2>
+  <div class="codeblock"><span class="k">const</span> [expandedYearId, setExpandedYearId] = useState(activeYearId);  <span class="c1">// active year starts expanded</span>
+<span class="k">const</span> [addTermFor, setAddTermFor]         = useState(<span class="k">null</span>);        <span class="c1">// yearId | null — opens the add-term sheet</span>
+<span class="k">const</span> [confirmActivate, setConfirmActivate] = useState(<span class="k">null</span>);      <span class="c1">// year | null</span>
+
+<span class="c1">// termsByYear is fetched lazily — only for years the user has expanded, via</span>
+<span class="c1">// React Query keyed ['terms', yearId], so collapsed years never fetch at all.</span>
+
+<span class="k">function</span> isCurrentTerm(term) {
+  <span class="k">const</span> today = <span class="k">new</span> Date();
+  <span class="k">return</span> today >= <span class="k">new</span> Date(term.startDate) && today <= <span class="k">new</span> Date(term.endDate);
+}
+
+<span class="k">function</span> handleSetActive(year) {
+  setConfirmActivate(year);   <span class="c1">// tap always confirms first — this changes app-wide context</span>
+}
+<span class="k">function</span> confirmActivateYear() {
+  activateMutation.mutate(confirmActivate._id);
+  setConfirmActivate(<span class="k">null</span>);
+}</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="components">4 · File &amp; component plan</h2>
+  <div class="rail" style="gap:16px">
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Files</div></div>
+      <div class="codeblock filetree" style="width:100%;box-sizing:border-box"><span class="mod">M</span> apps/web/src/pages/academic/AcademicYearsPage.jsx <span class="c1">— rewrite body</span>
+<span class="new">A</span> apps/web/src/components/academic-years/YearCard.jsx
+<span class="new">A</span> apps/web/src/components/academic-years/TermRow.jsx
+<span class="new">A</span> apps/web/src/components/academic-years/AddTermSheet.jsx
+<span class="new">A</span> apps/web/src/components/academic-years/ActivateConfirm.jsx</div>
+    </div>
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Component contracts</div></div>
+      <div class="card" style="width:100%">
+        <div class="kv"><span class="k">YearCard</span><span class="v"><code>{ year, expanded, onToggle, onSetActive, canWrite }</code></span></div>
+        <div class="kv"><span class="k">TermRow</span><span class="v"><code>{ term, isCurrent }</code> — presentational only</span></div>
+        <div class="kv"><span class="k">AddTermSheet</span><span class="v"><code>{ open, yearId, existingTerms, onClose }</code> — <code>existingTerms</code> drives the overlap warning</span></div>
+        <div class="kv"><span class="k">ActivateConfirm</span><span class="v"><code>{ year, onConfirm, onCancel }</code></span></div>
+        <div class="kv"><span class="k">Reuse as-is</span><span class="v"><code>Button</code>, <code>Badge</code>, <code>Input</code>, <code>Dialog</code> (already used by <code>CreateYearModal</code>)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="edge">5 · Errors, empty states, accessibility</h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Situation</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td><b>New term overlaps an existing one</b></td><td>Inline warning in the sheet — "Overlaps Term 1 (1 Apr – 30 Sep)" — but the API has no server-side check, so this is advisory, not a hard block, and the request is still allowed through</td></tr>
+        <tr><td><b>Year has zero terms</b></td><td>"No terms yet" in place of the term list, with ＋ Add a term still visible for admins</td></tr>
+        <tr><td><b>Activate fails (network)</b></td><td>Confirm dialog stays open with an inline error + Retry — the year list is not optimistically updated before the request succeeds</td></tr>
+        <tr><td><b>Read-only user (no tenant:admin)</b></td><td>Cards render, terms expand and collapse — every write control (＋ New year, Set active, ＋ Add a term) is simply absent, not disabled-and-unexplained</td></tr>
+        <tr><td><b>Expand / collapse</b></td><td>The chevron toggle is a real <code>&lt;button aria-expanded&gt;</code>, keyboard and screen-reader operable without extra work</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="dod">6 · Definition of done</h2>
+  <div class="painbox" style="max-width:900px">
+    <ul class="checklist">
+      <li>Active year's terms are expanded by default; inactive years collapse to a count</li>
+      <li>The term containing today's date is tagged "current" — computed client-side, no new field</li>
+      <li>＋ Add a term calls the existing <code>POST /academic/terms</code>; warns (doesn't block) on date overlap</li>
+      <li>Set active always confirms first and its copy explains the app-wide effect</li>
+      <li>＋ New year's confirm explicitly states the new year becomes active immediately</li>
+      <li>All four write controls are hidden (not disabled) for users without <code>tenant:admin</code></li>
+      <li>No filter, search, or sort control was added — the dataset doesn't need one, and adding one would fail rule 1</li>
+      <li>Verified against the real seeded years/terms (2024-25, 2025-26, 2026-27 active, today inside 2026-27 Term 1)</li>
+    </ul>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="signoff">7 · Sign-off</h2>
+  <div class="painbox" style="max-width:900px">
+    <div class="signoff">
+      <div class="field"><div class="l">Approved by</div><div class="v"></div></div>
+      <div class="field"><div class="l">Date</div><div class="v"></div></div>
+      <div class="field"><div class="l">Spec version</div><div class="v">v1.0 · 22 Aug 2026</div></div>
+      <div class="field"><div class="l">Module</div><div class="v">Academic · 1 of 18</div></div>
+    </div>
+  </div>
+
+</div>
+<nav class="reviewnav" title="← → move between screens · I gallery">
+  <a class="rn-btn" href="10-academic-years.html" data-nav="prev">‹ <span class="rn-lbl">5-variant exploration</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">APPROVED</span><span class="rn-title">Academic Years · 1 of 18</span></a>
+  <a class="rn-btn" href="01-students.html" data-nav="next"><span class="rn-lbl">Students</span> ›</a>
+  <span class="rn-keys">← →  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

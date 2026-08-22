@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Report Cards — 2 mockups + approved spec · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page wide">
+  <p class="crumbs"><a href="index.html">← All modules</a> · Academic · <code>ReportCardPage.jsx</code></p>
+
+  <div class="approved-band">
+    <span class="seal">✅ APPROVED FOR BUILD</span>
+    <span class="txt">Module 9 of 18, lightweight process: understand the real desktop screen → exactly <b>2 mobile mockups</b> (simple, then smart) → approve one → write the full build spec.</span>
+  </div>
+
+  <h1 class="page-title">Report Cards — mobile mock</h1>
+  <p class="page-sub">Real data: Grade 5-A, Term 1 — 21 students, generation job with real per-card progress.</p>
+
+  <div class="statrow" style="max-width:900px">
+    <div class="s"><div class="n">2</div><div class="l">Mockups made</div></div>
+    <div class="s hot"><div class="n">1</div><div class="l">Approved</div></div>
+    
+  </div>
+
+  <div class="toc">
+    <a href="#current"><b>0</b> · What the desktop does today</a>
+    <a href="#mocks"><b>1</b> · The 2 mockups</a>
+    <a href="#wiring"><b>2</b> · API contracts</a>
+    <a href="#state"><b>3</b> · State &amp; logic</a>
+    <a href="#components"><b>4</b> · File &amp; component plan</a>
+    <a href="#edge"><b>5</b> · Errors, empty, a11y</a>
+    <a href="#dod"><b>6</b> · Definition of done</a>
+    <a href="#signoff"><b>7</b> · Sign-off</a>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:34px" id="current">0 · What the desktop does today <span style="color:#6e7a8a;font-size:13px;font-weight:400">— read from the real code, not assumed</span></h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Behaviour</th><th>Where it lives</th></tr></thead>
+      <tbody>
+        <tr><td>Section/term pickers, Generate button, then 3-second polling for up to 2 minutes (<code>MAX_POLL_ATTEMPTS=40</code>)</td><td>ReportCardPage.jsx</td></tr>
+        <tr><td>Polling silently stops if the phone screen locks — no way to know if it finished</td><td>confirmed failure mode, flagged in the plan</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="mocks">1 · The 2 mockups</h2>
+
+  <div class="rail">
+    <div class="variant">
+      <div class="variant-head">
+        <span class="statechip" style="background:#3a4152;color:#e2e7ee">MOCK 1 · SIMPLE</span>
+        <div class="variant-title">Mirrors the desktop, exactly</div>
+        <p class="variant-for">Section/term pickers, Generate button, then a job status that polls every 3 seconds for up to 2 minutes. If the phone screen locks, the poll silently stops and the teacher has no idea whether 21 PDFs got built.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Report Cards</h2></div></div>
+            <div class="row" style="margin-top:10px;gap:6px"><div class="chip on">5-A ▾</div><div class="chip">Term 1 ▾</div></div>
+          </div>
+          <div class="body">
+            <div class="btn">Generate Report Cards</div>
+            <div class="card tight"><div class="between"><span class="small">Job ID: rc-8821</span><span class="badge warn">active</span></div><div class="tiny muted" style="margin-top:4px">Polling every 3 seconds…</div></div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant" style="position:relative">
+      <div class="variant-head">
+        <span class="statechip">MOCK 2 · SMART <span style="margin-left:6px">✅ APPROVED</span></span>
+        <div class="variant-title">Progress ring + push notification</div>
+        <p class="variant-for">Real progress ("13 of 21 cards"), an explicit "you can leave this screen" promise, and a push notification when it's done — the poll surviving a locked screen isn't needed because the phone doesn't need to keep polling at all. Already validated as concept 1 (★) in the earlier exploration.</p>
+      </div>
+      <div class="phone">
+        <div class="redline-dot" style="left:200px;top:230px">1</div>
+        <div class="redline-dot" style="left:200px;top:390px">2</div>
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Generating</h2><p class="sub">Grade 5-A · Term 1</p></div></div></div>
+          <div class="body">
+            <div class="card" style="text-align:center;padding:22px 16px">
+              <div class="ring" style="--p:62%;width:110px;height:110px;margin:0 auto"><div><div style="font-size:22px;font-weight:700">13</div><div class="tiny muted">of 21</div></div></div>
+              <div class="small" style="font-weight:600;margin-top:12px">Building PDFs…</div>
+            </div>
+            <div class="banner info">🔔<div>You can leave this screen — we'll notify you when it's ready.</div></div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div style="max-width:280px;padding-top:52px">
+      <ol class="speclist">
+        <li><b>Real progress</b> from the BullMQ job's actual state, not a spinner guessing.</li>
+        <li><b>Push notification</b> on completion — the phone never needs to stay open or polling.</li>
+      </ol>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="border-color:#2f5c4a;background:#12211b">
+    <b>Why Mock 2 is approved:</b> a locked phone stopping the poll is the single named failure mode for this screen in the plan (§4.9). Validated as <a href="09-report-cards.html#v1" style="color:#9fe3c6">concept 1, ★ recommended</a>. This spec is UI-only — the push mechanism (web push / FCM) is a separate infra decision flagged below, not solved here.
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="wiring">2 · API contracts <span style="color:#6e7a8a;font-size:13px;font-weight:400">— every one of these already exists</span></h2>
+  <div class="codeblock"><span class="k">POST</span> /academic/report-card/generate   {{ <span class="s">"sectionId"</span>, <span class="s">"termId"</span> }}  <span class="c1">// unchanged — returns jobId</span>
+<span class="k">GET</span>  /academic/report-card/status/<span class="s">{{jobId}}</span>              <span class="c1">// unchanged — { state, result: { url } }</span></div>
+  <div class="notebox warn"><b>Push requires new infra, out of scope for this UI spec:</b> today's polling logic can stay as the fallback for browsers/devices without push permission granted. The BullMQ job (<code>reportCard.worker.js</code>) needs one addition — call a notification service on job completion — which is a backend decision (web push vs. FCM vs. in-app only) to make separately, not implied by this mockup.</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="state">3 · State &amp; logic</h2>
+  <div class="codeblock"><span class="k">const</span> [pushGranted, setPushGranted] = useState(<span class="k">false</span>);
+<span class="c1">// falls back to the existing 3s poll if push permission is denied — same</span>
+<span class="c1">// MAX_POLL_ATTEMPTS=40 safety net as today's code, just not the primary path</span></div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="components">4 · File &amp; component plan</h2>
+  <div class="rail" style="gap:16px">
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Files</div></div>
+      <div class="codeblock filetree" style="width:100%;box-sizing:border-box"><span class="new">A</span> apps/web/src/components/report-cards/ProgressRing.jsx
+<span class="mod">M</span> apps/web/src/pages/academic/ReportCardPage.jsx
+<span class="mod">M</span> apps/api/src/workers/reportCard.worker.js <span class="c1">— notify on completion (separate decision)</span></div>
+    </div>
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Component contracts</div></div>
+      <div class="card" style="width:100%">
+        <div class="kv"><span class="k">ProgressRing</span><span class="v">{ completed, total }</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="edge">5 · Errors, empty states, accessibility</h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Situation</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td><b>Push permission denied</b></td><td>silently falls back to the existing 3-second poll — no broken experience</td></tr>
+        <tr><td><b>Job fails</b></td><td>unchanged — error banner + history table below still shows the failed batch</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="dod">6 · Definition of done</h2>
+  <div class="painbox" style="max-width:900px">
+    <ul class="checklist">
+      <li>Progress ring shows real completed/total counts, not a spinner</li>
+      <li>User is told explicitly they can leave the screen</li>
+      <li>Falls back to polling if push isn't available</li>
+      <li>History table below behaves identically to today</li>
+    </ul>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="signoff">7 · Sign-off</h2>
+  <div class="painbox" style="max-width:900px">
+    <div class="signoff">
+      <div class="field"><div class="l">Approved by</div><div class="v"></div></div>
+      <div class="field"><div class="l">Date</div><div class="v"></div></div>
+      <div class="field"><div class="l">Spec version</div><div class="v">v1.0 · 22 Aug 2026</div></div>
+      <div class="field"><div class="l">Module</div><div class="v">Academic · 9 of 18</div></div>
+    </div>
+  </div>
+
+</div>
+<nav class="reviewnav" title="← → move between screens · I gallery">
+  <a class="rn-btn" href="08-my-schedule-approved.html" data-nav="prev">‹ <span class="rn-lbl">My Schedule</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">APPROVED</span><span class="rn-title">Report Cards · 9 of 18</span></a>
+  <a class="rn-btn" href="11-staff-directory-approved.html" data-nav="next"><span class="rn-lbl">Staff Directory</span> ›</a>
+  <span class="rn-keys">← →  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

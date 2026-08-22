@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Report cards — 5 mobile concepts · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page">
+  <p class="crumbs"><a href="index.html">← All screens</a> · Academic · <code>ReportCardPage.jsx</code></p>
+  <h1 class="page-title">9 · Report Cards</h1>
+  <p class="page-sub">A long-running background job triggered from a device that locks its screen after 30 seconds. The design problem is not the button — it is trust: knowing the PDFs got built, and getting them to parents.</p>
+
+  <div class="painbox">
+    <b>Pain today:</b> two selects and a Generate button, then in-page polling every 3&nbsp;s for up to 2 minutes (<code>MAX_POLL_ATTEMPTS = 40</code>). Lock the phone and the poll dies with no notification; the history table is the only way back. The job is queued per section+term, so end-of-term means repeating the same three taps 40 times. Nothing checks whether grades are actually locked first.
+  </div>
+
+  <input type="checkbox" id="fit" class="vis-hidden">
+  <div class="zoombar"><label for="fit">▣ Fit all five on one screen (toggle)</label> · real data: 6 seeded batches, 20 of 40 sections locked for Term 1</div>
+
+  <div class="rail">
+
+    <!-- V1 -->
+    <div class="variant" id="v1">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 1</span>
+        <div class="variant-title">Job card + push <span class="rec">SHIP</span></div>
+        <p class="variant-for"><b>Optimises:</b> trust on a phone that sleeps. Progress ring with real counts, an explicit "you can leave this screen" promise, and a notification when it lands.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Generating</h2><p class="sub">Grade 5-A · Term 1 · 2026-27</p></div><div class="iconbtn">⋯</div></div>
+          </div>
+          <div class="body">
+            <div class="card" style="text-align:center;padding:22px 16px">
+              <div class="ring" style="--p:62%;width:132px;height:132px;margin:0 auto"><div><div style="font-size:26px;font-weight:700">13</div><div class="tiny muted">of 21 cards</div></div></div>
+              <div class="small" style="font-weight:600;margin-top:14px">Building PDFs…</div>
+              <div class="tiny muted" style="margin-top:3px">Started 09:40 · about 40 seconds left</div>
+              <div class="banner info" style="margin-top:14px;text-align:left">🔔<div>You can leave this screen. We'll notify you when the file is ready — the job keeps running on the server.</div></div>
+            </div>
+            <div class="card tight">
+              <div class="card-title">Included in each card</div>
+              <div class="kv"><span class="k">Subjects</span><span class="v">8</span></div>
+              <div class="kv"><span class="k">Assessments</span><span class="v">Quiz · Midterm · Final</span></div>
+              <div class="kv"><span class="k">Attendance</span><span class="v">Last 20 school days</span></div>
+              <div class="kv"><span class="k">Class rank</span><span class="v">Included</span></div>
+            </div>
+            <p class="sectionlabel">Earlier batches</p>
+            <div class="list">
+              <div class="li"><div class="avatar sm g">✓</div><div class="grow"><div class="nm">Grade 5-A · Term 1</div><div class="tiny muted">18 Aug 14:02 · 21 cards</div></div><span class="chip soft">Open</span></div>
+              <div class="li"><div class="avatar sm g">✓</div><div class="grow"><div class="nm">Grade 5-B · Term 1</div><div class="tiny muted">18 Aug 13:58 · 25 cards</div></div><span class="chip soft">Open</span></div>
+              <div class="li"><div class="avatar sm r">✕</div><div class="grow"><div class="nm">Grade 6-A · Term 1</div><div class="tiny muted">No grades found for section</div></div><span class="chip">Retry</span></div>
+            </div>
+          </div>
+          <div class="stickybar"><div class="btn sec">Run in background</div><div class="hint">Batches older than 30 days are cleaned up automatically</div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V2 -->
+    <div class="variant" id="v2">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 2</span>
+        <div class="variant-title">Batch queue</div>
+        <p class="variant-for"><b>Optimises:</b> end of term, when it is 40 sections and not one. Queue everything, walk away, come back to a list with per-row retry instead of repeating three taps forty times.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="grow"><h2 style="font-size:17px">Term 1 report cards</h2><p class="sub">18 queued · 12 done · 1 failed</p></div><div class="iconbtn">⋯</div></div>
+            <div class="bar" style="margin-top:10px"><span class="g" style="width:63%"></span></div>
+          </div>
+          <div class="body">
+            <div class="chiprow"><div class="chip on">All grades</div><div class="chip">Grade 1–5</div><div class="chip">Grade 6–10</div><div class="chip">Failed · 1</div></div>
+            <div class="list">
+              <div class="li"><div class="avatar sm g">✓</div><div class="grow"><div class="nm">Grade 5-A</div><div class="tiny muted">21 cards · 2.4 MB</div></div><span class="chip soft">⇩</span></div>
+              <div class="li"><div class="avatar sm g">✓</div><div class="grow"><div class="nm">Grade 5-B</div><div class="tiny muted">25 cards · 2.9 MB</div></div><span class="chip soft">⇩</span></div>
+              <div class="li"><div class="avatar sm g">✓</div><div class="grow"><div class="nm">Grade 5-C</div><div class="tiny muted">24 cards · 2.8 MB</div></div><span class="chip soft">⇩</span></div>
+              <div class="li" style="background:var(--accent-soft)"><div class="avatar sm" style="background:var(--accent);color:#fff">◐</div><div class="grow"><div class="nm">Grade 5-D</div><div class="tiny muted">building · 14 of 25</div><div class="bar" style="margin-top:5px"><span class="g" style="width:56%"></span></div></div></div>
+              <div class="li"><div class="avatar sm r">✕</div><div class="grow"><div class="nm">Grade 6-A</div><div class="tiny muted">Finals not locked — 8 subjects open</div></div><span class="chip">Fix</span></div>
+              <div class="li"><div class="avatar sm">◌</div><div class="grow"><div class="nm">Grade 6-B</div><div class="tiny muted">queued · position 2</div></div><span class="tiny muted">…</span></div>
+              <div class="li"><div class="avatar sm">◌</div><div class="grow"><div class="nm">Grade 6-C</div><div class="tiny muted">queued · position 3</div></div><span class="tiny muted">…</span></div>
+              <div class="li"><div class="avatar sm">◌</div><div class="grow"><div class="nm">Grade 6-D</div><div class="tiny muted">queued · position 4</div></div><span class="tiny muted">…</span></div>
+            </div>
+          </div>
+          <div class="stickybar"><div class="row" style="gap:8px"><div class="btn sec grow">Retry failed</div><div class="btn grow">Download all (12)</div></div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V3 -->
+    <div class="variant" id="v3">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 3</span>
+        <div class="variant-title">Preview then generate</div>
+        <p class="variant-for"><b>Optimises:</b> catching bad data before 21 PDFs and 21 parents see it. Renders one real card first — wrong marks, missing attendance and blank remarks show up immediately.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Preview</h2><p class="sub">Sample: Heena Malhotra · 1 of 21</p></div><div class="iconbtn">⇄</div></div>
+          </div>
+          <div class="body">
+            <div class="card" style="padding:16px">
+              <div style="text-align:center;border-bottom:1px solid var(--line);padding-bottom:10px">
+                <div style="font-weight:700">Greenwood Public School</div>
+                <div class="tiny muted">Report Card · Term 1 · 2026-27</div>
+              </div>
+              <div class="row" style="margin-top:10px"><div class="avatar sm">HM</div><div class="grow"><div class="small" style="font-weight:650">Heena Malhotra</div><div class="tiny muted">Grade 5-A · GPS/2026/0411</div></div><span class="badge ok">B</span></div>
+              <div style="margin-top:12px">
+                <div class="kv" style="font-size:11.5px"><span class="k">Mathematics</span><span class="v">81 · B</span></div>
+                <div class="kv" style="font-size:11.5px"><span class="k">English</span><span class="v">76 · C</span></div>
+                <div class="kv" style="font-size:11.5px"><span class="k">Science</span><span class="v">79 · C</span></div>
+                <div class="kv" style="font-size:11.5px"><span class="k">Social Studies</span><span class="v">74 · C</span></div>
+                <div class="kv" style="font-size:11.5px"><span class="k">Hindi</span><span class="v">83 · B</span></div>
+                <div class="kv" style="font-size:11.5px"><span class="k">Computer Science</span><span class="v">88 · B</span></div>
+                <div class="kv" style="font-size:11.5px"><span class="k">Physical Education</span><span class="v" style="color:var(--absent)">— missing</span></div>
+                <div class="kv" style="font-size:11.5px"><span class="k">Art &amp; Craft</span><span class="v">90 · A</span></div>
+              </div>
+              <div class="between" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line)">
+                <span class="tiny muted">Attendance 100% · Rank 2 of 21</span><span class="small" style="font-weight:700">Avg 81.6</span>
+              </div>
+            </div>
+            <div class="banner warn">!<div><b>1 subject has no marks</b> (Physical Education). Generating now prints a blank row on all 21 cards.</div></div>
+          </div>
+          <div class="stickybar"><div class="row" style="gap:8px"><div class="btn sec grow">Fix marks first</div><div class="btn grow">Generate 21</div></div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V4 -->
+    <div class="variant" id="v4">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 4</span>
+        <div class="variant-title">Distribute flow <span class="rec">SHIP</span></div>
+        <p class="variant-for"><b>Optimises:</b> the real end of the job — cards in parents' hands. Per-student share links, a WhatsApp round, and a print queue for the families without smartphones.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Distribute</h2><p class="sub">Grade 5-A · Term 1 · 21 cards ready</p></div><div class="iconbtn">⋯</div></div>
+          </div>
+          <div class="body">
+            <div class="card tight">
+              <div class="between"><span class="small" style="font-weight:600">Sent to guardians</span><span class="badge ok">14 of 21</span></div>
+              <div class="bar" style="margin-top:9px"><span class="g" style="width:67%"></span></div>
+              <div class="row" style="gap:6px;margin-top:10px"><span class="badge ok">9 opened</span><span class="badge warn">5 delivered</span><span class="badge bad">7 not sent</span></div>
+            </div>
+            <div class="row" style="gap:8px">
+              <div class="btn accent grow">✆ Send remaining 7</div>
+              <div class="btn sec" style="flex:0 0 96px">⎙ Print</div>
+            </div>
+            <p class="sectionlabel">Not sent · no WhatsApp number</p>
+            <div class="list">
+              <div class="li"><div class="avatar sm a">KD</div><div class="grow"><div class="nm">Kartik Dutta</div><div class="tiny muted">Father: +91 97100 30422 · voice only</div></div><span class="chip">Print</span></div>
+              <div class="li"><div class="avatar sm a">AN</div><div class="grow"><div class="nm">Avni Naidu</div><div class="tiny muted">No number on file</div></div><span class="chip">Add</span></div>
+              <div class="li"><div class="avatar sm a">VS</div><div class="grow"><div class="nm">Veer Sandhu</div><div class="tiny muted">Number bounced twice</div></div><span class="chip">Fix</span></div>
+            </div>
+            <p class="sectionlabel">Recently opened</p>
+            <div class="list">
+              <div class="li"><div class="avatar sm g">HM</div><div class="grow"><div class="nm">Heena Malhotra</div><div class="tiny muted">Opened 09:12 by Keshav Malhotra</div></div><span class="badge ok">✓</span></div>
+              <div class="li"><div class="avatar sm g">PS</div><div class="grow"><div class="nm">Pihu Sheikh</div><div class="tiny muted">Opened 08:47</div></div><span class="badge ok">✓</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V5 -->
+    <div class="variant" id="v5">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 5</span>
+        <div class="variant-title">Pre-flight checklist <span class="rec">SHIP as gate</span></div>
+        <p class="variant-for"><b>Optimises:</b> not generating garbage. The four things that make a report card wrong are checked first, each with a one-tap route to the fix, and Generate stays disabled until they pass.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar">
+            <div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2 style="font-size:17px">Before you generate</h2><p class="sub">Grade 5-A · Term 1 · 21 students</p></div></div>
+            <div class="wizdots" style="margin-top:12px"><i class="on"></i><i></i><i></i></div>
+          </div>
+          <div class="body">
+            <div class="list">
+              <div class="li"><div class="avatar sm g">✓</div><div class="grow"><div class="nm">Marks entered</div><div class="tiny muted">21 of 21 students · 8 subjects</div></div></div>
+              <div class="li"><div class="avatar sm r">✕</div><div class="grow"><div class="nm">Finals locked</div><div class="tiny muted">Physical Education still open for editing</div></div><span class="chip">Lock</span></div>
+              <div class="li"><div class="avatar sm a">!</div><div class="grow"><div class="nm">Attendance complete</div><div class="tiny muted">2 school days unmarked (17, 19 Aug)</div></div><span class="chip">Mark</span></div>
+              <div class="li"><div class="avatar sm g">✓</div><div class="grow"><div class="nm">Class teacher remarks</div><div class="tiny muted">21 of 21 written</div></div></div>
+              <div class="li"><div class="avatar sm a">!</div><div class="grow"><div class="nm">Fee status</div><div class="tiny muted">3 students unpaid — school policy may withhold cards</div></div><span class="chip">Review</span></div>
+            </div>
+            <div class="banner bad">✕<div><b>1 blocker, 2 warnings.</b> Locking Physical Education takes one tap and makes the marks read-only for teachers.</div></div>
+            <div class="card tight">
+              <div class="between"><span class="small">Generate anyway</span><span class="badge">off</span></div>
+              <div class="tiny muted" style="margin-top:6px">Admins can override, but the cards will show a blank PE row.</div>
+            </div>
+          </div>
+          <div class="stickybar"><div class="row" style="gap:8px"><div class="btn sec grow">Fix blocker</div><div class="btn" style="flex:1 1 0;background:var(--ink-4)">Generate</div></div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="margin-top:8px">
+    <b>Recommendation:</b> one flow — <b>V5 (gate) → V1 (job with push) → V4 (distribute)</b> — with <b>V2's queue</b> as the end-of-term power path. That fixes the dead poll, stops garbage cards leaving the building, and finishes the job where it actually finishes: with parents.
+  </div>
+</div>
+
+<nav class="reviewnav" title="← → move between screens · F fit all five · I gallery">
+  <a class="rn-btn" href="08-my-schedule.html" data-nav="prev">‹ <span class="rn-lbl">My Schedule</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index">
+    <span class="rn-count">9 / 10</span>
+    <span class="rn-title">Report Cards</span>
+  </a>
+  <div class="rn-dots"><a class="rn-dot" href="01-students.html" title="1. Students"></a><a class="rn-dot" href="02-student-detail.html" title="2. Student 360"></a><a class="rn-dot" href="03-attendance.html" title="3. Mark Attendance"></a><a class="rn-dot" href="04-attendance-report.html" title="4. Attendance Report"></a><a class="rn-dot" href="05-grades.html" title="5. Enter Marks"></a><a class="rn-dot" href="06-grade-report.html" title="6. Grade Report"></a><a class="rn-dot" href="07-timetable.html" title="7. Timetable Builder"></a><a class="rn-dot" href="08-my-schedule.html" title="8. My Schedule"></a><a class="rn-dot on" href="09-report-cards.html" title="9. Report Cards"></a><a class="rn-dot" href="10-academic-years.html" title="10. Years & Terms"></a></div>
+  <a class="rn-btn" href="10-academic-years.html" data-nav="next"><span class="rn-lbl">Years & Terms</span> ›</a>
+  <span class="rn-keys">← →  ·  F fit  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

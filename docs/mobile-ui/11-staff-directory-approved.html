@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Staff Directory — 2 mockups + approved spec · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page wide">
+  <p class="crumbs"><a href="index.html">← All modules</a> · Staff · <code>StaffPage.jsx</code></p>
+
+  <div class="approved-band">
+    <span class="seal">✅ APPROVED FOR BUILD</span>
+    <span class="txt">Module 10 of 18, lightweight process: understand the real desktop screen → exactly <b>2 mobile mockups</b> (simple, then smart) → approve one → write the full build spec.</span>
+  </div>
+
+  <h1 class="page-title">Staff Directory — mobile mock</h1>
+  <p class="page-sub">Real data: 74 staff across 12 departments (Mathematics 8, Science 9, PE 9…), 72 active + 2 on leave today (Pranav Rodrigues, Bhavesh Shetty).</p>
+
+  <div class="statrow" style="max-width:900px">
+    <div class="s"><div class="n">2</div><div class="l">Mockups made</div></div>
+    <div class="s hot"><div class="n">1</div><div class="l">Approved</div></div>
+    <div class="s"><div class="n">0</div><div class="l">New API endpoints</div></div>
+  </div>
+
+  <div class="toc">
+    <a href="#current"><b>0</b> · What the desktop does today</a>
+    <a href="#mocks"><b>1</b> · The 2 mockups</a>
+    <a href="#wiring"><b>2</b> · API contracts</a>
+    <a href="#state"><b>3</b> · State &amp; logic</a>
+    <a href="#components"><b>4</b> · File &amp; component plan</a>
+    <a href="#edge"><b>5</b> · Errors, empty, a11y</a>
+    <a href="#dod"><b>6</b> · Definition of done</a>
+    <a href="#signoff"><b>7</b> · Sign-off</a>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:34px" id="current">0 · What the desktop does today <span style="color:#6e7a8a;font-size:13px;font-weight:400">— read from the real code, not assumed</span></h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Behaviour</th><th>Where it lives</th></tr></thead>
+      <tbody>
+        <tr><td>Search + department/status <code>&lt;select&gt;</code> filters, paginated 6-column table</td><td>StaffPage.jsx</td></tr>
+        <tr><td>"Add Staff" is a 3-step wizard: Basic Info → Contact → Review</td><td>same file</td></tr>
+        <tr><td>Departments only discoverable by opening the filter select</td><td>same file</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="mocks">1 · The 2 mockups</h2>
+
+  <div class="rail">
+    <div class="variant">
+      <div class="variant-head">
+        <span class="statechip" style="background:#3a4152;color:#e2e7ee">MOCK 1 · SIMPLE</span>
+        <div class="variant-title">Mirrors the desktop, exactly</div>
+        <p class="variant-for">Search + department select + status select filter a paginated 6-column table. A 3-step "Add Staff" wizard (Basic Info / Contact / Review). Same capability, mobile-shaped.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Staff Directory</h2><p class="sub">74 staff</p></div><div class="iconbtn">＋</div></div>
+            <div class="searchbar" style="margin-top:10px">🔍 <span class="muted">Search name or employee ID</span></div>
+            <div class="row" style="margin-top:9px;gap:6px"><div class="chip on">All Departments ▾</div><div class="chip">All Statuses ▾</div></div>
+          </div>
+          <div class="body">
+            <div class="list">
+              <div class="li"><div class="avatar">DK</div><div class="grow"><div class="nm">Dinesh Kurup</div><div class="meta">GPS-0017 · Teacher</div></div><span class="badge ok">active</span></div>
+              <div class="li"><div class="avatar">MS</div><div class="grow"><div class="nm">Mitali Sinha</div><div class="meta">GPS-0016 · Teacher</div></div><span class="badge ok">active</span></div>
+              <div class="li"><div class="avatar">PR</div><div class="grow"><div class="nm">Pranav Rodrigues</div><div class="meta">GPS-0006 · Teacher</div></div><span class="badge warn">on_leave</span></div>
+            </div>
+          </div>
+          <div class="stickybar"><div class="row" style="gap:8px"><div class="btn sec" style="flex:0 0 100px">‹ Prev</div><div class="tiny muted" style="flex:1;text-align:center;align-self:center">Page 1 of 4</div><div class="btn sec" style="flex:0 0 100px">Next ›</div></div></div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant" style="position:relative">
+      <div class="variant-head">
+        <span class="statechip">MOCK 2 · SMART <span style="margin-left:6px">✅ APPROVED</span></span>
+        <div class="variant-title">Grouped by department, on-leave surfaced</div>
+        <p class="variant-for">74 staff across 12 departments is small enough that department-grouped sections beat filter-then-scroll — and "on leave today" (2 of 74) is worth a dedicated strip since it's the one thing an admin actually checks daily.</p>
+      </div>
+      <div class="phone">
+        <div class="redline-dot" style="left:200px;top:170px">1</div>
+        <div class="redline-dot" style="left:120px;top:260px">2</div>
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="grow"><h2>Staff Directory</h2><p class="sub">74 staff · 12 departments</p></div><div class="iconbtn">🔍</div></div></div>
+          <div class="body">
+            <div class="card tight" style="border-color:var(--late)">
+              <div class="between"><span class="small" style="font-weight:600">On leave today · 2</span></div>
+              <div class="row" style="gap:8px;margin-top:8px">
+                <div class="chip">Pranav Rodrigues</div><div class="chip">Bhavesh Shetty</div>
+              </div>
+            </div>
+            <p class="sectionlabel">Mathematics · 8</p>
+            <div class="list">
+              <div class="li"><div class="avatar">MS</div><div class="grow"><div class="nm">Mitali Sinha</div><div class="meta">GPS-0016</div></div><span class="badge ok">active</span></div>
+              <div class="li"><div class="avatar a">PR</div><div class="grow"><div class="nm">Pranav Rodrigues</div><div class="meta">GPS-0006</div></div><span class="badge warn">on_leave</span></div>
+            </div>
+            <p class="sectionlabel">Science · 9</p>
+            <div class="list"><div class="li"><div class="avatar">DK</div><div class="grow"><div class="nm">Dinesh Kurup</div><div class="meta">GPS-0017</div></div><span class="badge ok">active</span></div></div>
+          </div>
+          <div class="fab">＋</div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div style="max-width:280px;padding-top:52px">
+      <ol class="speclist">
+        <li><b>Department sections</b> replace the department filter — you scroll past the ones you don't need instead of picking from a select first.</li>
+        <li><b>On-leave strip.</b> The one cross-department question ("who's out today?") answered without filtering.</li>
+      </ol>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="border-color:#2f5c4a;background:#12211b">
+    <b>Why Mock 2 is approved:</b> at 74 staff, department-grouped sections are genuinely easier to scan than filter-then-scroll (this is <i>not</i> a blanket rule — Students at 1000 needs drill-down navigation instead, per rule 1: match the accelerator to the data shape). The "on leave today" strip needs no new query — <code>employmentStatus: 'on_leave'</code> already exists on <code>StaffMember</code>.
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="wiring">2 · API contracts <span style="color:#6e7a8a;font-size:13px;font-weight:400">— every one of these already exists</span></h2>
+  <div class="codeblock"><span class="k">GET</span> /staff/members?limit=<span class="k">100</span>
+<span class="c1">// existing endpoint; client groups by department instead of the server paging by 20</span>
+<span class="c1">// 74 rows is small enough to fetch in one call and group/search client-side</span>
+{{ <span class="s">"members"</span>:[{{ <span class="s">"employeeId"</span>,<span class="s">"firstName"</span>,<span class="s">"lastName"</span>,<span class="s">"designation"</span>,<span class="s">"department"</span>,<span class="s">"employmentStatus"</span> }}], <span class="s">"total"</span>,<span class="s">"pages"</span> }}
+<span class="c1">// "On leave today" strip = client filter: members.filter(m => m.employmentStatus === 'on_leave')</span></div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="state">3 · State &amp; logic</h2>
+  <div class="codeblock"><span class="k">const</span> byDept = groupBy(members, <span class="s">'department'</span>);
+<span class="k">const</span> onLeave = members.filter(m => m.employmentStatus === <span class="s">'on_leave'</span>);
+<span class="k">const</span> filtered = search ? members.filter(matchesSearch) : <span class="k">null</span>;  <span class="c1">// search flattens groups into one list</span></div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="components">4 · File &amp; component plan</h2>
+  <div class="rail" style="gap:16px">
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Files</div></div>
+      <div class="codeblock filetree" style="width:100%;box-sizing:border-box"><span class="new">A</span> apps/web/src/components/staff/DepartmentSection.jsx
+<span class="new">A</span> apps/web/src/components/staff/OnLeaveStrip.jsx
+<span class="mod">M</span> apps/web/src/pages/staff/StaffPage.jsx</div>
+    </div>
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Component contracts</div></div>
+      <div class="card" style="width:100%">
+        <div class="kv"><span class="k">DepartmentSection</span><span class="v">{ department, members }</span></div>
+        <div class="kv"><span class="k">OnLeaveStrip</span><span class="v">{ members }</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="edge">5 · Errors, empty states, accessibility</h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Situation</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td><b>Search active</b></td><td>department grouping collapses to a flat filtered list, same as today's search</td></tr>
+        <tr><td><b>Nobody on leave</b></td><td>strip hides entirely rather than showing "0 on leave"</td></tr>
+        <tr><td><b>Add Staff</b></td><td>unchanged 3-step wizard — no evidence this needs simplifying on mobile</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="dod">6 · Definition of done</h2>
+  <div class="painbox" style="max-width:900px">
+    <ul class="checklist">
+      <li>Staff grouped by department instead of a flat paginated table</li>
+      <li>On-leave-today strip needs zero new backend fields</li>
+      <li>Search bypasses grouping and returns a flat result list</li>
+      <li>Add Staff wizard behaves identically to desktop</li>
+    </ul>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="signoff">7 · Sign-off</h2>
+  <div class="painbox" style="max-width:900px">
+    <div class="signoff">
+      <div class="field"><div class="l">Approved by</div><div class="v"></div></div>
+      <div class="field"><div class="l">Date</div><div class="v"></div></div>
+      <div class="field"><div class="l">Spec version</div><div class="v">v1.0 · 22 Aug 2026</div></div>
+      <div class="field"><div class="l">Module</div><div class="v">Staff · 10 of 18</div></div>
+    </div>
+  </div>
+
+</div>
+<nav class="reviewnav" title="← → move between screens · I gallery">
+  <a class="rn-btn" href="09-report-cards-approved.html" data-nav="prev">‹ <span class="rn-lbl">Report Cards</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">APPROVED</span><span class="rn-title">Staff Directory · 10 of 18</span></a>
+  <a class="rn-btn" href="12-leave-requests-approved.html" data-nav="next"><span class="rn-lbl">Leave Requests</span> ›</a>
+  <span class="rn-keys">← →  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

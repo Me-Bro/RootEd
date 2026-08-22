@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Timetable — 2 mockups + approved spec · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page wide">
+  <p class="crumbs"><a href="index.html">← All modules</a> · Academic · <code>TimetablePage.jsx</code></p>
+
+  <div class="approved-band">
+    <span class="seal">✅ APPROVED FOR BUILD</span>
+    <span class="txt">Module 7 of 18, lightweight process: understand the real desktop screen → exactly <b>2 mobile mockups</b> (simple, then smart) → approve one → write the full build spec.</span>
+  </div>
+
+  <h1 class="page-title">Timetable — mobile mock</h1>
+  <p class="page-sub">Real data: Grade 5-A's real Friday schedule — 8 periods, Mathematics with Mitali Sinha at 10:30 highlighted as "now".</p>
+
+  <div class="statrow" style="max-width:900px">
+    <div class="s"><div class="n">2</div><div class="l">Mockups made</div></div>
+    <div class="s hot"><div class="n">1</div><div class="l">Approved</div></div>
+    
+  </div>
+
+  <div class="toc">
+    <a href="#current"><b>0</b> · What the desktop does today</a>
+    <a href="#mocks"><b>1</b> · The 2 mockups</a>
+    <a href="#wiring"><b>2</b> · API contracts</a>
+    <a href="#state"><b>3</b> · State &amp; logic</a>
+    <a href="#components"><b>4</b> · File &amp; component plan</a>
+    <a href="#edge"><b>5</b> · Errors, empty, a11y</a>
+    <a href="#dod"><b>6</b> · Definition of done</a>
+    <a href="#signoff"><b>7</b> · Sign-off</a>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:34px" id="current">0 · What the desktop does today <span style="color:#6e7a8a;font-size:13px;font-weight:400">— read from the real code, not assumed</span></h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Behaviour</th><th>Where it lives</th></tr></thead>
+      <tbody>
+        <tr><td>8×5 grid, shrinks to ~1.6 visible days at 390px width, horizontal scroll for the rest</td><td>TimetablePage.jsx (read-only view; editing is out of scope here)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="mocks">1 · The 2 mockups</h2>
+
+  <div class="rail">
+    <div class="variant">
+      <div class="variant-head">
+        <span class="statechip" style="background:#3a4152;color:#e2e7ee">MOCK 1 · SIMPLE</span>
+        <div class="variant-title">Mirrors the desktop, exactly</div>
+        <p class="variant-for">The same 8×5 grid as desktop, shrunk to fit — at 390px you see about 1.6 days and must scroll horizontally to see the rest of the week.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Timetable</h2><p class="sub">Grade 5-A · 2026-27</p></div></div></div>
+          <div class="body" style="overflow-x:auto">
+            <div class="grid-week" style="min-width:520px">
+              <div class="h"></div><div class="h">Mon</div><div class="h">Tue</div><div class="h">Wed</div><div class="h">Thu</div><div class="h">Fri</div>
+              <div class="h">1</div><div class="c">CS</div><div class="c">PE</div><div class="c">ART</div><div class="c">MAT</div><div class="c">CS</div>
+              <div class="h">2</div><div class="c">MAT</div><div class="c">ENG</div><div class="c">SCI</div><div class="c">SST</div><div class="c">PE</div>
+              <div class="h">3</div><div class="c">ENG</div><div class="c">SCI</div><div class="c">HIN</div><div class="c">CS</div><div class="c">ART</div>
+            </div>
+            <div class="tiny muted" style="text-align:center;margin-top:6px">← scroll for the rest of the week →</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant" style="position:relative">
+      <div class="variant-head">
+        <span class="statechip">MOCK 2 · SMART <span style="margin-left:6px">✅ APPROVED</span></span>
+        <div class="variant-title">One day at a time, full names visible</div>
+        <p class="variant-for">Day chips replace grid columns; periods stack vertically with full subject and teacher names. Zero horizontal scroll. Already validated as concept 1 (★) in the earlier exploration.</p>
+      </div>
+      <div class="phone">
+        <div class="redline-dot" style="left:200px;top:170px">1</div>
+        <div class="redline-dot" style="left:200px;top:400px">2</div>
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Grade 5-A</h2><p class="sub">2026-27 · R-5A</p></div><span class="badge ok">Published</span></div>
+            <div class="seg" style="margin-top:10px"><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div class="on">Fri</div></div>
+          </div>
+          <div class="body">
+            <div class="slot"><div class="time">08:00<br>08:45</div><div class="grow"><div class="subj">Computer Science</div><div class="who">Bhavesh Shetty · R-5A</div></div><span class="tiny muted">P1</span></div>
+            <div class="slot now"><div class="time">10:30<br>11:15</div><div class="grow"><div class="subj">Mathematics</div><div class="who">Mitali Sinha · R-5A</div></div><span class="badge ok">now</span></div>
+            <div class="slot"><div class="time">11:15<br>12:00</div><div class="grow"><div class="subj">English</div><div class="who">Ekansh Reddy · R-5A</div></div><span class="tiny muted">P5</span></div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div style="max-width:280px;padding-top:52px">
+      <ol class="speclist">
+        <li><b>Day chips.</b> One day fully visible, full names — the 40-cell grid becomes a readable vertical list.</li>
+        <li><b>"now" highlight.</b> The current period is visually distinct — no counting rows against a clock.</li>
+      </ol>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="border-color:#2f5c4a;background:#12211b">
+    <b>Why Mock 2 is approved:</b> validated in the earlier exploration as <a href="07-timetable.html#v1" style="color:#9fe3c6">concept 1, ★ recommended</a> as the viewer (paired there with copy-and-diff as the builder — out of scope for this lightweight spec, which covers the read-only view only).
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="wiring">2 · API contracts <span style="color:#6e7a8a;font-size:13px;font-weight:400">— every one of these already exists</span></h2>
+  <div class="codeblock"><span class="k">GET</span> /academic/timetable?sectionId=&yearId=
+<span class="c1">// 200 — unchanged. Client groups by dayOfWeek instead of rendering a grid.</span>
+[{{ <span class="s">"dayOfWeek"</span>:<span class="k">5</span>, <span class="s">"periodNumber"</span>:<span class="k">4</span>, <span class="s">"startTime"</span>:<span class="s">"10:30"</span>, <span class="s">"endTime"</span>:<span class="s">"11:15"</span>, <span class="s">"subjectId"</span>:{{<span class="s">"name"</span>}}, <span class="s">"teacher"</span>:{{<span class="s">"firstName"</span>,<span class="s">"lastName"</span>}}, <span class="s">"room"</span> }}]</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="state">3 · State &amp; logic</h2>
+  <div class="codeblock"><span class="k">const</span> [activeDay, setActiveDay] = useState(todayIsWeekday ? todayDayOfWeek : <span class="k">1</span>);
+<span class="k">const</span> daySlots = timetable.filter(e => e.dayOfWeek === activeDay).sort((a,b) => a.periodNumber - b.periodNumber);
+<span class="k">const</span> isNow = (slot) => activeDay === todayDayOfWeek && nowBetween(slot.startTime, slot.endTime);</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="components">4 · File &amp; component plan</h2>
+  <div class="rail" style="gap:16px">
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Files</div></div>
+      <div class="codeblock filetree" style="width:100%;box-sizing:border-box"><span class="new">A</span> apps/web/src/components/timetable/DaySlotList.jsx
+<span class="mod">M</span> apps/web/src/pages/academic/TimetablePage.jsx</div>
+    </div>
+    <div class="variant" style="width:480px">
+      <div class="variant-head" style="max-width:480px"><div class="variant-title" style="font-size:15px">Component contracts</div></div>
+      <div class="card" style="width:100%">
+        <div class="kv"><span class="k">DaySlotList</span><span class="v">{ slots, activeDay, isNowFn }</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="edge">5 · Errors, empty states, accessibility</h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Situation</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td><b>No entries for a day</b></td><td>"No classes scheduled" for that day chip</td></tr>
+        <tr><td><b>Timetable is a draft (unpublished)</b></td><td>amber "Draft" badge stays, unchanged from desktop</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="dod">6 · Definition of done</h2>
+  <div class="painbox" style="max-width:900px">
+    <ul class="checklist">
+      <li>Day chips replace the 8×5 grid; zero horizontal scroll</li>
+      <li>Current period is visually highlighted when viewing today</li>
+      <li>Full subject + teacher names always visible, never truncated</li>
+    </ul>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="signoff">7 · Sign-off</h2>
+  <div class="painbox" style="max-width:900px">
+    <div class="signoff">
+      <div class="field"><div class="l">Approved by</div><div class="v"></div></div>
+      <div class="field"><div class="l">Date</div><div class="v"></div></div>
+      <div class="field"><div class="l">Spec version</div><div class="v">v1.0 · 22 Aug 2026</div></div>
+      <div class="field"><div class="l">Module</div><div class="v">Academic · 7 of 18</div></div>
+    </div>
+  </div>
+
+</div>
+<nav class="reviewnav" title="← → move between screens · I gallery">
+  <a class="rn-btn" href="06-grade-report-approved.html" data-nav="prev">‹ <span class="rn-lbl">Grade Report</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">APPROVED</span><span class="rn-title">Timetable · 7 of 18</span></a>
+  <a class="rn-btn" href="08-my-schedule-approved.html" data-nav="next"><span class="rn-lbl">My Schedule</span> ›</a>
+  <span class="rn-keys">← →  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>
