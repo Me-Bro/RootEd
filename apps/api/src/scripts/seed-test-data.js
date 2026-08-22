@@ -24,6 +24,8 @@ import { Section } from '../models/Section.js';
 import { Subject } from '../models/Subject.js';
 import { Student } from '../models/Student.js';
 import { Grade } from '../models/Grade.js';
+import { Timetable } from '../models/Timetable.js';
+import { TimetablePublish } from '../models/TimetablePublish.js';
 import { scoreToLetter } from '@rooted/shared/utils';
 import { StaffMember } from '../models/StaffMember.js';
 import { LeaveType } from '../models/LeaveType.js';
@@ -73,6 +75,8 @@ async function run() {
   // the current schema on every seed run.
   await AttendanceRecord.syncIndexes();
   await Grade.syncIndexes();
+  await Timetable.syncIndexes();
+  await TimetablePublish.syncIndexes();
 
   if (CLEAN) {
     const collections = await mongoose.connection.db.collections();
@@ -155,6 +159,22 @@ async function run() {
     year = year.toObject();
   }
 
+  // A second, empty academic year — lets the timetable copy-between-years
+  // e2e case start from a genuinely blank grid instead of overwriting 2025-26.
+  let nextYear = await AcademicYear.findOne({ tenantId, name: '2026-27' }, null, {
+    _bypassTenantScope: true,
+  }).lean();
+  if (!nextYear) {
+    nextYear = await AcademicYear.create({
+      tenantId,
+      name: '2026-27',
+      startDate: new Date('2026-04-01'),
+      endDate: new Date('2027-03-31'),
+      isActive: false,
+    });
+    nextYear = nextYear.toObject();
+  }
+
   // ── Term ──────────────────────────────────────────────────────────────────
   let term = await Term.findOne({ tenantId, name: 'Term 1' }, null, {
     _bypassTenantScope: true,
@@ -186,6 +206,17 @@ async function run() {
   if (!section) {
     section = await Section.create({ tenantId, classId: cls._id, name: 'A' });
     section = section.toObject();
+  }
+
+  // Second section — used by the timetable spec to exercise cross-section
+  // teacher/room conflicts and the draft-vs-published visibility filter
+  // without touching section A's already-asserted-on data.
+  let sectionB = await Section.findOne({ tenantId, classId: cls._id, name: 'B' }, null, {
+    _bypassTenantScope: true,
+  }).lean();
+  if (!sectionB) {
+    sectionB = await Section.create({ tenantId, classId: cls._id, name: 'B' });
+    sectionB = sectionB.toObject();
   }
 
   // ── Subjects ──────────────────────────────────────────────────────────────
@@ -426,6 +457,90 @@ async function run() {
     feeStructure = feeStructure.toObject();
   }
 
+  // ── Timetable ─────────────────────────────────────────────────────────────
+  const mathSub = subjects.find((s) => s.code === 'MATH5');
+  const englishSub = subjects.find((s) => s.code === 'ENG5');
+  const scienceSub = subjects.find((s) => s.code === 'SCI5');
+  const teacherUserId = staffMembers[0].userId; // Alice Smith
+  const secondTeacherUserId = staffMembers[1].userId; // Bob Jones
+
+  const timetableDefs = [
+    {
+      sectionId: section._id,
+      subjectId: mathSub._id,
+      teacherId: teacherUserId,
+      dayOfWeek: 1,
+      periodNumber: 1,
+      startTime: '09:00',
+      endTime: '09:45',
+      room: 'Room 101',
+    },
+    {
+      sectionId: section._id,
+      subjectId: englishSub._id,
+      teacherId: teacherUserId,
+      dayOfWeek: 1,
+      periodNumber: 2,
+      startTime: '09:45',
+      endTime: '10:30',
+    },
+    {
+      sectionId: section._id,
+      subjectId: scienceSub._id,
+      teacherId: teacherUserId,
+      dayOfWeek: 2,
+      periodNumber: 1,
+      startTime: '09:00',
+      endTime: '09:45',
+    },
+    // Section B stays unpublished (draft) — distinct day/period from section
+    // A's slots above so the same teacher isn't double-booked at seed time.
+    {
+      sectionId: sectionB._id,
+      subjectId: mathSub._id,
+      teacherId: secondTeacherUserId,
+      dayOfWeek: 1,
+      periodNumber: 3,
+      startTime: '10:30',
+      endTime: '11:15',
+    },
+  ];
+
+  const timetable = [];
+  for (const def of timetableDefs) {
+    let entry = await Timetable.findOne(
+      {
+        tenantId,
+        academicYearId: year._id,
+        sectionId: def.sectionId,
+        dayOfWeek: def.dayOfWeek,
+        periodNumber: def.periodNumber,
+      },
+      null,
+      { _bypassTenantScope: true }
+    ).lean();
+    if (!entry) {
+      entry = await Timetable.create({ tenantId, academicYearId: year._id, ...def });
+      entry = entry.toObject();
+    }
+    timetable.push(entry);
+  }
+
+  let timetablePublish = await TimetablePublish.findOne(
+    { tenantId, academicYearId: year._id, sectionId: section._id },
+    null,
+    { _bypassTenantScope: true }
+  ).lean();
+  if (!timetablePublish) {
+    timetablePublish = await TimetablePublish.create({
+      tenantId,
+      academicYearId: year._id,
+      sectionId: section._id,
+      publishedBy: users.tenant_admin._id,
+    });
+    timetablePublish = timetablePublish.toObject();
+  }
+
   // ── Attendance (last 5 days, active students only) ───────────────────────
   const attendanceDates = Array.from({ length: 5 }, (_, i) => {
     const d = new Date('2025-06-02');
@@ -616,9 +731,11 @@ async function run() {
     tenant: { _id: tenantId.toString(), subdomain: 'testschool' },
     roles: Object.fromEntries(Object.entries(roleByKey).map(([k, r]) => [k, r._id.toString()])),
     academicYear: { _id: year._id.toString() },
+    nextAcademicYear: { _id: nextYear._id.toString(), name: nextYear.name },
     term: { _id: term._id.toString() },
     class: { _id: cls._id.toString() },
     section: { _id: section._id.toString() },
+    sectionB: { _id: sectionB._id.toString() },
     subjects: subjects.map((s) => ({ _id: s._id.toString(), name: s.name })),
     students: students.map((s) => ({
       _id: s._id.toString(),
@@ -638,7 +755,24 @@ async function run() {
       assessmentType: g.assessmentType,
       score: g.score,
     })),
-    staffMembers: staffMembers.map((s) => ({ _id: s._id.toString(), employeeId: s.employeeId })),
+    staffMembers: staffMembers.map((s) => ({
+      _id: s._id.toString(),
+      employeeId: s.employeeId,
+      userId: s.userId.toString(),
+    })),
+    timetable: timetable.map((t) => ({
+      _id: t._id.toString(),
+      sectionId: t.sectionId.toString(),
+      teacherId: t.teacherId.toString(),
+      subjectId: t.subjectId.toString(),
+      dayOfWeek: t.dayOfWeek,
+      periodNumber: t.periodNumber,
+      room: t.room ?? null,
+    })),
+    timetablePublish: {
+      _id: timetablePublish._id.toString(),
+      sectionId: timetablePublish.sectionId.toString(),
+    },
     leaveType: { _id: leaveType._id.toString() },
     salaryStructure: { _id: salaryStructure._id.toString() },
     costCenter: { _id: costCenter._id.toString() },

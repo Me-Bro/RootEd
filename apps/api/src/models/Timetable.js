@@ -12,12 +12,23 @@ const timetableSchema = new mongoose.Schema(
     periodNumber: { type: Number, required: true },
     startTime: { type: String, required: true },
     endTime: { type: String, required: true },
+    room: { type: String, trim: true },
   },
   { timestamps: true }
 );
 
 timetableSchema.plugin(tenantScopePlugin);
-timetableSchema.index({ tenantId: 1, academicYearId: 1, sectionId: 1 });
-timetableSchema.index({ tenantId: 1, teacherId: 1, dayOfWeek: 1 });
+timetableSchema.index(
+  { tenantId: 1, academicYearId: 1, sectionId: 1, dayOfWeek: 1, periodNumber: 1 },
+  { unique: true }
+);
+timetableSchema.index(
+  { tenantId: 1, academicYearId: 1, teacherId: 1, dayOfWeek: 1, periodNumber: 1 },
+  { unique: true }
+);
+timetableSchema.index(
+  { tenantId: 1, academicYearId: 1, room: 1, dayOfWeek: 1, periodNumber: 1 },
+  { unique: true, partialFilterExpression: { room: { $exists: true, $type: 'string' } } }
+);
 
 export const Timetable = mongoose.model('Timetable', timetableSchema);
