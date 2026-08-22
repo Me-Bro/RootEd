@@ -10,6 +10,7 @@ const feeAssignmentSchema = new mongoose.Schema(
     totalAmount: { type: Number, required: true },
     discountAmount: { type: Number, default: 0 },
     discountReason: { type: String },
+    lateFeeAmount: { type: Number, default: 0 },
     dueDate: { type: Date },
     installments: [
       {

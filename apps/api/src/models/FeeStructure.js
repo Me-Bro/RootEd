@@ -23,6 +23,10 @@ const feeStructureSchema = new mongoose.Schema(
         dueDate: { type: Date, required: true },
       },
     ],
+    lateFeeEnabled: { type: Boolean, default: false },
+    lateFeeType: { type: String, enum: ['flat', 'percentage'] },
+    lateFeeValue: { type: Number },
+    lateFeeGraceDays: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

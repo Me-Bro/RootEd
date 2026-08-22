@@ -14,3 +14,8 @@ export function installmentsMatchTotal(installments, components) {
   const installmentTotal = installments.reduce((sum, i) => sum + i.amount, 0);
   return installmentTotal === calculateMandatoryTotal(components);
 }
+
+export function calculateLateFeeAmount({ type, value, baseAmount }) {
+  if (type === 'percentage') return Math.round((baseAmount * value) / 100);
+  return value; // flat
+}

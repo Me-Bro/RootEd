@@ -8,6 +8,7 @@ import { uploadBuffer } from './storage.service.js';
 import { env } from '../config/env.js';
 import { calculateMandatoryTotal, calculateEffectiveTotal } from '../utils/feeCalculations.js';
 import { autoAssignSupported } from '../utils/feeAutoAssignScope.js';
+import { scheduleLateCharge } from '../workers/feeLateCharge.worker.js';
 
 export async function assignFeesToStudents({
   studentIds,
@@ -51,7 +52,7 @@ export async function assignFeesToStudents({
       continue;
     }
 
-    await FeeAssignment.create({
+    const assignment = await FeeAssignment.create({
       tenantId,
       studentId,
       feeStructureId: structure._id,
@@ -62,6 +63,12 @@ export async function assignFeesToStudents({
     });
 
     created++;
+
+    if (structure.lateFeeEnabled && dueDate) {
+      const delayMs =
+        new Date(dueDate).getTime() + (structure.lateFeeGraceDays || 0) * 86400000 - Date.now();
+      await scheduleLateCharge(assignment._id, delayMs);
+    }
   }
 
   return { created, skipped };

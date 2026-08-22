@@ -2,6 +2,7 @@ import {
   calculateMandatoryTotal,
   calculateEffectiveTotal,
   installmentsMatchTotal,
+  calculateLateFeeAmount,
 } from '../utils/feeCalculations.js';
 
 test('sums only non-optional components', () => {
@@ -55,4 +56,13 @@ test('installmentsMatchTotal ignores optional components in the target total', (
       ]
     )
   ).toBe(true);
+});
+
+test('calculateLateFeeAmount flat type returns the flat value', () => {
+  expect(calculateLateFeeAmount({ type: 'flat', value: 200, baseAmount: 5000 })).toBe(200);
+});
+
+test('calculateLateFeeAmount percentage type computes and rounds', () => {
+  expect(calculateLateFeeAmount({ type: 'percentage', value: 5, baseAmount: 5000 })).toBe(250);
+  expect(calculateLateFeeAmount({ type: 'percentage', value: 3.33, baseAmount: 1000 })).toBe(33);
 });

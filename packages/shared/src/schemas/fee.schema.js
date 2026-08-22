@@ -22,6 +22,10 @@ const feeStructureBaseSchema = z.object({
   classId: objectId.optional(),
   dueDate: z.coerce.date().optional(),
   installments: z.array(installmentSchema).optional(),
+  lateFeeEnabled: z.boolean().default(false),
+  lateFeeType: z.enum(['flat', 'percentage']).optional(),
+  lateFeeValue: z.coerce.number().nonnegative().optional(),
+  lateFeeGraceDays: z.coerce.number().int().nonnegative().default(0),
 });
 
 export const createFeeStructureSchema = feeStructureBaseSchema
@@ -43,7 +47,11 @@ export const createFeeStructureSchema = feeStructureBaseSchema
       message: 'sum of installment amounts must equal the sum of mandatory component amounts',
       path: ['installments'],
     }
-  );
+  )
+  .refine((v) => !v.lateFeeEnabled || (v.lateFeeType && v.lateFeeValue !== undefined), {
+    message: 'lateFeeType and lateFeeValue are required when lateFeeEnabled is true',
+    path: ['lateFeeType'],
+  });
 
 export const updateFeeStructureSchema = feeStructureBaseSchema.partial();
 

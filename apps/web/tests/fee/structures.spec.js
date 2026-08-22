@@ -139,4 +139,18 @@ test.describe('Fee Structures', () => {
     expect(a.installments[0].status).toBe('paid');
     expect(a.installments[1].status).toBe('unpaid');
   });
+
+  test('creating a structure with lateFeeEnabled requires lateFeeType/lateFeeValue', async ({
+    request,
+  }) => {
+    const ids = getTestIds();
+    const client = await createTestApiClient(request, 'super_admin');
+    const res = await client.post('/fee/structures', {
+      name: 'Late Fee Missing Type',
+      academicYearId: ids.academicYear._id,
+      lateFeeEnabled: true,
+      components: [{ label: 'X', amount: 100 }],
+    });
+    expect(res.status()).toBe(400);
+  });
 });
