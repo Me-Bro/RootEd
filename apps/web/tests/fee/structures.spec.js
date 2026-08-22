@@ -264,4 +264,48 @@ test.describe('Fee Structures UI', () => {
     const card = page.locator('[data-slot="card"]', { hasText: 'Standard Fee' });
     await expect(card.getByText(/1 discount/)).toBeVisible();
   });
+
+  // Mobile-ui spec (docs/mobile-ui/16-fee-structures-approved.html, Mock 2/approved):
+  // every card shows its collection rate inline — no extra tap into a separate summary.
+  test('shows collection rate inline on the structure card, without an extra tap', async ({
+    page,
+  }) => {
+    const ids = getTestIds();
+    await page.goto('/fee/structures');
+    await page.getByRole('combobox', { name: 'Academic Year' }).selectOption(ids.academicYear._id);
+    const card = page.locator('[data-slot="card"]', { hasText: 'Standard Fee' });
+    // Values aren't asserted exactly — other tests in this file assign additional
+    // students to this same structure, so assignedCount/collected% legitimately vary
+    // by run order. What must hold is that the bar and its labels render immediately.
+    await expect(card.getByText(/\d+ assigned/)).toBeVisible();
+    await expect(card.getByText(/\d+% collected/)).toBeVisible();
+    await expect(card.getByText(/ of /)).toBeVisible();
+  });
+
+  test('shows an Active badge on an active structure card', async ({ page }) => {
+    await page.goto('/fee/structures');
+    const card = page.locator('[data-slot="card"]', { hasText: 'Standard Fee' });
+    await expect(card.getByText('Active', { exact: true })).toBeVisible();
+  });
+
+  test('a failed summary fetch for one card does not block the rest of the list', async ({
+    page,
+  }) => {
+    const ids = getTestIds();
+    // Route only the Standard Fee summary call to a 500 — every other card's summary
+    // (and the components/total block on this card, which doesn't depend on it) must
+    // still render per spec §5 "Errors, empty states, accessibility".
+    await page.route(`**/fee/structures/${ids.feeStructure._id}/summary`, (route) =>
+      route.fulfill({ status: 500, json: { error: 'boom' } })
+    );
+    await page.goto('/fee/structures');
+    await page.getByRole('combobox', { name: 'Academic Year' }).selectOption(ids.academicYear._id);
+
+    const brokenCard = page.locator('[data-slot="card"]', { hasText: 'Standard Fee' });
+    await expect(brokenCard.getByText(/5,500/)).toBeVisible(); // components/total still show
+    await expect(brokenCard.getByText(/% collected/)).not.toBeVisible();
+
+    const otherCard = page.locator('[data-slot="card"]', { hasText: 'Sports Fee' });
+    await expect(otherCard.getByText(/% collected/)).toBeVisible();
+  });
 });
