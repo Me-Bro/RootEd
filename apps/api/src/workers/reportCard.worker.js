@@ -1,18 +1,11 @@
 import { Worker } from 'bullmq';
 import PDFDocument from 'pdfkit';
+import { scoreToLetter } from '@rooted/shared/utils';
 import { redis } from '../config/redis.js';
 import { logger } from '../utils/logger.js';
 import { Student } from '../models/Student.js';
 import { Grade } from '../models/Grade.js';
 import { uploadBuffer, getSignedUrl } from '../services/storage.service.js';
-
-function scoreToLetter(score) {
-  if (score >= 90) return 'A';
-  if (score >= 80) return 'B';
-  if (score >= 70) return 'C';
-  if (score >= 60) return 'D';
-  return 'F';
-}
 
 async function generateReportCardPdf(tenantId, termId, sectionId) {
   const students = await Student.find({ tenantId, sectionId }).lean();
@@ -62,7 +55,12 @@ async function generateReportCardPdf(tenantId, termId, sectionId) {
       for (const g of studentGrades) {
         const y = doc.y;
         const letter = g.letterGrade || scoreToLetter(g.score ?? 0);
-        doc.text(g.subjectId?.name ?? 'Unknown', 50, y, { width: 200 });
+        const subjectLabel = g.subjectId?.name ?? 'Unknown';
+        const assessmentLabel =
+          g.assessmentType && g.assessmentType !== 'final'
+            ? `${subjectLabel} (${g.assessmentType[0].toUpperCase()}${g.assessmentType.slice(1)})`
+            : subjectLabel;
+        doc.text(assessmentLabel, 50, y, { width: 200 });
         doc.text(String(g.score ?? '—'), 260, y, { width: 80 });
         doc.text(letter, 350, y, { width: 80 });
         doc.moveDown(0.5);

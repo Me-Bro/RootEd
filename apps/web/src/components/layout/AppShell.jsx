@@ -70,6 +70,12 @@ const NAV_GROUPS = [
         permission: 'attendance:read',
       },
       { to: '/academic/grades', label: 'Grades', icon: BookOpen, permission: 'grades:read' },
+      {
+        to: '/academic/grades/report',
+        label: 'Grade Report',
+        icon: BarChart2,
+        permission: 'grades:read',
+      },
       { to: '/academic/timetable', label: 'Timetable', icon: Grid, permission: 'students:read' },
       {
         to: '/academic/report-cards',

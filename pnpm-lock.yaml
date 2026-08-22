@@ -161,6 +161,9 @@ importers:
       '@fontsource-variable/geist':
         specifier: ^5.2.8
         version: 5.2.8
+      '@rooted/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       '@sentry/react':
         specifier: ^10.53.1
         version: 10.53.1(react@19.2.6)

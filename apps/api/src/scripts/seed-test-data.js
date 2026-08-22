@@ -24,6 +24,7 @@ import { Section } from '../models/Section.js';
 import { Subject } from '../models/Subject.js';
 import { Student } from '../models/Student.js';
 import { Grade } from '../models/Grade.js';
+import { scoreToLetter } from '@rooted/shared/utils';
 import { StaffMember } from '../models/StaffMember.js';
 import { LeaveType } from '../models/LeaveType.js';
 import { SalaryStructure } from '../models/SalaryStructure.js';
@@ -66,10 +67,12 @@ async function run() {
   await mongoose.connect(env.MONGODB_URI);
   console.error('Connected:', env.MONGODB_URI);
 
-  // AttendanceRecord's unique index gained subjectId (per-period attendance) —
-  // deleteMany below doesn't drop indexes, so keep the test DB's index in sync
-  // with the current schema on every seed run.
+  // AttendanceRecord's unique index gained subjectId (per-period attendance),
+  // and Grade's gained assessmentType (multi-assessment support) — deleteMany
+  // below doesn't drop indexes, so keep the test DB's indexes in sync with
+  // the current schema on every seed run.
   await AttendanceRecord.syncIndexes();
+  await Grade.syncIndexes();
 
   if (CLEAN) {
     const collections = await mongoose.connection.db.collections();
@@ -259,20 +262,18 @@ async function run() {
   const activeStudents = students.filter((s) => s.status === 'active');
 
   // ── Grades ────────────────────────────────────────────────────────────────
-  function scoreToLetter(score) {
-    if (score >= 90) return 'A';
-    if (score >= 80) return 'B';
-    if (score >= 70) return 'C';
-    if (score >= 60) return 'D';
-    return 'F';
-  }
-
   const grades = [];
   for (const student of students) {
     for (const subject of subjects) {
       const score = 60 + ((student.admissionNo.length + subject.code.length) % 40);
       let grade = await Grade.findOne(
-        { tenantId, studentId: student._id, subjectId: subject._id, termId: term._id },
+        {
+          tenantId,
+          studentId: student._id,
+          subjectId: subject._id,
+          termId: term._id,
+          assessmentType: 'final',
+        },
         null,
         { _bypassTenantScope: true }
       ).lean();
@@ -280,9 +281,11 @@ async function run() {
         grade = await Grade.create({
           tenantId,
           studentId: student._id,
+          sectionId: student.sectionId,
           subjectId: subject._id,
           termId: term._id,
           academicYearId: year._id,
+          assessmentType: 'final',
           score,
           letterGrade: scoreToLetter(score),
           weightage: 1,
@@ -292,6 +295,43 @@ async function run() {
       }
       grades.push(grade);
     }
+  }
+
+  // A quiz-type row alongside each student's final grade in Mathematics, so
+  // multi-assessment rendering/analytics have more than one row per subject
+  // to exercise.
+  const mathSubject = subjects.find((s) => s.code === 'MATH5');
+  for (const student of students) {
+    const admissionNum = parseInt(student.admissionNo.slice(-3), 10);
+    const quizScore = 50 + ((admissionNum * 7) % 45);
+    let quizGrade = await Grade.findOne(
+      {
+        tenantId,
+        studentId: student._id,
+        subjectId: mathSubject._id,
+        termId: term._id,
+        assessmentType: 'quiz',
+      },
+      null,
+      { _bypassTenantScope: true }
+    ).lean();
+    if (!quizGrade) {
+      quizGrade = await Grade.create({
+        tenantId,
+        studentId: student._id,
+        sectionId: student.sectionId,
+        subjectId: mathSubject._id,
+        termId: term._id,
+        academicYearId: year._id,
+        assessmentType: 'quiz',
+        score: quizScore,
+        letterGrade: scoreToLetter(quizScore),
+        weightage: 0.3,
+        gradedBy: users.teacher._id,
+      });
+      quizGrade = quizGrade.toObject();
+    }
+    grades.push(quizGrade);
   }
 
   // ── Staff Members (linked to tenant users) ───────────────────────────────
@@ -593,6 +633,9 @@ async function run() {
     grades: grades.map((g) => ({
       _id: g._id.toString(),
       studentId: g.studentId.toString(),
+      subjectId: g.subjectId.toString(),
+      sectionId: g.sectionId.toString(),
+      assessmentType: g.assessmentType,
       score: g.score,
     })),
     staffMembers: staffMembers.map((s) => ({ _id: s._id.toString(), employeeId: s.employeeId })),

@@ -6,7 +6,12 @@ import {
   markAttendanceSchema,
   attendanceQuerySchema,
   attendanceReportQuerySchema,
+  saveGradesSchema,
+  gradesQuerySchema,
+  gradesReportQuerySchema,
+  gradeLockSchema,
 } from '@rooted/shared/schemas';
+import { scoreToLetter } from '@rooted/shared/utils';
 import { authenticate } from '../middleware/authenticate.js';
 import { requirePermission } from '../middleware/requirePermission.js';
 import { validate } from '../middleware/validate.js';
@@ -21,8 +26,11 @@ import { Student } from '../models/Student.js';
 import { Timetable } from '../models/Timetable.js';
 import { AttendanceRecord } from '../models/AttendanceRecord.js';
 import { Grade } from '../models/Grade.js';
+import { GradeLock } from '../models/GradeLock.js';
 import { buildStudentFilter } from '../utils/studentFilter.js';
 import { computeAttendanceStats } from '../utils/attendanceStats.js';
+import { computeGradeStats } from '../utils/gradeStats.js';
+import { auditLog } from '../services/audit.service.js';
 
 const DEFAULTER_THRESHOLD_PCT = 75;
 const DEFAULT_REPORT_RANGE_DAYS = 30;
@@ -595,57 +603,108 @@ router.get('/attendance/report', requirePermission('attendance:read'), async (re
 
 // ── Grades ────────────────────────────────────────────────────────────────────
 
-router.post('/grades', requirePermission('grades:write'), async (req, res, next) => {
-  try {
-    const { grades } = req.body;
-    const tenantId = req.tenant._id;
-    const gradedBy = req.user.sub;
+function lockKey({ sectionId, subjectId, termId, assessmentType }) {
+  return `${sectionId}:${subjectId}:${termId}:${assessmentType}`;
+}
 
-    const ops = grades.map(
-      ({
-        studentId,
-        subjectId,
-        termId,
-        academicYearId,
-        score,
-        letterGrade,
-        weightage,
-        remarks,
-      }) => ({
-        updateOne: {
-          filter: { tenantId, studentId, subjectId, termId },
-          update: {
-            $set: {
-              tenantId,
-              studentId,
-              subjectId,
-              termId,
-              academicYearId,
-              score,
-              letterGrade,
-              weightage: weightage ?? 1,
-              gradedBy,
-              remarks,
-            },
-          },
-          upsert: true,
-        },
-      })
-    );
+// Builds bulkWrite ops for a batch of already-validated grade rows, after
+// checking every distinct {sectionId,subjectId,termId,assessmentType} scope
+// touched by the batch against GradeLock — shared by the manual save route
+// and the CSV import route so the lock-check/letterGrade-recompute logic
+// isn't duplicated between them.
+async function buildGradeUpsertOps(tenantId, gradedBy, rows) {
+  const scopes = [...new Map(rows.map((r) => [lockKey(r), r])).values()];
+  const locks = await GradeLock.find({
+    tenantId,
+    $or: scopes.map(({ sectionId, subjectId, termId, assessmentType }) => ({
+      sectionId,
+      subjectId,
+      termId,
+      assessmentType,
+    })),
+  }).lean();
+  const lockedKeys = new Set(locks.map(lockKey));
 
-    await Grade.bulkWrite(ops);
-    res.json({ saved: ops.length });
-  } catch (err) {
-    next(err);
+  const lockedRows = rows.filter((r) => lockedKeys.has(lockKey(r)));
+  if (lockedRows.length > 0) {
+    return {
+      error: 'Grades are locked for one or more selected scopes',
+      lockedKeys: [...lockedKeys],
+    };
   }
-});
+
+  const ops = rows.map((row) => ({
+    updateOne: {
+      filter: {
+        tenantId,
+        studentId: row.studentId,
+        subjectId: row.subjectId,
+        termId: row.termId,
+        assessmentType: row.assessmentType,
+      },
+      update: {
+        $set: {
+          tenantId,
+          studentId: row.studentId,
+          sectionId: row.sectionId,
+          subjectId: row.subjectId,
+          termId: row.termId,
+          academicYearId: row.academicYearId,
+          assessmentType: row.assessmentType,
+          score: row.score,
+          letterGrade: scoreToLetter(row.score),
+          weightage: row.weightage ?? 1,
+          gradedBy,
+          remarks: row.remarks,
+        },
+      },
+      upsert: true,
+    },
+  }));
+
+  return { ops };
+}
+
+router.post(
+  '/grades',
+  requirePermission('grades:write'),
+  validate(saveGradesSchema),
+  async (req, res, next) => {
+    try {
+      const { grades } = req.body;
+      const tenantId = req.tenant._id;
+      const gradedBy = req.user.sub;
+
+      const { ops, error, lockedKeys } = await buildGradeUpsertOps(tenantId, gradedBy, grades);
+      if (error) return res.status(409).json({ error, lockedKeys });
+
+      await Grade.bulkWrite(ops);
+
+      await auditLog({
+        actorId: gradedBy,
+        tenantId: tenantId.toString(),
+        action: 'grades.save',
+        target: { model: 'Grade', id: null },
+        after: { count: ops.length },
+        ip: req.ip,
+      });
+
+      res.json({ saved: ops.length });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.get('/grades', requirePermission('grades:read'), async (req, res, next) => {
   try {
+    const query = gradesQuerySchema.parse(req.query);
     const filter = { tenantId: req.tenant._id };
-    if (req.query.studentId) filter.studentId = req.query.studentId;
-    if (req.query.subjectId) filter.subjectId = req.query.subjectId;
-    if (req.query.termId) filter.termId = req.query.termId;
+    if (query.studentId) filter.studentId = query.studentId;
+    if (query.sectionId) filter.sectionId = query.sectionId;
+    if (query.subjectId) filter.subjectId = query.subjectId;
+    if (query.termId) filter.termId = query.termId;
+    if (query.assessmentType) filter.assessmentType = query.assessmentType;
 
     const grades = await Grade.find(filter)
       .populate('studentId', 'firstName lastName admissionNo')
@@ -657,6 +716,184 @@ router.get('/grades', requirePermission('grades:read'), async (req, res, next) =
     next(err);
   }
 });
+
+router.get('/grades/report', requirePermission('grades:read'), async (req, res, next) => {
+  try {
+    const { sectionId, subjectId, termId, assessmentType } = gradesReportQuerySchema.parse(
+      req.query
+    );
+    const tenantId = req.tenant._id;
+
+    const [students, grades] = await Promise.all([
+      Student.find({ tenantId, sectionId }).lean(),
+      Grade.find({
+        tenantId,
+        sectionId,
+        subjectId,
+        termId,
+        ...(assessmentType ? { assessmentType } : {}),
+      }).lean(),
+    ]);
+
+    res.json(computeGradeStats(students, grades));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post(
+  '/grades/import',
+  requirePermission('grades:write'),
+  upload.single('file'),
+  async (req, res, next) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+      const { sectionId, subjectId, termId, academicYearId, assessmentType } = req.body;
+      if (!sectionId || !subjectId || !termId || !academicYearId) {
+        return res
+          .status(400)
+          .json({ error: 'sectionId, subjectId, termId, academicYearId required' });
+      }
+
+      const records = parse(req.file.buffer, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true,
+      });
+
+      const tenantId = req.tenant._id;
+      const gradedBy = req.user.sub;
+      const errors = [];
+      const rows = [];
+
+      for (const row of records) {
+        try {
+          const { admissionNo, score, remarks } = row;
+          if (!admissionNo || score === undefined || score === '') {
+            errors.push({ row, reason: 'Missing admissionNo or score' });
+            continue;
+          }
+
+          const student = await Student.findOne({ tenantId, admissionNo });
+          if (!student) {
+            errors.push({ row, reason: 'Unknown admissionNo' });
+            continue;
+          }
+
+          const parsed = saveGradesSchema.shape.grades.element.parse({
+            studentId: student._id.toString(),
+            sectionId,
+            subjectId,
+            termId,
+            academicYearId,
+            assessmentType: assessmentType || 'final',
+            score,
+            remarks: remarks || undefined,
+          });
+          rows.push(parsed);
+        } catch (rowErr) {
+          errors.push({ row, reason: rowErr.message });
+        }
+      }
+
+      let saved = 0;
+      if (rows.length > 0) {
+        const { ops, error, lockedKeys } = await buildGradeUpsertOps(tenantId, gradedBy, rows);
+        if (error) return res.status(409).json({ error, lockedKeys });
+        await Grade.bulkWrite(ops);
+        saved = ops.length;
+      }
+
+      await auditLog({
+        actorId: gradedBy,
+        tenantId: tenantId.toString(),
+        action: 'grades.import',
+        target: { model: 'Grade', id: null },
+        after: { saved, errors: errors.length },
+        ip: req.ip,
+      });
+
+      res.json({ saved, errors });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get('/grades/lock', requirePermission('grades:read'), async (req, res, next) => {
+  try {
+    const { sectionId, subjectId, termId, assessmentType } = gradeLockSchema.parse(req.query);
+    const lock = await GradeLock.findOne({
+      tenantId: req.tenant._id,
+      sectionId,
+      subjectId,
+      termId,
+      assessmentType,
+    }).lean();
+
+    res.json({ locked: Boolean(lock), lock: lock ?? null });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post(
+  '/grades/lock',
+  requirePermission('grades:publish'),
+  validate(gradeLockSchema),
+  async (req, res, next) => {
+    try {
+      const { sectionId, subjectId, termId, assessmentType } = req.body;
+      const tenantId = req.tenant._id;
+
+      const lock = await GradeLock.findOneAndUpdate(
+        { tenantId, sectionId, subjectId, termId, assessmentType },
+        { $setOnInsert: { publishedAt: new Date(), publishedBy: req.user.sub } },
+        { upsert: true, new: true }
+      );
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'grades.lock',
+        target: { model: 'GradeLock', id: lock._id },
+        ip: req.ip,
+      });
+
+      res.json(lock);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/grades/unlock',
+  requirePermission('grades:publish'),
+  validate(gradeLockSchema),
+  async (req, res, next) => {
+    try {
+      const { sectionId, subjectId, termId, assessmentType } = req.body;
+      const tenantId = req.tenant._id;
+
+      await GradeLock.deleteOne({ tenantId, sectionId, subjectId, termId, assessmentType });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'grades.unlock',
+        target: { model: 'GradeLock', id: null },
+        after: { sectionId, subjectId, termId, assessmentType },
+        ip: req.ip,
+      });
+
+      res.json({ unlocked: true });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 // ── Report Card ───────────────────────────────────────────────────────────────
 
@@ -675,18 +912,24 @@ router.post('/report-card/generate', requirePermission('grades:read'), async (re
   }
 });
 
-router.get('/report-card/status/:jobId', async (req, res, next) => {
-  try {
-    const job = await reportCardQueue.getJob(req.params.jobId);
-    if (!job) return res.status(404).json({ error: 'Job not found' });
+router.get(
+  '/report-card/status/:jobId',
+  requirePermission('grades:read'),
+  async (req, res, next) => {
+    try {
+      const job = await reportCardQueue.getJob(req.params.jobId);
+      if (!job || job.data?.tenantId !== req.tenant._id.toString()) {
+        return res.status(404).json({ error: 'Job not found' });
+      }
 
-    const state = await job.getState();
-    const result = job.returnvalue;
+      const state = await job.getState();
+      const result = job.returnvalue;
 
-    res.json({ jobId: job.id, state, result });
-  } catch (err) {
-    next(err);
+      res.json({ jobId: job.id, state, result });
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 export default router;

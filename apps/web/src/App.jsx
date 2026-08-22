@@ -16,6 +16,7 @@ import StudentDetailPage from './pages/academic/StudentDetailPage.jsx';
 import AttendancePage from './pages/academic/AttendancePage.jsx';
 import AttendanceReportPage from './pages/academic/AttendanceReportPage.jsx';
 import GradesPage from './pages/academic/GradesPage.jsx';
+import GradeReportPage from './pages/academic/GradeReportPage.jsx';
 import TimetablePage from './pages/academic/TimetablePage.jsx';
 import ReportCardPage from './pages/academic/ReportCardPage.jsx';
 import StaffPage from './pages/staff/StaffPage.jsx';
@@ -149,6 +150,14 @@ function AppRoutes() {
           element={
             <RequirePermission permission="grades:read">
               <GradesPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/academic/grades/report"
+          element={
+            <RequirePermission permission="grades:read">
+              <GradeReportPage />
             </RequirePermission>
           }
         />
