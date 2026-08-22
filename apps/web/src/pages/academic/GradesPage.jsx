@@ -1,28 +1,33 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { scoreToLetter } from '@rooted/shared/utils';
+import { ASSESSMENT_TYPES } from '@rooted/shared/constants';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
+import { useAuth } from '../../contexts/useAuth.js';
 
 const EMPTY_ARRAY = [];
 
-function scoreToLetter(score) {
-  const n = Number(score);
-  if (isNaN(n)) return '';
-  if (n >= 90) return 'A';
-  if (n >= 80) return 'B';
-  if (n >= 70) return 'C';
-  if (n >= 60) return 'D';
-  return 'F';
+function assessmentLabel(type) {
+  return type[0].toUpperCase() + type.slice(1);
 }
 
 export default function GradesPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const permissions = user?.permissions ?? [];
+  const canPublish = permissions.includes('grades:publish');
+
   const [sectionId, setSectionId] = useState('');
   const [termId, setTermId] = useState('');
   const [subjectId, setSubjectId] = useState('');
+  const [assessmentType, setAssessmentType] = useState('final');
   const [scoreMap, setScoreMap] = useState({});
   const [syncedGrades, setSyncedGrades] = useState(EMPTY_ARRAY);
+  const [importResult, setImportResult] = useState(null);
+  const fileRef = useRef(null);
 
   const { classes } = useClassSections();
 
@@ -47,14 +52,31 @@ export default function GradesPage() {
     enabled: Boolean(sectionId),
   });
 
+  const gradesKey = ['grades', sectionId, termId, subjectId, assessmentType];
+  const gradesReady = Boolean(sectionId && termId && subjectId);
+
   const { data: existingGrades = EMPTY_ARRAY } = useQuery({
-    queryKey: ['grades', termId, subjectId],
+    queryKey: gradesKey,
     queryFn: () =>
-      termId && subjectId
-        ? api.get(`/academic/grades?termId=${termId}&subjectId=${subjectId}`).then((r) => r.data)
-        : Promise.resolve(EMPTY_ARRAY),
-    enabled: Boolean(termId && subjectId),
+      api
+        .get(
+          `/academic/grades?sectionId=${sectionId}&termId=${termId}&subjectId=${subjectId}&assessmentType=${assessmentType}`
+        )
+        .then((r) => r.data),
+    enabled: gradesReady,
   });
+
+  const { data: lockStatus } = useQuery({
+    queryKey: ['grade-lock', sectionId, subjectId, termId, assessmentType],
+    queryFn: () =>
+      api
+        .get(
+          `/academic/grades/lock?sectionId=${sectionId}&subjectId=${subjectId}&termId=${termId}&assessmentType=${assessmentType}`
+        )
+        .then((r) => r.data),
+    enabled: gradesReady,
+  });
+  const locked = Boolean(lockStatus?.locked);
 
   if (existingGrades !== syncedGrades) {
     setSyncedGrades(existingGrades);
@@ -69,7 +91,39 @@ export default function GradesPage() {
 
   const saveMutation = useMutation({
     mutationFn: (grades) => api.post('/academic/grades', { grades }).then((r) => r.data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['grades', termId, subjectId] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: gradesKey }),
+  });
+
+  const lockMutation = useMutation({
+    mutationFn: (action) =>
+      api
+        .post(`/academic/grades/${action}`, { sectionId, subjectId, termId, assessmentType })
+        .then((r) => r.data),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: ['grade-lock', sectionId, subjectId, termId, assessmentType],
+      }),
+  });
+
+  const importMutation = useMutation({
+    mutationFn: (file) => {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('sectionId', sectionId);
+      fd.append('termId', termId);
+      fd.append('subjectId', subjectId);
+      fd.append('academicYearId', selectedTerm?.academicYearId ?? '');
+      fd.append('assessmentType', assessmentType);
+      return api
+        .post('/academic/grades/import', fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+        .then((r) => r.data);
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: gradesKey });
+      setImportResult(result);
+    },
   });
 
   function handleSave() {
@@ -78,11 +132,12 @@ export default function GradesPage() {
         const score = scoreMap[s._id] !== undefined ? Number(scoreMap[s._id]) : undefined;
         return {
           studentId: s._id,
+          sectionId,
           subjectId,
           termId,
           academicYearId: selectedTerm?.academicYearId,
+          assessmentType,
           score,
-          letterGrade: scoreToLetter(score),
         };
       })
       .filter((g) => g.score !== undefined && !isNaN(g.score));
@@ -94,7 +149,36 @@ export default function GradesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Grades</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Grades</h1>
+        <div className="flex items-center gap-4">
+          {sectionId && (
+            <Link
+              to={`/academic/grades/report?sectionId=${sectionId}`}
+              className="text-sm font-medium text-blue-600 hover:underline"
+            >
+              View Report →
+            </Link>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => fileRef.current?.click()}
+            disabled={!gradesReady || locked || importMutation.isPending}
+          >
+            {importMutation.isPending ? 'Importing…' : 'Import CSV'}
+          </Button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".csv"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files?.[0]) importMutation.mutate(e.target.files[0]);
+              e.target.value = '';
+            }}
+          />
+        </div>
+      </div>
 
       <div className="flex flex-wrap gap-4">
         <div className="flex flex-col gap-1.5">
@@ -148,7 +232,44 @@ export default function GradesPage() {
             ))}
           </select>
         </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Assessment</label>
+          <select
+            value={assessmentType}
+            onChange={(e) => setAssessmentType(e.target.value)}
+            className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+          >
+            {ASSESSMENT_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {assessmentLabel(t)}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+
+      {importResult && (
+        <div className="flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 px-4 py-2 text-sm dark:border-gray-700 dark:bg-gray-800">
+          <span>
+            Imported {importResult.saved} grade{importResult.saved === 1 ? '' : 's'}
+            {importResult.errors?.length > 0 && `, ${importResult.errors.length} error(s)`}
+          </span>
+          <button
+            type="button"
+            onClick={() => setImportResult(null)}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {locked && (
+        <p className="rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          Grades are locked for this selection. {canPublish ? 'Unlock to make changes.' : ''}
+        </p>
+      )}
 
       {ready && (
         <>
@@ -183,8 +304,9 @@ export default function GradesPage() {
                           min={0}
                           max={100}
                           value={score}
+                          disabled={locked}
                           onChange={(e) => setScoreMap((m) => ({ ...m, [s._id]: e.target.value }))}
-                          className="w-24 rounded-md border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                          className="w-24 rounded-md border border-gray-300 px-2 py-1 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 disabled:opacity-50"
                         />
                       </td>
                       <td className="px-4 py-3 font-semibold text-gray-700 dark:text-gray-300">
@@ -200,7 +322,16 @@ export default function GradesPage() {
           <div className="flex justify-end gap-3 items-center">
             {saveMutation.isSuccess && <span className="text-sm text-green-600">Grades saved</span>}
             {saveMutation.isError && <span className="text-sm text-red-500">Save failed</span>}
-            <Button onClick={handleSave} disabled={saveMutation.isPending}>
+            {canPublish && (
+              <Button
+                variant="outline"
+                onClick={() => lockMutation.mutate(locked ? 'unlock' : 'lock')}
+                disabled={lockMutation.isPending}
+              >
+                {locked ? 'Unlock' : 'Lock'} Grades
+              </Button>
+            )}
+            <Button onClick={handleSave} disabled={saveMutation.isPending || locked}>
               {saveMutation.isPending ? 'Saving…' : 'Save Grades'}
             </Button>
           </div>

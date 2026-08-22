@@ -263,10 +263,11 @@ function GradesSummary({ studentId }) {
   if (grades.length === 0) return <p className="text-sm text-muted-foreground">No grades yet.</p>;
 
   return (
-    <DataTable headers={['Subject', 'Score', 'Grade']}>
+    <DataTable headers={['Subject', 'Assessment', 'Score', 'Grade']}>
       {grades.map((g) => (
         <TableRow key={g._id}>
           <TableCell className="px-4 py-2">{g.subjectId?.name ?? '—'}</TableCell>
+          <TableCell className="px-4 py-2 capitalize">{g.assessmentType ?? 'final'}</TableCell>
           <TableCell className="px-4 py-2">{g.score}</TableCell>
           <TableCell className="px-4 py-2">{g.letterGrade}</TableCell>
         </TableRow>

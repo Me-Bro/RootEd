@@ -21,6 +21,7 @@
     "test:snapshot:restore": "node --env-file=../api/.env.test tests/seed/snapshot.js restore"
   },
   "dependencies": {
+    "@rooted/shared": "workspace:*",
     "@base-ui/react": "^1.4.1",
     "@fontsource-variable/geist": "^5.2.8",
     "@sentry/react": "^10.53.1",
