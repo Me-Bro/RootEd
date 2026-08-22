@@ -19,10 +19,12 @@ import {
 import { getSignedUrl } from '../services/storage.service.js';
 import { env } from '../config/env.js';
 import { auditLog } from '../services/audit.service.js';
+import { scaleComponents } from '../utils/feeCalculations.js';
 import {
   createFeeStructureSchema,
   updateFeeStructureSchema,
   assignFeeStructureSchema,
+  cloneFeeStructureSchema,
   createFeeDiscountSchema,
 } from '@rooted/shared/schemas';
 
@@ -136,6 +138,66 @@ router.patch('/structures/:id/activate', requirePermission('fees:write'), (req, 
 );
 router.patch('/structures/:id/deactivate', requirePermission('fees:write'), (req, res, next) =>
   setStructureActive(req, res, next, false)
+);
+
+router.post(
+  '/structures/:id/clone',
+  requirePermission('fees:write'),
+  validate(cloneFeeStructureSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { targetAcademicYearId, amountAdjustmentPercent } = req.body;
+
+      const source = await FeeStructure.findOne({ _id: req.params.id, tenantId }).lean();
+      if (!source) return res.status(404).json({ error: 'Not found' });
+
+      const existing = await FeeStructure.findOne({
+        tenantId,
+        name: source.name,
+        academicYearId: targetAcademicYearId,
+      });
+      if (existing) {
+        return res
+          .status(409)
+          .json({ error: 'A fee structure with this name already exists for this academic year' });
+      }
+
+      const scaledComponents = scaleComponents(source.components, amountAdjustmentPercent);
+      const scaledInstallments = scaleComponents(
+        source.installments || [],
+        amountAdjustmentPercent
+      );
+
+      const clone = await FeeStructure.create({
+        tenantId,
+        name: source.name,
+        academicYearId: targetAcademicYearId,
+        components: scaledComponents,
+        ...(scaledInstallments.length ? { installments: scaledInstallments } : {}),
+        applicableTo: source.applicableTo,
+        classId: source.classId,
+        dueDate: source.dueDate,
+        lateFeeEnabled: source.lateFeeEnabled,
+        lateFeeType: source.lateFeeType,
+        lateFeeValue: source.lateFeeValue,
+        lateFeeGraceDays: source.lateFeeGraceDays,
+      });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'feeStructure.clone',
+        target: { model: 'FeeStructure', id: clone._id },
+        after: clone.toObject(),
+        ip: req.ip,
+      });
+
+      res.status(201).json(clone);
+    } catch (err) {
+      next(err);
+    }
+  }
 );
 
 router.get('/structures', requirePermission('fees:read'), async (req, res, next) => {

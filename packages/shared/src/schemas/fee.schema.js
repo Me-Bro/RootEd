@@ -60,6 +60,11 @@ export const assignFeeStructureSchema = z.object({
   dueDate: z.coerce.date().optional(),
 });
 
+export const cloneFeeStructureSchema = z.object({
+  targetAcademicYearId: objectId,
+  amountAdjustmentPercent: z.coerce.number().optional(),
+});
+
 export const createFeeDiscountSchema = z
   .object({
     name: z.string().trim().min(1),

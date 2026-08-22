@@ -153,4 +153,30 @@ test.describe('Fee Structures', () => {
     });
     expect(res.status()).toBe(400);
   });
+
+  test('clone creates a copy in the target year with scaled amounts', async ({ request }) => {
+    const ids = getTestIds();
+    const client = await createTestApiClient(request, 'super_admin');
+    const res = await client.post(`/fee/structures/${ids.feeStructure._id}/clone`, {
+      targetAcademicYearId: ids.nextAcademicYear._id,
+      amountAdjustmentPercent: 10,
+    });
+    const body = await res.json();
+    expect(body.name).toBe('Standard Fee');
+    expect(body.components.find((c) => c.label === 'Tuition').amount).toBe(5500); // 5000 * 1.1
+  });
+
+  test('cloning into a year that already has the same name is a 409', async ({ request }) => {
+    const ids = getTestIds();
+    const client = await createTestApiClient(request, 'super_admin');
+    // Clone twice within this test (rather than relying on another test's side effect,
+    // since Playwright's fullyParallel mode doesn't guarantee cross-test ordering).
+    await client.post(`/fee/structures/${ids.feeStructureWithOptional._id}/clone`, {
+      targetAcademicYearId: ids.nextAcademicYear._id,
+    });
+    const res = await client.post(`/fee/structures/${ids.feeStructureWithOptional._id}/clone`, {
+      targetAcademicYearId: ids.nextAcademicYear._id,
+    });
+    expect(res.status()).toBe(409);
+  });
 });

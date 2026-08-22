@@ -3,6 +3,7 @@ import {
   calculateEffectiveTotal,
   installmentsMatchTotal,
   calculateLateFeeAmount,
+  scaleComponents,
 } from '../utils/feeCalculations.js';
 
 test('sums only non-optional components', () => {
@@ -65,4 +66,21 @@ test('calculateLateFeeAmount flat type returns the flat value', () => {
 test('calculateLateFeeAmount percentage type computes and rounds', () => {
   expect(calculateLateFeeAmount({ type: 'percentage', value: 5, baseAmount: 5000 })).toBe(250);
   expect(calculateLateFeeAmount({ type: 'percentage', value: 3.33, baseAmount: 1000 })).toBe(33);
+});
+
+test('scaleComponents with no adjustment returns amounts unchanged', () => {
+  expect(scaleComponents([{ label: 'T', amount: 1000 }])).toEqual([{ label: 'T', amount: 1000 }]);
+});
+
+test('scaleComponents applies a positive percentage adjustment and rounds', () => {
+  expect(scaleComponents([{ label: 'T', amount: 1000 }], 10)).toEqual([
+    { label: 'T', amount: 1100 },
+  ]);
+  expect(scaleComponents([{ label: 'T', amount: 333 }], 10)).toEqual([{ label: 'T', amount: 366 }]);
+});
+
+test('scaleComponents applies a negative percentage adjustment', () => {
+  expect(scaleComponents([{ label: 'T', amount: 1000 }], -10)).toEqual([
+    { label: 'T', amount: 900 },
+  ]);
 });

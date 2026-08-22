@@ -19,3 +19,8 @@ export function calculateLateFeeAmount({ type, value, baseAmount }) {
   if (type === 'percentage') return Math.round((baseAmount * value) / 100);
   return value; // flat
 }
+
+export function scaleComponents(components, adjustmentPercent = 0) {
+  const factor = 1 + adjustmentPercent / 100;
+  return components.map((c) => ({ ...c, amount: Math.round(c.amount * factor) }));
+}
