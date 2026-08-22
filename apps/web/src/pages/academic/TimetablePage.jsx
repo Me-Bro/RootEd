@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api.js';
+import { cn } from '../../lib/utils.js';
 import { Button } from '../../components/ui/Button.jsx';
+import { Badge } from '../../components/ui/Badge.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import {
   Dialog,
@@ -12,13 +15,20 @@ import {
 } from '../../components/ui/dialog.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
+import { DaySlotList } from '../../components/timetable/DaySlotList.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
 import { useAuth } from '../../contexts/useAuth.js';
+import { isCurrentPeriodCell } from '../../utils/scheduleHighlight.js';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const PERIODS = [1, 2, 3, 4, 5, 6, 7, 8];
 const DAY_TO_NUMBER = { Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5 };
 const EMPTY_FORM = { teacherId: '', subjectId: '', startTime: '', endTime: '', room: '' };
+
+function defaultActiveDay() {
+  const today = new Date().getDay(); // 0=Sun..6=Sat, matches dayOfWeek 1-5 for Mon-Fri
+  return today >= 1 && today <= 5 ? today : 1;
+}
 
 function EntryModal({ open, onOpenChange, sectionId, yearId, day, period, entry }) {
   const queryClient = useQueryClient();
@@ -233,10 +243,12 @@ export default function TimetablePage() {
   const { user } = useAuth();
   const isAdmin = (user?.permissions ?? []).includes('tenant:admin');
 
-  const [sectionId, setSectionId] = useState('');
-  const [yearId, setYearId] = useState('');
+  const [searchParams] = useSearchParams();
+  const [sectionId, setSectionId] = useState(() => searchParams.get('sectionId') || '');
+  const [yearId, setYearId] = useState(() => searchParams.get('yearId') || '');
   const [entryCell, setEntryCell] = useState(null);
   const [copyOpen, setCopyOpen] = useState(false);
+  const [activeDay, setActiveDay] = useState(defaultActiveDay);
 
   const { data: years = [] } = useQuery({
     queryKey: ['academic-years'],
@@ -282,9 +294,17 @@ export default function TimetablePage() {
     return timetable.find((e) => e.dayOfWeek === DAY_TO_NUMBER[day] && e.periodNumber === period);
   }
 
+  // Mobile day-chip view (docs/mobile-ui/07-timetable-approved.html §3) — day
+  // chips replace the grid; the desktop grid (and its per-slot editing) is
+  // unchanged and still renders at md+ widths.
+  const daySlots = timetable
+    .filter((e) => e.dayOfWeek === activeDay)
+    .sort((a, b) => a.periodNumber - b.periodNumber);
+  const isNowFn = (slot) => isCurrentPeriodCell(DAYS[activeDay - 1], slot);
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <PageHeader title="Timetable" />
         {sectionId && yearId && isAdmin && (
           <div className="flex items-center gap-2">
@@ -332,16 +352,9 @@ export default function TimetablePage() {
           ))}
         </select>
         {sectionId && yearId && (
-          <span
-            className={
-              'rounded-full px-2.5 py-0.5 text-xs font-medium ' +
-              (published
-                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200'
-                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200')
-            }
-          >
+          <Badge variant={published ? 'success' : 'warning'}>
             {published ? 'Published' : 'Draft'}
-          </span>
+          </Badge>
         )}
       </div>
 
@@ -352,79 +365,119 @@ export default function TimetablePage() {
       )}
 
       {sectionId && yearId && (
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-sm border-collapse">
-            <thead className="bg-muted/50">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground w-16">
-                  Period
-                </th>
-                {DAYS.map((d) => (
-                  <th key={d} className="px-4 py-3 text-left font-medium text-muted-foreground">
-                    {d}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {isLoading ? (
+        <>
+          {/* Mobile: day chips + vertical period list (approved mock 2) — read-only, zero
+              horizontal scroll. Editing stays on the desktop grid below. */}
+          <div className="flex flex-col gap-3 md:hidden">
+            <div
+              role="tablist"
+              aria-label="Day of week"
+              className="grid grid-cols-5 gap-1 rounded-lg bg-muted p-1"
+            >
+              {DAYS.map((day, idx) => {
+                const dayNum = idx + 1;
+                const active = activeDay === dayNum;
+                return (
+                  <button
+                    key={day}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setActiveDay(dayNum)}
+                    className={cn(
+                      'rounded-md px-2 py-1.5 text-xs font-medium transition-colors',
+                      active
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {day.slice(0, 3)}
+                  </button>
+                );
+              })}
+            </div>
+            {isLoading ? (
+              <p className="text-sm text-muted-foreground">Loading…</p>
+            ) : (
+              <DaySlotList slots={daySlots} activeDay={activeDay} isNowFn={isNowFn} />
+            )}
+          </div>
+
+          {/* Desktop: 8x5 grid, unchanged — per-slot add/edit/remove for admins. */}
+          <div className="hidden overflow-x-auto rounded-lg border border-border md:block">
+            <table className="w-full text-sm border-collapse">
+              <thead className="bg-muted/50">
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
-                    Loading…
-                  </td>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground w-16">
+                    Period
+                  </th>
+                  {DAYS.map((d) => (
+                    <th key={d} className="px-4 py-3 text-left font-medium text-muted-foreground">
+                      {d}
+                    </th>
+                  ))}
                 </tr>
-              ) : (
-                PERIODS.map((period) => (
-                  <tr key={period} className="bg-card">
-                    <td className="px-4 py-3 font-medium text-muted-foreground">{period}</td>
-                    {DAYS.map((day) => {
-                      const entry = cellEntry(day, period);
-                      return (
-                        <td key={day} className="px-4 py-3 border-l border-border">
-                          {entry ? (
-                            <div className="flex items-start justify-between gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setEntryCell({ day, period, entry })}
-                                className="text-left"
-                                title="Edit"
-                              >
-                                <p className="font-medium text-xs">
-                                  {entry.subjectId?.name || '—'}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {entry.teacher?.firstName} {entry.teacher?.lastName}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {entry.startTime}–{entry.endTime}
-                                  {entry.room ? ` · ${entry.room}` : ''}
-                                </p>
-                              </button>
-                              <button
-                                onClick={() => removeMutation.mutate(entry._id)}
-                                className="text-destructive/70 hover:text-destructive text-xs shrink-0"
-                                title="Remove"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setEntryCell({ day, period })}
-                              className="text-primary/70 hover:text-primary text-xs font-medium"
-                            >
-                              + Add
-                            </button>
-                          )}
-                        </td>
-                      );
-                    })}
+              </thead>
+              <tbody className="divide-y divide-border">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">
+                      Loading…
+                    </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : (
+                  PERIODS.map((period) => (
+                    <tr key={period} className="bg-card">
+                      <td className="px-4 py-3 font-medium text-muted-foreground">{period}</td>
+                      {DAYS.map((day) => {
+                        const entry = cellEntry(day, period);
+                        return (
+                          <td key={day} className="px-4 py-3 border-l border-border">
+                            {entry ? (
+                              <div className="flex items-start justify-between gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setEntryCell({ day, period, entry })}
+                                  className="text-left"
+                                  title="Edit"
+                                >
+                                  <p className="font-medium text-xs">
+                                    {entry.subjectId?.name || '—'}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {entry.teacher?.firstName} {entry.teacher?.lastName}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {entry.startTime}–{entry.endTime}
+                                    {entry.room ? ` · ${entry.room}` : ''}
+                                  </p>
+                                </button>
+                                <button
+                                  onClick={() => removeMutation.mutate(entry._id)}
+                                  className="text-destructive/70 hover:text-destructive text-xs shrink-0"
+                                  title="Remove"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setEntryCell({ day, period })}
+                                className="text-primary/70 hover:text-primary text-xs font-medium"
+                              >
+                                + Add
+                              </button>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       <EntryModal

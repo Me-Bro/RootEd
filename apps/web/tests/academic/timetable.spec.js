@@ -23,6 +23,10 @@ async function fillEntryForm(page, { teacherName, subjectName, startTime, endTim
   if (room) await page.getByLabel('Room (optional)').fill(room);
 }
 
+// 2025-06-02 is a Monday, inside the seeded 2025-26 academic year and within
+// Alice Smith's Monday/period-1 Mathematics slot (09:00-09:45) for section A.
+const MONDAY_DURING_MATH = '2025-06-02T09:15:00';
+
 test.describe('Timetable page', () => {
   test.use({ storageState: AUTH_STATES.tenant_admin });
 
@@ -137,6 +141,48 @@ test.describe('Timetable page', () => {
 
     await page.getByRole('button', { name: 'Unpublish' }).click();
     await expect(page.getByText('Draft')).toBeVisible({ timeout: 8_000 });
+  });
+
+  test('shows day chips with full names and no horizontal-scroll grid on narrow viewports', async ({
+    page,
+  }) => {
+    const { academicYear, section } = getTestIds();
+    // Tuesday/period-1 for section A (Science, Alice Smith, 09:00-09:45, no
+    // room) — untouched by any other test in this file, so safe to assert on.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/academic/timetable?sectionId=${section._id}&yearId=${academicYear._id}`);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.locator('table')).toBeHidden();
+    await expect(page.getByRole('tablist', { name: 'Day of week' })).toBeVisible();
+
+    await page.getByRole('tab', { name: 'Tue' }).click();
+    await expect(page.getByText('Science')).toBeVisible();
+    await expect(page.getByText('Alice Smith')).toBeVisible();
+    await expect(page.getByText('09:00')).toBeVisible();
+  });
+
+  test('shows an empty state for a day with no periods scheduled', async ({ page }) => {
+    const { academicYear, section } = getTestIds();
+    // Wednesday has no seeded entries for section A in any test in this file.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/academic/timetable?sectionId=${section._id}&yearId=${academicYear._id}`);
+    await page.waitForLoadState('networkidle');
+
+    await page.getByRole('tab', { name: 'Wed' }).click();
+    await expect(page.getByText('No classes scheduled')).toBeVisible();
+  });
+
+  test('highlights the current period on mobile when viewing today', async ({ page }) => {
+    const { academicYear, section } = getTestIds();
+    await page.clock.install({ time: new Date(MONDAY_DURING_MATH) });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/academic/timetable?sectionId=${section._id}&yearId=${academicYear._id}`);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('tab', { name: 'Mon' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByText('Mathematics')).toBeVisible();
+    await expect(page.getByText('now', { exact: true })).toBeVisible();
   });
 });
 
