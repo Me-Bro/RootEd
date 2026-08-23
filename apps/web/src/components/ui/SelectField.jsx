@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -15,11 +16,12 @@ export function SelectField({
   id,
   value,
   onValueChange,
-  placeholder = 'Select…',
+  placeholder,
   className,
   children,
   disabled,
 }) {
+  const { t } = useTranslation();
   const fieldId = id ?? (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
 
   return (
@@ -27,7 +29,7 @@ export function SelectField({
       {label && <Label htmlFor={fieldId}>{label}</Label>}
       <Select value={value} onValueChange={onValueChange} disabled={disabled}>
         <SelectTrigger id={fieldId} className="w-full h-9">
-          <SelectValue placeholder={placeholder} />
+          <SelectValue placeholder={placeholder ?? t('common.selectPlaceholder')} />
         </SelectTrigger>
         <SelectContent>{children}</SelectContent>
       </Select>

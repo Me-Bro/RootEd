@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils.js';
 
 /**
@@ -6,12 +7,16 @@ import { cn } from '../../lib/utils.js';
  * from the caller — this component only renders what it's given.
  */
 export default function DefaulterRing({ classAveragePct, thresholdPct, defaulterCount }) {
+  const { t } = useTranslation();
   const hasData = classAveragePct !== null && classAveragePct !== undefined;
   const ringPct = hasData ? classAveragePct : 0;
   const message =
     defaulterCount === 0
-      ? `0 below ${thresholdPct}% — nobody to call today`
-      : `${defaulterCount} below ${thresholdPct}%`;
+      ? t('academic.attendanceReport.noneBelowThreshold', { pct: thresholdPct })
+      : t('academic.attendanceReport.countBelowThreshold', {
+          count: defaulterCount,
+          pct: thresholdPct,
+        });
 
   return (
     <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-4">
@@ -21,7 +26,11 @@ export default function DefaulterRing({ classAveragePct, thresholdPct, defaulter
           background: `conic-gradient(var(--primary) ${ringPct}%, var(--border) 0)`,
         }}
         role="img"
-        aria-label={hasData ? `Class average ${classAveragePct}%` : 'No attendance records yet'}
+        aria-label={
+          hasData
+            ? t('academic.attendanceReport.classAverageAria', { pct: classAveragePct })
+            : t('academic.attendanceReport.noRecordsYetAria')
+        }
       >
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-card text-sm font-bold text-foreground">
           {hasData ? `${classAveragePct}%` : '—'}
@@ -37,7 +46,7 @@ export default function DefaulterRing({ classAveragePct, thresholdPct, defaulter
           {message}
         </p>
         <p className="text-xs text-muted-foreground">
-          Sorted worst first · threshold {thresholdPct}%
+          {t('academic.attendanceReport.sortedWorstFirst', { pct: thresholdPct })}
         </p>
       </div>
     </div>

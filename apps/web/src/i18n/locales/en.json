@@ -67,6 +67,8 @@
     "subject": "Subject",
     "allYears": "All Years",
     "allClasses": "All Classes",
+    "selectPlaceholder": "Select…",
+    "noRecordsFound": "No records found",
     "weekdays": {
       "monday": "Monday",
       "tuesday": "Tuesday",
@@ -94,6 +96,9 @@
     "columnTime": "Time"
   },
   "academic": {
+    "shared": {
+      "searchPlaceholder": "Search name or admission no."
+    },
     "assessmentTypes": {
       "quiz": "Quiz",
       "midterm": "Midterm",
@@ -191,7 +196,30 @@
       "saveOfTotal": "Save · {{marked}} of {{total}}",
       "secondDayAbsent": "2nd day absent",
       "late": "Late",
-      "excused": "Excused"
+      "excused": "Excused",
+      "filter": {
+        "all": "All",
+        "unmarked": "Unmarked",
+        "atRisk": "At-risk"
+      },
+      "filterAriaLabel": "Filter students",
+      "markPresentAria": "Mark present",
+      "markAbsentAria": "Mark absent",
+      "moreStatusOptionsAria": "More status options: late or excused",
+      "stillUnmarked_one": "{{count}} student still unmarked",
+      "stillUnmarked_other": "{{count}} students still unmarked",
+      "stillUnmarkedDescription": "Nothing is assumed for these — choose Present or Absent, or mark the rest present in one tap.",
+      "markAllPresent_one": "⚡ Mark all {{count}} present",
+      "markAllPresent_other": "⚡ Mark all {{count}} present",
+      "keepMarkingManually": "Keep marking manually",
+      "markedPresentSuffix_one": "student marked present",
+      "markedPresentSuffix_other": "students marked present",
+      "undo": "UNDO",
+      "sort": {
+        "name": "Name (A–Z)",
+        "admissionNo": "Admission no.",
+        "attendancePct": "Attendance % (low→high)"
+      }
     },
     "attendanceReport": {
       "title": "Attendance Report",
@@ -206,7 +234,26 @@
       "retrying": "Retrying…",
       "retry": "Retry",
       "noActiveStudents": "No active students in this section",
-      "exportCsv": "Export CSV"
+      "exportCsv": "Export CSV",
+      "cardTitle": "Attendance Report",
+      "noneBelowThreshold": "0 below {{pct}}% — nobody to call today",
+      "countBelowThreshold": "{{count}} below {{pct}}%",
+      "cardThresholdLine": "Threshold {{pct}}% · {{count}} students",
+      "cardMoreCount": "+ {{count}} more",
+      "cardFooter": "RootEd · Attendance Report",
+      "renderImageFailed": "Could not render summary image",
+      "shareTitle": "Attendance summary",
+      "shareText": "Class average {{avg}}% · {{count}} below {{pct}}%",
+      "imageDownloaded": "Summary image downloaded",
+      "shareImageFailed": "Could not create the share image",
+      "preparing": "Preparing…",
+      "shareSummaryCard": "Share summary card",
+      "noHistory": "no history",
+      "call": "Call",
+      "addContact": "Add contact",
+      "classAverageAria": "Class average {{pct}}%",
+      "noRecordsYetAria": "No attendance records yet",
+      "sortedWorstFirst": "Sorted worst first · threshold {{pct}}%"
     },
     "grades": {
       "title": "Grades",

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '../ui/sheet.jsx';
 import { Button } from '../ui/Button.jsx';
 import { cn } from '../../lib/utils.js';
@@ -29,15 +30,15 @@ export default function UnmarkedGuardSheet({
   onMarkAllPresent,
   onClose,
 }) {
+  const { t } = useTranslation();
   return (
     <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
       <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{unmarkedRows.length} students still unmarked</SheetTitle>
-          <SheetDescription>
-            Nothing is assumed for these — choose Present or Absent, or mark the rest present in one
-            tap.
-          </SheetDescription>
+          <SheetTitle>
+            {t('academic.attendance.stillUnmarked', { count: unmarkedRows.length })}
+          </SheetTitle>
+          <SheetDescription>{t('academic.attendance.stillUnmarkedDescription')}</SheetDescription>
         </SheetHeader>
         <div className="flex flex-col gap-2 px-4">
           {unmarkedRows.map((r) => (
@@ -65,9 +66,11 @@ export default function UnmarkedGuardSheet({
           ))}
         </div>
         <div className="flex flex-col gap-2 px-4 pb-4">
-          <Button onClick={onMarkAllPresent}>⚡ Mark all {unmarkedRows.length} present</Button>
+          <Button onClick={onMarkAllPresent}>
+            {t('academic.attendance.markAllPresent', { count: unmarkedRows.length })}
+          </Button>
           <Button variant="outline" onClick={onClose}>
-            Keep marking manually
+            {t('academic.attendance.keepMarkingManually')}
           </Button>
         </div>
       </SheetContent>

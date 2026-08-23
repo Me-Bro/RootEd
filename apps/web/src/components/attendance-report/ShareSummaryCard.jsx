@@ -1,13 +1,14 @@
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Share2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/Button.jsx';
 
 const CARD_WIDTH = 720;
 const CARD_HEIGHT = 480;
 const MAX_ROWS = 8;
 
-function drawCard(canvas, report) {
+function drawCard(canvas, report, t) {
   canvas.width = CARD_WIDTH;
   canvas.height = CARD_HEIGHT;
   const ctx = canvas.getContext('2d');
@@ -20,7 +21,7 @@ function drawCard(canvas, report) {
 
   ctx.fillStyle = '#e2e7ee';
   ctx.font = '600 26px system-ui, sans-serif';
-  ctx.fillText('Attendance Report', 32, 52);
+  ctx.fillText(t('academic.attendanceReport.cardTitle'), 32, 52);
 
   ctx.fillStyle = '#8a93a3';
   ctx.font = '400 15px system-ui, sans-serif';
@@ -55,13 +56,23 @@ function drawCard(canvas, report) {
   ctx.font = '600 20px system-ui, sans-serif';
   const headline =
     defaulters.length === 0
-      ? `0 below ${report.thresholdPct}% — nobody to call today`
-      : `${defaulters.length} below ${report.thresholdPct}%`;
+      ? t('academic.attendanceReport.noneBelowThreshold', { pct: report.thresholdPct })
+      : t('academic.attendanceReport.countBelowThreshold', {
+          count: defaulters.length,
+          pct: report.thresholdPct,
+        });
   ctx.fillText(headline, 190, 150);
 
   ctx.fillStyle = '#8a93a3';
   ctx.font = '400 14px system-ui, sans-serif';
-  ctx.fillText(`Threshold ${report.thresholdPct}% · ${report.students.length} students`, 190, 174);
+  ctx.fillText(
+    t('academic.attendanceReport.cardThresholdLine', {
+      pct: report.thresholdPct,
+      count: report.students.length,
+    }),
+    190,
+    174
+  );
 
   // Defaulter list
   let y = 250;
@@ -79,12 +90,16 @@ function drawCard(canvas, report) {
   if (defaulters.length > shown.length) {
     ctx.fillStyle = '#8a93a3';
     ctx.font = '400 14px system-ui, sans-serif';
-    ctx.fillText(`+ ${defaulters.length - shown.length} more`, 32, y);
+    ctx.fillText(
+      t('academic.attendanceReport.cardMoreCount', { count: defaulters.length - shown.length }),
+      32,
+      y
+    );
   }
 
   ctx.fillStyle = '#6e7a8a';
   ctx.font = '400 12px system-ui, sans-serif';
-  ctx.fillText('RootEd · Attendance Report', 32, CARD_HEIGHT - 20);
+  ctx.fillText(t('academic.attendanceReport.cardFooter'), 32, CARD_HEIGHT - 20);
 
   return canvas;
 }
@@ -96,6 +111,7 @@ function drawCard(canvas, report) {
  * sharing) isn't available.
  */
 export default function ShareSummaryCard({ report }) {
+  const { t } = useTranslation();
   const canvasRef = useRef(null);
   const [busy, setBusy] = useState(false);
 
@@ -103,20 +119,24 @@ export default function ShareSummaryCard({ report }) {
     setBusy(true);
     try {
       if (!canvasRef.current) canvasRef.current = document.createElement('canvas');
-      const canvas = drawCard(canvasRef.current, report);
+      const canvas = drawCard(canvasRef.current, report, t);
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
-      if (!blob) throw new Error('Could not render summary image');
+      if (!blob) throw new Error(t('academic.attendanceReport.renderImageFailed'));
 
       const file = new File([blob], 'attendance-summary.png', { type: 'image/png' });
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: 'Attendance summary',
+          title: t('academic.attendanceReport.shareTitle'),
           text:
             report.classAveragePct === null
-              ? 'Attendance report'
-              : `Class average ${report.classAveragePct}% · ${report.students.filter((s) => s.isDefaulter).length} below ${report.thresholdPct}%`,
+              ? t('academic.attendanceReport.title')
+              : t('academic.attendanceReport.shareText', {
+                  avg: report.classAveragePct,
+                  count: report.students.filter((s) => s.isDefaulter).length,
+                  pct: report.thresholdPct,
+                }),
         });
       } else {
         const url = URL.createObjectURL(blob);
@@ -125,11 +145,11 @@ export default function ShareSummaryCard({ report }) {
         a.download = 'attendance-summary.png';
         a.click();
         URL.revokeObjectURL(url);
-        toast.success('Summary image downloaded');
+        toast.success(t('academic.attendanceReport.imageDownloaded'));
       }
     } catch (err) {
       if (err?.name !== 'AbortError') {
-        toast.error('Could not create the share image');
+        toast.error(t('academic.attendanceReport.shareImageFailed'));
       }
     } finally {
       setBusy(false);
@@ -139,7 +159,9 @@ export default function ShareSummaryCard({ report }) {
   return (
     <Button className="w-full gap-1.5" onClick={handleShare} disabled={busy}>
       <Share2 size={14} />
-      {busy ? 'Preparing…' : 'Share summary card'}
+      {busy
+        ? t('academic.attendanceReport.preparing')
+        : t('academic.attendanceReport.shareSummaryCard')}
     </Button>
   );
 }

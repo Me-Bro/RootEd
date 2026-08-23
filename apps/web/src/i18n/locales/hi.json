@@ -67,6 +67,8 @@
     "subject": "विषय",
     "allYears": "सभी वर्ष",
     "allClasses": "सभी कक्षाएं",
+    "selectPlaceholder": "चुनें…",
+    "noRecordsFound": "कोई रिकॉर्ड नहीं मिला",
     "weekdays": {
       "monday": "सोमवार",
       "tuesday": "मंगलवार",
@@ -94,6 +96,9 @@
     "columnTime": "समय"
   },
   "academic": {
+    "shared": {
+      "searchPlaceholder": "नाम या प्रवेश क्रमांक से खोजें"
+    },
     "assessmentTypes": {
       "quiz": "क्विज़",
       "midterm": "मिडटर्म",
@@ -191,7 +196,30 @@
       "saveOfTotal": "सहेजें · {{total}} में से {{marked}}",
       "secondDayAbsent": "दूसरा दिन अनुपस्थित",
       "late": "देर से",
-      "excused": "क्षमा प्राप्त"
+      "excused": "क्षमा प्राप्त",
+      "filter": {
+        "all": "सभी",
+        "unmarked": "अचिह्नित",
+        "atRisk": "जोखिम में"
+      },
+      "filterAriaLabel": "छात्रों को फ़िल्टर करें",
+      "markPresentAria": "उपस्थित चिह्नित करें",
+      "markAbsentAria": "अनुपस्थित चिह्नित करें",
+      "moreStatusOptionsAria": "अधिक स्थिति विकल्प: देर से या क्षमा प्राप्त",
+      "stillUnmarked_one": "{{count}} छात्र अभी भी अचिह्नित",
+      "stillUnmarked_other": "{{count}} छात्र अभी भी अचिह्नित",
+      "stillUnmarkedDescription": "इनके लिए कुछ भी मान नहीं लिया गया है — उपस्थित या अनुपस्थित चुनें, या एक टैप में बाकी को उपस्थित चिह्नित करें।",
+      "markAllPresent_one": "⚡ सभी {{count}} को उपस्थित चिह्नित करें",
+      "markAllPresent_other": "⚡ सभी {{count}} को उपस्थित चिह्नित करें",
+      "keepMarkingManually": "मैन्युअल रूप से चिह्नित करना जारी रखें",
+      "markedPresentSuffix_one": "छात्र उपस्थित चिह्नित",
+      "markedPresentSuffix_other": "छात्र उपस्थित चिह्नित",
+      "undo": "पूर्ववत करें",
+      "sort": {
+        "name": "नाम (A–Z)",
+        "admissionNo": "प्रवेश क्रमांक",
+        "attendancePct": "उपस्थिति % (कम→अधिक)"
+      }
     },
     "attendanceReport": {
       "title": "उपस्थिति रिपोर्ट",
@@ -206,7 +234,26 @@
       "retrying": "पुनः प्रयास हो रहा है…",
       "retry": "पुनः प्रयास करें",
       "noActiveStudents": "इस सेक्शन में कोई सक्रिय छात्र नहीं",
-      "exportCsv": "CSV निर्यात करें"
+      "exportCsv": "CSV निर्यात करें",
+      "cardTitle": "उपस्थिति रिपोर्ट",
+      "noneBelowThreshold": "0 {{pct}}% से कम — आज किसी को कॉल नहीं करना",
+      "countBelowThreshold": "{{count}} {{pct}}% से कम",
+      "cardThresholdLine": "सीमा {{pct}}% · {{count}} छात्र",
+      "cardMoreCount": "+ {{count}} और",
+      "cardFooter": "RootEd · उपस्थिति रिपोर्ट",
+      "renderImageFailed": "सारांश छवि रेंडर नहीं हो सकी",
+      "shareTitle": "उपस्थिति सारांश",
+      "shareText": "कक्षा औसत {{avg}}% · {{count}} {{pct}}% से कम",
+      "imageDownloaded": "सारांश छवि डाउनलोड हो गई",
+      "shareImageFailed": "शेयर छवि नहीं बन सकी",
+      "preparing": "तैयार हो रहा है…",
+      "shareSummaryCard": "सारांश कार्ड शेयर करें",
+      "noHistory": "कोई इतिहास नहीं",
+      "call": "कॉल करें",
+      "addContact": "संपर्क जोड़ें",
+      "classAverageAria": "कक्षा औसत {{pct}}%",
+      "noRecordsYetAria": "अभी तक कोई उपस्थिति रिकॉर्ड नहीं",
+      "sortedWorstFirst": "सबसे खराब पहले क्रमबद्ध · सीमा {{pct}}%"
     },
     "grades": {
       "title": "ग्रेड",
