@@ -19,3 +19,9 @@ apps/web/tests/seed/.snapshot/
 apps/web/tests/seed/.test-ids.json
 
 .claude/settings.local.json
+
+# Private local notes/docs, not for the repo
+private-doc/
+
+# Locally-generated TLS material — never commit private keys
+nginx/certs/

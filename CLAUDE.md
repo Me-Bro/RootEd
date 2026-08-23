@@ -9,13 +9,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pnpm dev:api          # Express API on :3001 (node --watch)
 pnpm dev:web          # Vite frontend on :5173
 
-# Full stack via Docker (production-like: built images, nginx with TLS)
+# "prod mode" — full stack via Docker, self-managed TLS (built images, nginx
+# terminates TLS itself using certs in nginx/certs/). Use when Claude is asked
+# for "prod mode" WITHOUT "tunnel" — do not use this on a box that's actually
+# served through the Cloudflare Tunnel (see "tunnel mode" below), since its
+# HTTP->HTTPS redirect loops forever behind a tunnel that only ever connects
+# on port 80.
 docker compose up -d
 
-# Full stack with hot reload (dev — API node --watch + Vite HMR, plain-HTTP nginx)
+# "tunnel mode" — prod stack behind the Cloudflare Tunnel (this is how the
+# live ruralrootcloud.com deployment actually runs). Plain-HTTP nginx (TLS
+# terminates at the Cloudflare edge), APP_DOMAIN/VITE_APP_DOMAIN overridden to
+# ruralrootcloud.com. Use whenever the user says "tunnel mode" or mentions
+# Cloudflare/the tunnel — see docker-compose.tunnel.yml's header comment for
+# the tunnel UUID and DNS-onboarding gotcha.
+docker compose -f docker-compose.yml -f docker-compose.tunnel.yml up -d --build
+
+# "dev mode" — full stack with hot reload (API node --watch + Vite HMR, plain-HTTP nginx)
 docker compose -f docker-compose.dev.yml up
 
-# Fully local, no nginx/TLS at all (API :3001, Web :5173 direct)
+# "local mode" — fully local, no nginx/TLS at all (API :3001, Web :5173 direct)
 docker compose -f docker-compose.local.yml up --build
 
 # Build all
