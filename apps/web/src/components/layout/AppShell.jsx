@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Building2,
   ScrollText,
+  Activity,
   ToggleLeft,
   LogOut,
   Menu,
@@ -57,6 +58,7 @@ function getNavGroups(t, orgType) {
       items: [
         { to: '/tenants', label: t('nav.tenants'), icon: Building2 },
         { to: '/audit', label: t('nav.audit'), icon: ScrollText },
+        { to: '/request-logs', label: t('nav.requestLogs'), icon: Activity },
         { to: '/flags', label: t('nav.flags'), icon: ToggleLeft },
       ],
     },

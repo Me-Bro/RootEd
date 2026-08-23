@@ -20,8 +20,10 @@ apps/web/tests/seed/.test-ids.json
 
 .claude/settings.local.json
 
-# Private local notes/docs, not for the repo
-private-doc/
+# Private local notes/docs, not for the repo — keep the directory itself in
+# git (so it exists after a fresh clone) but ignore everything inside it
+private-doc/*
+!private-doc/.gitkeep
 
 # Locally-generated TLS material — never commit private keys
 nginx/certs/

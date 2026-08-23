@@ -5,6 +5,7 @@ import { authenticate, requireSystemRole } from '../middleware/authenticate.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { Tenant } from '../models/Tenant.js';
 import { AuditLog } from '../models/AuditLog.js';
+import { RequestLog } from '../models/RequestLog.js';
 import { TenantMembership } from '../models/TenantMembership.js';
 import {
   createTenant,
@@ -229,6 +230,37 @@ router.get('/audit', async (req, res, next) => {
         .limit(limit)
         .lean(),
       AuditLog.countDocuments(filter),
+    ]);
+
+    res.json({ logs, total, page, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/request-logs', async (req, res, next) => {
+  try {
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Number(req.query.limit) || 50);
+    const filter = {};
+    if (req.query.tenantId) filter.tenantId = req.query.tenantId;
+    if (req.query.module) filter.module = req.query.module;
+    if (req.query.ip) filter.ip = req.query.ip;
+    if (req.query.userEmail) filter.userEmail = req.query.userEmail;
+    if (req.query.statusCode) filter.statusCode = Number(req.query.statusCode);
+    if (req.query.from || req.query.to) {
+      filter.at = {};
+      if (req.query.from) filter.at.$gte = new Date(req.query.from);
+      if (req.query.to) filter.at.$lte = new Date(req.query.to);
+    }
+
+    const [logs, total] = await Promise.all([
+      RequestLog.find(filter)
+        .sort({ at: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      RequestLog.countDocuments(filter),
     ]);
 
     res.json({ logs, total, page, pages: Math.ceil(total / limit) });
