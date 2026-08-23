@@ -990,6 +990,37 @@
       "tabMembers": "सदस्य",
       "tabBilling": "बिलिंग",
       "tabAuditLog": "ऑडिट लॉग"
+    },
+    "audit": {
+      "tenantLabel": "टेनेंट",
+      "allTenants": "सभी टेनेंट",
+      "actionLabel": "कार्रवाई",
+      "fromLabel": "से",
+      "toLabel": "तक",
+      "tableTenant": "टेनेंट",
+      "loadFailed": "ऑडिट लॉग लोड करने में विफल",
+      "noneFound": "कोई ऑडिट प्रविष्टि नहीं मिली",
+      "previous": "पिछला",
+      "next": "अगला",
+      "pageOfTotal": "पृष्ठ {{page}} / {{total}}"
+    },
+    "flags": {
+      "newFlag": "नया फ़्लैग",
+      "keyLabel": "की",
+      "descriptionLabel": "विवरण",
+      "enabledLabel": "सक्षम",
+      "creating": "बनाया जा रहा है…",
+      "createFailed": "फ़्लैग सहेजने में विफल",
+      "loadFailed": "फ़्लैग लोड करने में विफल",
+      "emptyTitle": "अभी तक कोई फ़ीचर फ़्लैग नहीं",
+      "emptyDescription": "किसी विशेष रोलआउट के लिए फ़ीचर गेट करने हेतु एक बनाएं।",
+      "tableKey": "की",
+      "tableDescription": "विवरण",
+      "tableUpdatedAt": "अपडेट किया गया",
+      "enabled": "सक्षम",
+      "disabled": "अक्षम",
+      "enable": "सक्षम करें",
+      "disable": "अक्षम करें"
     }
   }
 }

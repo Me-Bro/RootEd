@@ -41,6 +41,7 @@ import { AttendanceRecord } from '../models/AttendanceRecord.js';
 import { FeeAssignment } from '../models/FeeAssignment.js';
 import { FeePayment } from '../models/FeePayment.js';
 import { FeeDiscount } from '../models/FeeDiscount.js';
+import { FeatureFlag } from '../models/FeatureFlag.js';
 import { hashPassword } from '../services/auth.service.js';
 
 const CLEAN = process.argv.includes('--clean');
@@ -1312,6 +1313,23 @@ async function run() {
   }
   inventoryItems.push(projector);
 
+  // ── Feature Flags ─────────────────────────────────────────────────────────
+  // One enabled, one disabled — exercises both toggle directions on the
+  // /flags admin page without an e2e run having to create its own fixture.
+  const featureFlagDefs = [
+    { key: 'seed-test-flag-on', enabled: true, description: 'Seeded flag (on)' },
+    { key: 'seed-test-flag-off', enabled: false, description: 'Seeded flag (off)' },
+  ];
+  const featureFlags = [];
+  for (const def of featureFlagDefs) {
+    let flag = await FeatureFlag.findOne({ key: def.key }).lean();
+    if (!flag) {
+      flag = await FeatureFlag.create(def);
+      flag = flag.toObject();
+    }
+    featureFlags.push(flag);
+  }
+
   await mongoose.disconnect();
 
   // Output seeded IDs as JSON for fixtures to consume
@@ -1445,6 +1463,11 @@ async function run() {
       studentId: waiveUiTargetAssignment.studentId.toString(),
     },
     inventoryItems: inventoryItems.map((i) => ({ _id: i._id.toString(), sku: i.sku })),
+    featureFlags: featureFlags.map((f) => ({
+      _id: f._id.toString(),
+      key: f.key,
+      enabled: f.enabled,
+    })),
   };
 
   // Write to disk so Playwright fixtures can read seeded IDs
