@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "test:e2e": "node node_modules/@playwright/test/cli.js test --project=e2e",
     "test:e2e:headed": "node node_modules/@playwright/test/cli.js test --project=e2e --headed",
+    "test:e2e:mobile": "node node_modules/@playwright/test/cli.js test --project=mobile",
     "test:e2e:ui": "node node_modules/@playwright/test/cli.js test --ui",
     "test:e2e:report": "node node_modules/@playwright/test/cli.js show-report",
     "test:axe": "node node_modules/@playwright/test/cli.js test --project=axe",

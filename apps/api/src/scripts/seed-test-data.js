@@ -42,6 +42,7 @@ import { FeeAssignment } from '../models/FeeAssignment.js';
 import { FeePayment } from '../models/FeePayment.js';
 import { FeeDiscount } from '../models/FeeDiscount.js';
 import { FeatureFlag } from '../models/FeatureFlag.js';
+import { AuditLog } from '../models/AuditLog.js';
 import { hashPassword } from '../services/auth.service.js';
 
 const CLEAN = process.argv.includes('--clean');
@@ -1330,6 +1331,44 @@ async function run() {
     featureFlags.push(flag);
   }
 
+  // ── Audit Logs ────────────────────────────────────────────────────────────
+  // Written directly (bypassing the BullMQ audit worker) so the /audit page
+  // has deterministic rows to filter/paginate without an e2e run first
+  // triggering a real mutation and waiting on async processing.
+  const auditLogDefs = [
+    {
+      action: 'seed-test-audit.tenant.suspended',
+      tenantId,
+      actorId: users.super_admin._id,
+      target: { model: 'Tenant', id: tenantId },
+      before: { status: 'active' },
+      after: { status: 'suspended' },
+    },
+    {
+      action: 'seed-test-audit.flag.toggled',
+      tenantId: null,
+      actorId: users.super_admin._id,
+      target: { model: 'FeatureFlag', id: featureFlags[0]._id },
+      before: { enabled: false },
+      after: { enabled: true },
+    },
+    {
+      action: 'seed-test-audit.student.created',
+      tenantId,
+      actorId: users.tenant_admin._id,
+      target: { model: 'Student', id: students[0]._id },
+    },
+  ];
+  const auditLogs = [];
+  for (const def of auditLogDefs) {
+    let log = await AuditLog.findOne({ action: def.action }).lean();
+    if (!log) {
+      log = await AuditLog.create(def);
+      log = log.toObject();
+    }
+    auditLogs.push(log);
+  }
+
   await mongoose.disconnect();
 
   // Output seeded IDs as JSON for fixtures to consume
@@ -1468,6 +1507,7 @@ async function run() {
       key: f.key,
       enabled: f.enabled,
     })),
+    auditLogs: auditLogs.map((l) => ({ _id: l._id.toString(), action: l.action })),
   };
 
   // Write to disk so Playwright fixtures can read seeded IDs
