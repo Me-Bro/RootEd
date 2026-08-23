@@ -549,6 +549,7 @@
       "previous": "Previous",
       "next": "Next",
       "pageOfTotal": "Page {{page}} of {{total}}",
+      "leaveTypeLabel": "Leave type",
       "datesLabel": "Dates",
       "dayCount_one": "{{count}} day",
       "dayCount_other": "{{count}} days",

@@ -549,6 +549,7 @@
       "previous": "पिछला",
       "next": "आगे",
       "pageOfTotal": "पृष्ठ {{page}} / {{total}}",
+      "leaveTypeLabel": "अवकाश प्रकार",
       "datesLabel": "तारीखें",
       "dayCount_one": "{{count}} दिन",
       "dayCount_other": "{{count}} दिन",

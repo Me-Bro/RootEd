@@ -70,7 +70,7 @@ export default function ApprovalQueueCard({ request, balance, onApprove, onRejec
 
         <dl className="flex flex-col gap-1.5 text-sm">
           <div className="flex justify-between gap-3">
-            <dt className="text-muted-foreground">{t('staff.leaves.leaveType')}</dt>
+            <dt className="text-muted-foreground">{t('staff.leaves.leaveTypeLabel')}</dt>
             <dd className="font-medium">{leaveType.name ?? '—'}</dd>
           </div>
           <div className="flex justify-between gap-3">
