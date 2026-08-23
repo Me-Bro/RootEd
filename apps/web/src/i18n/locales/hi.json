@@ -304,7 +304,12 @@
       "allStudentsMarked": "सभी छात्र चिह्नित",
       "unlockGrades": "ग्रेड अनलॉक करें",
       "lockGrades": "ग्रेड लॉक करें",
-      "saveGrades": "ग्रेड सहेजें"
+      "saveGrades": "ग्रेड सहेजें",
+      "typing": "टाइप हो रहा है…",
+      "markAbsentAria": "अनुपस्थित चिह्नित करें",
+      "backspaceAria": "बैकस्पेस",
+      "digitAria": "अंक {{digit}}",
+      "nextStudent": "अगला छात्र ›"
     },
     "gradeReport": {
       "title": "ग्रेड रिपोर्ट",
@@ -319,7 +324,10 @@
       "gradeBandCount_other": "ग्रेड {{band}} · {{count}} छात्र",
       "allStudentsCount": "सभी छात्र · {{count}}",
       "enterMarksDescription": "रिपोर्ट देखने के लिए इस टर्म के लिए अंक दर्ज करें।",
-      "noStudentsWithGrade": "ग्रेड {{band}} वाला कोई छात्र नहीं"
+      "noStudentsWithGrade": "ग्रेड {{band}} वाला कोई छात्र नहीं",
+      "distributionAriaLabel": "ग्रेड वितरण — छात्र सूची फ़िल्टर करने के लिए बार पर टैप करें",
+      "barAriaLabel_one": "ग्रेड {{band}}: {{count}} छात्र",
+      "barAriaLabel_other": "ग्रेड {{band}}: {{count}} छात्र"
     },
     "timetable": {
       "title": "समय सारणी",
@@ -340,6 +348,10 @@
       "endTime": "समाप्ति समय",
       "roomOptional": "कमरा (वैकल्पिक)",
       "roomPlaceholder": "उदा. कमरा 204",
+      "noClassesScheduled": "कोई कक्षा निर्धारित नहीं",
+      "noPeriodsScheduledDescription": "इस दिन के लिए कोई पीरियड निर्धारित नहीं है।",
+      "periodsAriaLabel": "चयनित दिन के पीरियड",
+      "now": "अभी",
       "updateEntryFailed": "प्रविष्टि अपडेट करने में विफल",
       "addEntryFailed": "प्रविष्टि जोड़ने में विफल",
       "editEntryTitle": "प्रविष्टि संपादित करें — {{day}}, पीरियड {{period}}",
@@ -387,7 +399,10 @@
       "loadingHistory": "इतिहास लोड हो रहा है…",
       "noHistoryEmpty": "इस दायरे के लिए अभी तक कोई रिपोर्ट कार्ड जनरेट नहीं हुआ।",
       "columnGenerated": "जनरेट किया गया",
-      "download": "डाउनलोड करें"
+      "download": "डाउनलोड करें",
+      "ringAriaLabel": "{{total}} में से {{completed}} रिपोर्ट कार्ड बने",
+      "ringStartingAria": "रिपोर्ट कार्ड जनरेशन शुरू हो रहा है",
+      "ringOfTotal": "{{total}} में से"
     }
   },
   "staff": {

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils.js';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'F'];
@@ -17,6 +18,7 @@ const BAR_COLOR = {
  * `bandFilter` state owned by GradeReportPage.
  */
 export default function DistributionBars({ distribution, activeFilter, onSelectBand }) {
+  const { t } = useTranslation();
   const counts = LETTERS.map((letter) => distribution?.[letter] ?? 0);
   const max = Math.max(...counts, 1);
 
@@ -24,7 +26,7 @@ export default function DistributionBars({ distribution, activeFilter, onSelectB
     <div
       className="flex items-end gap-2"
       role="group"
-      aria-label="Grade distribution — tap a bar to filter the student list"
+      aria-label={t('academic.gradeReport.distributionAriaLabel')}
     >
       {LETTERS.map((letter, i) => {
         const count = counts[i];
@@ -36,7 +38,7 @@ export default function DistributionBars({ distribution, activeFilter, onSelectB
             key={letter}
             type="button"
             aria-pressed={active}
-            aria-label={`Grade ${letter}: ${count} student${count === 1 ? '' : 's'}`}
+            aria-label={t('academic.gradeReport.barAriaLabel', { band: letter, count })}
             onClick={() => onSelectBand(letter)}
             className={cn(
               'flex flex-1 flex-col items-center gap-1.5 rounded-md py-1 transition-colors',

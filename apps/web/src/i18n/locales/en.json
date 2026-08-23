@@ -304,7 +304,12 @@
       "allStudentsMarked": "All students marked",
       "unlockGrades": "Unlock Grades",
       "lockGrades": "Lock Grades",
-      "saveGrades": "Save Grades"
+      "saveGrades": "Save Grades",
+      "typing": "typing…",
+      "markAbsentAria": "Mark absent",
+      "backspaceAria": "Backspace",
+      "digitAria": "Digit {{digit}}",
+      "nextStudent": "Next student ›"
     },
     "gradeReport": {
       "title": "Grade Report",
@@ -319,7 +324,10 @@
       "gradeBandCount_other": "Grade {{band}} · {{count}} students",
       "allStudentsCount": "All students · {{count}}",
       "enterMarksDescription": "Enter marks for this term to see the report.",
-      "noStudentsWithGrade": "No students with grade {{band}}"
+      "noStudentsWithGrade": "No students with grade {{band}}",
+      "distributionAriaLabel": "Grade distribution — tap a bar to filter the student list",
+      "barAriaLabel_one": "Grade {{band}}: {{count}} student",
+      "barAriaLabel_other": "Grade {{band}}: {{count}} students"
     },
     "timetable": {
       "title": "Timetable",
@@ -340,6 +348,10 @@
       "endTime": "End Time",
       "roomOptional": "Room (optional)",
       "roomPlaceholder": "e.g. Room 204",
+      "noClassesScheduled": "No classes scheduled",
+      "noPeriodsScheduledDescription": "There are no periods scheduled for this day.",
+      "periodsAriaLabel": "Periods for the selected day",
+      "now": "now",
       "updateEntryFailed": "Failed to update entry",
       "addEntryFailed": "Failed to add entry",
       "editEntryTitle": "Edit Entry — {{day}}, Period {{period}}",
@@ -387,7 +399,10 @@
       "loadingHistory": "Loading history…",
       "noHistoryEmpty": "No report cards generated yet for this scope.",
       "columnGenerated": "Generated",
-      "download": "Download"
+      "download": "Download",
+      "ringAriaLabel": "{{completed}} of {{total}} report cards built",
+      "ringStartingAria": "Report card generation starting",
+      "ringOfTotal": "of {{total}}"
     }
   },
   "staff": {

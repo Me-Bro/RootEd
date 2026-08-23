@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Badge } from '../ui/Badge.jsx';
 import { cn } from '../../lib/utils.js';
 
@@ -27,6 +28,7 @@ const GRADE_VARIANT = {
  * grades are locked.
  */
 export default function MarkRow({ student, score, letterGrade, focused, onSelect }) {
+  const { t } = useTranslation();
   const isAbsent = score === null;
 
   return (
@@ -49,7 +51,9 @@ export default function MarkRow({ student, score, letterGrade, focused, onSelect
         </p>
         <p className="truncate text-xs text-muted-foreground">
           {student.admissionNo}
-          {focused && <span className="ml-1.5 font-medium text-primary">typing…</span>}
+          {focused && (
+            <span className="ml-1.5 font-medium text-primary">{t('academic.grades.typing')}</span>
+          )}
         </p>
       </div>
       {isAbsent ? (
