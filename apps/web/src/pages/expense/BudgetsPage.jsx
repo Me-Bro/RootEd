@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
@@ -48,6 +49,7 @@ function UtilizationBar({ spent, cap }) {
 }
 
 function SetBudgetModal({ open, onOpenChange, costCenters }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
     costCenterId: '',
@@ -77,7 +79,7 @@ function SetBudgetModal({ open, onOpenChange, costCenters }) {
       });
       setError('');
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to set budget'),
+    onError: (err) => setError(err.response?.data?.error || t('expense.budgets.setFailed')),
   });
 
   const selectCls =
@@ -87,7 +89,7 @@ function SetBudgetModal({ open, onOpenChange, costCenters }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Set Budget</DialogTitle>
+          <DialogTitle>{t('expense.budgets.setBudgetTitle')}</DialogTitle>
         </DialogHeader>
         <form
           id="set-budget"
@@ -98,14 +100,14 @@ function SetBudgetModal({ open, onOpenChange, costCenters }) {
           className="flex flex-col gap-4"
         >
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Cost Center</label>
+            <label className="text-sm font-medium">{t('expense.budgets.costCenterLabel')}</label>
             <select
               value={form.costCenterId}
               onChange={update('costCenterId')}
               required
               className={selectCls}
             >
-              <option value="">— Select —</option>
+              <option value="">{t('expense.budgets.selectPlaceholder')}</option>
               {costCenters.map((c) => (
                 <option key={c._id} value={c._id}>
                   {c.name}
@@ -114,30 +116,36 @@ function SetBudgetModal({ open, onOpenChange, costCenters }) {
             </select>
           </div>
           <SelectField
-            label="Period"
+            label={t('expense.budgets.periodLabel')}
             value={form.period}
             onValueChange={(v) => setForm((f) => ({ ...f, period: v }))}
           >
-            <SelectItem value="monthly">Monthly</SelectItem>
-            <SelectItem value="annual">Annual</SelectItem>
+            <SelectItem value="monthly">{t('expense.budgets.periodMonthly')}</SelectItem>
+            <SelectItem value="annual">{t('expense.budgets.periodAnnual')}</SelectItem>
           </SelectField>
           <Input
-            label="Cap Amount (INR)"
+            label={t('expense.budgets.capAmountLabel')}
             type="number"
             value={form.cap}
             onChange={update('cap')}
             required
             min="1"
           />
-          <Input label="Year" type="number" value={form.year} onChange={update('year')} required />
+          <Input
+            label={t('expense.budgets.yearLabel')}
+            type="number"
+            value={form.year}
+            onChange={update('year')}
+            required
+          />
           {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="submit" form="set-budget" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Saving…' : 'Save Budget'}
+            {mutation.isPending ? t('common.saving') : t('expense.budgets.saveBudget')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -146,6 +154,7 @@ function SetBudgetModal({ open, onOpenChange, costCenters }) {
 }
 
 export default function BudgetsPage() {
+  const { t } = useTranslation();
   const [showSet, setShowSet] = useState(false);
   const [yearFilter, setYearFilter] = useState(String(new Date().getFullYear()));
 
@@ -183,12 +192,18 @@ export default function BudgetsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Budgets"
-        action={<Button onClick={() => setShowSet(true)}>Set Budget</Button>}
+        title={t('nav.budgets')}
+        action={
+          <Button onClick={() => setShowSet(true)}>{t('expense.budgets.setBudgetTitle')}</Button>
+        }
       />
 
       <div className="flex gap-3 items-center">
-        <SelectField value={yearFilter} onValueChange={setYearFilter} placeholder="Select year">
+        <SelectField
+          value={yearFilter}
+          onValueChange={setYearFilter}
+          placeholder={t('expense.budgets.selectYearPlaceholder')}
+        >
           {years.map((y) => (
             <SelectItem key={y} value={y}>
               {y}
@@ -197,13 +212,20 @@ export default function BudgetsPage() {
         </SelectField>
       </div>
 
-      {error && <p className="text-destructive">Failed to load budgets</p>}
+      {error && <p className="text-destructive">{t('expense.budgets.loadFailed')}</p>}
 
       <DataTable
-        headers={['Cost Center', 'Period', 'Cap', 'Spent', 'Remaining', 'Utilization']}
+        headers={[
+          t('expense.budgets.tableCostCenter'),
+          t('expense.budgets.tablePeriod'),
+          t('expense.budgets.tableCap'),
+          t('expense.budgets.tableSpent'),
+          t('expense.budgets.tableRemaining'),
+          t('expense.budgets.tableUtilization'),
+        ]}
         isLoading={isLoading}
         isEmpty={budgets.length === 0}
-        emptyMessage="No budgets configured"
+        emptyMessage={t('expense.budgets.noneConfigured')}
       >
         {sortedBudgets.map((b) => {
           const remaining = b.cap - b.spent;

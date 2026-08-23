@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Button } from '../../components/ui/Button.jsx';
@@ -17,9 +18,13 @@ import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import DepartmentSection from '../../components/staff/DepartmentSection.jsx';
 import OnLeaveStrip from '../../components/staff/OnLeaveStrip.jsx';
 
-const STEPS = ['Basic Info', 'Contact', 'Review'];
-
 function AddStaffModal({ open, onOpenChange }) {
+  const { t } = useTranslation();
+  const STEPS = [
+    t('staff.directory.steps.basicInfo'),
+    t('staff.directory.steps.contact'),
+    t('staff.directory.steps.review'),
+  ];
   const queryClient = useQueryClient();
   const [step, setStep] = useState(0);
   const [error, setError] = useState('');
@@ -48,14 +53,14 @@ function AddStaffModal({ open, onOpenChange }) {
       setStep(0);
       setError('');
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to add staff member'),
+    onError: (err) => setError(err.response?.data?.error || t('staff.directory.addFailed')),
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Staff Member — {STEPS[step]}</DialogTitle>
+          <DialogTitle>{t('staff.directory.addStaffTitle', { step: STEPS[step] })}</DialogTitle>
           <div className="flex gap-2 mt-1">
             {STEPS.map((s, i) => (
               <span
@@ -78,31 +83,49 @@ function AddStaffModal({ open, onOpenChange }) {
         <form onSubmit={handleSubmit((data) => mutation.mutate(data))}>
           {step === 0 && (
             <div className="flex flex-col gap-4">
-              <Input label="Email" type="email" {...register('email', { required: true })} />
-              <Input label="First Name" {...register('firstName', { required: true })} />
-              <Input label="Last Name" {...register('lastName', { required: true })} />
-              <Input label="Employee ID" {...register('employeeId')} />
-              <Input label="Designation" {...register('designation')} />
-              <Input label="Department" {...register('department')} />
-              <Input label="Joining Date" type="date" {...register('joiningDate')} />
+              <Input
+                label={t('staff.directory.email')}
+                type="email"
+                {...register('email', { required: true })}
+              />
+              <Input
+                label={t('staff.directory.firstName')}
+                {...register('firstName', { required: true })}
+              />
+              <Input
+                label={t('staff.directory.lastName')}
+                {...register('lastName', { required: true })}
+              />
+              <Input label={t('staff.directory.employeeId')} {...register('employeeId')} />
+              <Input label={t('staff.directory.designation')} {...register('designation')} />
+              <Input label={t('staff.directory.department')} {...register('department')} />
+              <Input
+                label={t('staff.directory.joiningDate')}
+                type="date"
+                {...register('joiningDate')}
+              />
             </div>
           )}
 
           {step === 1 && (
             <div className="flex flex-col gap-4">
-              <Input label="Phone" {...register('phone')} />
-              <Input label="Address" {...register('address')} />
-              <Input label="Date of Birth" type="date" {...register('dateOfBirth')} />
+              <Input label={t('staff.directory.phone')} {...register('phone')} />
+              <Input label={t('staff.directory.address')} {...register('address')} />
+              <Input
+                label={t('staff.directory.dateOfBirth')}
+                type="date"
+                {...register('dateOfBirth')}
+              />
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium">Gender</label>
+                <label className="text-sm font-medium">{t('staff.directory.gender')}</label>
                 <select
                   {...register('gender')}
                   className="h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
-                  <option value="">— Select —</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
+                  <option value="">{t('staff.directory.selectPlaceholder')}</option>
+                  <option value="male">{t('staff.directory.male')}</option>
+                  <option value="female">{t('staff.directory.female')}</option>
+                  <option value="other">{t('staff.directory.other')}</option>
                 </select>
               </div>
             </div>
@@ -110,7 +133,9 @@ function AddStaffModal({ open, onOpenChange }) {
 
           {step === 2 && (
             <div className="flex flex-col gap-2 text-sm">
-              <p className="font-medium text-muted-foreground">Review Details</p>
+              <p className="font-medium text-muted-foreground">
+                {t('staff.directory.reviewDetails')}
+              </p>
               {Object.entries(getValues()).map(([k, v]) =>
                 v ? (
                   <div key={k} className="flex justify-between border-b border-border py-1">
@@ -132,7 +157,7 @@ function AddStaffModal({ open, onOpenChange }) {
               type="button"
               onClick={step === 0 ? () => onOpenChange(false) : () => setStep((s) => s - 1)}
             >
-              {step === 0 ? 'Cancel' : 'Back'}
+              {step === 0 ? t('common.cancel') : t('staff.directory.back')}
             </Button>
             {step < STEPS.length - 1 ? (
               <Button
@@ -150,11 +175,11 @@ function AddStaffModal({ open, onOpenChange }) {
                   setStep((s) => s + 1);
                 }}
               >
-                Next
+                {t('staff.directory.next')}
               </Button>
             ) : (
               <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? 'Saving…' : 'Submit'}
+                {mutation.isPending ? t('common.saving') : t('staff.directory.submit')}
               </Button>
             )}
           </DialogFooter>
@@ -165,20 +190,23 @@ function AddStaffModal({ open, onOpenChange }) {
 }
 
 function ImportResultModal({ open, onOpenChange, result }) {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Import Results</DialogTitle>
+          <DialogTitle>{t('staff.directory.importResultsTitle')}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-2">
           <p className="text-sm text-emerald-600 dark:text-emerald-400">
-            Created: {result?.created}
+            {t('staff.directory.createdCount', { count: result?.created ?? 0 })}
           </p>
           <p className="text-sm text-amber-600 dark:text-amber-400">
-            Skipped (duplicate): {result?.skipped}
+            {t('staff.directory.skippedDuplicateCount', { count: result?.skipped ?? 0 })}
           </p>
-          <p className="text-sm text-destructive">Errors: {result?.errors?.length ?? 0}</p>
+          <p className="text-sm text-destructive">
+            {t('staff.directory.errorsCount', { count: result?.errors?.length ?? 0 })}
+          </p>
           {result?.errors?.length > 0 && (
             <div className="mt-2 max-h-40 overflow-y-auto rounded border border-destructive/30 p-2 text-xs text-destructive">
               {result.errors.map((e, i) => (
@@ -190,7 +218,7 @@ function ImportResultModal({ open, onOpenChange, result }) {
           )}
         </div>
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>Close</Button>
+          <Button onClick={() => onOpenChange(false)}>{t('common.close')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -215,6 +243,7 @@ function matchesSearch(member, term) {
 }
 
 export default function StaffPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const canWrite = (user?.permissions ?? []).includes('staff:write');
   const queryClient = useQueryClient();
@@ -266,9 +295,14 @@ export default function StaffPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Staff Directory"
+        title={t('staff.directory.title')}
         description={
-          data ? `${members.length} staff · ${departmentNames.length} departments` : undefined
+          data
+            ? t('staff.directory.summary', {
+                staffCount: members.length,
+                deptCount: departmentNames.length,
+              })
+            : undefined
         }
         action={
           canWrite && (
@@ -278,7 +312,9 @@ export default function StaffPage() {
                 onClick={() => fileRef.current?.click()}
                 disabled={importMutation.isPending}
               >
-                {importMutation.isPending ? 'Importing…' : 'Import CSV'}
+                {importMutation.isPending
+                  ? t('staff.directory.importing')
+                  : t('staff.directory.importCsv')}
               </Button>
               <input
                 ref={fileRef}
@@ -290,21 +326,23 @@ export default function StaffPage() {
                   e.target.value = '';
                 }}
               />
-              <Button onClick={() => setShowAdd(true)}>Add Staff</Button>
+              <Button onClick={() => setShowAdd(true)}>{t('staff.directory.addStaff')}</Button>
             </div>
           )
         }
       />
 
       <Input
-        placeholder="Search by name or employee ID…"
+        placeholder={t('staff.directory.searchPlaceholder')}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         className="max-w-xs"
       />
 
-      {error && <p className="text-destructive">Failed to load staff</p>}
-      {isLoading && <p className="text-sm text-muted-foreground">Loading staff…</p>}
+      {error && <p className="text-destructive">{t('staff.directory.loadFailed')}</p>}
+      {isLoading && (
+        <p className="text-sm text-muted-foreground">{t('staff.directory.loadingStaff')}</p>
+      )}
 
       {!isLoading && !error && (
         <>
@@ -312,12 +350,12 @@ export default function StaffPage() {
 
           {members.length === 0 ? (
             <EmptyState
-              title="No staff members found"
-              description="Add a staff member or import a CSV to get started."
+              title={t('staff.directory.emptyTitle')}
+              description={t('staff.directory.emptyDescription')}
             />
           ) : filtered ? (
             filtered.length === 0 ? (
-              <EmptyState title="No staff match your search" />
+              <EmptyState title={t('staff.directory.emptySearchTitle')} />
             ) : (
               <DepartmentSection members={filtered} />
             )

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { buildImpersonateUrl } from '../../lib/impersonation.js';
 import { Badge } from '../../components/ui/Badge.jsx';
@@ -18,6 +19,7 @@ function statusVariant(status) {
 }
 
 function CreateModal({ onClose }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [form, setForm] = useState({ name: '', subdomain: '', plan: 'starter', adminEmail: '' });
   const [error, setError] = useState('');
@@ -28,7 +30,7 @@ function CreateModal({ onClose }) {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
       onClose();
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to create tenant'),
+    onError: (err) => setError(err.response?.data?.error || t('admin.tenants.createFailed')),
   });
 
   function update(field) {
@@ -39,7 +41,7 @@ function CreateModal({ onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>New Tenant</CardTitle>
+          <CardTitle>{t('admin.tenants.newTenant')}</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -50,16 +52,23 @@ function CreateModal({ onClose }) {
             }}
             className="flex flex-col gap-4"
           >
-            <Input label="School Name" value={form.name} onChange={update('name')} required />
             <Input
-              label="Subdomain"
+              label={t('admin.tenants.schoolNameLabel')}
+              value={form.name}
+              onChange={update('name')}
+              required
+            />
+            <Input
+              label={t('admin.tenants.subdomainLabel')}
               value={form.subdomain}
               onChange={update('subdomain')}
               required
               placeholder="acme-school"
             />
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Plan</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {t('admin.tenants.planLabel')}
+              </label>
               <select
                 value={form.plan}
                 onChange={update('plan')}
@@ -73,7 +82,7 @@ function CreateModal({ onClose }) {
               </select>
             </div>
             <Input
-              label="Admin Email"
+              label={t('admin.tenants.adminEmailLabel')}
               type="email"
               value={form.adminEmail}
               onChange={update('adminEmail')}
@@ -84,10 +93,10 @@ function CreateModal({ onClose }) {
         </CardContent>
         <CardFooter className="gap-2 justify-end">
           <Button variant="outline" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="submit" form="create-tenant" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Creating…' : 'Create'}
+            {mutation.isPending ? t('admin.tenants.creating') : t('common.create')}
           </Button>
         </CardFooter>
       </Card>
@@ -96,6 +105,7 @@ function CreateModal({ onClose }) {
 }
 
 export default function TenantsPage() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
 
@@ -125,19 +135,26 @@ export default function TenantsPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Tenants</h1>
-        <Button onClick={() => setShowCreate(true)}>New Tenant</Button>
+        <h1 className="text-2xl font-semibold">{t('nav.tenants')}</h1>
+        <Button onClick={() => setShowCreate(true)}>{t('admin.tenants.newTenant')}</Button>
       </div>
 
-      {isLoading && <p className="text-gray-500">Loading…</p>}
-      {error && <p className="text-red-500">Failed to load tenants</p>}
+      {isLoading && <p className="text-gray-500">{t('common.loading')}</p>}
+      {error && <p className="text-red-500">{t('admin.tenants.loadFailed')}</p>}
 
       {data && (
         <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800 text-left">
               <tr>
-                {['Name', 'Subdomain', 'Plan', 'Status', 'Created At', 'Actions'].map((h) => (
+                {[
+                  t('common.name'),
+                  t('admin.tenants.tableSubdomain'),
+                  t('admin.tenants.tablePlan'),
+                  t('common.status'),
+                  t('admin.tenants.tableCreatedAt'),
+                  t('common.actions'),
+                ].map((h) => (
                   <th key={h} className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
                     {h}
                   </th>
@@ -145,56 +162,64 @@ export default function TenantsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-              {data.tenants?.map((t) => (
+              {data.tenants?.map((tenant) => (
                 <tr
-                  key={t._id}
+                  key={tenant._id}
                   className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                   <td className="px-4 py-3 font-medium">
                     <Link
-                      to={`/tenants/${t._id}`}
+                      to={`/tenants/${tenant._id}`}
                       className="text-blue-600 hover:underline dark:text-blue-400"
                     >
-                      {t.name}
+                      {tenant.name}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">{t.subdomain}</td>
-                  <td className="px-4 py-3 capitalize">{t.plan}</td>
+                  <td className="px-4 py-3 text-gray-500">{tenant.subdomain}</td>
+                  <td className="px-4 py-3 capitalize">{tenant.plan}</td>
                   <td className="px-4 py-3">
-                    <Badge variant={statusVariant(t.status)}>{t.status}</Badge>
+                    <Badge variant={statusVariant(tenant.status)}>{tenant.status}</Badge>
                   </td>
                   <td className="px-4 py-3 text-gray-500">
-                    {new Date(t.createdAt).toLocaleDateString()}
+                    {new Date(tenant.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
-                      {t.status === 'active' && (
+                      {tenant.status === 'active' && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => impersonate.mutate(t._id)}
+                          onClick={() => impersonate.mutate(tenant._id)}
                           disabled={impersonate.isPending}
                         >
-                          Login to tenant
+                          {t('admin.tenants.loginToTenant')}
                         </Button>
                       )}
-                      {t.status === 'active' && (
-                        <Button variant="outline" size="sm" onClick={() => suspend.mutate(t._id)}>
-                          Suspend
+                      {tenant.status === 'active' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => suspend.mutate(tenant._id)}
+                        >
+                          {t('admin.tenants.suspend')}
                         </Button>
                       )}
-                      {(t.status === 'active' || t.status === 'suspended') && (
+                      {(tenant.status === 'active' || tenant.status === 'suspended') && (
                         <Button
                           variant="destructive"
                           size="sm"
-                          onClick={() => archive.mutate(t._id)}
+                          onClick={() => archive.mutate(tenant._id)}
                         >
-                          Archive
+                          {t('admin.tenants.archive')}
                         </Button>
                       )}
-                      {t.status === 'archived' && (
-                        <Button variant="outline" size="sm" onClick={() => restore.mutate(t._id)}>
-                          Restore
+                      {tenant.status === 'archived' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => restore.mutate(tenant._id)}
+                        >
+                          {t('admin.tenants.restore')}
                         </Button>
                       )}
                     </div>

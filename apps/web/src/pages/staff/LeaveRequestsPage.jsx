@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Badge } from '../../components/ui/Badge.jsx';
@@ -30,6 +31,7 @@ function statusVariant(status) {
 }
 
 function RejectModal({ open, onOpenChange, requestId, onSuccess }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [comment, setComment] = useState('');
   const [error, setError] = useState('');
@@ -44,17 +46,17 @@ function RejectModal({ open, onOpenChange, requestId, onSuccess }) {
       setError('');
       onSuccess?.();
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to reject'),
+    onError: (err) => setError(err.response?.data?.error || t('staff.leaves.rejectFailed')),
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Reject Leave Request</DialogTitle>
+          <DialogTitle>{t('staff.leaves.rejectModalTitle')}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-3">
-          <label className="text-sm font-medium">Comment (optional)</label>
+          <label className="text-sm font-medium">{t('staff.leaves.commentOptional')}</label>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
@@ -65,14 +67,14 @@ function RejectModal({ open, onOpenChange, requestId, onSuccess }) {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             variant="destructive"
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? 'Rejecting…' : 'Reject'}
+            {mutation.isPending ? t('staff.leaves.rejecting') : t('staff.leaves.reject')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -81,6 +83,7 @@ function RejectModal({ open, onOpenChange, requestId, onSuccess }) {
 }
 
 function ApplyLeaveModal({ open, onOpenChange, staffId, leaveTypes }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
 
@@ -98,21 +101,21 @@ function ApplyLeaveModal({ open, onOpenChange, staffId, leaveTypes }) {
       reset();
       setError('');
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to submit leave request'),
+    onError: (err) => setError(err.response?.data?.error || t('staff.leaves.submitFailed')),
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Apply for Leave</DialogTitle>
+          <DialogTitle>{t('staff.leaves.applyForLeave')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit((data) => mutation.mutate(data))}>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium">Leave Type</label>
+              <label className="text-sm font-medium">{t('staff.leaves.leaveType')}</label>
               <select {...register('leaveTypeId', { required: true })} className={selectCls}>
-                <option value="">— Select —</option>
+                <option value="">{t('staff.leaves.selectPlaceholder')}</option>
                 {leaveTypes.map((lt) => (
                   <option key={lt._id} value={lt._id}>
                     {lt.name}
@@ -120,10 +123,18 @@ function ApplyLeaveModal({ open, onOpenChange, staffId, leaveTypes }) {
                 ))}
               </select>
             </div>
-            <Input label="From" type="date" {...register('fromDate', { required: true })} />
-            <Input label="To" type="date" {...register('toDate', { required: true })} />
+            <Input
+              label={t('staff.leaves.from')}
+              type="date"
+              {...register('fromDate', { required: true })}
+            />
+            <Input
+              label={t('staff.leaves.to')}
+              type="date"
+              {...register('toDate', { required: true })}
+            />
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium">Reason (optional)</label>
+              <label className="text-sm font-medium">{t('staff.leaves.reasonOptional')}</label>
               <textarea
                 {...register('reason')}
                 rows={3}
@@ -136,10 +147,10 @@ function ApplyLeaveModal({ open, onOpenChange, staffId, leaveTypes }) {
 
           <DialogFooter className="mt-4">
             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Submitting…' : 'Submit'}
+              {mutation.isPending ? t('staff.leaves.submitting') : t('staff.leaves.submit')}
             </Button>
           </DialogFooter>
         </form>
@@ -149,6 +160,7 @@ function ApplyLeaveModal({ open, onOpenChange, staffId, leaveTypes }) {
 }
 
 function LeaveTypeModal({ open, onOpenChange, leaveType }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
 
@@ -172,31 +184,33 @@ function LeaveTypeModal({ open, onOpenChange, leaveType }) {
       reset();
       setError('');
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to save leave type'),
+    onError: (err) => setError(err.response?.data?.error || t('staff.leaves.saveLeaveTypeFailed')),
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{leaveType ? 'Edit Leave Type' : 'Add Leave Type'}</DialogTitle>
+          <DialogTitle>
+            {leaveType ? t('staff.leaves.editLeaveTypeTitle') : t('staff.leaves.addLeaveTypeTitle')}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit((data) => mutation.mutate(data))}>
           <div className="flex flex-col gap-4">
-            <Input label="Name" {...register('name', { required: true })} />
+            <Input label={t('common.name')} {...register('name', { required: true })} />
             <Input
-              label="Max Days / Year"
+              label={t('staff.leaves.maxDaysPerYear')}
               type="number"
               min="1"
               {...register('maxDaysPerYear', { required: true, valueAsNumber: true })}
             />
             <label className="flex items-center gap-2 text-sm font-medium">
               <input type="checkbox" {...register('isPaid')} />
-              Paid leave
+              {t('staff.leaves.paidLeave')}
             </label>
             <label className="flex items-center gap-2 text-sm font-medium">
               <input type="checkbox" {...register('requiresApproval')} />
-              Requires approval
+              {t('staff.leaves.requiresApproval')}
             </label>
           </div>
 
@@ -204,10 +218,10 @@ function LeaveTypeModal({ open, onOpenChange, leaveType }) {
 
           <DialogFooter className="mt-4">
             <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={mutation.isPending}>
-              {mutation.isPending ? 'Saving…' : 'Save'}
+              {mutation.isPending ? t('common.saving') : t('common.save')}
             </Button>
           </DialogFooter>
         </form>
@@ -217,13 +231,14 @@ function LeaveTypeModal({ open, onOpenChange, leaveType }) {
 }
 
 function LeaveTypesSection({ leaveTypes }) {
+  const { t } = useTranslation();
   const [modalType, setModalType] = useState(undefined);
   const [showModal, setShowModal] = useState(false);
 
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-semibold">Leave Types</h2>
+        <h2 className="text-sm font-semibold">{t('staff.leaves.leaveTypesHeading')}</h2>
         <Button
           size="sm"
           variant="outline"
@@ -232,14 +247,15 @@ function LeaveTypesSection({ leaveTypes }) {
             setShowModal(true);
           }}
         >
-          Add Leave Type
+          {t('staff.leaves.addLeaveType')}
         </Button>
       </div>
       <div className="flex flex-col gap-2">
         {leaveTypes.map((lt) => (
           <div key={lt._id} className="flex items-center justify-between text-sm py-1">
             <span>
-              {lt.name} — {lt.maxDaysPerYear} days/year{lt.isPaid ? '' : ' (unpaid)'}
+              {lt.name} — {t('staff.leaves.daysPerYear', { count: lt.maxDaysPerYear })}
+              {lt.isPaid ? '' : ` (${t('staff.leaves.unpaid')})`}
             </span>
             <Button
               size="sm"
@@ -249,12 +265,12 @@ function LeaveTypesSection({ leaveTypes }) {
                 setShowModal(true);
               }}
             >
-              Edit
+              {t('common.edit')}
             </Button>
           </div>
         ))}
         {leaveTypes.length === 0 && (
-          <p className="text-sm text-muted-foreground">No leave types configured yet.</p>
+          <p className="text-sm text-muted-foreground">{t('staff.leaves.noLeaveTypes')}</p>
         )}
       </div>
       <LeaveTypeModal open={showModal} onOpenChange={setShowModal} leaveType={modalType} />
@@ -265,15 +281,17 @@ function LeaveTypesSection({ leaveTypes }) {
 const EMPTY_REQUESTS = [];
 
 function ConflictBadge({ flags }) {
+  const { t } = useTranslation();
   if (!flags?.length) return null;
   return (
     <Badge variant="warning" title={flags.join(', ')}>
-      {flags.length} timetable conflict{flags.length > 1 ? 's' : ''}
+      {t('staff.leaves.timetableConflict', { count: flags.length })}
     </Badge>
   );
 }
 
 export default function LeaveRequestsPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const permissions = user?.permissions ?? [];
   const canApprove = permissions.includes('leave:approve');
@@ -388,7 +406,7 @@ export default function LeaveRequestsPage() {
       setProcessedCount((c) => c + 1);
       setQueueError('');
     },
-    onError: (err) => setQueueError(err.response?.data?.error || 'Failed to approve'),
+    onError: (err) => setQueueError(err.response?.data?.error || t('staff.leaves.approveFailed')),
   });
 
   const cancelMutation = useMutation({
@@ -407,11 +425,11 @@ export default function LeaveRequestsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Leave Requests"
+        title={t('staff.leaves.title')}
         action={
           canWrite && (
             <Button onClick={() => setShowApply(true)} disabled={!myStaff}>
-              Apply for Leave
+              {t('staff.leaves.applyForLeave')}
             </Button>
           )
         }
@@ -425,7 +443,7 @@ export default function LeaveRequestsPage() {
             <div key={b._id} className="rounded-lg border border-border bg-card px-3 py-2 text-sm">
               <span className="text-muted-foreground">{b.leaveTypeId?.name}: </span>
               <span className="font-medium">
-                {b.total - b.used} / {b.total} days left
+                {t('staff.leaves.balanceLeftSuffix', { left: b.total - b.used, total: b.total })}
               </span>
             </div>
           ))}
@@ -433,21 +451,23 @@ export default function LeaveRequestsPage() {
       )}
 
       <div className="flex gap-2 border-b border-border">
-        {['all', 'pending'].map((t) => (
+        {['all', 'pending'].map((tabKey) => (
           <button
-            key={t}
+            key={tabKey}
             onClick={() => {
-              setTab(t);
+              setTab(tabKey);
               setPage(1);
             }}
             className={[
               'px-4 py-2 text-sm font-medium capitalize border-b-2 transition-colors',
-              tab === t
+              tab === tabKey
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground',
             ].join(' ')}
           >
-            {t === 'all' ? 'All Requests' : 'Pending Approval'}
+            {tabKey === 'all'
+              ? t('staff.leaves.allRequestsTab')
+              : t('staff.leaves.pendingApprovalTab')}
           </button>
         ))}
       </div>
@@ -462,11 +482,11 @@ export default function LeaveRequestsPage() {
             }}
             className={selectCls}
           >
-            <option value="">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="">{t('staff.leaves.statusOptions.all')}</option>
+            <option value="pending">{t('staff.leaves.statusOptions.pending')}</option>
+            <option value="approved">{t('staff.leaves.statusOptions.approved')}</option>
+            <option value="rejected">{t('staff.leaves.statusOptions.rejected')}</option>
+            <option value="cancelled">{t('staff.leaves.statusOptions.cancelled')}</option>
           </select>
           <Input
             type="date"
@@ -476,7 +496,7 @@ export default function LeaveRequestsPage() {
               setFrom(e.target.value);
               setPage(1);
             }}
-            placeholder="From"
+            placeholder={t('staff.leaves.from')}
           />
           <Input
             type="date"
@@ -486,34 +506,36 @@ export default function LeaveRequestsPage() {
               setTo(e.target.value);
               setPage(1);
             }}
-            placeholder="To"
+            placeholder={t('staff.leaves.to')}
           />
         </div>
       )}
 
-      {error && <p className="text-destructive">Failed to load leave requests</p>}
+      {error && <p className="text-destructive">{t('staff.leaves.loadFailed')}</p>}
 
       {isApproverQueue ? (
         isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading queue…</p>
+          <p className="text-sm text-muted-foreground">{t('staff.leaves.loadingQueue')}</p>
         ) : myPendingQueue.length === 0 ? (
           <EmptyState
-            title="All caught up"
-            description="No leave requests are waiting on your approval right now."
+            title={t('staff.leaves.allCaughtUpTitle')}
+            description={t('staff.leaves.allCaughtUpDescription')}
           />
         ) : (
           <div className="flex max-w-md flex-col gap-3">
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span aria-live="polite">
-                {Math.min(processedCount + 1, queueTotal ?? myPendingQueue.length)} of{' '}
-                {queueTotal ?? myPendingQueue.length} pending
+                {t('staff.leaves.queueProgressLabel', {
+                  current: Math.min(processedCount + 1, queueTotal ?? myPendingQueue.length),
+                  total: queueTotal ?? myPendingQueue.length,
+                })}
               </span>
             </div>
             <Progress
               value={
                 queueTotal ? Math.min(100, Math.round((processedCount / queueTotal) * 100)) : 0
               }
-              aria-label="Approval queue progress"
+              aria-label={t('staff.leaves.approvalQueueProgressAriaLabel')}
             />
             <ApprovalQueueCard
               key={currentRequest._id}
@@ -528,10 +550,18 @@ export default function LeaveRequestsPage() {
         )
       ) : (
         <DataTable
-          headers={['Staff', 'Leave Type', 'From', 'To', 'Days', 'Status', 'Actions']}
+          headers={[
+            t('staff.leaves.columnStaff'),
+            t('staff.leaves.leaveType'),
+            t('staff.leaves.from'),
+            t('staff.leaves.to'),
+            t('staff.leaves.columnDays'),
+            t('common.status'),
+            t('common.actions'),
+          ]}
           isLoading={isLoading}
           isEmpty={requests.length === 0}
-          emptyMessage="No leave requests found"
+          emptyMessage={t('staff.leaves.noRequestsFound')}
         >
           {requests.map((r) => {
             const isOwn = myStaff && r.staffId?._id === myStaff._id;
@@ -562,10 +592,10 @@ export default function LeaveRequestsPage() {
                             onClick={() => approveMutation.mutate(r._id)}
                             disabled={approveMutation.isPending}
                           >
-                            Approve
+                            {t('staff.leaves.approve')}
                           </Button>
                           <Button size="sm" variant="outline" onClick={() => setRejectId(r._id)}>
-                            Reject
+                            {t('staff.leaves.reject')}
                           </Button>
                         </>
                       )}
@@ -576,7 +606,7 @@ export default function LeaveRequestsPage() {
                           onClick={() => cancelMutation.mutate(r._id)}
                           disabled={cancelMutation.isPending}
                         >
-                          Cancel
+                          {t('common.cancel')}
                         </Button>
                       )}
                     </div>
@@ -596,10 +626,10 @@ export default function LeaveRequestsPage() {
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
           >
-            Previous
+            {t('staff.leaves.previous')}
           </Button>
           <span className="text-sm self-center text-muted-foreground">
-            Page {page} of {data.pages}
+            {t('staff.leaves.pageOfTotal', { page, total: data.pages })}
           </span>
           <Button
             variant="outline"
@@ -607,7 +637,7 @@ export default function LeaveRequestsPage() {
             onClick={() => setPage((p) => p + 1)}
             disabled={page >= data.pages}
           >
-            Next
+            {t('staff.leaves.next')}
           </Button>
         </div>
       )}

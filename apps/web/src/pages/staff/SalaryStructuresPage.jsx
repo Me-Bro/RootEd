@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Button } from '../../components/ui/Button.jsx';
@@ -57,12 +58,13 @@ function baseRefLabel(components, baseRef) {
 }
 
 function SalaryComponentRows({ components, onAdd, onRemove, onUpdate }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">Components</span>
+        <span className="text-sm font-medium">{t('staff.salaryStructures.componentsLabel')}</span>
         <Button type="button" size="sm" variant="outline" onClick={onAdd}>
-          + Add Row
+          {t('staff.salaryStructures.addRow')}
         </Button>
       </div>
       {components.map((c, i) => {
@@ -70,7 +72,7 @@ function SalaryComponentRows({ components, onAdd, onRemove, onUpdate }) {
         return (
           <div key={c.id} className="flex gap-2 items-center flex-wrap">
             <Input
-              placeholder="Label (e.g. Basic)"
+              placeholder={t('staff.salaryStructures.labelPlaceholder')}
               value={c.label}
               onChange={(e) => onUpdate(i, 'label', e.target.value)}
               required
@@ -81,11 +83,15 @@ function SalaryComponentRows({ components, onAdd, onRemove, onUpdate }) {
               onChange={(e) => onUpdate(i, 'type', e.target.value)}
               className={selectCls}
             >
-              <option value="earning">Earning</option>
-              <option value="deduction">Deduction</option>
+              <option value="earning">{t('staff.salaryStructures.earning')}</option>
+              <option value="deduction">{t('staff.salaryStructures.deduction')}</option>
             </select>
             <Input
-              placeholder={c.isPercentage ? 'Percent' : 'Amount'}
+              placeholder={
+                c.isPercentage
+                  ? t('staff.salaryStructures.percentPlaceholder')
+                  : t('staff.salaryStructures.amountPlaceholder')
+              }
               type="number"
               value={c.amount}
               onChange={(e) => onUpdate(i, 'amount', e.target.value)}
@@ -99,7 +105,7 @@ function SalaryComponentRows({ components, onAdd, onRemove, onUpdate }) {
                 checked={c.isPercentage || false}
                 onChange={(e) => onUpdate(i, 'isPercentage', e.target.checked)}
               />
-              % of another component
+              {t('staff.salaryStructures.percentOfAnother')}
             </label>
             {c.isPercentage && (
               <select
@@ -109,11 +115,11 @@ function SalaryComponentRows({ components, onAdd, onRemove, onUpdate }) {
                 className={selectCls}
               >
                 <option value="" disabled>
-                  Base component…
+                  {t('staff.salaryStructures.baseComponentPlaceholder')}
                 </option>
                 {baseOptions.map((sib) => (
                   <option key={sib.id} value={sib.id}>
-                    {sib.label || '(unnamed)'}
+                    {sib.label || t('staff.salaryStructures.unnamed')}
                   </option>
                 ))}
               </select>
@@ -167,6 +173,7 @@ function NewSalaryStructureModal({
   initialName = '',
   initialComponents = null,
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [name, setName] = useState(initialName);
   const [error, setError] = useState('');
@@ -183,7 +190,7 @@ function NewSalaryStructureModal({
       queryClient.invalidateQueries({ queryKey: ['salary-structures'] });
       onOpenChange(false);
     },
-    onError: (err) => setError(extractErrorMessage(err, 'Failed to create structure')),
+    onError: (err) => setError(extractErrorMessage(err, t('staff.salaryStructures.createFailed'))),
   });
 
   return (
@@ -191,7 +198,9 @@ function NewSalaryStructureModal({
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {initialComponents ? 'Duplicate Salary Structure' : 'New Salary Structure'}
+            {initialComponents
+              ? t('staff.salaryStructures.duplicateStructureTitle')
+              : t('staff.salaryStructures.newStructureTitle')}
           </DialogTitle>
         </DialogHeader>
         <form
@@ -202,7 +211,12 @@ function NewSalaryStructureModal({
           }}
           className="flex flex-col gap-4"
         >
-          <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
+          <Input
+            label={t('common.name')}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
           <SalaryComponentRows
             components={components}
             onAdd={addComponent}
@@ -213,10 +227,10 @@ function NewSalaryStructureModal({
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="submit" form="new-salary-structure" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Creating…' : 'Create'}
+            {mutation.isPending ? t('staff.salaryStructures.creating') : t('common.create')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -225,6 +239,7 @@ function NewSalaryStructureModal({
 }
 
 function EditSalaryStructureModal({ open, onOpenChange, structure }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [name, setName] = useState(structure.name);
   const [error, setError] = useState('');
@@ -252,14 +267,14 @@ function EditSalaryStructureModal({ open, onOpenChange, structure }) {
       queryClient.invalidateQueries({ queryKey: ['salary-structures'] });
       onOpenChange(false);
     },
-    onError: (err) => setError(extractErrorMessage(err, 'Failed to update structure')),
+    onError: (err) => setError(extractErrorMessage(err, t('staff.salaryStructures.updateFailed'))),
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Salary Structure</DialogTitle>
+          <DialogTitle>{t('staff.salaryStructures.editStructureTitle')}</DialogTitle>
         </DialogHeader>
         <form
           id="edit-salary-structure"
@@ -269,7 +284,12 @@ function EditSalaryStructureModal({ open, onOpenChange, structure }) {
           }}
           className="flex flex-col gap-4"
         >
-          <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
+          <Input
+            label={t('common.name')}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
           <SalaryComponentRows
             components={components}
             onAdd={addComponent}
@@ -280,10 +300,10 @@ function EditSalaryStructureModal({ open, onOpenChange, structure }) {
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="submit" form="edit-salary-structure" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Saving…' : 'Save Changes'}
+            {mutation.isPending ? t('common.saving') : t('staff.salaryStructures.saveChanges')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -292,6 +312,7 @@ function EditSalaryStructureModal({ open, onOpenChange, structure }) {
 }
 
 function DeleteSalaryStructureModal({ open, onOpenChange, structure }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
 
@@ -301,29 +322,29 @@ function DeleteSalaryStructureModal({ open, onOpenChange, structure }) {
       queryClient.invalidateQueries({ queryKey: ['salary-structures'] });
       onOpenChange(false);
     },
-    onError: (err) => setError(extractErrorMessage(err, 'Failed to delete structure')),
+    onError: (err) => setError(extractErrorMessage(err, t('staff.salaryStructures.deleteFailed'))),
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Delete Salary Structure?</DialogTitle>
+          <DialogTitle>{t('staff.salaryStructures.deleteStructureTitle')}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          This will permanently delete &quot;{structure.name}&quot;. This cannot be undone.
+          {t('staff.salaryStructures.deleteDescription', { name: structure.name })}
         </p>
         {error && <p className="text-sm text-destructive">{error}</p>}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             variant="destructive"
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending}
           >
-            {mutation.isPending ? 'Deleting…' : 'Delete'}
+            {mutation.isPending ? t('staff.salaryStructures.deleting') : t('common.delete')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -332,6 +353,7 @@ function DeleteSalaryStructureModal({ open, onOpenChange, structure }) {
 }
 
 export default function SalaryStructuresPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   // Structure create/edit is gated on tenant:admin (matching the route's
   // actual permission), not payroll:write — accountants get payroll:write
@@ -352,20 +374,23 @@ export default function SalaryStructuresPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Salary Structures"
+        title={t('staff.salaryStructures.title')}
         action={
-          canManage && <Button onClick={() => setModalState({ mode: 'new' })}>New Structure</Button>
+          canManage && (
+            <Button onClick={() => setModalState({ mode: 'new' })}>
+              {t('staff.salaryStructures.newStructure')}
+            </Button>
+          )
         }
       />
 
       {!canManage && (
         <p className="text-sm text-muted-foreground">
-          You have read-only access to salary structures. Creating or editing structures requires
-          the tenant administrator role.
+          {t('staff.salaryStructures.readOnlyNotice')}
         </p>
       )}
 
-      {isLoading && <p className="text-muted-foreground">Loading…</p>}
+      {isLoading && <p className="text-muted-foreground">{t('staff.salaryStructures.loading')}</p>}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {structures.map((s) => (
@@ -373,7 +398,9 @@ export default function SalaryStructuresPage() {
             <CardHeader>
               <div className="flex items-center justify-between gap-2">
                 <CardTitle className="text-base">{s.name}</CardTitle>
-                <Badge variant="outline">{s.staffCount ?? 0} staff</Badge>
+                <Badge variant="outline">
+                  {t('staff.salaryStructures.staffCount', { count: s.staffCount ?? 0 })}
+                </Badge>
               </div>
             </CardHeader>
             <CardContent>
@@ -396,14 +423,14 @@ export default function SalaryStructuresPage() {
             {canManage && (
               <CardFooter className="flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" onClick={() => setEditFor(s)}>
-                  Edit
+                  {t('common.edit')}
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => setModalState({ mode: 'duplicate', source: s })}
                 >
-                  Duplicate
+                  {t('staff.salaryStructures.duplicate')}
                 </Button>
                 <Button
                   size="sm"
@@ -411,19 +438,21 @@ export default function SalaryStructuresPage() {
                   disabled={(s.staffCount ?? 0) > 0}
                   title={
                     (s.staffCount ?? 0) > 0
-                      ? `Cannot delete: ${s.staffCount} staff member(s) assigned`
+                      ? t('staff.salaryStructures.deleteDisabledTitle', { count: s.staffCount })
                       : undefined
                   }
                   onClick={() => setDeleteFor(s)}
                 >
-                  Delete
+                  {t('common.delete')}
                 </Button>
               </CardFooter>
             )}
           </Card>
         ))}
         {structures.length === 0 && !isLoading && (
-          <p className="text-muted-foreground col-span-3">No salary structures found.</p>
+          <p className="text-muted-foreground col-span-3">
+            {t('staff.salaryStructures.noStructures')}
+          </p>
         )}
       </div>
 
@@ -431,7 +460,11 @@ export default function SalaryStructuresPage() {
         <NewSalaryStructureModal
           open={Boolean(modalState)}
           onOpenChange={(v) => !v && setModalState(null)}
-          initialName={modalState.mode === 'duplicate' ? `Copy of ${modalState.source.name}` : ''}
+          initialName={
+            modalState.mode === 'duplicate'
+              ? t('staff.salaryStructures.copyOfName', { name: modalState.source.name })
+              : ''
+          }
           initialComponents={modalState.mode === 'duplicate' ? modalState.source.components : null}
         />
       )}

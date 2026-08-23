@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
@@ -16,7 +17,7 @@ import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.js
 import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
 import AttentionStrip from '../../components/inventory/AttentionStrip.jsx';
 
-const TABS = ['Items', 'Movements', 'Requisitions', 'Low Stock'];
+const TAB_IDS = ['items', 'movements', 'requisitions', 'lowStock'];
 
 function movementVariant(type) {
   if (type === 'purchase' || type === 'return') return 'success';
@@ -26,6 +27,7 @@ function movementVariant(type) {
 }
 
 function AddItemModal({ open, onOpenChange }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [itemType, setItemType] = useState('consumable');
   const [form, setForm] = useState({
@@ -88,14 +90,14 @@ function AddItemModal({ open, onOpenChange }) {
       });
       setError('');
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to create'),
+    onError: (err) => setError(err.response?.data?.error || t('inventory.items.createFailed')),
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Inventory Item</DialogTitle>
+          <DialogTitle>{t('inventory.items.addItemTitle')}</DialogTitle>
         </DialogHeader>
         <form
           id="add-item"
@@ -106,45 +108,56 @@ function AddItemModal({ open, onOpenChange }) {
           className="flex flex-col gap-4"
         >
           <div className="flex gap-3">
-            {['consumable', 'fixed_asset'].map((t) => (
+            {['consumable', 'fixed_asset'].map((type) => (
               <button
-                key={t}
+                key={type}
                 type="button"
-                onClick={() => setItemType(t)}
+                onClick={() => setItemType(type)}
                 className={[
                   'flex-1 px-4 py-2 rounded-lg text-sm font-medium border transition-colors',
-                  itemType === t
+                  itemType === type
                     ? 'border-primary bg-primary/10 text-primary'
                     : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted',
                 ].join(' ')}
               >
-                {t === 'consumable' ? 'Consumable' : 'Fixed Asset'}
+                {type === 'consumable'
+                  ? t('inventory.items.consumable')
+                  : t('inventory.items.fixedAsset')}
               </button>
             ))}
           </div>
-          <Input label="Name" value={form.name} onChange={update('name')} required />
-          <Input label="Category" value={form.category} onChange={update('category')} required />
-          <Input label="SKU (auto-generated if empty)" value={form.sku} onChange={update('sku')} />
+          <Input label={t('common.name')} value={form.name} onChange={update('name')} required />
           <Input
-            label="Unit Cost"
+            label={t('inventory.items.categoryLabel')}
+            value={form.category}
+            onChange={update('category')}
+            required
+          />
+          <Input label={t('inventory.items.skuLabel')} value={form.sku} onChange={update('sku')} />
+          <Input
+            label={t('inventory.items.unitCostLabel')}
             type="number"
             value={form.unitCost}
             onChange={update('unitCost')}
             min="0"
           />
-          <Input label="Location" value={form.location} onChange={update('location')} />
+          <Input
+            label={t('inventory.items.locationLabel')}
+            value={form.location}
+            onChange={update('location')}
+          />
 
           {itemType === 'consumable' && (
             <>
               <Input
-                label="Initial Quantity"
+                label={t('inventory.items.initialQuantityLabel')}
                 type="number"
                 value={form.quantity}
                 onChange={update('quantity')}
                 min="0"
               />
               <Input
-                label="Reorder Level"
+                label={t('inventory.items.reorderLevelLabel')}
                 type="number"
                 value={form.reorderLevel}
                 onChange={update('reorderLevel')}
@@ -155,27 +168,31 @@ function AddItemModal({ open, onOpenChange }) {
 
           {itemType === 'fixed_asset' && (
             <>
-              <Input label="Asset ID" value={form.assetId} onChange={update('assetId')} />
               <Input
-                label="Purchase Date"
+                label={t('inventory.items.assetIdLabel')}
+                value={form.assetId}
+                onChange={update('assetId')}
+              />
+              <Input
+                label={t('inventory.items.purchaseDateLabel')}
                 type="date"
                 value={form.purchaseDate}
                 onChange={update('purchaseDate')}
               />
               <Input
-                label="Useful Life (years)"
+                label={t('inventory.items.usefulLifeLabel')}
                 type="number"
                 value={form.usefulLifeYears}
                 onChange={update('usefulLifeYears')}
                 min="1"
               />
               <SelectField
-                label="Depreciation Method"
+                label={t('inventory.items.depreciationMethodLabel')}
                 value={form.depreciationMethod}
                 onValueChange={(v) => setForm((f) => ({ ...f, depreciationMethod: v }))}
               >
-                <SelectItem value="slm">SLM (Straight Line)</SelectItem>
-                <SelectItem value="wdv">WDV (Written Down Value)</SelectItem>
+                <SelectItem value="slm">{t('inventory.items.methodSlm')}</SelectItem>
+                <SelectItem value="wdv">{t('inventory.items.methodWdv')}</SelectItem>
               </SelectField>
             </>
           )}
@@ -184,10 +201,10 @@ function AddItemModal({ open, onOpenChange }) {
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="submit" form="add-item" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Creating…' : 'Create'}
+            {mutation.isPending ? t('inventory.items.creating') : t('common.create')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -196,6 +213,7 @@ function AddItemModal({ open, onOpenChange }) {
 }
 
 function IssueModal({ open, onOpenChange, item }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
     entityType: 'staff',
@@ -227,14 +245,14 @@ function IssueModal({ open, onOpenChange, item }) {
       setForm({ entityType: 'staff', entityId: '', quantity: '1', dueDate: '' });
       setError('');
     },
-    onError: (err) => setError(err.response?.data?.error || 'Issue failed'),
+    onError: (err) => setError(err.response?.data?.error || t('inventory.items.issueFailed')),
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Issue Item: {item?.name}</DialogTitle>
+          <DialogTitle>{t('inventory.items.issueItemTitle', { name: item?.name })}</DialogTitle>
         </DialogHeader>
         <form
           id="issue-item"
@@ -245,23 +263,23 @@ function IssueModal({ open, onOpenChange, item }) {
           className="flex flex-col gap-4"
         >
           <SelectField
-            label="Issued To"
+            label={t('inventory.items.issuedToLabel')}
             value={form.entityType}
             onValueChange={(v) => setForm((f) => ({ ...f, entityType: v }))}
           >
-            <SelectItem value="staff">Staff</SelectItem>
-            <SelectItem value="student">Student</SelectItem>
+            <SelectItem value="staff">{t('inventory.items.entityStaff')}</SelectItem>
+            <SelectItem value="student">{t('inventory.items.entityStudent')}</SelectItem>
           </SelectField>
           <Input
-            label="Entity ID"
+            label={t('inventory.items.entityIdLabel')}
             value={form.entityId}
             onChange={update('entityId')}
             required
-            placeholder="Staff/Student ID"
+            placeholder={t('inventory.items.entityIdPlaceholder')}
           />
           {item?.itemType === 'consumable' && (
             <Input
-              label="Quantity"
+              label={t('inventory.items.quantityLabel')}
               type="number"
               value={form.quantity}
               onChange={update('quantity')}
@@ -271,7 +289,7 @@ function IssueModal({ open, onOpenChange, item }) {
             />
           )}
           <Input
-            label="Due Date (optional)"
+            label={t('inventory.items.dueDateOptional')}
             type="date"
             value={form.dueDate}
             onChange={update('dueDate')}
@@ -280,10 +298,10 @@ function IssueModal({ open, onOpenChange, item }) {
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="submit" form="issue-item" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Issuing…' : 'Issue'}
+            {mutation.isPending ? t('inventory.items.issuing') : t('inventory.items.issue')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -292,6 +310,7 @@ function IssueModal({ open, onOpenChange, item }) {
 }
 
 function QrModal({ open, onOpenChange, item }) {
+  const { t } = useTranslation();
   const { data, isLoading } = useQuery({
     queryKey: ['inventory-item-qr', item?._id],
     queryFn: () => api.get(`/inventory/items/${item._id}`).then((r) => r.data),
@@ -302,19 +321,23 @@ function QrModal({ open, onOpenChange, item }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>QR Code: {item?.sku}</DialogTitle>
+          <DialogTitle>{t('inventory.items.qrCodeTitle', { sku: item?.sku })}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col items-center gap-4">
-          {isLoading && <p className="text-muted-foreground">Generating…</p>}
+          {isLoading && <p className="text-muted-foreground">{t('inventory.items.generating')}</p>}
           {data?.qrCodeDataUrl && (
-            <img src={data.qrCodeDataUrl} alt={`QR code for ${item?.sku}`} className="w-48 h-48" />
+            <img
+              src={data.qrCodeDataUrl}
+              alt={t('inventory.items.qrCodeAlt', { sku: item?.sku })}
+              className="w-48 h-48"
+            />
           )}
           <p className="text-xs text-muted-foreground">
             {item?.name} — {item?.sku}
           </p>
         </div>
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)}>Close</Button>
+          <Button onClick={() => onOpenChange(false)}>{t('common.close')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -322,6 +345,7 @@ function QrModal({ open, onOpenChange, item }) {
 }
 
 function ItemsTab() {
+  const { t } = useTranslation();
   const [itemType, setItemType] = useState('');
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
@@ -347,24 +371,32 @@ function ItemsTab() {
             onChange={(e) => setItemType(e.target.value)}
             className="h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
           >
-            <option value="">All Types</option>
-            <option value="consumable">Consumable</option>
-            <option value="fixed_asset">Fixed Asset</option>
+            <option value="">{t('inventory.items.allTypes')}</option>
+            <option value="consumable">{t('inventory.items.consumable')}</option>
+            <option value="fixed_asset">{t('inventory.items.fixedAsset')}</option>
           </select>
           <Input
-            placeholder="Search name or SKU…"
+            placeholder={t('inventory.items.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <Button onClick={() => setShowAdd(true)}>Add Item</Button>
+        <Button onClick={() => setShowAdd(true)}>{t('inventory.items.addItemButton')}</Button>
       </div>
 
       <DataTable
-        headers={['SKU', 'Name', 'Category', 'Type', 'Qty/Condition', 'Location', 'Actions']}
+        headers={[
+          t('inventory.items.tableSku'),
+          t('common.name'),
+          t('inventory.items.tableCategory'),
+          t('inventory.items.tableType'),
+          t('inventory.items.tableQtyCondition'),
+          t('inventory.items.tableLocation'),
+          t('common.actions'),
+        ]}
         isLoading={isLoading}
         isEmpty={items.length === 0}
-        emptyMessage="No items found"
+        emptyMessage={t('inventory.items.noneFound')}
       >
         {items.map((item) => (
           <TableRow key={item._id} className="bg-card">
@@ -373,11 +405,15 @@ function ItemsTab() {
             <TableCell className="px-4 py-3 text-muted-foreground">{item.category}</TableCell>
             <TableCell className="px-4 py-3">
               <Badge variant={item.itemType === 'consumable' ? 'default' : 'warning'}>
-                {item.itemType === 'consumable' ? 'Consumable' : 'Fixed Asset'}
+                {item.itemType === 'consumable'
+                  ? t('inventory.items.consumable')
+                  : t('inventory.items.fixedAsset')}
               </Badge>
             </TableCell>
             <TableCell className="px-4 py-3">
-              {item.itemType === 'consumable' ? `${item.quantity} units` : item.condition || '—'}
+              {item.itemType === 'consumable'
+                ? t('inventory.items.unitsCount', { count: item.quantity })
+                : item.condition || '—'}
             </TableCell>
             <TableCell className="px-4 py-3 text-muted-foreground">
               {item.location || '—'}
@@ -385,10 +421,10 @@ function ItemsTab() {
             <TableCell className="px-4 py-3">
               <div className="flex gap-2">
                 <Button size="sm" onClick={() => setIssueItem(item)}>
-                  Issue
+                  {t('inventory.items.issue')}
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setQrItem(item)}>
-                  QR
+                  {t('inventory.items.qrButton')}
                 </Button>
               </div>
             </TableCell>
@@ -408,6 +444,7 @@ function ItemsTab() {
 }
 
 function MovementsTab({ type, onTypeChange, openOnly, onOpenOnlyChange }) {
+  const { t } = useTranslation();
   const [itemId] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -445,10 +482,10 @@ function MovementsTab({ type, onTypeChange, openOnly, onOpenOnlyChange }) {
           onChange={(e) => onTypeChange(e.target.value)}
           className="h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          <option value="">All Types</option>
-          {['purchase', 'issue', 'return', 'scrap', 'transfer', 'adjustment'].map((t) => (
-            <option key={t} value={t}>
-              {t}
+          <option value="">{t('inventory.items.allTypes')}</option>
+          {['purchase', 'issue', 'return', 'scrap', 'transfer', 'adjustment'].map((type) => (
+            <option key={type} value={type}>
+              {type}
             </option>
           ))}
         </select>
@@ -460,15 +497,24 @@ function MovementsTab({ type, onTypeChange, openOnly, onOpenOnlyChange }) {
             checked={openOnly}
             onChange={(e) => onOpenOnlyChange(e.target.checked)}
           />
-          Not yet returned
+          {t('inventory.items.notYetReturned')}
         </label>
       </div>
 
       <DataTable
-        headers={['Item', 'Type', 'Qty', 'Issued To', 'Due Date', 'Returned', 'Date', 'Action']}
+        headers={[
+          t('inventory.items.tableItem'),
+          t('inventory.items.tableType'),
+          t('inventory.items.tableQty'),
+          t('inventory.items.tableIssuedTo'),
+          t('inventory.items.tableDueDate'),
+          t('inventory.items.tableReturned'),
+          t('inventory.items.tableDate'),
+          t('inventory.items.tableAction'),
+        ]}
         isLoading={isLoading}
         isEmpty={movements.length === 0}
-        emptyMessage="No movements found"
+        emptyMessage={t('inventory.items.noMovementsFound')}
       >
         {movements.map((m) => (
           <TableRow key={m._id} className="bg-card">
@@ -485,9 +531,9 @@ function MovementsTab({ type, onTypeChange, openOnly, onOpenOnlyChange }) {
             </TableCell>
             <TableCell className="px-4 py-3">
               {m.returnedAt ? (
-                <Badge variant="success">Returned</Badge>
+                <Badge variant="success">{t('inventory.items.returnedBadge')}</Badge>
               ) : m.movementType === 'issue' ? (
-                <Badge variant="warning">Pending</Badge>
+                <Badge variant="warning">{t('inventory.items.pendingBadge')}</Badge>
               ) : (
                 '—'
               )}
@@ -503,7 +549,7 @@ function MovementsTab({ type, onTypeChange, openOnly, onOpenOnlyChange }) {
                   onClick={() => returnMutation.mutate(m._id)}
                   disabled={returnMutation.isPending}
                 >
-                  Return
+                  {t('inventory.items.returnButton')}
                 </Button>
               )}
             </TableCell>
@@ -515,6 +561,7 @@ function MovementsTab({ type, onTypeChange, openOnly, onOpenOnlyChange }) {
 }
 
 function RequisitionsTab() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState('pending');
 
@@ -540,19 +587,27 @@ function RequisitionsTab() {
           onChange={(e) => setStatus(e.target.value)}
           className="h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          <option value="">All</option>
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-          <option value="ordered">Ordered</option>
+          <option value="">{t('inventory.items.reqStatusAll')}</option>
+          <option value="pending">{t('inventory.items.reqStatusPending')}</option>
+          <option value="approved">{t('inventory.items.reqStatusApproved')}</option>
+          <option value="rejected">{t('inventory.items.reqStatusRejected')}</option>
+          <option value="ordered">{t('inventory.items.reqStatusOrdered')}</option>
         </select>
       </div>
 
       <DataTable
-        headers={['Item', 'SKU', 'Qty Requested', 'Reason', 'Status', 'Requested By', 'Action']}
+        headers={[
+          t('inventory.items.tableItem'),
+          t('inventory.items.tableSku'),
+          t('inventory.items.tableQtyRequested'),
+          t('inventory.items.tableReason'),
+          t('common.status'),
+          t('inventory.items.tableRequestedBy'),
+          t('inventory.items.tableAction'),
+        ]}
         isLoading={isLoading}
         isEmpty={requisitions.length === 0}
-        emptyMessage="No requisitions found"
+        emptyMessage={t('inventory.items.noRequisitionsFound')}
       >
         {requisitions.map((r) => (
           <TableRow key={r._id} className="bg-card">
@@ -583,7 +638,7 @@ function RequisitionsTab() {
                   onClick={() => approveMutation.mutate(r._id)}
                   disabled={approveMutation.isPending}
                 >
-                  Approve
+                  {t('inventory.items.approve')}
                 </Button>
               )}
             </TableCell>
@@ -595,6 +650,7 @@ function RequisitionsTab() {
 }
 
 function LowStockTab() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const { data: items = [], isLoading } = useQuery({
@@ -613,10 +669,17 @@ function LowStockTab() {
   return (
     <div className="flex flex-col gap-4">
       <DataTable
-        headers={['SKU', 'Name', 'Category', 'Quantity', 'Reorder Level', 'Action']}
+        headers={[
+          t('inventory.items.tableSku'),
+          t('common.name'),
+          t('inventory.items.tableCategory'),
+          t('inventory.items.tableQuantity'),
+          t('inventory.items.reorderLevelLabel'),
+          t('inventory.items.tableAction'),
+        ]}
         isLoading={isLoading}
         isEmpty={items.length === 0}
-        emptyMessage="No low-stock items"
+        emptyMessage={t('inventory.items.noLowStockItems')}
       >
         {items.map((item) => (
           <TableRow key={item._id} className="bg-card">
@@ -634,7 +697,7 @@ function LowStockTab() {
                 onClick={() => createRequisition.mutate(item._id)}
                 disabled={createRequisition.isPending}
               >
-                Create Requisition
+                {t('inventory.items.createRequisition')}
               </Button>
             </TableCell>
           </TableRow>
@@ -645,7 +708,8 @@ function LowStockTab() {
 }
 
 export default function InventoryPage() {
-  const [activeTab, setActiveTab] = useState('Items');
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState('items');
   const [movementsType, setMovementsType] = useState('');
   const [movementsOpenOnly, setMovementsOpenOnly] = useState(false);
 
@@ -663,18 +727,25 @@ export default function InventoryPage() {
   });
 
   function handleTapLowStock() {
-    setActiveTab('Low Stock');
+    setActiveTab('lowStock');
   }
 
   function handleTapNotReturned() {
     setMovementsType('issue');
     setMovementsOpenOnly(true);
-    setActiveTab('Movements');
+    setActiveTab('movements');
   }
+
+  const TAB_LABELS = {
+    items: t('inventory.items.tabItems'),
+    movements: t('inventory.items.tabMovements'),
+    requisitions: t('inventory.items.tabRequisitions'),
+    lowStock: t('inventory.items.tabLowStock'),
+  };
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Inventory" />
+      <PageHeader title={t('nav.inventory')} />
 
       <AttentionStrip
         lowStockCount={lowStockItems.length}
@@ -684,24 +755,24 @@ export default function InventoryPage() {
       />
 
       <div className="flex gap-1 border-b border-border">
-        {TABS.map((t) => (
+        {TAB_IDS.map((id) => (
           <button
-            key={t}
-            onClick={() => setActiveTab(t)}
+            key={id}
+            onClick={() => setActiveTab(id)}
             className={[
               'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
-              activeTab === t
+              activeTab === id
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground',
             ].join(' ')}
           >
-            {t}
+            {TAB_LABELS[id]}
           </button>
         ))}
       </div>
 
-      {activeTab === 'Items' && <ItemsTab />}
-      {activeTab === 'Movements' && (
+      {activeTab === 'items' && <ItemsTab />}
+      {activeTab === 'movements' && (
         <MovementsTab
           type={movementsType}
           onTypeChange={setMovementsType}
@@ -709,8 +780,8 @@ export default function InventoryPage() {
           onOpenOnlyChange={setMovementsOpenOnly}
         />
       )}
-      {activeTab === 'Requisitions' && <RequisitionsTab />}
-      {activeTab === 'Low Stock' && <LowStockTab />}
+      {activeTab === 'requisitions' && <RequisitionsTab />}
+      {activeTab === 'lowStock' && <LowStockTab />}
     </div>
   );
 }

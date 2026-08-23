@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { buildImpersonateUrl } from '../../lib/impersonation.js';
 import { Badge } from '../../components/ui/Badge.jsx';
@@ -8,12 +9,15 @@ import { Button } from '../../components/ui/Button.jsx';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
 
 const PLAN_OPTIONS = ['starter', 'growth', 'pro', 'enterprise'];
-const DISCOUNT_OPTIONS = [
-  { value: 'none', label: 'None' },
-  { value: 'annual_prepay', label: 'Annual prepay (15%)' },
-  { value: 'nonprofit', label: 'Nonprofit (30%)' },
-  { value: 'government', label: 'Government (30%)' },
-];
+
+function getDiscountOptions(t) {
+  return [
+    { value: 'none', label: t('admin.tenantDetail.discountNone') },
+    { value: 'annual_prepay', label: t('admin.tenantDetail.discountAnnualPrepay') },
+    { value: 'nonprofit', label: t('admin.tenantDetail.discountNonprofit') },
+    { value: 'government', label: t('admin.tenantDetail.discountGovernment') },
+  ];
+}
 
 function statusVariant(status) {
   if (status === 'active') return 'success';
@@ -32,37 +36,48 @@ function InfoRow({ label, value }) {
 }
 
 function OverviewTab({ tenant }) {
+  const { t } = useTranslation();
   return (
     <div className="grid grid-cols-2 gap-6 sm:grid-cols-3">
-      <InfoRow label="Name" value={tenant.name} />
-      <InfoRow label="Subdomain" value={tenant.subdomain} />
-      <InfoRow label="Plan" value={tenant.plan} />
+      <InfoRow label={t('common.name')} value={tenant.name} />
+      <InfoRow label={t('admin.tenants.tableSubdomain')} value={tenant.subdomain} />
+      <InfoRow label={t('admin.tenants.tablePlan')} value={tenant.plan} />
       <InfoRow
-        label="Status"
+        label={t('common.status')}
         value={<Badge variant={statusVariant(tenant.status)}>{tenant.status}</Badge>}
       />
-      <InfoRow label="Locale" value={tenant.locale} />
-      <InfoRow label="Timezone" value={tenant.timezone} />
-      <InfoRow label="Currency" value={tenant.currency} />
-      <InfoRow label="Created" value={new Date(tenant.createdAt).toLocaleString()} />
+      <InfoRow label={t('admin.tenantDetail.localeLabel')} value={tenant.locale} />
+      <InfoRow label={t('admin.tenantDetail.timezoneLabel')} value={tenant.timezone} />
+      <InfoRow label={t('admin.tenantDetail.currencyLabel')} value={tenant.currency} />
+      <InfoRow
+        label={t('admin.tenantDetail.createdLabel')}
+        value={new Date(tenant.createdAt).toLocaleString()}
+      />
     </div>
   );
 }
 
 function MembersTab({ tenantId }) {
+  const { t } = useTranslation();
   const { data, isLoading } = useQuery({
     queryKey: ['tenant-members', tenantId],
     queryFn: () => api.get(`/admin/tenants/${tenantId}/members`).then((r) => r.data),
   });
 
-  if (isLoading) return <p className="text-gray-500 text-sm">Loading members…</p>;
+  if (isLoading)
+    return <p className="text-gray-500 text-sm">{t('admin.tenantDetail.loadingMembers')}</p>;
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
       <table className="w-full text-sm">
         <thead className="bg-gray-50 dark:bg-gray-800 text-left">
           <tr>
-            {['Email', 'Name', 'Roles', 'Status'].map((h) => (
+            {[
+              t('admin.tenantDetail.tableEmail'),
+              t('common.name'),
+              t('admin.tenantDetail.tableRoles'),
+              t('common.status'),
+            ].map((h) => (
               <th key={h} className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
                 {h}
               </th>
@@ -85,7 +100,7 @@ function MembersTab({ tenantId }) {
           {!data?.members?.length && (
             <tr>
               <td colSpan={4} className="px-4 py-6 text-center text-gray-400">
-                No members found
+                {t('admin.tenantDetail.noMembersFound')}
               </td>
             </tr>
           )}
@@ -96,19 +111,26 @@ function MembersTab({ tenantId }) {
 }
 
 function AuditTab({ tenantId }) {
+  const { t } = useTranslation();
   const { data, isLoading } = useQuery({
     queryKey: ['tenant-audit', tenantId],
     queryFn: () => api.get(`/admin/tenants/${tenantId}/audit`).then((r) => r.data),
   });
 
-  if (isLoading) return <p className="text-gray-500 text-sm">Loading audit log…</p>;
+  if (isLoading)
+    return <p className="text-gray-500 text-sm">{t('admin.tenantDetail.loadingAudit')}</p>;
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
       <table className="w-full text-sm">
         <thead className="bg-gray-50 dark:bg-gray-800 text-left">
           <tr>
-            {['Action', 'Actor', 'Target', 'At'].map((h) => (
+            {[
+              t('admin.tenantDetail.tableAction'),
+              t('admin.tenantDetail.tableActor'),
+              t('admin.tenantDetail.tableTarget'),
+              t('admin.tenantDetail.tableAt'),
+            ].map((h) => (
               <th key={h} className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
                 {h}
               </th>
@@ -127,7 +149,7 @@ function AuditTab({ tenantId }) {
           {!data?.logs?.length && (
             <tr>
               <td colSpan={4} className="px-4 py-6 text-center text-gray-400">
-                No audit entries
+                {t('admin.tenantDetail.noAuditEntries')}
               </td>
             </tr>
           )}
@@ -138,6 +160,7 @@ function AuditTab({ tenantId }) {
 }
 
 function BillingTab({ tenant, tenantId }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [plan, setPlan] = useState(tenant.plan);
   const [discountType, setDiscountType] = useState(tenant.discountType ?? 'none');
@@ -169,11 +192,13 @@ function BillingTab({ tenant, tenantId }) {
     <div className="flex flex-col gap-8">
       <div>
         <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-          Current plan
+          {t('admin.tenantDetail.currentPlan')}
         </h3>
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Plan</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {t('admin.tenants.tablePlan')}
+            </label>
             <select
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
@@ -187,41 +212,43 @@ function BillingTab({ tenant, tenantId }) {
             </select>
           </div>
           <Button onClick={() => subscribeMutation.mutate()} disabled={subscribeMutation.isPending}>
-            {subscribeMutation.isPending ? 'Subscribing…' : 'Subscribe / Change plan'}
+            {subscribeMutation.isPending
+              ? t('admin.tenantDetail.subscribing')
+              : t('admin.tenantDetail.subscribeOrChangePlan')}
           </Button>
         </div>
         <p className="mt-2 text-xs text-gray-400">
-          Current plan on record: <span className="font-medium">{tenant.plan}</span>. Subscribing
-          creates a Razorpay subscription; the tenant&apos;s plan updates when the webhook confirms
-          activation.
+          {t('admin.tenantDetail.currentPlanOnRecord')}{' '}
+          <span className="font-medium">{tenant.plan}</span>.{' '}
+          {t('admin.tenantDetail.subscribeDescription')}
         </p>
         {subscribeMutation.isSuccess && (
           <p className="mt-1 text-sm text-green-600">
             {subscribeMutation.data?.status === 'mock'
-              ? 'Subscription created (mock — Razorpay not configured)'
-              : 'Subscription created'}
+              ? t('admin.tenantDetail.subscriptionCreatedMock')
+              : t('admin.tenantDetail.subscriptionCreated')}
           </p>
         )}
         {subscribeMutation.isError && (
-          <p className="mt-1 text-sm text-red-500">Failed to create subscription</p>
+          <p className="mt-1 text-sm text-red-500">{t('admin.tenantDetail.subscriptionFailed')}</p>
         )}
       </div>
 
       <div>
         <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-          Discount &amp; pricing
+          {t('admin.tenantDetail.discountAndPricing')}
         </h3>
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Discount type
+              {t('admin.tenantDetail.discountTypeLabel')}
             </label>
             <select
               value={discountType}
               onChange={(e) => setDiscountType(e.target.value)}
               className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
             >
-              {DISCOUNT_OPTIONS.map((d) => (
+              {getDiscountOptions(t).map((d) => (
                 <option key={d.value} value={d.value}>
                   {d.label}
                 </option>
@@ -230,7 +257,7 @@ function BillingTab({ tenant, tenantId }) {
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Student count
+              {t('admin.tenantDetail.studentCountLabel')}
             </label>
             <input
               type="number"
@@ -245,27 +272,37 @@ function BillingTab({ tenant, tenantId }) {
             onClick={() => discountMutation.mutate()}
             disabled={discountMutation.isPending}
           >
-            {discountMutation.isPending ? 'Saving…' : 'Save & calculate'}
+            {discountMutation.isPending
+              ? t('common.saving')
+              : t('admin.tenantDetail.saveAndCalculate')}
           </Button>
         </div>
 
         {discountMutation.isError && (
-          <p className="mt-1 text-sm text-red-500">Failed to update discount</p>
+          <p className="mt-1 text-sm text-red-500">
+            {t('admin.tenantDetail.discountUpdateFailed')}
+          </p>
         )}
 
         {tenant.discountType && tenant.discountType !== 'none' && (
           <p className="mt-2 text-xs text-gray-400">
-            Discount on record: <span className="font-medium">{tenant.discountType}</span> (
-            {tenant.discountPct}%)
+            {t('admin.tenantDetail.discountOnRecord')}{' '}
+            <span className="font-medium">{tenant.discountType}</span> ({tenant.discountPct}%)
           </p>
         )}
 
         {pricing && (
           <div className="mt-4 grid grid-cols-3 gap-4 rounded-lg border border-gray-200 p-4 dark:border-gray-700 sm:w-fit sm:grid-cols-3">
-            <InfoRow label="Base amount" value={`₹${pricing.baseAmount.toLocaleString('en-IN')}`} />
-            <InfoRow label="Discount" value={`${pricing.discountPct}%`} />
             <InfoRow
-              label="Final amount"
+              label={t('admin.tenantDetail.baseAmountLabel')}
+              value={`₹${pricing.baseAmount.toLocaleString('en-IN')}`}
+            />
+            <InfoRow
+              label={t('admin.tenantDetail.discountLabel')}
+              value={`${pricing.discountPct}%`}
+            />
+            <InfoRow
+              label={t('admin.tenantDetail.finalAmountLabel')}
               value={`₹${pricing.finalAmount.toLocaleString('en-IN')}`}
             />
           </div>
@@ -275,12 +312,13 @@ function BillingTab({ tenant, tenantId }) {
   );
 }
 
-const TABS = ['Overview', 'Members', 'Billing', 'Audit Log'];
+const TAB_IDS = ['overview', 'members', 'billing', 'auditLog'];
 
 export default function TenantDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('Overview');
+  const [activeTab, setActiveTab] = useState('overview');
 
   const {
     data: tenant,
@@ -312,8 +350,15 @@ export default function TenantDetailPage() {
     },
   });
 
-  if (isLoading) return <p className="text-gray-500">Loading…</p>;
-  if (error) return <p className="text-red-500">Failed to load tenant</p>;
+  if (isLoading) return <p className="text-gray-500">{t('common.loading')}</p>;
+  if (error) return <p className="text-red-500">{t('admin.tenantDetail.loadFailed')}</p>;
+
+  const TAB_LABELS = {
+    overview: t('admin.tenantDetail.tabOverview'),
+    members: t('admin.tenantDetail.tabMembers'),
+    billing: t('admin.tenantDetail.tabBilling'),
+    auditLog: t('admin.tenantDetail.tabAuditLog'),
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -330,7 +375,9 @@ export default function TenantDetailPage() {
               onClick={() => impersonate.mutate()}
               disabled={impersonate.isPending}
             >
-              {impersonate.isPending ? 'Signing in…' : 'Login as tenant admin'}
+              {impersonate.isPending
+                ? t('admin.tenantDetail.signingIn')
+                : t('admin.tenantDetail.loginAsTenantAdmin')}
             </Button>
           )}
           {tenant.status === 'active' && (
@@ -340,7 +387,7 @@ export default function TenantDetailPage() {
               onClick={() => suspend.mutate()}
               disabled={suspend.isPending}
             >
-              Suspend
+              {t('admin.tenants.suspend')}
             </Button>
           )}
           {(tenant.status === 'active' || tenant.status === 'suspended') && (
@@ -350,7 +397,7 @@ export default function TenantDetailPage() {
               onClick={() => archive.mutate()}
               disabled={archive.isPending}
             >
-              Archive
+              {t('admin.tenants.archive')}
             </Button>
           )}
           {tenant.status === 'archived' && (
@@ -360,35 +407,35 @@ export default function TenantDetailPage() {
               onClick={() => restore.mutate()}
               disabled={restore.isPending}
             >
-              Restore
+              {t('admin.tenants.restore')}
             </Button>
           )}
         </div>
       </div>
 
       <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
-        {TABS.map((tab) => (
+        {TAB_IDS.map((tabId) => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
+            key={tabId}
+            onClick={() => setActiveTab(tabId)}
             className={[
               'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
-              activeTab === tab
+              activeTab === tabId
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400',
             ].join(' ')}
           >
-            {tab}
+            {TAB_LABELS[tabId]}
           </button>
         ))}
       </div>
 
       <Card>
         <CardContent className="pt-6">
-          {activeTab === 'Overview' && <OverviewTab tenant={tenant} />}
-          {activeTab === 'Members' && <MembersTab tenantId={id} />}
-          {activeTab === 'Billing' && <BillingTab tenant={tenant} tenantId={id} />}
-          {activeTab === 'Audit Log' && <AuditTab tenantId={id} />}
+          {activeTab === 'overview' && <OverviewTab tenant={tenant} />}
+          {activeTab === 'members' && <MembersTab tenantId={id} />}
+          {activeTab === 'billing' && <BillingTab tenant={tenant} tenantId={id} />}
+          {activeTab === 'auditLog' && <AuditTab tenantId={id} />}
         </CardContent>
       </Card>
     </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Badge } from '../../components/ui/Badge.jsx';
@@ -22,20 +23,22 @@ import { GenerateProgress } from '../../components/salary/GenerateProgress.jsx';
 const selectCls =
   'h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
 
-const MONTHS = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
+function getMonths(t) {
+  return [
+    t('staff.salary.months.january'),
+    t('staff.salary.months.february'),
+    t('staff.salary.months.march'),
+    t('staff.salary.months.april'),
+    t('staff.salary.months.may'),
+    t('staff.salary.months.june'),
+    t('staff.salary.months.july'),
+    t('staff.salary.months.august'),
+    t('staff.salary.months.september'),
+    t('staff.salary.months.october'),
+    t('staff.salary.months.november'),
+    t('staff.salary.months.december'),
+  ];
+}
 
 function statusVariant(status) {
   if (status === 'paid') return 'success';
@@ -46,6 +49,7 @@ function statusVariant(status) {
 }
 
 function MarkPaidDialog({ open, onOpenChange, slip }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
 
@@ -56,29 +60,29 @@ function MarkPaidDialog({ open, onOpenChange, slip }) {
       onOpenChange(false);
       setError('');
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to mark slip as paid'),
+    onError: (err) => setError(err.response?.data?.error || t('staff.salary.markPaidFailed')),
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Mark Slip as Paid?</DialogTitle>
+          <DialogTitle>{t('staff.salary.markSlipPaidTitle')}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          This marks{' '}
+          {t('staff.salary.markPaidPrefix')}{' '}
           <strong className="text-foreground">
             {slip?.staffId?.firstName} {slip?.staffId?.lastName}
           </strong>
-          's slip as paid. This cannot be undone.
+          {t('staff.salary.markPaidSuffix')}
         </p>
         {error && <p className="text-sm text-destructive">{error}</p>}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
-            {mutation.isPending ? 'Saving…' : 'Confirm'}
+            {mutation.isPending ? t('common.saving') : t('common.confirm')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -87,6 +91,7 @@ function MarkPaidDialog({ open, onOpenChange, slip }) {
 }
 
 function GenerateAllPanel({ jobId, staffCount, month, year }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { state, result, progress, error, timedOut } = useJobPolling(
     jobId ? `/staff/salary-slips/status/${jobId}` : null,
@@ -105,8 +110,8 @@ function GenerateAllPanel({ jobId, staffCount, month, year }) {
       aria-live="polite"
     >
       <p className="text-sm text-muted-foreground">
-        Job ID: <span className="font-mono text-xs">{jobId}</span> — generating slips for{' '}
-        {staffCount} staff member{staffCount === 1 ? '' : 's'}…
+        {t('staff.salary.jobIdLabel')} <span className="font-mono text-xs">{jobId}</span>{' '}
+        {t('staff.salary.generatingSlipsFor', { count: staffCount })}
       </p>
       {!isSettled && (
         <GenerateProgress done={progress?.completed ?? 0} total={progress?.total ?? staffCount} />
@@ -114,12 +119,11 @@ function GenerateAllPanel({ jobId, staffCount, month, year }) {
       {state === 'completed' && result && (
         <div className="text-sm">
           <p className="text-emerald-600 dark:text-emerald-400">
-            {result.succeeded?.length ?? 0} slip{result.succeeded?.length === 1 ? '' : 's'}{' '}
-            generated.
+            {t('staff.salary.slipsGenerated', { count: result.succeeded?.length ?? 0 })}
           </p>
           {result.failed?.length > 0 && (
             <div className="mt-1 text-destructive">
-              <p>{result.failed.length} failed:</p>
+              <p>{t('staff.salary.failedCount', { count: result.failed.length })}</p>
               <ul className="list-disc list-inside">
                 {result.failed.map((f) => (
                   <li key={f.staffId}>{f.error}</li>
@@ -129,14 +133,18 @@ function GenerateAllPanel({ jobId, staffCount, month, year }) {
           )}
         </div>
       )}
-      {state === 'failed' && <p className="text-sm text-destructive">Job failed.</p>}
+      {state === 'failed' && (
+        <p className="text-sm text-destructive">{t('staff.salary.jobFailed')}</p>
+      )}
       {error && <p className="text-sm text-destructive">{error}</p>}
-      {timedOut && <p className="text-sm text-destructive">Timed out waiting for the job.</p>}
+      {timedOut && <p className="text-sm text-destructive">{t('staff.salary.timedOut')}</p>}
     </div>
   );
 }
 
 export default function SalaryPage() {
+  const { t } = useTranslation();
+  const MONTHS = getMonths(t);
   const { user } = useAuth();
   const canWrite = (user?.permissions ?? []).includes('payroll:write');
   const now = new Date();
@@ -167,7 +175,7 @@ export default function SalaryPage() {
       setGenJob({ jobId: data.jobId, staffCount: data.staffCount });
       setGenError('');
     },
-    onError: (err) => setGenError(err.response?.data?.error || 'Failed to start generation'),
+    onError: (err) => setGenError(err.response?.data?.error || t('staff.salary.generateFailed')),
   });
 
   const downloadMutation = useMutation({
@@ -180,18 +188,20 @@ export default function SalaryPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Salary Slips"
+        title={t('staff.salary.title')}
         action={
           <div className="flex gap-2">
             <Link to="/staff/salary-structures">
-              <Button variant="outline">Manage Structures</Button>
+              <Button variant="outline">{t('staff.salary.manageStructures')}</Button>
             </Link>
             {canWrite && (
               <Button
                 onClick={() => generateAllMutation.mutate()}
                 disabled={generateAllMutation.isPending}
               >
-                {generateAllMutation.isPending ? 'Starting…' : 'Generate All Slips'}
+                {generateAllMutation.isPending
+                  ? t('staff.salary.starting')
+                  : t('staff.salary.generateAllSlips')}
               </Button>
             )}
           </div>
@@ -228,13 +238,20 @@ export default function SalaryPage() {
         />
       )}
 
-      {error && <p className="text-destructive">Failed to load salary slips</p>}
+      {error && <p className="text-destructive">{t('staff.salary.loadFailed')}</p>}
 
       <DataTable
-        headers={['Staff Name', 'Gross Earnings', 'Deductions', 'Net Pay', 'Status', 'Actions']}
+        headers={[
+          t('staff.salary.columnStaffName'),
+          t('staff.salary.columnGrossEarnings'),
+          t('staff.salary.columnDeductions'),
+          t('staff.salary.columnNetPay'),
+          t('common.status'),
+          t('common.actions'),
+        ]}
         isLoading={isLoading}
         isEmpty={slips.length === 0}
-        emptyMessage="No slips generated for this period"
+        emptyMessage={t('staff.salary.noSlips')}
       >
         {slips.map((s) => (
           <TableRow key={s._id} className="bg-card">
@@ -257,11 +274,11 @@ export default function SalaryPage() {
                   onClick={() => downloadMutation.mutate(s._id)}
                   disabled={!s.pdfKey || downloadMutation.isPending}
                 >
-                  Download
+                  {t('staff.salary.download')}
                 </Button>
                 {canWrite && s.status === 'generated' && (
                   <Button size="sm" variant="outline" onClick={() => setMarkPaidFor(s)}>
-                    Mark as Paid
+                    {t('staff.salary.markAsPaid')}
                   </Button>
                 )}
               </div>
