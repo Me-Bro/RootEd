@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
@@ -21,24 +22,25 @@ const selectCls =
   'h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
 
 function ComponentRows({ components, onAdd, onRemove, onUpdate }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">Components</span>
+        <span className="text-sm font-medium">{t('fee.structures.components')}</span>
         <Button type="button" size="sm" variant="outline" onClick={onAdd}>
-          + Add Row
+          {t('fee.structures.addRow')}
         </Button>
       </div>
       {components.map((c, i) => (
         <div key={i} className="flex gap-2 items-center">
           <Input
-            placeholder="Label (e.g. Tuition)"
+            placeholder={t('fee.structures.labelPlaceholder')}
             value={c.label}
             onChange={(e) => onUpdate(i, 'label', e.target.value)}
             required
           />
           <Input
-            placeholder="Amount"
+            placeholder={t('fee.structures.amountPlaceholder')}
             type="number"
             value={c.amount}
             onChange={(e) => onUpdate(i, 'amount', e.target.value)}
@@ -51,7 +53,7 @@ function ComponentRows({ components, onAdd, onRemove, onUpdate }) {
               checked={c.isOptional || false}
               onChange={(e) => onUpdate(i, 'isOptional', e.target.checked)}
             />
-            Optional
+            {t('fee.structures.optional')}
           </label>
           {components.length > 1 && (
             <button
@@ -69,6 +71,7 @@ function ComponentRows({ components, onAdd, onRemove, onUpdate }) {
 }
 
 function NewStructureModal({ open, onOpenChange }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const [yearId, setYearId] = useState('');
@@ -116,14 +119,14 @@ function NewStructureModal({ open, onOpenChange }) {
       setComponents([{ label: '', amount: '', isOptional: false }]);
       setError('');
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to create'),
+    onError: (err) => setError(err.response?.data?.error || t('fee.structures.createFailed')),
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>New Fee Structure</DialogTitle>
+          <DialogTitle>{t('fee.structures.newFeeStructureTitle')}</DialogTitle>
         </DialogHeader>
         <form
           id="new-structure"
@@ -133,16 +136,21 @@ function NewStructureModal({ open, onOpenChange }) {
           }}
           className="flex flex-col gap-4"
         >
-          <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
+          <Input
+            label={t('common.name')}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Academic Year</label>
+            <label className="text-sm font-medium">{t('fee.structures.academicYear')}</label>
             <select
               value={yearId}
               onChange={(e) => setYearId(e.target.value)}
               required
               className={selectCls}
             >
-              <option value="">— Select Year —</option>
+              <option value="">{t('fee.structures.selectYearPlaceholder')}</option>
               {years.map((y) => (
                 <option key={y._id} value={y._id}>
                   {y.name}
@@ -151,7 +159,7 @@ function NewStructureModal({ open, onOpenChange }) {
             </select>
           </div>
           <Input
-            label="Due Date (optional)"
+            label={t('fee.structures.dueDateOptional')}
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
@@ -168,10 +176,10 @@ function NewStructureModal({ open, onOpenChange }) {
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="submit" form="new-structure" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Creating…' : 'Create'}
+            {mutation.isPending ? t('fee.structures.creating') : t('common.create')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -180,6 +188,7 @@ function NewStructureModal({ open, onOpenChange }) {
 }
 
 function EditStructureModal({ open, onOpenChange, structure }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [name, setName] = useState(structure.name);
   const [dueDate, setDueDate] = useState(structure.dueDate ? structure.dueDate.slice(0, 10) : '');
@@ -218,14 +227,14 @@ function EditStructureModal({ open, onOpenChange, structure }) {
       onOpenChange(false);
       setError('');
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to update structure'),
+    onError: (err) => setError(err.response?.data?.error || t('fee.structures.updateFailed')),
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Fee Structure</DialogTitle>
+          <DialogTitle>{t('fee.structures.editFeeStructureTitle')}</DialogTitle>
         </DialogHeader>
         <form
           id="edit-structure"
@@ -235,9 +244,14 @@ function EditStructureModal({ open, onOpenChange, structure }) {
           }}
           className="flex flex-col gap-4"
         >
-          <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
           <Input
-            label="Due Date (optional)"
+            label={t('common.name')}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+          <Input
+            label={t('fee.structures.dueDateOptional')}
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
@@ -254,10 +268,10 @@ function EditStructureModal({ open, onOpenChange, structure }) {
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="submit" form="edit-structure" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Saving…' : 'Save Changes'}
+            {mutation.isPending ? t('common.saving') : t('fee.structures.saveChanges')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -266,6 +280,7 @@ function EditStructureModal({ open, onOpenChange, structure }) {
 }
 
 function DeactivateConfirmDialog({ open, onOpenChange, structure }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
   const willDeactivate = structure?.isActive !== false;
@@ -280,26 +295,31 @@ function DeactivateConfirmDialog({ open, onOpenChange, structure }) {
       onOpenChange(false);
       setError('');
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to update status'),
+    onError: (err) => setError(err.response?.data?.error || t('fee.structures.statusUpdateFailed')),
   });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>{willDeactivate ? 'Deactivate' : 'Activate'} Structure?</DialogTitle>
+          <DialogTitle>
+            {willDeactivate
+              ? t('fee.structures.deactivateTitle')
+              : t('fee.structures.activateTitle')}
+          </DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          This will {willDeactivate ? 'deactivate' : 'activate'}{' '}
-          <strong className="text-foreground">{structure?.name}</strong>.
+          {willDeactivate
+            ? t('fee.structures.deactivateBody', { name: structure?.name })
+            : t('fee.structures.activateBody', { name: structure?.name })}
         </p>
         {error && <p className="text-sm text-destructive">{error}</p>}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
-            {mutation.isPending ? 'Saving…' : 'Confirm'}
+            {mutation.isPending ? t('common.saving') : t('common.confirm')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -308,6 +328,7 @@ function DeactivateConfirmDialog({ open, onOpenChange, structure }) {
 }
 
 function AssignToSectionModal({ open, onOpenChange, structure }) {
+  const { t } = useTranslation();
   const [sectionId, setSectionId] = useState('');
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
@@ -321,7 +342,7 @@ function AssignToSectionModal({ open, onOpenChange, structure }) {
     mutationFn: () =>
       api.post(`/fee/structures/${structure._id}/assign`, { sectionId }).then((r) => r.data),
     onSuccess: (data) => setResult(data),
-    onError: (err) => setError(err.response?.data?.error || 'Assignment failed'),
+    onError: (err) => setError(err.response?.data?.error || t('fee.structures.assignmentFailed')),
   });
 
   function handleClose() {
@@ -335,25 +356,26 @@ function AssignToSectionModal({ open, onOpenChange, structure }) {
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Assign to Section</DialogTitle>
+          <DialogTitle>{t('fee.structures.assignToSectionTitle')}</DialogTitle>
         </DialogHeader>
         {result ? (
           <p className="text-sm text-muted-foreground">
-            Done — {result.created} created, {result.skipped} skipped (already assigned).
+            {t('fee.structures.assignDone', { created: result.created, skipped: result.skipped })}
           </p>
         ) : (
           <div className="flex flex-col gap-4">
             <p className="text-sm text-muted-foreground">
-              Structure: <strong className="text-foreground">{structure?.name}</strong>
+              {t('fee.structures.structureLabel')}{' '}
+              <strong className="text-foreground">{structure?.name}</strong>
             </p>
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium">Section</label>
+              <label className="text-sm font-medium">{t('fee.structures.section')}</label>
               <select
                 value={sectionId}
                 onChange={(e) => setSectionId(e.target.value)}
                 className={selectCls}
               >
-                <option value="">— Select Section —</option>
+                <option value="">{t('fee.structures.selectSectionPlaceholder')}</option>
                 {sections.map((s) => (
                   <option key={s._id} value={s._id}>
                     {s.classId?.name} — {s.name}
@@ -366,11 +388,11 @@ function AssignToSectionModal({ open, onOpenChange, structure }) {
         )}
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
-            {result ? 'Close' : 'Cancel'}
+            {result ? t('common.close') : t('common.cancel')}
           </Button>
           {!result && (
             <Button onClick={() => mutation.mutate()} disabled={!sectionId || mutation.isPending}>
-              {mutation.isPending ? 'Assigning…' : 'Assign'}
+              {mutation.isPending ? t('fee.structures.assigning') : t('fee.structures.assign')}
             </Button>
           )}
         </DialogFooter>
@@ -386,6 +408,7 @@ function AssignToSectionModal({ open, onOpenChange, structure }) {
 // stays purely presentational: a failed/pending fetch for one card just renders nothing
 // here, leaving the components/total block above it intact (spec §5).
 function StructureSummary({ summaryQuery }) {
+  const { t } = useTranslation();
   const { data, isError } = summaryQuery || {};
 
   if (!data || isError) return null;
@@ -395,12 +418,17 @@ function StructureSummary({ summaryQuery }) {
 
   return (
     <div className="mt-3 pt-3 border-t border-border">
-      <p className="text-xs text-muted-foreground mb-2">{data.assignedCount} assigned</p>
-      <Progress value={pct} aria-label={`${pct}% of fees collected`} />
+      <p className="text-xs text-muted-foreground mb-2">
+        {t('fee.structures.assignedCount', { count: data.assignedCount })}
+      </p>
+      <Progress value={pct} aria-label={t('fee.structures.pctCollectedAria', { pct })} />
       <div className="flex items-center justify-between mt-1.5 text-xs text-muted-foreground">
-        <span>{pct}% collected</span>
+        <span>{t('fee.structures.pctCollected', { pct })}</span>
         <span>
-          {formatCurrency(data.collectedAmount)} of {formatCurrency(totalOwed)}
+          {t('fee.structures.collectedOfTotal', {
+            collected: formatCurrency(data.collectedAmount),
+            total: formatCurrency(totalOwed),
+          })}
         </span>
       </div>
     </div>
@@ -408,6 +436,7 @@ function StructureSummary({ summaryQuery }) {
 }
 
 export default function FeeStructuresPage() {
+  const { t } = useTranslation();
   const [yearId, setYearId] = useState('');
   const [classFilter, setClassFilter] = useState('');
   const [search, setSearch] = useState('');
@@ -455,24 +484,26 @@ export default function FeeStructuresPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Fee Structures"
-        action={<Button onClick={() => setShowNew(true)}>New Structure</Button>}
+        title={t('nav.feeStructures')}
+        action={
+          <Button onClick={() => setShowNew(true)}>{t('fee.structures.newStructure')}</Button>
+        }
       />
 
       <div className="flex flex-wrap gap-3">
         <Input
-          placeholder="Search structures..."
+          placeholder={t('fee.structures.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-xs"
         />
         <select
-          aria-label="Academic Year"
+          aria-label={t('fee.structures.academicYear')}
           value={yearId}
           onChange={(e) => setYearId(e.target.value)}
           className="h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          <option value="">All Years</option>
+          <option value="">{t('common.allYears')}</option>
           {years.map((y) => (
             <option key={y._id} value={y._id}>
               {y.name}
@@ -480,12 +511,12 @@ export default function FeeStructuresPage() {
           ))}
         </select>
         <select
-          aria-label="Class"
+          aria-label={t('fee.structures.classLabel')}
           value={classFilter}
           onChange={(e) => setClassFilter(e.target.value)}
           className="h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          <option value="">All Classes</option>
+          <option value="">{t('common.allClasses')}</option>
           {classes.map((c) => (
             <option key={c._id} value={c._id}>
               {c.name}
@@ -494,7 +525,7 @@ export default function FeeStructuresPage() {
         </select>
       </div>
 
-      {isLoading && <p className="text-muted-foreground">Loading…</p>}
+      {isLoading && <p className="text-muted-foreground">{t('common.loading')}</p>}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filtered.map((s, i) => {
@@ -512,17 +543,16 @@ export default function FeeStructuresPage() {
                   <CardTitle className="text-base">{s.name}</CardTitle>
                   <div className="flex gap-1">
                     {s.isActive === false ? (
-                      <Badge variant="danger">Inactive</Badge>
+                      <Badge variant="danger">{t('fee.structures.inactive')}</Badge>
                     ) : (
-                      <Badge variant="success">Active</Badge>
+                      <Badge variant="success">{t('fee.structures.active')}</Badge>
                     )}
                     {applicableDiscounts.length > 0 && (
                       <Badge
                         variant="secondary"
                         title={applicableDiscounts.map((d) => d.name).join(', ')}
                       >
-                        {applicableDiscounts.length} discount
-                        {applicableDiscounts.length > 1 ? 's' : ''}
+                        {t('fee.structures.discountCount', { count: applicableDiscounts.length })}
                       </Badge>
                     )}
                   </div>
@@ -535,14 +565,14 @@ export default function FeeStructuresPage() {
                     <li key={i} className="flex justify-between">
                       <span className="text-muted-foreground">
                         {c.label}
-                        {c.isOptional && ' (optional)'}
+                        {c.isOptional && t('fee.structures.optionalSuffix')}
                       </span>
                       <span className="font-medium">{formatCurrency(c.amount)}</span>
                     </li>
                   ))}
                 </ul>
                 <div className="mt-3 pt-3 border-t border-border flex justify-between text-sm font-semibold">
-                  <span>Total</span>
+                  <span>{t('fee.structures.total')}</span>
                   <span>
                     {formatCurrency((s.components || []).reduce((sum, c) => sum + c.amount, 0))}
                   </span>
@@ -551,20 +581,22 @@ export default function FeeStructuresPage() {
               </CardContent>
               <CardFooter className="flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" onClick={() => setAssignFor(s)}>
-                  Assign to Section
+                  {t('fee.structures.assignToSectionTitle')}
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setEditFor(s)}>
-                  Edit
+                  {t('common.edit')}
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setDeactivateFor(s)}>
-                  {s.isActive === false ? 'Activate' : 'Deactivate'}
+                  {s.isActive === false
+                    ? t('fee.structures.activate')
+                    : t('fee.structures.deactivate')}
                 </Button>
               </CardFooter>
             </Card>
           );
         })}
         {filtered.length === 0 && !isLoading && (
-          <p className="text-muted-foreground col-span-3">No fee structures found.</p>
+          <p className="text-muted-foreground col-span-3">{t('fee.structures.noneFound')}</p>
         )}
       </div>
 

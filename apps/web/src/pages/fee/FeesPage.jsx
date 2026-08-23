@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
@@ -18,7 +19,7 @@ import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.js
 // Defaulters leads: chasing 160 unpaid + 254 partial assignments (₹1.98Cr
 // outstanding) is this module's real job, not an afterthought behind two
 // other tabs. See docs/mobile-ui/17-fee-collection-approved.html.
-const TABS = ['Defaulters', 'Assignments', 'Payments'];
+const TAB_IDS = ['defaulters', 'assignments', 'payments'];
 
 function statusVariant(status) {
   if (status === 'paid') return 'success';
@@ -28,6 +29,7 @@ function statusVariant(status) {
 }
 
 function CollectPaymentModal({ open, onOpenChange, assignment }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
     amount: '',
@@ -69,7 +71,7 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
       setPaymentSuccess(true);
       if (data.receiptUrl) setReceiptUrl(data.receiptUrl);
     },
-    onError: (err) => setError(err.response?.data?.error || 'Payment failed'),
+    onError: (err) => setError(err.response?.data?.error || t('fee.collection.paymentFailed')),
   });
 
   async function handlePayOnline() {
@@ -101,13 +103,13 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
             queryClient.invalidateQueries({ queryKey: ['fee-assignments'] });
             setOnlineSuccess(true);
           } catch {
-            setError('Payment verification failed');
+            setError(t('fee.collection.verificationFailed'));
           }
         },
       });
       rzp.open();
     } catch {
-      setError('Failed to initiate online payment');
+      setError(t('fee.collection.initiateFailed'));
     }
   }
 
@@ -120,14 +122,16 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
         <DialogHeader>
           <DialogTitle>
             {receiptUrl || onlineSuccess || paymentSuccess
-              ? 'Payment Successful'
-              : 'Collect Payment'}
+              ? t('fee.collection.paymentSuccessfulTitle')
+              : t('fee.collection.collectPaymentTitle')}
           </DialogTitle>
         </DialogHeader>
 
         {receiptUrl || onlineSuccess || paymentSuccess ? (
           <div className="flex flex-col gap-3">
-            <p className="text-sm text-muted-foreground">Payment recorded successfully.</p>
+            <p className="text-sm text-muted-foreground">
+              {t('fee.collection.paymentRecordedSuccess')}
+            </p>
             {receiptUrl && (
               <a
                 href={receiptUrl}
@@ -135,7 +139,7 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-primary hover:underline text-sm font-medium"
               >
-                Download Receipt PDF
+                {t('fee.collection.downloadReceiptPdf')}
               </a>
             )}
           </div>
@@ -149,18 +153,18 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
             className="flex flex-col gap-4"
           >
             <div className="text-sm text-muted-foreground rounded-lg bg-muted/50 px-3 py-2">
-              Student:{' '}
+              {t('fee.collection.studentLabel')}{' '}
               <strong className="text-foreground">
                 {assignment?.studentId?.firstName} {assignment?.studentId?.lastName}
               </strong>
               <br />
-              Total Due:{' '}
+              {t('fee.collection.totalDueLabel')}{' '}
               <strong className="text-foreground">
                 {formatCurrency((assignment?.totalAmount ?? 0) - (assignment?.discountAmount || 0))}
               </strong>
             </div>
             <Input
-              label="Amount"
+              label={t('fee.collection.amountLabel')}
               type="number"
               value={form.amount}
               onChange={update('amount')}
@@ -168,40 +172,46 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
               min="1"
             />
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium">Payment Method</label>
+              <label className="text-sm font-medium">{t('fee.collection.paymentMethod')}</label>
               <select
                 value={form.paymentMethod}
                 onChange={update('paymentMethod')}
                 className={selectCls}
               >
-                <option value="cash">Cash</option>
-                <option value="card">Card</option>
-                <option value="upi">UPI</option>
-                <option value="bank_transfer">Bank Transfer</option>
-                <option value="cheque">Cheque</option>
+                <option value="cash">{t('fee.collection.methodCash')}</option>
+                <option value="card">{t('fee.collection.methodCard')}</option>
+                <option value="upi">{t('fee.collection.methodUpi')}</option>
+                <option value="bank_transfer">{t('fee.collection.methodBankTransfer')}</option>
+                <option value="cheque">{t('fee.collection.methodCheque')}</option>
               </select>
             </div>
             <Input
-              label="Transaction ID (optional)"
+              label={t('fee.collection.transactionIdOptional')}
               value={form.transactionId}
               onChange={update('transactionId')}
             />
-            <Input label="Notes (optional)" value={form.notes} onChange={update('notes')} />
+            <Input
+              label={t('fee.collection.notesOptional')}
+              value={form.notes}
+              onChange={update('notes')}
+            />
             {error && <p className="text-sm text-destructive">{error}</p>}
           </form>
         )}
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
-            {receiptUrl || onlineSuccess || paymentSuccess ? 'Close' : 'Cancel'}
+            {receiptUrl || onlineSuccess || paymentSuccess ? t('common.close') : t('common.cancel')}
           </Button>
           {!receiptUrl && !onlineSuccess && !paymentSuccess && (
             <>
               <Button variant="outline" type="button" onClick={handlePayOnline}>
-                Pay Online
+                {t('fee.collection.payOnline')}
               </Button>
               <Button type="submit" form="collect-payment" disabled={mutation.isPending}>
-                {mutation.isPending ? 'Processing…' : 'Record Payment'}
+                {mutation.isPending
+                  ? t('fee.collection.processing')
+                  : t('fee.collection.recordPayment')}
               </Button>
             </>
           )}
@@ -212,6 +222,7 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
 }
 
 function ApplyDiscountModal({ open, onOpenChange, assignment }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [discountId, setDiscountId] = useState('');
   const [error, setError] = useState('');
@@ -235,7 +246,8 @@ function ApplyDiscountModal({ open, onOpenChange, assignment }) {
       queryClient.invalidateQueries({ queryKey: ['fee-assignments'] });
       handleClose();
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to apply discount'),
+    onError: (err) =>
+      setError(err.response?.data?.error || t('fee.collection.applyDiscountFailed')),
   });
 
   const selectCls =
@@ -245,24 +257,24 @@ function ApplyDiscountModal({ open, onOpenChange, assignment }) {
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Apply Discount</DialogTitle>
+          <DialogTitle>{t('fee.collection.applyDiscountTitle')}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <p className="text-sm text-muted-foreground">
-            Student:{' '}
+            {t('fee.collection.studentLabel')}{' '}
             <strong className="text-foreground">
               {assignment?.studentId?.firstName} {assignment?.studentId?.lastName}
             </strong>
           </p>
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Discount</label>
+            <label className="text-sm font-medium">{t('fee.collection.discountLabel')}</label>
             <select
-              aria-label="Discount"
+              aria-label={t('fee.collection.discountLabel')}
               value={discountId}
               onChange={(e) => setDiscountId(e.target.value)}
               className={selectCls}
             >
-              <option value="">— Select Discount —</option>
+              <option value="">{t('fee.collection.selectDiscountPlaceholder')}</option>
               {discounts.map((d) => (
                 <option key={d._id} value={d._id}>
                   {d.name} ({d.type === 'percentage' ? `${d.value}%` : formatCurrency(d.value)})
@@ -274,10 +286,10 @@ function ApplyDiscountModal({ open, onOpenChange, assignment }) {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button onClick={() => mutation.mutate()} disabled={!discountId || mutation.isPending}>
-            {mutation.isPending ? 'Applying…' : 'Apply'}
+            {mutation.isPending ? t('fee.collection.applying') : t('fee.collection.apply')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -286,6 +298,7 @@ function ApplyDiscountModal({ open, onOpenChange, assignment }) {
 }
 
 function WaiveAssignmentModal({ open, onOpenChange, assignment }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
@@ -305,25 +318,23 @@ function WaiveAssignmentModal({ open, onOpenChange, assignment }) {
       queryClient.invalidateQueries({ queryKey: ['fee-assignments'] });
       handleClose();
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to waive assignment'),
+    onError: (err) => setError(err.response?.data?.error || t('fee.collection.waiveFailed')),
   });
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Waive Fee Assignment</DialogTitle>
+          <DialogTitle>{t('fee.collection.waiveTitle')}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <p className="text-sm text-muted-foreground">
-            This will mark{' '}
-            <strong className="text-foreground">
-              {assignment?.studentId?.firstName} {assignment?.studentId?.lastName}
-            </strong>
-            's assignment as waived.
+            {t('fee.collection.waiveBody', {
+              name: `${assignment?.studentId?.firstName ?? ''} ${assignment?.studentId?.lastName ?? ''}`.trim(),
+            })}
           </p>
           <Input
-            label="Reason (optional)"
+            label={t('fee.collection.reasonOptional')}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
           />
@@ -331,10 +342,10 @@ function WaiveAssignmentModal({ open, onOpenChange, assignment }) {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
-            {mutation.isPending ? 'Waiving…' : 'Waive'}
+            {mutation.isPending ? t('fee.collection.waiving') : t('fee.collection.waive')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -343,6 +354,7 @@ function WaiveAssignmentModal({ open, onOpenChange, assignment }) {
 }
 
 function AssignmentsTab() {
+  const { t } = useTranslation();
   const [studentSearch, setStudentSearch] = useState('');
   const [yearId, setYearId] = useState('');
   const [collectFor, setCollectFor] = useState(null);
@@ -376,7 +388,7 @@ function AssignmentsTab() {
     <div className="flex flex-col gap-4">
       <div className="flex gap-3 flex-wrap">
         <Input
-          placeholder="Search student…"
+          placeholder={t('fee.collection.searchStudentPlaceholder')}
           value={studentSearch}
           onChange={(e) => setStudentSearch(e.target.value)}
         />
@@ -385,7 +397,7 @@ function AssignmentsTab() {
           onChange={(e) => setYearId(e.target.value)}
           className="h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          <option value="">All Years</option>
+          <option value="">{t('common.allYears')}</option>
           {years.map((y) => (
             <option key={y._id} value={y._id}>
               {y.name}
@@ -396,18 +408,18 @@ function AssignmentsTab() {
 
       <DataTable
         headers={[
-          'Student',
-          'Admission No',
-          'Structure',
-          'Total',
-          'Discount',
-          'Status',
-          'Due Date',
-          'Action',
+          t('fee.collection.tableStudent'),
+          t('fee.collection.tableAdmissionNo'),
+          t('fee.collection.tableStructure'),
+          t('fee.collection.tableTotal'),
+          t('fee.collection.tableDiscount'),
+          t('common.status'),
+          t('fee.collection.tableDueDate'),
+          t('fee.collection.tableAction'),
         ]}
         isLoading={isLoading}
         isEmpty={filtered.length === 0}
-        emptyMessage="No assignments found"
+        emptyMessage={t('fee.collection.noAssignmentsFound')}
       >
         {filtered.map((a) => (
           <TableRow key={a._id} className="bg-card">
@@ -434,13 +446,13 @@ function AssignmentsTab() {
               {a.status !== 'paid' && a.status !== 'waived' && (
                 <div className="flex gap-1.5">
                   <Button size="sm" onClick={() => setCollectFor(a)}>
-                    Collect
+                    {t('fee.collection.collectButton')}
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => setDiscountFor(a)}>
-                    Discount
+                    {t('fee.collection.discountButton')}
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => setWaiveFor(a)}>
-                    Waive
+                    {t('fee.collection.waive')}
                   </Button>
                 </div>
               )}
@@ -469,6 +481,7 @@ function AssignmentsTab() {
 }
 
 function RefundPaymentModal({ open, onOpenChange, payment }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
@@ -489,24 +502,24 @@ function RefundPaymentModal({ open, onOpenChange, payment }) {
       queryClient.invalidateQueries({ queryKey: ['fee-assignments'] });
       handleClose();
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to refund payment'),
+    onError: (err) => setError(err.response?.data?.error || t('fee.collection.refundFailed')),
   });
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Refund Payment</DialogTitle>
+          <DialogTitle>{t('fee.collection.refundPaymentTitle')}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <p className="text-sm text-muted-foreground">
-            This reverses receipt{' '}
-            <strong className="text-foreground">{payment?.receiptNumber}</strong> (
-            {formatCurrency(payment?.amount ?? 0)}) as an internal ledger correction only — no
-            gateway refund is issued.
+            {t('fee.collection.refundBody', {
+              receiptNumber: payment?.receiptNumber,
+              amount: formatCurrency(payment?.amount ?? 0),
+            })}
           </p>
           <Input
-            label="Reason (optional)"
+            label={t('fee.collection.reasonOptional')}
             value={reason}
             onChange={(e) => setReason(e.target.value)}
           />
@@ -514,10 +527,10 @@ function RefundPaymentModal({ open, onOpenChange, payment }) {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
-            {mutation.isPending ? 'Refunding…' : 'Refund'}
+            {mutation.isPending ? t('fee.collection.refunding') : t('fee.collection.refundButton')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -526,6 +539,7 @@ function RefundPaymentModal({ open, onOpenChange, payment }) {
 }
 
 function PaymentsTab() {
+  const { t } = useTranslation();
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [refundFor, setRefundFor] = useState(null);
@@ -554,18 +568,18 @@ function PaymentsTab() {
 
       <DataTable
         headers={[
-          'Receipt No',
-          'Student',
-          'Amount',
-          'Method',
-          'Date',
-          'Collected By',
-          'Receipt',
-          'Refund',
+          t('fee.collection.tableReceiptNo'),
+          t('fee.collection.tableStudent'),
+          t('fee.collection.tableAmount'),
+          t('fee.collection.tableMethod'),
+          t('fee.collection.tableDate'),
+          t('fee.collection.tableCollectedBy'),
+          t('fee.collection.tableReceipt'),
+          t('fee.collection.tableRefund'),
         ]}
         isLoading={isLoading}
         isEmpty={payments.length === 0}
-        emptyMessage="No payments found"
+        emptyMessage={t('fee.collection.noPaymentsFound')}
       >
         {payments.map((p) => (
           <TableRow key={p._id} className="bg-card">
@@ -583,15 +597,15 @@ function PaymentsTab() {
             </TableCell>
             <TableCell className="px-4 py-3">
               <Button size="sm" variant="outline" onClick={() => downloadReceipt(p._id)}>
-                Download
+                {t('fee.collection.downloadButton')}
               </Button>
             </TableCell>
             <TableCell className="px-4 py-3">
               {p.refunded ? (
-                <Badge variant="danger">Refunded</Badge>
+                <Badge variant="danger">{t('fee.collection.refundedBadge')}</Badge>
               ) : (
                 <Button size="sm" variant="outline" onClick={() => setRefundFor(p)}>
-                  Refund
+                  {t('fee.collection.refundButton')}
                 </Button>
               )}
             </TableCell>
@@ -609,6 +623,7 @@ function PaymentsTab() {
 }
 
 function DefaultersTab() {
+  const { t } = useTranslation();
   const [yearId, setYearId] = useState('');
 
   const { data: years = [] } = useQuery({
@@ -639,7 +654,10 @@ function DefaultersTab() {
     <div className="flex flex-col gap-4">
       {!isLoading && (
         <p className="text-sm text-muted-foreground">
-          {sorted.length} outstanding · {formatCurrency(totalOutstanding)}
+          {t('fee.collection.outstandingSummary', {
+            count: sorted.length,
+            amount: formatCurrency(totalOutstanding),
+          })}
         </p>
       )}
 
@@ -649,7 +667,7 @@ function DefaultersTab() {
           onChange={(e) => setYearId(e.target.value)}
           className="h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         >
-          <option value="">All Years</option>
+          <option value="">{t('common.allYears')}</option>
           {years.map((y) => (
             <option key={y._id} value={y._id}>
               {y.name}
@@ -659,10 +677,17 @@ function DefaultersTab() {
       </div>
 
       <DataTable
-        headers={['Student', 'Admission No', 'Amount Due', 'Status', 'Due Date', 'Days Overdue']}
+        headers={[
+          t('fee.collection.tableStudent'),
+          t('fee.collection.tableAdmissionNo'),
+          t('fee.collection.tableAmountDue'),
+          t('common.status'),
+          t('fee.collection.tableDueDate'),
+          t('fee.collection.tableDaysOverdue'),
+        ]}
         isLoading={isLoading}
         isEmpty={sorted.length === 0}
-        emptyMessage="Nothing outstanding"
+        emptyMessage={t('fee.collection.nothingOutstanding')}
       >
         {sorted.map((d) => (
           <TableRow key={d._id} className="bg-card">
@@ -692,32 +717,39 @@ function DefaultersTab() {
 }
 
 export default function FeesPage() {
-  const [activeTab, setActiveTab] = useState('Defaulters');
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState('defaulters');
+
+  const TAB_LABELS = {
+    defaulters: t('fee.collection.tabDefaulters'),
+    assignments: t('fee.collection.tabAssignments'),
+    payments: t('fee.collection.tabPayments'),
+  };
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Fee Collection" />
+      <PageHeader title={t('nav.feeCollection')} />
 
       <div className="flex gap-1 border-b border-border">
-        {TABS.map((t) => (
+        {TAB_IDS.map((id) => (
           <button
-            key={t}
-            onClick={() => setActiveTab(t)}
+            key={id}
+            onClick={() => setActiveTab(id)}
             className={[
               'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
-              activeTab === t
+              activeTab === id
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground',
             ].join(' ')}
           >
-            {t}
+            {TAB_LABELS[id]}
           </button>
         ))}
       </div>
 
-      {activeTab === 'Defaulters' && <DefaultersTab />}
-      {activeTab === 'Assignments' && <AssignmentsTab />}
-      {activeTab === 'Payments' && <PaymentsTab />}
+      {activeTab === 'defaulters' && <DefaultersTab />}
+      {activeTab === 'assignments' && <AssignmentsTab />}
+      {activeTab === 'payments' && <PaymentsTab />}
     </div>
   );
 }
