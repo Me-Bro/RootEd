@@ -352,11 +352,13 @@ router.get('/me', authenticate, async (req, res, next) => {
     const impersonatedPermissions = effectivePermissionsFor(req.user);
     let permissions = impersonatedPermissions ?? [];
     let tenant = null;
-    if (!impersonatedPermissions && user.systemRole !== 'super_admin') {
+    if (impersonatedPermissions) {
+      tenant = await Tenant.findById(req.user.impersonatedTenantId, '_id orgType').lean();
+    } else if (user.systemRole !== 'super_admin') {
       const subdomain = req.hostname.replace(`.${env.APP_DOMAIN}`, '');
       tenant =
         subdomain && subdomain !== req.hostname
-          ? await Tenant.findOne({ subdomain, status: 'active' }, '_id').lean()
+          ? await Tenant.findOne({ subdomain, status: 'active' }, '_id orgType').lean()
           : await resolveTenantFromToken(req);
       if (tenant) permissions = await resolvePermissions(req.user.sub, tenant._id.toString());
     }
@@ -366,6 +368,7 @@ router.get('/me', authenticate, async (req, res, next) => {
       permissions,
       impersonatedTenantId: req.user.impersonatedTenantId ?? null,
       tenantId: tenant?._id?.toString() ?? req.user.tenantId ?? null,
+      orgType: tenant?.orgType ?? null,
     });
   } catch (err) {
     next(err);

@@ -58,6 +58,9 @@ const USERS = {
   // general-portal login's tenant-picker screen, which every other seeded
   // user (single membership) never triggers.
   multiTenant: { email: 'multi@testschool.local' },
+  // Belongs to a tuition_center-orgType tenant — exercises org-type module/nav
+  // gating (no expense/inventory modules, "Learner"/"Batch" terminology).
+  tuitionAdmin: { email: 'admin@tuitioncenter.local' },
 };
 
 async function upsertUser(data) {
@@ -217,6 +220,50 @@ async function run() {
         tenantId: secondTenantId,
         userId: users.multiTenant._id,
         roleIds: [secondTenantAdminRole._id],
+        status: 'active',
+      },
+    },
+    { upsert: true, _bypassTenantScope: true }
+  );
+
+  // ── Tuition-center tenant (org-type gating fixture) ──────────────────────
+  let tuitionTenant = await Tenant.findOne({ subdomain: 'tuitioncenter' }).lean();
+  if (!tuitionTenant) {
+    tuitionTenant = await Tenant.create({
+      name: 'Tuition Center',
+      subdomain: 'tuitioncenter',
+      plan: 'starter',
+      orgType: 'tuition_center',
+      status: 'active',
+      locale: 'en',
+      timezone: 'Asia/Kolkata',
+      currency: 'INR',
+    });
+    tuitionTenant = tuitionTenant.toObject();
+  }
+  const tuitionTenantId = tuitionTenant._id;
+
+  const existingTuitionRoles = await Role.find({ tenantId: tuitionTenantId }, null, {
+    _bypassTenantScope: true,
+  }).lean();
+  let tuitionTenantAdminRole = existingTuitionRoles.find((r) => r.templateKey === 'tenant_admin');
+  if (!tuitionTenantAdminRole) {
+    tuitionTenantAdminRole = await Role.create({
+      tenantId: tuitionTenantId,
+      name: 'tenant admin',
+      permissions: DEFAULT_ROLE_TEMPLATES.tenant_admin,
+      isTemplate: true,
+      templateKey: 'tenant_admin',
+    });
+    tuitionTenantAdminRole = tuitionTenantAdminRole.toObject();
+  }
+  await TenantMembership.findOneAndUpdate(
+    { tenantId: tuitionTenantId, userId: users.tuitionAdmin._id },
+    {
+      $setOnInsert: {
+        tenantId: tuitionTenantId,
+        userId: users.tuitionAdmin._id,
+        roleIds: [tuitionTenantAdminRole._id],
         status: 'active',
       },
     },
@@ -1274,6 +1321,11 @@ async function run() {
     ),
     tenant: { _id: tenantId.toString(), subdomain: 'testschool' },
     secondTenant: { _id: secondTenantId.toString(), subdomain: 'secondschool' },
+    tuitionTenant: {
+      _id: tuitionTenantId.toString(),
+      subdomain: 'tuitioncenter',
+      orgType: 'tuition_center',
+    },
     roles: Object.fromEntries(Object.entries(roleByKey).map(([k, r]) => [k, r._id.toString()])),
     academicYear: { _id: year._id.toString() },
     nextAcademicYear: { _id: nextYear._id.toString(), name: nextYear.name },

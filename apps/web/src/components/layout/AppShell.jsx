@@ -28,6 +28,7 @@ import {
   FileText,
 } from 'lucide-react';
 
+import { isModuleEnabled, resolveOrgTerm } from '@rooted/shared/utils';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Button } from '../ui/Button.jsx';
 import { ThemeConfiguratorTrigger } from '../ui/ThemeConfigurator.jsx';
@@ -38,7 +39,13 @@ import MobileBottomBar from './MobileBottomBar.jsx';
 import { cn } from '../../lib/utils.js';
 import api from '../../lib/api.js';
 
-function getNavGroups(t) {
+function getNavGroups(t, orgType) {
+  // Only override the translated label for org types whose terminology actually
+  // diverges — school (the default) keeps the plain t() call so Hindi/hi_en
+  // coverage stays intact for the common case.
+  const studentLabel =
+    orgType && orgType !== 'school' ? resolveOrgTerm(orgType, 'student') : t('nav.students');
+
   return [
     {
       label: null,
@@ -55,6 +62,7 @@ function getNavGroups(t) {
     },
     {
       label: t('nav.academic'),
+      module: 'academic',
       items: [
         {
           to: '/academic/years',
@@ -64,7 +72,7 @@ function getNavGroups(t) {
         },
         {
           to: '/academic/students',
-          label: t('nav.students'),
+          label: studentLabel,
           icon: Users,
           permission: 'students:read',
         },
@@ -114,6 +122,7 @@ function getNavGroups(t) {
     },
     {
       label: t('nav.staff'),
+      module: 'staff',
       items: [
         { to: '/staff', label: t('nav.staffDirectory'), icon: Briefcase, permission: 'staff:read' },
         {
@@ -133,6 +142,7 @@ function getNavGroups(t) {
     },
     {
       label: t('nav.expenses'),
+      module: 'expense',
       items: [
         { to: '/expense', label: t('nav.expenses'), icon: DollarSign, permission: 'expense:read' },
         {
@@ -145,6 +155,7 @@ function getNavGroups(t) {
     },
     {
       label: t('nav.fees'),
+      module: 'fee',
       items: [
         {
           to: '/fee/structures',
@@ -157,6 +168,7 @@ function getNavGroups(t) {
     },
     {
       label: t('nav.inventory'),
+      module: 'inventory',
       items: [
         {
           to: '/inventory',
@@ -271,13 +283,14 @@ export default function AppShell() {
   // while impersonating, per GET /auth/me) — a bare super_admin token grants none.
   const hasPermission = (permission) => !permission || permissions.includes(permission);
 
-  const navGroups = getNavGroups(t)
+  const navGroups = getNavGroups(t, user?.orgType)
     .filter((g) => !g.superAdminOnly || (isSuperAdmin && !isImpersonating))
     // A super_admin with no active impersonation has no tenant context — hide
     // tenant modules (Academic/Staff/Expense/Fees/Inventory) entirely rather
     // than showing links that 404 against /tenant/* endpoints. Once impersonating
     // a tenant, treat them like any tenant_admin and let the permission filter below decide.
     .filter((g) => !isSuperAdmin || isImpersonating || g.label === null)
+    .filter((g) => !g.module || isModuleEnabled(user?.orgType, g.module))
     .map((g) => ({ ...g, items: g.items.filter((item) => hasPermission(item.permission)) }))
     .filter((g) => g.items.length > 0);
 

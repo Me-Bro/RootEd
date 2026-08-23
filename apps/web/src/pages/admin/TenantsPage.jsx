@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { ORG_TYPES } from '@rooted/shared/constants';
 import api from '../../lib/api.js';
 import { buildImpersonateUrl } from '../../lib/impersonation.js';
 import { Badge } from '../../components/ui/Badge.jsx';
@@ -21,7 +22,13 @@ function statusVariant(status) {
 function CreateModal({ onClose }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({ name: '', subdomain: '', plan: 'starter', adminEmail: '' });
+  const [form, setForm] = useState({
+    name: '',
+    subdomain: '',
+    plan: 'starter',
+    orgType: 'school',
+    adminEmail: '',
+  });
   const [error, setError] = useState('');
 
   const mutation = useMutation({
@@ -77,6 +84,22 @@ function CreateModal({ onClose }) {
                 {planOptions.map((p) => (
                   <option key={p} value={p}>
                     {p}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                {t('admin.tenants.orgTypeLabel')}
+              </label>
+              <select
+                value={form.orgType}
+                onChange={update('orgType')}
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+              >
+                {ORG_TYPES.map((o) => (
+                  <option key={o} value={o}>
+                    {o}
                   </option>
                 ))}
               </select>
@@ -151,6 +174,7 @@ export default function TenantsPage() {
                   t('common.name'),
                   t('admin.tenants.tableSubdomain'),
                   t('admin.tenants.tablePlan'),
+                  t('admin.tenants.tableOrgType'),
                   t('common.status'),
                   t('admin.tenants.tableCreatedAt'),
                   t('common.actions'),
@@ -177,6 +201,7 @@ export default function TenantsPage() {
                   </td>
                   <td className="px-4 py-3 text-gray-500">{tenant.subdomain}</td>
                   <td className="px-4 py-3 capitalize">{tenant.plan}</td>
+                  <td className="px-4 py-3 capitalize">{tenant.orgType?.replace('_', ' ')}</td>
                   <td className="px-4 py-3">
                     <Badge variant={statusVariant(tenant.status)}>{tenant.status}</Badge>
                   </td>
