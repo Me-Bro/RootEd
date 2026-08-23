@@ -1,4 +1,5 @@
 import { Check, AlertTriangle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '../ui/Card.jsx';
 import { Badge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
@@ -41,6 +42,7 @@ function findBalance(balances, leaveTypeId) {
  * instead of silently doing nothing — see build report.
  */
 export default function ApprovalQueueCard({ request, balance, onApprove, onReject, busy, error }) {
+  const { t } = useTranslation();
   const staff = request.staffId ?? {};
   const leaveType = request.leaveTypeId ?? {};
   const matchedBalance = findBalance(balance, leaveType._id);
@@ -68,26 +70,30 @@ export default function ApprovalQueueCard({ request, balance, onApprove, onRejec
 
         <dl className="flex flex-col gap-1.5 text-sm">
           <div className="flex justify-between gap-3">
-            <dt className="text-muted-foreground">Leave type</dt>
+            <dt className="text-muted-foreground">{t('staff.leaves.leaveType')}</dt>
             <dd className="font-medium">{leaveType.name ?? '—'}</dd>
           </div>
           <div className="flex justify-between gap-3">
-            <dt className="text-muted-foreground">Dates</dt>
+            <dt className="text-muted-foreground">{t('staff.leaves.datesLabel')}</dt>
             <dd className="text-right font-medium">
-              {formatDate(request.fromDate)} – {formatDate(request.toDate)} ({request.totalDays} day
-              {request.totalDays === 1 ? '' : 's'})
+              {formatDate(request.fromDate)} – {formatDate(request.toDate)} (
+              {t('staff.leaves.dayCount', { count: request.totalDays })})
             </dd>
           </div>
           <div className="flex justify-between gap-3">
-            <dt className="text-muted-foreground">Reason</dt>
+            <dt className="text-muted-foreground">{t('staff.leaves.reasonLabel')}</dt>
             <dd className="text-right font-medium">{request.reason || '—'}</dd>
           </div>
           <div className="flex justify-between gap-3">
-            <dt className="text-muted-foreground">Balance after</dt>
+            <dt className="text-muted-foreground">{t('staff.leaves.balanceAfterLabel')}</dt>
             <dd className="text-right font-medium">
               {remainingAfter === null
-                ? 'Not tracked'
-                : `${Math.max(remainingAfter, 0)} of ${matchedBalance.total} ${leaveType.name ?? ''} days left`}
+                ? t('staff.leaves.notTracked')
+                : t('staff.leaves.balanceAfterValue', {
+                    left: Math.max(remainingAfter, 0),
+                    total: matchedBalance.total,
+                    type: leaveType.name ?? '',
+                  })}
             </dd>
           </div>
         </dl>
@@ -95,7 +101,7 @@ export default function ApprovalQueueCard({ request, balance, onApprove, onRejec
         {conflictFlags.length > 0 && (
           <Badge variant="warning" className="w-fit gap-1" title={conflictFlags.join(', ')}>
             <AlertTriangle size={12} />
-            {conflictFlags.length} timetable conflict{conflictFlags.length > 1 ? 's' : ''}
+            {t('staff.leaves.timetableConflict', { count: conflictFlags.length })}
           </Badge>
         )}
 
@@ -104,10 +110,10 @@ export default function ApprovalQueueCard({ request, balance, onApprove, onRejec
         <div className="flex gap-2 pt-1">
           <Button className="flex-1 gap-1.5" onClick={onApprove} disabled={busy}>
             <Check size={14} />
-            Approve
+            {t('staff.leaves.approve')}
           </Button>
           <Button variant="outline" className="flex-1" onClick={onReject} disabled={busy}>
-            Reject
+            {t('staff.leaves.reject')}
           </Button>
         </div>
       </CardContent>

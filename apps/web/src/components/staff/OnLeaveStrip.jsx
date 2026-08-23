@@ -11,13 +11,16 @@
  * admin can tell apart same-named staff at a glance — a small deliberate
  * deviation from the low-fidelity mock.
  */
+import { useTranslation } from 'react-i18next';
+
 export default function OnLeaveStrip({ members }) {
+  const { t } = useTranslation();
   if (!members || members.length === 0) return null;
 
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
       <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-400">
-        On leave today · {members.length}
+        {t('staff.directory.onLeaveToday', { count: members.length })}
       </p>
       <div className="flex flex-wrap gap-2">
         {members.map((m) => (

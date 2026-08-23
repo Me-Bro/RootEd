@@ -447,7 +447,9 @@
       "importResultsTitle": "आयात परिणाम",
       "createdCount": "बनाए गए: {{count}}",
       "skippedDuplicateCount": "छोड़े गए (डुप्लिकेट): {{count}}",
-      "errorsCount": "त्रुटियां: {{count}}"
+      "errorsCount": "त्रुटियां: {{count}}",
+      "onLeaveToday_one": "आज अवकाश पर · {{count}}",
+      "onLeaveToday_other": "आज अवकाश पर · {{count}}"
     },
     "detail": {
       "editModalTitle": "स्टाफ सदस्य संपादित करें",
@@ -546,7 +548,14 @@
       "balanceLeftSuffix": "{{total}} में से {{left}} दिन शेष",
       "previous": "पिछला",
       "next": "आगे",
-      "pageOfTotal": "पृष्ठ {{page}} / {{total}}"
+      "pageOfTotal": "पृष्ठ {{page}} / {{total}}",
+      "datesLabel": "तारीखें",
+      "dayCount_one": "{{count}} दिन",
+      "dayCount_other": "{{count}} दिन",
+      "reasonLabel": "कारण",
+      "balanceAfterLabel": "बाद में शेष",
+      "notTracked": "ट्रैक नहीं किया गया",
+      "balanceAfterValue": "{{total}} में से {{left}} {{type}} दिन शेष"
     },
     "salary": {
       "title": "वेतन पर्ची",
@@ -587,7 +596,14 @@
       "columnNetPay": "नेट वेतन",
       "noSlips": "इस अवधि के लिए कोई पर्ची नहीं बनाई गई",
       "download": "डाउनलोड करें",
-      "markAsPaid": "भुगतान किया गया चिह्नित करें"
+      "markAsPaid": "भुगतान किया गया चिह्नित करें",
+      "totalPayroll": "कुल वेतन",
+      "staffNetAfterDeductions_one": "{{count}} स्टाफ · कटौती के बाद नेट",
+      "staffNetAfterDeductions_other": "{{count}} स्टाफ · कटौती के बाद नेट",
+      "slipsGeneratedAria": "{{total}} में से {{done}} पर्चियां जनरेट हुईं",
+      "generationStartingAria": "वेतन पर्ची जनरेशन शुरू हो रहा है",
+      "generatingLabel": "बन रहा है…",
+      "doneOfTotal": "{{total}} में से {{done}}"
     },
     "salaryStructures": {
       "title": "वेतन संरचनाएं",

@@ -447,7 +447,9 @@
       "importResultsTitle": "Import Results",
       "createdCount": "Created: {{count}}",
       "skippedDuplicateCount": "Skipped (duplicate): {{count}}",
-      "errorsCount": "Errors: {{count}}"
+      "errorsCount": "Errors: {{count}}",
+      "onLeaveToday_one": "On leave today · {{count}}",
+      "onLeaveToday_other": "On leave today · {{count}}"
     },
     "detail": {
       "editModalTitle": "Edit Staff Member",
@@ -546,7 +548,14 @@
       "balanceLeftSuffix": "{{left}} / {{total}} days left",
       "previous": "Previous",
       "next": "Next",
-      "pageOfTotal": "Page {{page}} of {{total}}"
+      "pageOfTotal": "Page {{page}} of {{total}}",
+      "datesLabel": "Dates",
+      "dayCount_one": "{{count}} day",
+      "dayCount_other": "{{count}} days",
+      "reasonLabel": "Reason",
+      "balanceAfterLabel": "Balance after",
+      "notTracked": "Not tracked",
+      "balanceAfterValue": "{{left}} of {{total}} {{type}} days left"
     },
     "salary": {
       "title": "Salary Slips",
@@ -587,7 +596,14 @@
       "columnNetPay": "Net Pay",
       "noSlips": "No slips generated for this period",
       "download": "Download",
-      "markAsPaid": "Mark as Paid"
+      "markAsPaid": "Mark as Paid",
+      "totalPayroll": "Total payroll",
+      "staffNetAfterDeductions_one": "{{count}} staff · net after deductions",
+      "staffNetAfterDeductions_other": "{{count}} staff · net after deductions",
+      "slipsGeneratedAria": "{{done}} of {{total}} slips generated",
+      "generationStartingAria": "Salary slip generation starting",
+      "generatingLabel": "Generating…",
+      "doneOfTotal": "{{done}} of {{total}}"
     },
     "salaryStructures": {
       "title": "Salary Structures",
