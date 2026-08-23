@@ -1,14 +1,21 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils.js';
 
-const FILTERS = [
-  { key: 'all', label: 'All' },
-  { key: 'unmarked', label: 'Unmarked' },
-  { key: 'atRisk', label: 'At-risk' },
-];
+const FILTER_KEYS = ['all', 'unmarked', 'atRisk'];
 
 export default function FilterChips({ value, onChange, counts }) {
+  const { t } = useTranslation();
+  const FILTERS = FILTER_KEYS.map((key) => ({
+    key,
+    label: t(`academic.attendance.filter.${key}`),
+  }));
+
   return (
-    <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter students">
+    <div
+      className="flex flex-wrap gap-1.5"
+      role="group"
+      aria-label={t('academic.attendance.filterAriaLabel')}
+    >
       {FILTERS.map(({ key, label }) => {
         const count = counts[key] ?? 0;
         const disabled = key === 'unmarked' && count === 0;

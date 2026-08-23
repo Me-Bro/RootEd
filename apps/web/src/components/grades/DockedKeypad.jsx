@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils.js';
 import { Button } from '../ui/Button.jsx';
 
@@ -14,6 +15,7 @@ const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'AB', '0', '⌫'];
  * whatever digits are in `value` and advances to the next unmarked student.
  */
 export default function DockedKeypad({ value, onKey, onNext, disabled = false }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-2">
       <div className="grid grid-cols-3 gap-1.5">
@@ -23,7 +25,13 @@ export default function DockedKeypad({ value, onKey, onNext, disabled = false })
             type="button"
             disabled={disabled}
             onClick={() => onKey(key)}
-            aria-label={key === 'AB' ? 'Mark absent' : key === '⌫' ? 'Backspace' : `Digit ${key}`}
+            aria-label={
+              key === 'AB'
+                ? t('academic.grades.markAbsentAria')
+                : key === '⌫'
+                  ? t('academic.grades.backspaceAria')
+                  : t('academic.grades.digitAria', { digit: key })
+            }
             className={cn(
               'h-11 rounded-md border text-base font-semibold transition-colors disabled:pointer-events-none disabled:opacity-40',
               key === 'AB' || key === '⌫'
@@ -36,7 +44,7 @@ export default function DockedKeypad({ value, onKey, onNext, disabled = false })
         ))}
       </div>
       <Button className="h-11" onClick={onNext} disabled={disabled || !value}>
-        Next student ›
+        {t('academic.grades.nextStudent')}
       </Button>
     </div>
   );

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils.js';
 import { Badge } from '../ui/Badge.jsx';
 import { EmptyState } from '../ui/EmptyState.jsx';
@@ -9,11 +10,12 @@ import { EmptyState } from '../ui/EmptyState.jsx';
  * grid-only per the approved spec's scope.
  */
 export function DaySlotList({ slots, activeDay, isNowFn }) {
+  const { t } = useTranslation();
   if (slots.length === 0) {
     return (
       <EmptyState
-        title="No classes scheduled"
-        description="There are no periods scheduled for this day."
+        title={t('academic.timetable.noClassesScheduled')}
+        description={t('academic.timetable.noPeriodsScheduledDescription')}
       />
     );
   }
@@ -21,7 +23,7 @@ export function DaySlotList({ slots, activeDay, isNowFn }) {
   return (
     <ul
       className="flex flex-col gap-2"
-      aria-label="Periods for the selected day"
+      aria-label={t('academic.timetable.periodsAriaLabel')}
       data-day={activeDay}
     >
       {slots.map((slot) => {
@@ -46,7 +48,7 @@ export function DaySlotList({ slots, activeDay, isNowFn }) {
               </p>
             </div>
             {now ? (
-              <Badge variant="success">now</Badge>
+              <Badge variant="success">{t('academic.timetable.now')}</Badge>
             ) : (
               <span className="shrink-0 text-xs text-muted-foreground">P{slot.periodNumber}</span>
             )}

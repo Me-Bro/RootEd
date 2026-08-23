@@ -1,6 +1,7 @@
 'use client';
 
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
@@ -36,6 +37,7 @@ function DialogOverlay({ className, ...props }) {
 }
 
 function DialogContent({ className, children, showCloseButton = true, ...props }) {
+  const { t } = useTranslation();
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -54,7 +56,7 @@ function DialogContent({ className, children, showCloseButton = true, ...props }
             render={<Button variant="ghost" className="absolute top-2 right-2" size="icon-sm" />}
           >
             <XIcon />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{t('common.close')}</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Popup>
@@ -69,6 +71,7 @@ function DialogHeader({ className, ...props }) {
 }
 
 function DialogFooter({ className, showCloseButton = false, children, ...props }) {
+  const { t } = useTranslation();
   return (
     <div
       data-slot="dialog-footer"
@@ -80,7 +83,9 @@ function DialogFooter({ className, showCloseButton = false, children, ...props }
     >
       {children}
       {showCloseButton && (
-        <DialogPrimitive.Close render={<Button variant="outline" />}>Close</DialogPrimitive.Close>
+        <DialogPrimitive.Close render={<Button variant="outline" />}>
+          {t('common.close')}
+        </DialogPrimitive.Close>
       )}
     </div>
   );

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils.js';
 
 // Surfaces the two facts an admin actually needs today — low stock and
@@ -10,10 +11,15 @@ export default function AttentionStrip({
   onTapLowStock,
   onTapNotReturned,
 }) {
+  const { t } = useTranslation();
   if (!lowStockCount && !notReturnedCount) return null;
 
   return (
-    <div className="flex flex-wrap gap-2" role="group" aria-label="Items needing attention">
+    <div
+      className="flex flex-wrap gap-2"
+      role="group"
+      aria-label={t('inventory.items.attentionAriaLabel')}
+    >
       {lowStockCount > 0 && (
         <button
           type="button"
@@ -25,7 +31,7 @@ export default function AttentionStrip({
         >
           <div className="text-lg font-semibold text-destructive">{lowStockCount}</div>
           <div className="text-xs text-muted-foreground">
-            {lowStockCount === 1 ? 'item low on stock' : 'items low on stock'}
+            {t('inventory.items.lowStockCountLabel', { count: lowStockCount })}
           </div>
         </button>
       )}
@@ -43,7 +49,7 @@ export default function AttentionStrip({
             {notReturnedCount}
           </div>
           <div className="text-xs text-muted-foreground">
-            {notReturnedCount === 1 ? 'item not yet returned' : 'items not yet returned'}
+            {t('inventory.items.notReturnedCountLabel', { count: notReturnedCount })}
           </div>
         </button>
       )}

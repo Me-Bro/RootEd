@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   Table,
   TableBody,
@@ -27,15 +28,20 @@ export function DataTable({
   children,
   isLoading = false,
   isEmpty = false,
-  emptyMessage = 'No records found',
+  emptyMessage,
 }) {
+  const { t } = useTranslation();
+  const resolvedEmptyMessage = emptyMessage ?? t('common.noRecordsFound');
   return (
     <div className="rounded-lg border border-border overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             {headers.map((h) => (
-              <TableHead key={h} className="px-4 py-3 bg-muted/50 text-muted-foreground font-medium text-xs uppercase tracking-wide">
+              <TableHead
+                key={h}
+                className="px-4 py-3 bg-muted/50 text-muted-foreground font-medium text-xs uppercase tracking-wide"
+              >
                 {h}
               </TableHead>
             ))}
@@ -50,7 +56,7 @@ export function DataTable({
                 colSpan={headers.length}
                 className="h-32 text-center text-muted-foreground"
               >
-                {emptyMessage}
+                {resolvedEmptyMessage}
               </TableCell>
             </TableRow>
           ) : (

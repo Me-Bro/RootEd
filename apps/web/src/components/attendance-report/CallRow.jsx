@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Phone, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils.js';
 
 function initials(firstName, lastName) {
@@ -12,6 +13,7 @@ function initials(firstName, lastName) {
  * everyone else just shows their attendance, no call action to take.
  */
 export default function CallRow({ student, onCall }) {
+  const { t } = useTranslation();
   const { firstName, lastName, admissionNo, presentCount, totalCount, pct, isDefaulter } = student;
   const hasPhone = Boolean(student.guardianPhone);
 
@@ -34,7 +36,7 @@ export default function CallRow({ student, onCall }) {
           {' · '}
           {presentCount}/{totalCount}
           {' · '}
-          {pct === null ? 'no history' : `${pct}%`}
+          {pct === null ? t('academic.attendanceReport.noHistory') : `${pct}%`}
         </p>
       </div>
 
@@ -46,14 +48,14 @@ export default function CallRow({ student, onCall }) {
             className="flex shrink-0 items-center gap-1 rounded-full bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20"
           >
             <Phone size={13} />
-            Call
+            {t('academic.attendanceReport.call')}
           </button>
         ) : (
           <Link
             to={`/academic/students/${student.studentId}`}
             className="shrink-0 text-xs font-medium text-primary underline-offset-2 hover:underline"
           >
-            Add contact
+            {t('academic.attendanceReport.addContact')}
           </Link>
         )
       ) : (

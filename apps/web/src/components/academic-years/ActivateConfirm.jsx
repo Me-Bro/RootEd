@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -15,27 +16,31 @@ import {
 // is a plain Button (not a Close), so it never auto-dismisses on click; only the
 // page setting `year` back to null (on mutation success) closes this dialog.
 export default function ActivateConfirm({ year, isPending, error, onConfirm, onCancel }) {
+  const { t } = useTranslation();
   return (
     <AlertDialog open={Boolean(year)} onOpenChange={(next) => !next && onCancel()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Set &quot;{year?.name}&quot; as the active year?</AlertDialogTitle>
+          <AlertDialogTitle>
+            {t('academic.years.activateConfirmTitle', { name: year?.name })}
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            Every other screen — Grades, Timetable, Fees, Report Cards — switches to this year as
-            its default immediately.
+            {t('academic.years.activateConfirmDescription')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         {error && (
-          <p className="text-sm text-destructive">
-            Failed to activate — check your connection and retry.
-          </p>
+          <p className="text-sm text-destructive">{t('academic.years.activateFailedRetry')}</p>
         )}
         <AlertDialogFooter>
           {/* A plain Close — dismissing it fires the Root's onOpenChange(false)
               above, which already calls onCancel(). No separate onClick needed. */}
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} disabled={isPending}>
-            {isPending ? 'Activating…' : error ? 'Retry' : 'Set active'}
+            {isPending
+              ? t('academic.years.activating')
+              : error
+                ? t('academic.years.retry')
+                : t('academic.years.setActive')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

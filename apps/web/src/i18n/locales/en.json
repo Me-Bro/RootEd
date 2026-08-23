@@ -67,6 +67,8 @@
     "subject": "Subject",
     "allYears": "All Years",
     "allClasses": "All Classes",
+    "selectPlaceholder": "Select…",
+    "noRecordsFound": "No records found",
     "weekdays": {
       "monday": "Monday",
       "tuesday": "Tuesday",
@@ -94,6 +96,9 @@
     "columnTime": "Time"
   },
   "academic": {
+    "shared": {
+      "searchPlaceholder": "Search name or admission no."
+    },
     "assessmentTypes": {
       "quiz": "Quiz",
       "midterm": "Midterm",
@@ -116,7 +121,24 @@
       "activateNotice": "This year becomes active immediately{{replacing}}.",
       "replacingSuffix": ", replacing {{name}}",
       "createFailed": "Failed to create year",
-      "creating": "Creating…"
+      "creating": "Creating…",
+      "activeBadge": "Active",
+      "setActive": "Set active",
+      "noTermsYet": "No terms yet",
+      "addATerm": "+ Add a term",
+      "currentBadge": "current",
+      "addTermTitle": "Add a Term",
+      "addTermDescription": "Terms let Grades, Grade Report and Report Cards filter by period.",
+      "termNamePlaceholder": "Term 1",
+      "createTermFailed": "Failed to create term",
+      "overlapsWarning": "Overlaps {{name}} ({{start}} – {{end}})",
+      "adding": "Adding…",
+      "addTermButton": "Add Term",
+      "activateConfirmTitle": "Set \"{{name}}\" as the active year?",
+      "activateConfirmDescription": "Every other screen — Grades, Timetable, Fees, Report Cards — switches to this year as its default immediately.",
+      "activateFailedRetry": "Failed to activate — check your connection and retry.",
+      "activating": "Activating…",
+      "retry": "Retry"
     },
     "students": {
       "title": "Students",
@@ -140,7 +162,20 @@
       "importResultsTitle": "Import Results",
       "createdCount": "Created: {{count}}",
       "skippedDuplicateCount": "Skipped (duplicate): {{count}}",
-      "errorsCount": "Errors: {{count}}"
+      "errorsCount": "Errors: {{count}}",
+      "classesAriaLabel": "Classes",
+      "sectionCount_one": "{{count}} section",
+      "sectionCount_other": "{{count}} sections",
+      "noSectionsYet": "No sections in this class yet.",
+      "sectionsAriaLabel": "Sections",
+      "loadingStudents": "Loading students…",
+      "rosterLoadFailed": "Failed to load students — check your connection and try again.",
+      "noSearchMatch": "No students match your search",
+      "noStudentsInSection": "No students in this section yet",
+      "rosterCount_one": "{{count}} student",
+      "rosterCount_other": "{{count}} students",
+      "loadingMore": "Loading more…",
+      "loadMore": "Load more"
     },
     "studentDetail": {
       "editModalTitle": "Edit Student",
@@ -191,7 +226,30 @@
       "saveOfTotal": "Save · {{marked}} of {{total}}",
       "secondDayAbsent": "2nd day absent",
       "late": "Late",
-      "excused": "Excused"
+      "excused": "Excused",
+      "filter": {
+        "all": "All",
+        "unmarked": "Unmarked",
+        "atRisk": "At-risk"
+      },
+      "filterAriaLabel": "Filter students",
+      "markPresentAria": "Mark present",
+      "markAbsentAria": "Mark absent",
+      "moreStatusOptionsAria": "More status options: late or excused",
+      "stillUnmarked_one": "{{count}} student still unmarked",
+      "stillUnmarked_other": "{{count}} students still unmarked",
+      "stillUnmarkedDescription": "Nothing is assumed for these — choose Present or Absent, or mark the rest present in one tap.",
+      "markAllPresent_one": "⚡ Mark all {{count}} present",
+      "markAllPresent_other": "⚡ Mark all {{count}} present",
+      "keepMarkingManually": "Keep marking manually",
+      "markedPresentSuffix_one": "student marked present",
+      "markedPresentSuffix_other": "students marked present",
+      "undo": "UNDO",
+      "sort": {
+        "name": "Name (A–Z)",
+        "admissionNo": "Admission no.",
+        "attendancePct": "Attendance % (low→high)"
+      }
     },
     "attendanceReport": {
       "title": "Attendance Report",
@@ -206,7 +264,26 @@
       "retrying": "Retrying…",
       "retry": "Retry",
       "noActiveStudents": "No active students in this section",
-      "exportCsv": "Export CSV"
+      "exportCsv": "Export CSV",
+      "cardTitle": "Attendance Report",
+      "noneBelowThreshold": "0 below {{pct}}% — nobody to call today",
+      "countBelowThreshold": "{{count}} below {{pct}}%",
+      "cardThresholdLine": "Threshold {{pct}}% · {{count}} students",
+      "cardMoreCount": "+ {{count}} more",
+      "cardFooter": "RootEd · Attendance Report",
+      "renderImageFailed": "Could not render summary image",
+      "shareTitle": "Attendance summary",
+      "shareText": "Class average {{avg}}% · {{count}} below {{pct}}%",
+      "imageDownloaded": "Summary image downloaded",
+      "shareImageFailed": "Could not create the share image",
+      "preparing": "Preparing…",
+      "shareSummaryCard": "Share summary card",
+      "noHistory": "no history",
+      "call": "Call",
+      "addContact": "Add contact",
+      "classAverageAria": "Class average {{pct}}%",
+      "noRecordsYetAria": "No attendance records yet",
+      "sortedWorstFirst": "Sorted worst first · threshold {{pct}}%"
     },
     "grades": {
       "title": "Grades",
@@ -227,7 +304,12 @@
       "allStudentsMarked": "All students marked",
       "unlockGrades": "Unlock Grades",
       "lockGrades": "Lock Grades",
-      "saveGrades": "Save Grades"
+      "saveGrades": "Save Grades",
+      "typing": "typing…",
+      "markAbsentAria": "Mark absent",
+      "backspaceAria": "Backspace",
+      "digitAria": "Digit {{digit}}",
+      "nextStudent": "Next student ›"
     },
     "gradeReport": {
       "title": "Grade Report",
@@ -242,7 +324,10 @@
       "gradeBandCount_other": "Grade {{band}} · {{count}} students",
       "allStudentsCount": "All students · {{count}}",
       "enterMarksDescription": "Enter marks for this term to see the report.",
-      "noStudentsWithGrade": "No students with grade {{band}}"
+      "noStudentsWithGrade": "No students with grade {{band}}",
+      "distributionAriaLabel": "Grade distribution — tap a bar to filter the student list",
+      "barAriaLabel_one": "Grade {{band}}: {{count}} student",
+      "barAriaLabel_other": "Grade {{band}}: {{count}} students"
     },
     "timetable": {
       "title": "Timetable",
@@ -263,6 +348,10 @@
       "endTime": "End Time",
       "roomOptional": "Room (optional)",
       "roomPlaceholder": "e.g. Room 204",
+      "noClassesScheduled": "No classes scheduled",
+      "noPeriodsScheduledDescription": "There are no periods scheduled for this day.",
+      "periodsAriaLabel": "Periods for the selected day",
+      "now": "now",
       "updateEntryFailed": "Failed to update entry",
       "addEntryFailed": "Failed to add entry",
       "editEntryTitle": "Edit Entry — {{day}}, Period {{period}}",
@@ -310,7 +399,10 @@
       "loadingHistory": "Loading history…",
       "noHistoryEmpty": "No report cards generated yet for this scope.",
       "columnGenerated": "Generated",
-      "download": "Download"
+      "download": "Download",
+      "ringAriaLabel": "{{completed}} of {{total}} report cards built",
+      "ringStartingAria": "Report card generation starting",
+      "ringOfTotal": "of {{total}}"
     }
   },
   "staff": {
@@ -355,7 +447,9 @@
       "importResultsTitle": "Import Results",
       "createdCount": "Created: {{count}}",
       "skippedDuplicateCount": "Skipped (duplicate): {{count}}",
-      "errorsCount": "Errors: {{count}}"
+      "errorsCount": "Errors: {{count}}",
+      "onLeaveToday_one": "On leave today · {{count}}",
+      "onLeaveToday_other": "On leave today · {{count}}"
     },
     "detail": {
       "editModalTitle": "Edit Staff Member",
@@ -454,7 +548,15 @@
       "balanceLeftSuffix": "{{left}} / {{total}} days left",
       "previous": "Previous",
       "next": "Next",
-      "pageOfTotal": "Page {{page}} of {{total}}"
+      "pageOfTotal": "Page {{page}} of {{total}}",
+      "leaveTypeLabel": "Leave type",
+      "datesLabel": "Dates",
+      "dayCount_one": "{{count}} day",
+      "dayCount_other": "{{count}} days",
+      "reasonLabel": "Reason",
+      "balanceAfterLabel": "Balance after",
+      "notTracked": "Not tracked",
+      "balanceAfterValue": "{{left}} of {{total}} {{type}} days left"
     },
     "salary": {
       "title": "Salary Slips",
@@ -495,7 +597,14 @@
       "columnNetPay": "Net Pay",
       "noSlips": "No slips generated for this period",
       "download": "Download",
-      "markAsPaid": "Mark as Paid"
+      "markAsPaid": "Mark as Paid",
+      "totalPayroll": "Total payroll",
+      "staffNetAfterDeductions_one": "{{count}} staff · net after deductions",
+      "staffNetAfterDeductions_other": "{{count}} staff · net after deductions",
+      "slipsGeneratedAria": "{{done}} of {{total}} slips generated",
+      "generationStartingAria": "Salary slip generation starting",
+      "generatingLabel": "Generating…",
+      "doneOfTotal": "{{done}} of {{total}}"
     },
     "salaryStructures": {
       "title": "Salary Structures",
@@ -689,7 +798,14 @@
       "tableCostCenter": "Cost Center",
       "tableSubmittedBy": "Submitted By",
       "noneFound": "No expenses found",
-      "approve": "Approve"
+      "approve": "Approve",
+      "submittedBy": "submitted by {{name}}",
+      "approving": "Approving…",
+      "namedBudget": "{{name}} budget",
+      "budgetFallback": "Budget",
+      "pctSpent": "{{pct}}% spent",
+      "budgetProgressAria": "{{label}}: {{pct}}% of {{period}} cap spent",
+      "budgetCapSummary": "{{spent}} of {{cap}} {{period}} cap · this expense pushes it to {{projectedPct}}%"
     },
     "budgets": {
       "setFailed": "Failed to set budget",
@@ -785,7 +901,12 @@
       "tabItems": "Items",
       "tabMovements": "Movements",
       "tabRequisitions": "Requisitions",
-      "tabLowStock": "Low Stock"
+      "tabLowStock": "Low Stock",
+      "attentionAriaLabel": "Items needing attention",
+      "lowStockCountLabel_one": "item low on stock",
+      "lowStockCountLabel_other": "items low on stock",
+      "notReturnedCountLabel_one": "item not yet returned",
+      "notReturnedCountLabel_other": "items not yet returned"
     },
     "depreciation": {
       "title": "Asset Depreciation",
@@ -798,7 +919,11 @@
       "tableCurrentValue": "Current Value",
       "tableAnnualDepreciation": "Annual Depreciation",
       "tablePctDeprecated": "% Deprecated",
-      "noneFound": "No fixed assets found"
+      "noneFound": "No fixed assets found",
+      "fleetValue": "Fleet value",
+      "fleetValueOfTotal": "{{current}} of {{original}}",
+      "fleetValueRetainedAria": "Fleet value retained",
+      "pctRetained": "{{pct}}% of original value retained"
     }
   },
   "admin": {

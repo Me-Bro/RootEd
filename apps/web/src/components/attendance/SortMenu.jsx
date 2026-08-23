@@ -1,4 +1,5 @@
 import { ArrowUpDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -7,13 +8,14 @@ import {
   DropdownMenuRadioItem,
 } from '../ui/dropdown-menu.jsx';
 
-const OPTIONS = [
-  { key: 'name', label: 'Name (A–Z)' },
-  { key: 'admissionNo', label: 'Admission no.' },
-  { key: 'attendancePct', label: 'Attendance % (low→high)' },
-];
+const OPTION_KEYS = ['name', 'admissionNo', 'attendancePct'];
 
 export default function SortMenu({ value, onChange }) {
+  const { t } = useTranslation();
+  const OPTIONS = OPTION_KEYS.map((key) => ({
+    key,
+    label: t(`academic.attendance.sort.${key}`),
+  }));
   const current = OPTIONS.find((o) => o.key === value) ?? OPTIONS[0];
 
   return (

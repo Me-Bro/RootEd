@@ -1,4 +1,5 @@
 import { MoreHorizontal } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils.js';
 
 const PILL_STYLES = {
@@ -26,6 +27,7 @@ function Pill({ active, tone, onClick, children, ariaLabel }) {
 }
 
 export default function StatusPills({ status, onSet, onOpenMore }) {
+  const { t } = useTranslation();
   const isOverflowStatus = status === 'late' || status === 'excused';
 
   return (
@@ -34,7 +36,7 @@ export default function StatusPills({ status, onSet, onOpenMore }) {
         <Pill
           active={status === 'present'}
           tone="present"
-          ariaLabel="Mark present"
+          ariaLabel={t('academic.attendance.markPresentAria')}
           onClick={() => onSet('present')}
         >
           P
@@ -42,7 +44,7 @@ export default function StatusPills({ status, onSet, onOpenMore }) {
         <Pill
           active={status === 'absent'}
           tone="absent"
-          ariaLabel="Mark absent"
+          ariaLabel={t('academic.attendance.markAbsentAria')}
           onClick={() => onSet('absent')}
         >
           A
@@ -51,7 +53,7 @@ export default function StatusPills({ status, onSet, onOpenMore }) {
       <button
         type="button"
         onClick={onOpenMore}
-        aria-label="More status options: late or excused"
+        aria-label={t('academic.attendance.moreStatusOptionsAria')}
         className={cn(
           'flex h-9 w-9 shrink-0 items-center justify-center rounded-md border text-muted-foreground hover:bg-muted',
           isOverflowStatus ? 'border-amber-400 text-amber-700 dark:text-amber-300' : 'border-border'

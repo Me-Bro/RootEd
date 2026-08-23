@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { Button } from '../ui/Button.jsx';
 import { Input } from '../ui/Input.jsx';
@@ -30,6 +31,7 @@ function formatDate(value) {
 // POST /academic/terms has no server-side overlap check (see spec §2), so
 // this warning is advisory only — it never blocks submission.
 export default function AddTermSheet({ open, yearId, existingTerms, onClose }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [form, setForm] = useState(EMPTY_FORM);
   const [error, setError] = useState('');
@@ -51,7 +53,7 @@ export default function AddTermSheet({ open, yearId, existingTerms, onClose }) {
       queryClient.invalidateQueries({ queryKey: ['academic-terms'] });
       resetAndClose();
     },
-    onError: (err) => setError(err.response?.data?.error || 'Failed to create term'),
+    onError: (err) => setError(err.response?.data?.error || t('academic.years.createTermFailed')),
   });
 
   const overlap = findOverlap(form, existingTerms ?? []);
@@ -60,10 +62,8 @@ export default function AddTermSheet({ open, yearId, existingTerms, onClose }) {
     <Sheet open={open} onOpenChange={(next) => !next && resetAndClose()}>
       <SheetContent side="bottom">
         <SheetHeader>
-          <SheetTitle>Add a Term</SheetTitle>
-          <SheetDescription>
-            Terms let Grades, Grade Report and Report Cards filter by period.
-          </SheetDescription>
+          <SheetTitle>{t('academic.years.addTermTitle')}</SheetTitle>
+          <SheetDescription>{t('academic.years.addTermDescription')}</SheetDescription>
         </SheetHeader>
         <form
           id="add-term-form"
@@ -74,21 +74,21 @@ export default function AddTermSheet({ open, yearId, existingTerms, onClose }) {
           className="flex flex-col gap-4 px-4"
         >
           <Input
-            label="Name"
+            label={t('common.name')}
             value={form.name}
             onChange={update('name')}
             required
-            placeholder="Term 1"
+            placeholder={t('academic.years.termNamePlaceholder')}
           />
           <Input
-            label="Start Date"
+            label={t('academic.years.startDate')}
             type="date"
             value={form.startDate}
             onChange={update('startDate')}
             required
           />
           <Input
-            label="End Date"
+            label={t('academic.years.endDate')}
             type="date"
             value={form.endDate}
             onChange={update('endDate')}
@@ -96,18 +96,21 @@ export default function AddTermSheet({ open, yearId, existingTerms, onClose }) {
           />
           {overlap && (
             <p className="text-sm text-amber-700 dark:text-amber-400">
-              Overlaps {overlap.name} ({formatDate(overlap.startDate)} –{' '}
-              {formatDate(overlap.endDate)})
+              {t('academic.years.overlapsWarning', {
+                name: overlap.name,
+                start: formatDate(overlap.startDate),
+                end: formatDate(overlap.endDate),
+              })}
             </p>
           )}
           {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
         <div className="flex justify-end gap-2 px-4 pb-4">
           <Button variant="outline" onClick={resetAndClose}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="submit" form="add-term-form" disabled={mutation.isPending}>
-            {mutation.isPending ? 'Adding…' : 'Add Term'}
+            {mutation.isPending ? t('academic.years.adding') : t('academic.years.addTermButton')}
           </Button>
         </div>
       </SheetContent>
