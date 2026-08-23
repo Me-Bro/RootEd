@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
@@ -11,6 +12,7 @@ import { formatCurrency } from '../../utils/intl.js';
 const NEAR_WRITE_OFF_RATIO = 0.1;
 
 export default function DepreciationPage() {
+  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
   const [year, setYear] = useState(String(currentYear));
 
@@ -53,7 +55,7 @@ export default function DepreciationPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-semibold">Asset Depreciation</h1>
+        <h1 className="text-2xl font-semibold">{t('inventory.depreciation.title')}</h1>
         <div className="flex gap-3 items-center">
           <select
             value={year}
@@ -67,12 +69,12 @@ export default function DepreciationPage() {
             ))}
           </select>
           <Button variant="outline" onClick={exportCsv} disabled={records.length === 0}>
-            Export CSV
+            {t('inventory.depreciation.exportCsv')}
           </Button>
         </div>
       </div>
 
-      {isLoading && <p className="text-gray-500">Loading…</p>}
+      {isLoading && <p className="text-gray-500">{t('common.loading')}</p>}
 
       {!isLoading && records.length > 0 && (
         <FleetTotalCard currentTotal={fleetTotal} originalTotal={fleetOriginal} />
@@ -81,7 +83,7 @@ export default function DepreciationPage() {
       {!isLoading && nearWriteOff.length > 0 && (
         <div className="flex flex-col gap-2">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Near write-off · under 10% of original value
+            {t('inventory.depreciation.nearWriteOff')}
           </p>
           <div className="flex flex-col gap-2">
             {nearWriteOff.map((r) => {
@@ -109,7 +111,7 @@ export default function DepreciationPage() {
 
       {!isLoading && records.length > 0 && (
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          All assets
+          {t('inventory.depreciation.allAssets')}
         </p>
       )}
 
@@ -118,12 +120,12 @@ export default function DepreciationPage() {
           <thead className="bg-gray-50 dark:bg-gray-800 text-left">
             <tr>
               {[
-                'Asset Name',
-                'SKU',
-                'Method',
-                'Current Value',
-                'Annual Depreciation',
-                '% Deprecated',
+                t('inventory.depreciation.tableAssetName'),
+                t('inventory.depreciation.tableSku'),
+                t('inventory.depreciation.tableMethod'),
+                t('inventory.depreciation.tableCurrentValue'),
+                t('inventory.depreciation.tableAnnualDepreciation'),
+                t('inventory.depreciation.tablePctDeprecated'),
               ].map((h) => (
                 <th key={h} className="px-4 py-3 font-medium text-gray-600 dark:text-gray-300">
                   {h}
@@ -157,7 +159,7 @@ export default function DepreciationPage() {
             {records.length === 0 && !isLoading && (
               <tr>
                 <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
-                  No fixed assets found
+                  {t('inventory.depreciation.noneFound')}
                 </td>
               </tr>
             )}
