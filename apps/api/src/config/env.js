@@ -4,6 +4,9 @@ const schema = z.object({
   PORT: z.coerce.number().default(3001),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   MONGODB_URI: z.string().min(1),
+  // Optional override for the request-monitoring database connection. When unset,
+  // it's derived from MONGODB_URI by appending "_monitoring" to the db name.
+  MONITORING_MONGODB_URI: z.string().optional(),
   REDIS_URL: z.string().min(1),
   JWT_ACCESS_SECRET: z.string().min(32),
   JWT_REFRESH_SECRET: z.string().min(32),

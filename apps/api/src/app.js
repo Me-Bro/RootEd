@@ -17,6 +17,7 @@ import { requireModuleEnabled } from './middleware/requireModuleEnabled.js';
 import { sanitizeBody } from './utils/sanitize.js';
 import { swaggerSpec } from './config/swagger.js';
 import { httpRequestDuration, httpRequestTotal, registry } from './config/metrics.js';
+import { requestMonitor } from './middleware/requestMonitor.js';
 import authRouter from './routes/auth.js';
 import adminRouter from './routes/admin.js';
 import tenantRouter from './routes/tenant.js';
@@ -74,6 +75,8 @@ app.use((req, res, next) => {
   });
   next();
 });
+
+app.use(requestMonitor);
 
 app.use(
   rateLimit({
