@@ -797,7 +797,14 @@
       "tableCostCenter": "Cost Center",
       "tableSubmittedBy": "Submitted By",
       "noneFound": "No expenses found",
-      "approve": "Approve"
+      "approve": "Approve",
+      "submittedBy": "submitted by {{name}}",
+      "approving": "Approving…",
+      "namedBudget": "{{name}} budget",
+      "budgetFallback": "Budget",
+      "pctSpent": "{{pct}}% spent",
+      "budgetProgressAria": "{{label}}: {{pct}}% of {{period}} cap spent",
+      "budgetCapSummary": "{{spent}} of {{cap}} {{period}} cap · this expense pushes it to {{projectedPct}}%"
     },
     "budgets": {
       "setFailed": "Failed to set budget",

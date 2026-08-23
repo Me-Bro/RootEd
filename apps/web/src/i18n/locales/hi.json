@@ -797,7 +797,14 @@
       "tableCostCenter": "कॉस्ट सेंटर",
       "tableSubmittedBy": "प्रस्तुतकर्ता",
       "noneFound": "कोई खर्च नहीं मिला",
-      "approve": "स्वीकृत करें"
+      "approve": "स्वीकृत करें",
+      "submittedBy": "{{name}} द्वारा प्रस्तुत",
+      "approving": "स्वीकृत हो रहा है…",
+      "namedBudget": "{{name}} बजट",
+      "budgetFallback": "बजट",
+      "pctSpent": "{{pct}}% खर्च हुआ",
+      "budgetProgressAria": "{{label}}: {{period}} सीमा का {{pct}}% खर्च हुआ",
+      "budgetCapSummary": "{{cap}} {{period}} सीमा में से {{spent}} · यह खर्च इसे {{projectedPct}}% तक पहुंचाता है"
     },
     "budgets": {
       "setFailed": "बजट सेट करने में विफल",

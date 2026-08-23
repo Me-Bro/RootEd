@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils.js';
 import { Badge } from '../ui/Badge.jsx';
 import { formatCurrency } from '../../utils/intl.js';
@@ -26,28 +27,35 @@ function pctBarColor(pct) {
  * passing it down, per the component's `{ budget, projectedAmount }` contract.
  */
 export default function BudgetContextBar({ budget, projectedAmount }) {
+  const { t } = useTranslation();
   if (!budget || !budget.cap) return null;
 
   const spentPct = Math.round((budget.spent / budget.cap) * 100);
   const projectedPct = Math.round(((budget.spent + projectedAmount) / budget.cap) * 100);
   const label = budget.costCenterId?.name
-    ? `${budget.costCenterId.name} budget`
+    ? t('expense.entries.namedBudget', { name: budget.costCenterId.name })
     : budget.category
-      ? `${budget.category} budget`
-      : 'Budget';
+      ? t('expense.entries.namedBudget', { name: budget.category })
+      : t('expense.entries.budgetFallback');
 
   return (
     <div className="rounded-lg border border-border bg-muted/30 p-3">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-medium text-foreground">{label}</span>
-        <Badge variant={pctVariant(spentPct)}>{spentPct}% spent</Badge>
+        <Badge variant={pctVariant(spentPct)}>
+          {t('expense.entries.pctSpent', { pct: spentPct })}
+        </Badge>
       </div>
       <div
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.min(spentPct, 100)}
-        aria-label={`${label}: ${spentPct}% of ${budget.period} cap spent`}
+        aria-label={t('expense.entries.budgetProgressAria', {
+          label,
+          pct: spentPct,
+          period: budget.period,
+        })}
         className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted"
       >
         <div
@@ -56,8 +64,12 @@ export default function BudgetContextBar({ budget, projectedAmount }) {
         />
       </div>
       <p className="mt-1.5 text-[11px] text-muted-foreground">
-        {formatCurrency(budget.spent ?? 0)} of {formatCurrency(budget.cap)} {budget.period} cap ·
-        this expense pushes it to {projectedPct}%
+        {t('expense.entries.budgetCapSummary', {
+          spent: formatCurrency(budget.spent ?? 0),
+          cap: formatCurrency(budget.cap),
+          period: budget.period,
+          projectedPct,
+        })}
       </p>
     </div>
   );

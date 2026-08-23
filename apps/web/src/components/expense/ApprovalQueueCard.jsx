@@ -1,4 +1,5 @@
 import { Paperclip } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Card } from '../ui/Card.jsx';
 import { Button } from '../ui/Button.jsx';
 import { formatCurrency } from '../../utils/intl.js';
@@ -29,10 +30,13 @@ export default function ApprovalQueueCard({
   isApproving = false,
   isRejecting = false,
 }) {
+  const { t } = useTranslation();
   const submitter = submitterName(entry.submittedBy);
-  const metaParts = [entry.category, entry.vendor, submitter && `submitted by ${submitter}`].filter(
-    Boolean
-  );
+  const metaParts = [
+    entry.category,
+    entry.vendor,
+    submitter && t('expense.entries.submittedBy', { name: submitter }),
+  ].filter(Boolean);
   const lastAttachment = entry.attachments?.[entry.attachments.length - 1];
   const busy = isApproving || isRejecting;
 
@@ -61,7 +65,7 @@ export default function ApprovalQueueCard({
 
       <div className="flex gap-2 pt-1">
         <Button className="flex-1" onClick={() => onApprove(entry._id)} disabled={busy}>
-          {isApproving ? 'Approving…' : 'Approve'}
+          {isApproving ? t('expense.entries.approving') : t('expense.entries.approve')}
         </Button>
         <Button
           className="flex-1"
@@ -69,7 +73,7 @@ export default function ApprovalQueueCard({
           onClick={() => onReject(entry._id)}
           disabled={busy}
         >
-          Reject
+          {t('expense.entries.reject')}
         </Button>
       </div>
     </Card>
