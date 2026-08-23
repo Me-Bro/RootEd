@@ -4,7 +4,7 @@ import { ORG_TYPES } from '@rooted/shared/constants';
 const tenantSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
-    subdomain: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    subdomain: { type: String, lowercase: true, trim: true },
     plan: {
       type: String,
       enum: ['starter', 'growth', 'pro', 'enterprise'],
@@ -38,7 +38,7 @@ const tenantSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-tenantSchema.index({ subdomain: 1 }, { unique: true });
+tenantSchema.index({ subdomain: 1 }, { unique: true, sparse: true });
 tenantSchema.index({ status: 1 });
 
 export const Tenant = mongoose.model('Tenant', tenantSchema);

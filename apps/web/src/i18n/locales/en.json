@@ -944,6 +944,8 @@
       "newTenant": "New Tenant",
       "schoolNameLabel": "School Name",
       "subdomainLabel": "Subdomain",
+      "subdomainOptionalHint": "Optional — leave blank to allow login only via the general portal",
+      "portalOnly": "Portal only",
       "planLabel": "Plan",
       "orgTypeLabel": "Organization Type",
       "adminEmailLabel": "Admin Email",

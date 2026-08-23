@@ -7,7 +7,7 @@ import { TenantMembership } from '../models/TenantMembership.js';
 import { hashPassword } from './auth.service.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { sendTenantInvite } from './email.service.js';
-import { env } from '../config/env.js';
+import { env, getPortalHost } from '../config/env.js';
 
 export async function createTenant({
   name,
@@ -20,8 +20,10 @@ export async function createTenant({
   timezone,
   currency,
 }) {
-  const exists = await Tenant.findOne({ subdomain });
-  if (exists) throw new AppError('Subdomain already taken', 409);
+  if (subdomain) {
+    const exists = await Tenant.findOne({ subdomain });
+    if (exists) throw new AppError('Subdomain already taken', 409);
+  }
 
   const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
   const tenant = await Tenant.create({
@@ -68,7 +70,8 @@ export async function createTenant({
     status: 'invited',
   });
 
-  const inviteUrl = `https://${tenant.subdomain}.${env.APP_DOMAIN}/accept-invite`;
+  const inviteHost = tenant.subdomain ? `${tenant.subdomain}.${env.APP_DOMAIN}` : getPortalHost();
+  const inviteUrl = `https://${inviteHost}/accept-invite`;
   await sendTenantInvite(adminEmail, tenant.name, inviteUrl);
 
   return tenant;

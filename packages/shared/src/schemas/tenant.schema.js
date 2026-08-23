@@ -2,7 +2,15 @@ import { z } from 'zod';
 
 export const createTenantSchema = z.object({
   name: z.string().min(2).max(100),
-  subdomain: z.string().min(2).max(50).regex(/^[a-z0-9-]+$/, 'Lowercase letters, numbers, hyphens only'),
+  subdomain: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z
+      .string()
+      .min(2)
+      .max(50)
+      .regex(/^[a-z0-9-]+$/, 'Lowercase letters, numbers, hyphens only')
+      .optional()
+  ),
   plan: z.enum(['starter', 'growth', 'pro', 'enterprise']).default('starter'),
   adminEmail: z.string().email(),
   locale: z.string().default('en'),

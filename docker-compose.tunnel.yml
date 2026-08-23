@@ -10,6 +10,12 @@
 # (2026.3.0) mis-resolves route-by-name to a different tunnel on this box:
 #   cloudflared tunnel route dns --overwrite-dns b14594a9-bc18-417a-88ae-a5f3d23c02b5 <tenant>-rooted.ruralrootcloud.com
 #
+# PORTAL_SUBDOMAIN=rooted makes rooted.ruralrootcloud.com act as the general-portal
+# host (login without a tenant subdomain, tenant picker, subdomain-less tenants) —
+# resolveTenant() treats it the same as the bare apex. Needs its own one-time DNS
+# route, same as any tenant subdomain:
+#   cloudflared tunnel route dns --overwrite-dns b14594a9-bc18-417a-88ae-a5f3d23c02b5 rooted.ruralrootcloud.com
+#
 # File storage (S3_PUBLIC_ENDPOINT) uses self-hosted Minio, exposed through
 # the same tunnel at storage-rooted.ruralrootcloud.com (see
 # ~/.cloudflared/rooted-prod-config.yml ingress) — presigned URLs must use a
@@ -30,8 +36,10 @@ services:
     build:
       args:
         VITE_APP_DOMAIN: ruralrootcloud.com
+        VITE_PORTAL_SUBDOMAIN: rooted
   api:
     environment:
       APP_DOMAIN: ruralrootcloud.com
+      PORTAL_SUBDOMAIN: rooted
       NODE_ENV: production
       S3_PUBLIC_ENDPOINT: https://storage-rooted.ruralrootcloud.com
