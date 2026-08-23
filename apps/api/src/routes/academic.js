@@ -46,13 +46,17 @@ import { computeGradeStats } from '../utils/gradeStats.js';
 import { findMatchingJob } from '../utils/reportCardJobs.js';
 import { filterVisibleTimetableEntries } from '../utils/timetableVisibility.js';
 import { auditLog } from '../services/audit.service.js';
-import { getSignedUrl } from '../services/storage.service.js';
+import { getSignedUrl, uploadBuffer } from '../services/storage.service.js';
 
 const DEFAULTER_THRESHOLD_PCT = 75;
 const DEFAULT_REPORT_RANGE_DAYS = 30;
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
+const uploadImage = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => cb(null, file.mimetype.startsWith('image/')),
+});
 const reportCardQueue = new Queue('report-card', { connection: redis });
 
 router.use(authenticate);
@@ -352,6 +356,100 @@ router.patch('/students/:id', requirePermission('students:write'), async (req, r
     next(err);
   }
 });
+
+router.post(
+  '/students/:id/photo',
+  requirePermission('students:write'),
+  uploadImage.single('file'),
+  async (req, res, next) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: 'Only image files are allowed' });
+      const tenantId = req.tenant._id;
+      const student = await Student.findOne({ _id: req.params.id, tenantId });
+      if (!student) return res.status(404).json({ error: 'Not found' });
+
+      const key = `students/${tenantId}/${student._id}/photo/${Date.now()}-${req.file.originalname}`;
+      await uploadBuffer(key, req.file.buffer, req.file.mimetype);
+
+      student.photoKey = key;
+      await student.save();
+
+      res.json({ photoKey: key });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/students/:id/photo',
+  requirePermission('students:read'),
+  async (req, res, next) => {
+    try {
+      const student = await Student.findOne({
+        _id: req.params.id,
+        tenantId: req.tenant._id,
+      }).lean();
+      if (!student) return res.status(404).json({ error: 'Not found' });
+      if (!student.photoKey) return res.status(404).json({ error: 'No photo' });
+
+      const url = await getSignedUrl(student.photoKey, 3600);
+      res.json({ url });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/students/:id/documents',
+  requirePermission('students:write'),
+  upload.single('file'),
+  async (req, res, next) => {
+    try {
+      if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+      const tenantId = req.tenant._id;
+      const student = await Student.findOne({ _id: req.params.id, tenantId });
+      if (!student) return res.status(404).json({ error: 'Not found' });
+
+      const key = `students/${tenantId}/${student._id}/docs/${Date.now()}-${req.file.originalname}`;
+      await uploadBuffer(key, req.file.buffer, req.file.mimetype);
+
+      student.documents.push({
+        name: req.body.name || req.file.originalname,
+        key,
+        uploadedAt: new Date(),
+      });
+      await student.save();
+
+      res.json({ document: student.documents[student.documents.length - 1] });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/students/:id/documents/:index/download',
+  requirePermission('students:read'),
+  async (req, res, next) => {
+    try {
+      const student = await Student.findOne({
+        _id: req.params.id,
+        tenantId: req.tenant._id,
+      }).lean();
+      if (!student) return res.status(404).json({ error: 'Not found' });
+
+      const doc = student.documents?.[Number(req.params.index)];
+      if (!doc?.key) return res.status(404).json({ error: 'Document not found' });
+
+      const url = await getSignedUrl(doc.key, 3600);
+      res.json({ url });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.post(
   '/students/import',

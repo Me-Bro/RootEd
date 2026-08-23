@@ -210,7 +210,17 @@
       "sectionLabel": "Section: {{section}}",
       "attendanceHeading": "Attendance",
       "gradesHeading": "Grades",
-      "feesHeading": "Fees"
+      "feesHeading": "Fees",
+      "documentsHeading": "Documents",
+      "noDocuments": "No documents uploaded.",
+      "uploading": "Uploading…",
+      "uploadDocument": "Upload Document",
+      "uploadFailed": "Failed to upload document",
+      "download": "Download",
+      "downloadLinkFailed": "Failed to get document link",
+      "uploadPhoto": "Upload Photo",
+      "changePhoto": "Change Photo",
+      "photoUploadFailed": "Failed to upload photo"
     },
     "attendance": {
       "title": "Attendance",
