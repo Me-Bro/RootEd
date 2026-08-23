@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { ORG_TYPES } from '@rooted/shared/constants';
 
 const tenantSchema = new mongoose.Schema(
   {
@@ -8,6 +9,11 @@ const tenantSchema = new mongoose.Schema(
       type: String,
       enum: ['starter', 'growth', 'pro', 'enterprise'],
       default: 'starter',
+    },
+    orgType: {
+      type: String,
+      enum: ORG_TYPES,
+      default: 'school',
     },
     status: {
       type: String,
@@ -22,7 +28,11 @@ const tenantSchema = new mongoose.Schema(
     dataRetentionUntil: { type: Date },
     trialEndsAt: { type: Date },
     isTrialActive: { type: Boolean, default: false },
-    discountType: { type: String, enum: ['none', 'nonprofit', 'government', 'annual_prepay'], default: 'none' },
+    discountType: {
+      type: String,
+      enum: ['none', 'nonprofit', 'government', 'annual_prepay'],
+      default: 'none',
+    },
     discountPct: { type: Number, default: 0 },
   },
   { timestamps: true }

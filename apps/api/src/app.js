@@ -13,6 +13,7 @@ import { env } from './config/env.js';
 import { redis } from './config/redis.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { resolveTenant } from './middleware/resolveTenant.js';
+import { requireModuleEnabled } from './middleware/requireModuleEnabled.js';
 import { sanitizeBody } from './utils/sanitize.js';
 import { swaggerSpec } from './config/swagger.js';
 import { httpRequestDuration, httpRequestTotal, registry } from './config/metrics.js';
@@ -43,7 +44,8 @@ app.use(
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
       if (env.NODE_ENV === 'development') return cb(null, true);
-      if (origin.endsWith(`.${env.APP_DOMAIN}`) || origin === `https://${env.APP_DOMAIN}`) return cb(null, true);
+      if (origin.endsWith(`.${env.APP_DOMAIN}`) || origin === `https://${env.APP_DOMAIN}`)
+        return cb(null, true);
       cb(new Error('Not allowed by CORS'));
     },
     credentials: true,
@@ -163,12 +165,12 @@ app.use('/admin', adminRouter);
 app.use(resolveTenant);
 
 app.use('/tenant', tenantRouter);
-app.use('/academic', academicRouter);
-app.use('/staff', staffRouter);
-app.use('/expense', expenseRouter);
-app.use('/fee', feeRouter);
-app.use('/inventory', inventoryRouter);
-app.use('/billing', billingRouter);
+app.use('/academic', requireModuleEnabled('academic'), academicRouter);
+app.use('/staff', requireModuleEnabled('staff'), staffRouter);
+app.use('/expense', requireModuleEnabled('expense'), expenseRouter);
+app.use('/fee', requireModuleEnabled('fee'), feeRouter);
+app.use('/inventory', requireModuleEnabled('inventory'), inventoryRouter);
+app.use('/billing', requireModuleEnabled('billing'), billingRouter);
 
 app.use(errorHandler);
 

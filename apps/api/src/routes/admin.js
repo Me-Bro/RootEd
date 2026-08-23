@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { ORG_TYPES } from '@rooted/shared/constants';
 import { authenticate, requireSystemRole } from '../middleware/authenticate.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { Tenant } from '../models/Tenant.js';
@@ -27,6 +28,7 @@ const createTenantSchema = z.object({
     .min(2)
     .regex(/^[a-z0-9-]+$/),
   plan: z.enum(['starter', 'growth', 'pro', 'enterprise']).default('starter'),
+  orgType: z.enum(ORG_TYPES).default('school'),
   adminEmail: z.string().email(),
   adminPassword: z.string().min(8).optional(),
   locale: z.string().default('en'),

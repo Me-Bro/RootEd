@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { isModuleEnabled } from '@rooted/shared/utils';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { useAuth } from './contexts/useAuth.js';
 import LoginPage from './pages/auth/LoginPage.jsx';
@@ -49,6 +50,13 @@ function RequireSystemRole({ roles, children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (!roles.includes(user?.systemRole)) return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
+function RequireModuleEnabled({ moduleName, children }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!isModuleEnabled(user?.orgType, moduleName)) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
@@ -111,173 +119,213 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/academic/years"
           element={
-            <RequirePermission permission="students:read">
-              <AcademicYearsPage />
-            </RequirePermission>
+            <RequireModuleEnabled moduleName="academic">
+              <Outlet />
+            </RequireModuleEnabled>
           }
-        />
+        >
+          <Route
+            path="/academic/years"
+            element={
+              <RequirePermission permission="students:read">
+                <AcademicYearsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/academic/students"
+            element={
+              <RequirePermission permission="students:read">
+                <StudentsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/academic/students/:id"
+            element={
+              <RequirePermission permission="students:read">
+                <StudentDetailPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/academic/attendance"
+            element={
+              <RequirePermission permission="attendance:read">
+                <AttendancePage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/academic/attendance/report"
+            element={
+              <RequirePermission permission="attendance:read">
+                <AttendanceReportPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/academic/grades"
+            element={
+              <RequirePermission permission="grades:read">
+                <GradesPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/academic/grades/report"
+            element={
+              <RequirePermission permission="grades:read">
+                <GradeReportPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/academic/timetable"
+            element={
+              <RequirePermission permission="students:read">
+                <TimetablePage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/academic/my-timetable"
+            element={
+              <RequirePermission permission="students:read">
+                <MySchedulePage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/academic/report-cards"
+            element={
+              <RequirePermission permission="grades:read">
+                <ReportCardPage />
+              </RequirePermission>
+            }
+          />
+        </Route>
         <Route
-          path="/academic/students"
           element={
-            <RequirePermission permission="students:read">
-              <StudentsPage />
-            </RequirePermission>
+            <RequireModuleEnabled moduleName="staff">
+              <Outlet />
+            </RequireModuleEnabled>
           }
-        />
+        >
+          <Route
+            path="/staff"
+            element={
+              <RequirePermission permission="staff:read">
+                <StaffPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/staff/:id"
+            element={
+              <RequirePermission permission="staff:read">
+                <StaffDetailPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/staff/leaves"
+            element={
+              <RequirePermission permission="leave:read">
+                <LeaveRequestsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/staff/salary"
+            element={
+              <RequirePermission permission="payroll:read">
+                <SalaryPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/staff/salary-structures"
+            element={
+              <RequirePermission permission="payroll:read">
+                <SalaryStructuresPage />
+              </RequirePermission>
+            }
+          />
+        </Route>
         <Route
-          path="/academic/students/:id"
           element={
-            <RequirePermission permission="students:read">
-              <StudentDetailPage />
-            </RequirePermission>
+            <RequireModuleEnabled moduleName="expense">
+              <Outlet />
+            </RequireModuleEnabled>
           }
-        />
+        >
+          <Route
+            path="/expense"
+            element={
+              <RequirePermission permission="expense:read">
+                <ExpensesPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/expense/budgets"
+            element={
+              <RequirePermission permission="expense:read">
+                <BudgetsPage />
+              </RequirePermission>
+            }
+          />
+        </Route>
         <Route
-          path="/academic/attendance"
           element={
-            <RequirePermission permission="attendance:read">
-              <AttendancePage />
-            </RequirePermission>
+            <RequireModuleEnabled moduleName="fee">
+              <Outlet />
+            </RequireModuleEnabled>
           }
-        />
+        >
+          <Route
+            path="/fee"
+            element={
+              <RequirePermission permission="fees:read">
+                <FeesPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/fee/structures"
+            element={
+              <RequirePermission permission="fees:read">
+                <FeeStructuresPage />
+              </RequirePermission>
+            }
+          />
+        </Route>
         <Route
-          path="/academic/attendance/report"
           element={
-            <RequirePermission permission="attendance:read">
-              <AttendanceReportPage />
-            </RequirePermission>
+            <RequireModuleEnabled moduleName="inventory">
+              <Outlet />
+            </RequireModuleEnabled>
           }
-        />
-        <Route
-          path="/academic/grades"
-          element={
-            <RequirePermission permission="grades:read">
-              <GradesPage />
-            </RequirePermission>
-          }
-        />
-        <Route
-          path="/academic/grades/report"
-          element={
-            <RequirePermission permission="grades:read">
-              <GradeReportPage />
-            </RequirePermission>
-          }
-        />
-        <Route
-          path="/academic/timetable"
-          element={
-            <RequirePermission permission="students:read">
-              <TimetablePage />
-            </RequirePermission>
-          }
-        />
-        <Route
-          path="/academic/my-timetable"
-          element={
-            <RequirePermission permission="students:read">
-              <MySchedulePage />
-            </RequirePermission>
-          }
-        />
-        <Route
-          path="/academic/report-cards"
-          element={
-            <RequirePermission permission="grades:read">
-              <ReportCardPage />
-            </RequirePermission>
-          }
-        />
-        <Route
-          path="/staff"
-          element={
-            <RequirePermission permission="staff:read">
-              <StaffPage />
-            </RequirePermission>
-          }
-        />
-        <Route
-          path="/staff/:id"
-          element={
-            <RequirePermission permission="staff:read">
-              <StaffDetailPage />
-            </RequirePermission>
-          }
-        />
-        <Route
-          path="/staff/leaves"
-          element={
-            <RequirePermission permission="leave:read">
-              <LeaveRequestsPage />
-            </RequirePermission>
-          }
-        />
-        <Route
-          path="/staff/salary"
-          element={
-            <RequirePermission permission="payroll:read">
-              <SalaryPage />
-            </RequirePermission>
-          }
-        />
-        <Route
-          path="/staff/salary-structures"
-          element={
-            <RequirePermission permission="payroll:read">
-              <SalaryStructuresPage />
-            </RequirePermission>
-          }
-        />
-        <Route
-          path="/expense"
-          element={
-            <RequirePermission permission="expense:read">
-              <ExpensesPage />
-            </RequirePermission>
-          }
-        />
-        <Route
-          path="/expense/budgets"
-          element={
-            <RequirePermission permission="expense:read">
-              <BudgetsPage />
-            </RequirePermission>
-          }
-        />
-        <Route
-          path="/fee"
-          element={
-            <RequirePermission permission="fees:read">
-              <FeesPage />
-            </RequirePermission>
-          }
-        />
-        <Route
-          path="/fee/structures"
-          element={
-            <RequirePermission permission="fees:read">
-              <FeeStructuresPage />
-            </RequirePermission>
-          }
-        />
-        <Route
-          path="/inventory"
-          element={
-            <RequirePermission permission="inventory:read">
-              <InventoryPage />
-            </RequirePermission>
-          }
-        />
-        <Route
-          path="/inventory/depreciation"
-          element={
-            <RequirePermission permission="inventory:read">
-              <DepreciationPage />
-            </RequirePermission>
-          }
-        />
+        >
+          <Route
+            path="/inventory"
+            element={
+              <RequirePermission permission="inventory:read">
+                <InventoryPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/inventory/depreciation"
+            element={
+              <RequirePermission permission="inventory:read">
+                <DepreciationPage />
+              </RequirePermission>
+            }
+          />
+        </Route>
         <Route path="/setup" element={<SetupWizardPage />} />
       </Route>
     </Routes>
