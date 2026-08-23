@@ -1,6 +1,15 @@
 import mongoose from 'mongoose';
 import { tenantScopePlugin } from './plugins/tenantScope.js';
 
+const documentSchema = new mongoose.Schema(
+  {
+    name: String,
+    key: String,
+    uploadedAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const studentSchema = new mongoose.Schema(
   {
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true },
@@ -18,6 +27,8 @@ const studentSchema = new mongoose.Schema(
       },
     ],
     status: { type: String, enum: ['active', 'graduated', 'withdrawn'], default: 'active' },
+    photoKey: { type: String },
+    documents: [documentSchema],
   },
   { timestamps: true }
 );

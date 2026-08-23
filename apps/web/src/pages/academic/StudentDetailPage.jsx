@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
+import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
@@ -349,6 +350,163 @@ function FeeSummary({ studentId }) {
   );
 }
 
+function PhotoPanel({ student, canWrite }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const fileRef = useRef(null);
+  const [error, setError] = useState('');
+
+  const { data: photo } = useQuery({
+    queryKey: ['student-photo', student._id],
+    queryFn: () =>
+      api
+        .get(`/academic/students/${student._id}/photo`)
+        .then((r) => r.data)
+        .catch((err) => {
+          if (err.response?.status === 404) return null;
+          throw err;
+        }),
+  });
+
+  const uploadMutation = useMutation({
+    mutationFn: (file) => {
+      const fd = new FormData();
+      fd.append('file', file);
+      return api
+        .post(`/academic/students/${student._id}/photo`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+        .then((r) => r.data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student-photo', student._id] });
+      setError('');
+    },
+    onError: (err) =>
+      setError(err.response?.data?.error || t('academic.studentDetail.photoUploadFailed')),
+  });
+
+  const initials = `${student.firstName?.[0] ?? ''}${student.lastName?.[0] ?? ''}`.toUpperCase();
+
+  return (
+    <div className="flex items-center gap-4">
+      <Avatar size="lg">
+        {photo?.url && (
+          <AvatarImage src={photo.url} alt={`${student.firstName} ${student.lastName}`} />
+        )}
+        <AvatarFallback>{initials}</AvatarFallback>
+      </Avatar>
+      {canWrite && (
+        <div className="flex flex-col gap-1">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files?.[0]) uploadMutation.mutate(e.target.files[0]);
+              e.target.value = '';
+            }}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploadMutation.isPending}
+          >
+            {uploadMutation.isPending
+              ? t('academic.studentDetail.uploading')
+              : photo?.url
+                ? t('academic.studentDetail.changePhoto')
+                : t('academic.studentDetail.uploadPhoto')}
+          </Button>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DocumentsPanel({ student, canWrite }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const fileRef = useRef(null);
+  const [error, setError] = useState('');
+
+  const uploadMutation = useMutation({
+    mutationFn: (file) => {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('name', file.name);
+      return api
+        .post(`/academic/students/${student._id}/documents`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+        .then((r) => r.data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['student', student._id] });
+      setError('');
+    },
+    onError: (err) =>
+      setError(err.response?.data?.error || t('academic.studentDetail.uploadFailed')),
+  });
+
+  async function download(index) {
+    setError('');
+    try {
+      const { data } = await api.get(
+        `/academic/students/${student._id}/documents/${index}/download`
+      );
+      window.open(data.url, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      setError(err.response?.data?.error || t('academic.studentDetail.downloadLinkFailed'));
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {student.documents?.length > 0 ? (
+        student.documents.map((doc, i) => (
+          <div key={i} className="flex items-center justify-between text-sm">
+            <span>{doc.name}</span>
+            <Button variant="outline" size="sm" onClick={() => download(i)}>
+              {t('academic.studentDetail.download')}
+            </Button>
+          </div>
+        ))
+      ) : (
+        <p className="text-sm text-muted-foreground">{t('academic.studentDetail.noDocuments')}</p>
+      )}
+      {canWrite && (
+        <>
+          <input
+            ref={fileRef}
+            type="file"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files?.[0]) uploadMutation.mutate(e.target.files[0]);
+              e.target.value = '';
+            }}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="self-start mt-1"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploadMutation.isPending}
+          >
+            {uploadMutation.isPending
+              ? t('academic.studentDetail.uploading')
+              : t('academic.studentDetail.uploadDocument')}
+          </Button>
+        </>
+      )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
+  );
+}
+
 export default function StudentDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams();
@@ -391,6 +549,8 @@ export default function StudentDetailPage() {
           </div>
         }
       />
+
+      <PhotoPanel student={student} canWrite={canWrite} />
 
       <div className="flex flex-wrap items-center gap-3">
         <Badge variant={statusVariant(student.status)}>{student.status}</Badge>
@@ -450,6 +610,12 @@ export default function StudentDetailPage() {
             <FeeSummary studentId={id} />
           </div>
         )}
+        <div className="rounded-lg border border-border p-4">
+          <h2 className="mb-3 text-sm font-semibold">
+            {t('academic.studentDetail.documentsHeading')}
+          </h2>
+          <DocumentsPanel student={student} canWrite={canWrite} />
+        </div>
       </div>
 
       {showEdit && (

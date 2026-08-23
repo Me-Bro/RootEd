@@ -210,7 +210,17 @@
       "sectionLabel": "सेक्शन: {{section}}",
       "attendanceHeading": "उपस्थिति",
       "gradesHeading": "ग्रेड",
-      "feesHeading": "फीस"
+      "feesHeading": "फीस",
+      "documentsHeading": "दस्तावेज़",
+      "noDocuments": "कोई दस्तावेज़ अपलोड नहीं किया गया।",
+      "uploading": "अपलोड हो रहा है…",
+      "uploadDocument": "दस्तावेज़ अपलोड करें",
+      "uploadFailed": "दस्तावेज़ अपलोड करने में विफल",
+      "download": "डाउनलोड करें",
+      "downloadLinkFailed": "दस्तावेज़ लिंक प्राप्त करने में विफल",
+      "uploadPhoto": "फ़ोटो अपलोड करें",
+      "changePhoto": "फ़ोटो बदलें",
+      "photoUploadFailed": "फ़ोटो अपलोड करने में विफल"
     },
     "attendance": {
       "title": "उपस्थिति",
