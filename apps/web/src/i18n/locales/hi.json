@@ -900,7 +900,12 @@
       "tabItems": "आइटम",
       "tabMovements": "मूवमेंट",
       "tabRequisitions": "अधियाचनाएं",
-      "tabLowStock": "कम स्टॉक"
+      "tabLowStock": "कम स्टॉक",
+      "attentionAriaLabel": "ध्यान देने योग्य आइटम",
+      "lowStockCountLabel_one": "आइटम कम स्टॉक में",
+      "lowStockCountLabel_other": "आइटम कम स्टॉक में",
+      "notReturnedCountLabel_one": "आइटम अभी वापस नहीं किया गया",
+      "notReturnedCountLabel_other": "आइटम अभी वापस नहीं किए गए"
     },
     "depreciation": {
       "title": "संपत्ति मूल्यह्रास",
@@ -913,7 +918,11 @@
       "tableCurrentValue": "वर्तमान मूल्य",
       "tableAnnualDepreciation": "वार्षिक मूल्यह्रास",
       "tablePctDeprecated": "% मूल्यह्रासित",
-      "noneFound": "कोई स्थिर संपत्ति नहीं मिली"
+      "noneFound": "कोई स्थिर संपत्ति नहीं मिली",
+      "fleetValue": "फ्लीट मूल्य",
+      "fleetValueOfTotal": "{{original}} में से {{current}}",
+      "fleetValueRetainedAria": "फ्लीट मूल्य बरकरार",
+      "pctRetained": "मूल मूल्य का {{pct}}% बरकरार"
     }
   },
   "admin": {

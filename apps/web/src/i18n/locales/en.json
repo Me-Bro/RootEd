@@ -900,7 +900,12 @@
       "tabItems": "Items",
       "tabMovements": "Movements",
       "tabRequisitions": "Requisitions",
-      "tabLowStock": "Low Stock"
+      "tabLowStock": "Low Stock",
+      "attentionAriaLabel": "Items needing attention",
+      "lowStockCountLabel_one": "item low on stock",
+      "lowStockCountLabel_other": "items low on stock",
+      "notReturnedCountLabel_one": "item not yet returned",
+      "notReturnedCountLabel_other": "items not yet returned"
     },
     "depreciation": {
       "title": "Asset Depreciation",
@@ -913,7 +918,11 @@
       "tableCurrentValue": "Current Value",
       "tableAnnualDepreciation": "Annual Depreciation",
       "tablePctDeprecated": "% Deprecated",
-      "noneFound": "No fixed assets found"
+      "noneFound": "No fixed assets found",
+      "fleetValue": "Fleet value",
+      "fleetValueOfTotal": "{{current}} of {{original}}",
+      "fleetValueRetainedAria": "Fleet value retained",
+      "pctRetained": "{{pct}}% of original value retained"
     }
   },
   "admin": {
