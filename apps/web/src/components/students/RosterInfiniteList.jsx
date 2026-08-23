@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { Badge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
@@ -33,6 +34,7 @@ function statusVariant(status) {
  * list") instead of duplicating that logic in the page component.
  */
 export default function RosterInfiniteList({ sectionId, search }) {
+  const { t } = useTranslation();
   const mode = search ? 'search' : 'section';
   const key = mode === 'search' ? search : sectionId;
 
@@ -80,13 +82,17 @@ export default function RosterInfiniteList({ sectionId, search }) {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage, students.length]);
 
   if (isLoading) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">Loading students…</p>;
+    return (
+      <p className="py-6 text-center text-sm text-muted-foreground">
+        {t('academic.students.loadingStudents')}
+      </p>
+    );
   }
 
   if (isError) {
     return (
       <p className="py-6 text-center text-sm text-destructive">
-        Failed to load students — check your connection and try again.
+        {t('academic.students.rosterLoadFailed')}
       </p>
     );
   }
@@ -95,7 +101,9 @@ export default function RosterInfiniteList({ sectionId, search }) {
     return (
       <EmptyState
         title={
-          mode === 'search' ? 'No students match your search' : 'No students in this section yet'
+          mode === 'search'
+            ? t('academic.students.noSearchMatch')
+            : t('academic.students.noStudentsInSection')
         }
       />
     );
@@ -104,7 +112,7 @@ export default function RosterInfiniteList({ sectionId, search }) {
   return (
     <div className="flex flex-col gap-2">
       <p className="px-1 text-xs text-muted-foreground">
-        {total} student{total === 1 ? '' : 's'}
+        {t('academic.students.rosterCount', { count: total })}
       </p>
       <div className="flex flex-col divide-y divide-border rounded-lg border border-border">
         {students.map((s) => (
@@ -130,10 +138,12 @@ export default function RosterInfiniteList({ sectionId, search }) {
       {hasNextPage && (
         <div ref={sentinelRef} className="flex justify-center py-3">
           {isFetchingNextPage ? (
-            <span className="text-xs text-muted-foreground">Loading more…</span>
+            <span className="text-xs text-muted-foreground">
+              {t('academic.students.loadingMore')}
+            </span>
           ) : manualLoadVisible ? (
             <Button variant="outline" size="sm" onClick={() => fetchNextPage()}>
-              Load more
+              {t('academic.students.loadMore')}
             </Button>
           ) : (
             <span aria-hidden="true">&nbsp;</span>

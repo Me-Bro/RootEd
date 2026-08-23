@@ -1,4 +1,5 @@
 import { ChevronDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils.js';
 
 /**
@@ -7,10 +8,15 @@ import { cn } from '../../lib/utils.js';
  * sections (rendered by <SectionChips> in the parent) are shown below it.
  */
 export default function ClassGrid({ classes, expandedId, onExpand }) {
+  const { t } = useTranslation();
   if (!classes.length) return null;
 
   return (
-    <div className="flex flex-col gap-1.5" role="list" aria-label="Classes">
+    <div
+      className="flex flex-col gap-1.5"
+      role="list"
+      aria-label={t('academic.students.classesAriaLabel')}
+    >
       {classes.map((c) => {
         const isExpanded = c._id === expandedId;
         const sectionCount = (c.sections || []).length;
@@ -33,7 +39,7 @@ export default function ClassGrid({ classes, expandedId, onExpand }) {
               <div>
                 <p className="text-sm font-medium">{c.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {sectionCount} section{sectionCount === 1 ? '' : 's'}
+                  {t('academic.students.sectionCount', { count: sectionCount })}
                 </p>
               </div>
             </div>

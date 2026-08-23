@@ -1,4 +1,5 @@
 import { ChevronDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '../ui/Card.jsx';
 import { Badge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
@@ -32,6 +33,7 @@ export default function YearCard({
   onAddTerm,
   canWrite,
 }) {
+  const { t } = useTranslation();
   return (
     <Card className={year.isActive ? 'ring-2 ring-primary/40' : undefined}>
       <CardContent>
@@ -44,12 +46,12 @@ export default function YearCard({
           </div>
 
           {year.isActive ? (
-            <Badge variant="success">● Active</Badge>
+            <Badge variant="success">● {t('academic.years.activeBadge')}</Badge>
           ) : (
             <div className="flex shrink-0 items-center gap-2">
               {canWrite && (
                 <Button size="sm" variant="outline" onClick={onSetActive}>
-                  Set active
+                  {t('academic.years.setActive')}
                 </Button>
               )}
               <button
@@ -58,7 +60,7 @@ export default function YearCard({
                 onClick={onToggle}
                 className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
               >
-                {terms.length} term{terms.length === 1 ? '' : 's'}
+                {t('academic.years.termCount', { count: terms.length })}
                 <ChevronDown
                   size={14}
                   className={cn('transition-transform', expanded && 'rotate-180')}
@@ -71,7 +73,7 @@ export default function YearCard({
         {expanded && (
           <div className="mt-3 flex flex-col gap-2">
             {terms.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No terms yet</p>
+              <p className="text-sm text-muted-foreground">{t('academic.years.noTermsYet')}</p>
             ) : (
               terms.map((term) => (
                 <TermRow key={term._id} term={term} isCurrent={isCurrentTerm(term)} />
@@ -83,7 +85,7 @@ export default function YearCard({
                 onClick={onAddTerm}
                 className="rounded-lg border border-dashed border-border px-3 py-2 text-left text-sm text-muted-foreground hover:border-primary hover:text-primary"
               >
-                + Add a term
+                {t('academic.years.addATerm')}
               </button>
             )}
           </div>
