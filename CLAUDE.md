@@ -93,7 +93,7 @@ seeded users share password `TestPass123!`.
 
 Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts must literally end in `.${APP_DOMAIN}` (default `rooted.app`) or resolution fails with "Tenant not found" — the test env overrides `APP_DOMAIN=localhost` so `testschool.localhost` resolves correctly instead.
 
-**Background workers:** 6 in-process BullMQ workers (Redis-backed), started in `apps/api/src/index.js` alongside the HTTP server (not separate processes): `audit.worker.js`, `reportCard.worker.js`, `expenseEscalation.worker.js`, `inventoryOverdue.worker.js`, `trialExpiry.worker.js`, `stockValuation.worker.js`.
+**Background workers:** 8 in-process BullMQ workers (Redis-backed), started in `apps/api/src/index.js` alongside the HTTP server (not separate processes): `audit.worker.js`, `reportCard.worker.js`, `expenseEscalation.worker.js`, `inventoryOverdue.worker.js`, `trialExpiry.worker.js`, `stockValuation.worker.js`, `feeLateCharge.worker.js`, `salarySlip.worker.js`.
 
 **Field encryption:** AES-256-GCM (`apps/api/src/utils/fieldEncryption.js`) for `StaffMember` PII (government ID, bank account, salary). Per-tenant DEK derived from `MASTER_ENCRYPTION_KEY` via HKDF-SHA256 (salt = tenantId, info = `'rooted-field-encryption'`). Transparent via Mongoose getters/setters — never decrypt/re-encrypt manually.
 
@@ -103,22 +103,26 @@ Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts 
 
 **Frontend API client:** `apps/web/src/lib/api.js` defaults `baseURL` to `${window.location.origin}/__api` when `VITE_API_URL` is unset, so requests stay same-origin (subdomain-based tenant resolution needs the real Host header, and the refresh cookie must stay first-party). Both the Vite dev proxy (`vite.config.js`, active only in `--mode test`) and the built web image's own nginx (`apps/web/nginx.conf`) rewrite `/__api/*` → the API, forwarding `Host`. Don't call the API by absolute URL/different hostname from the page — it breaks CORS and cookie handling by design.
 
+**i18n:** `apps/web/src/i18n/` — i18next + react-i18next. Three languages: `en`, `hi`, and `hi_en` (a merged "Hindi / English" resource built at init time by `mergeHiEn.js`, which walks `en.json` and appends ` / <hi>` after each Hindi string). `languagePreference.js` persists the active language (`app-lang` in localStorage) and is the source of truth for `SUPPORTED_LANGUAGES` — add a new language there and to `locales/` together. All user-facing strings in `apps/web/src/components/**` must go through `useTranslation()`/`t()`, not hardcoded text, since Hindi coverage is enforced per-module.
+
 ## Key Files
 
 | File | Purpose |
 |------|---------|
 | `apps/api/src/app.js` | Express setup, middleware chain order |
-| `apps/api/src/index.js` | Process entrypoint — connects DB/Redis/S3, starts all 6 workers, then listens |
+| `apps/api/src/index.js` | Process entrypoint — connects DB/Redis/S3, starts all 8 workers, then listens |
 | `apps/api/src/config/env.js` | Zod-validated env schema — all required vars listed here |
 | `apps/api/src/middleware/resolveTenant.js` | Tenant resolution logic (Host-header subdomain matching against `APP_DOMAIN`) |
 | `apps/api/src/middleware/authenticate.js` | JWT + Redis blocklist check |
 | `apps/api/src/middleware/requirePermission.js` | RBAC permission check + 60s Redis permission cache |
 | `apps/api/src/models/plugins/tenantScope.js` | Enforces `tenantId` on every tenant-scoped query/write |
-| `apps/api/src/routes/` | 8 routers: auth, admin, tenant, academic, staff, expense, fee, inventory, billing |
+| `apps/api/src/routes/` | 9 routers: auth, admin, tenant, academic, staff, expense, fee, inventory, billing |
 | `apps/api/src/scripts/seed-test-data.js` | Deterministic seed for `rooted_test` (tenant `testschool`, 4 users, academic/staff/fee/inventory data); `--clean` wipes all collections first |
 | `apps/api/src/scripts/seed-super-admin.js` | Bootstraps one `systemRole: super_admin` user against whatever `MONGODB_URI` is active |
 | `apps/web/src/App.jsx` | React Router setup |
 | `apps/web/src/lib/api.js` | Axios client — same-origin `/__api` base URL logic |
+| `apps/web/src/i18n/index.js` | i18next setup — registers `en`/`hi`/`hi_en` resources |
+| `apps/web/src/i18n/mergeHiEn.js` | Builds the `hi_en` merged resource from `en.json` + `hi.json` |
 | `apps/web/playwright.config.js` | E2E project setup — `setup` project builds per-role auth storage state before `e2e`/`axe` projects run; `webServer` auto-starts `vite --mode test` |
 | `packages/shared/src/` | Zod schemas reused across API validation and frontend forms |
 | `docs/adr/` | Architecture decision records — tenancy model, field encryption, in-process workers, approval workflow engine |
@@ -178,11 +182,9 @@ The Vite dev proxy's upstream target and tenant `Host` header (`vite.config.js`)
 ## Current State
 
 MVP largely complete. Known gaps and open bugs:
-- Jest/Supertest integration tests minimal (only `apps/api/src/__tests__/tenant-isolation.test.js` exists — 4 tests against `mongodb-memory-server`); no route-level Supertest coverage
+- Jest unit/logic coverage is broad (21 files under `apps/api/src/__tests__/`, spanning fee/salary/leave/grading/staff/auth), but all against pure functions or `mongodb-memory-server` directly — no Supertest coverage through the actual Express app (middleware chain: auth, tenant resolution, permission checks untested end-to-end)
 - Playwright E2E specs exist for auth, academic (attendance/students), fee payments, staff leaves, and expense entries, plus an axe accessibility spec — but coverage is not exhaustive
-- i18n translation files incomplete (only `en`; `hi`/`ta`/`es`/`fr` not created)
+- i18n: `en` and `hi` (plus merged `hi_en`) done across all modules; `ta`/`es`/`fr` not created
 - Real-time notifications not implemented — the notification bell polls every 60s
 - `SES` is not a valid `EMAIL_PROVIDER` yet (only `smtp` and `postmark`)
 - `/audit` and `/flags` web pages are placeholders ("Coming soon")
-- `POST /fee/payments/verify` passes a hardcoded `amount: 0` instead of the Razorpay-verified charged amount
-- New tenants don't get default `LeaveType`s auto-seeded
