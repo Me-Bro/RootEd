@@ -990,6 +990,37 @@
       "tabMembers": "Members",
       "tabBilling": "Billing",
       "tabAuditLog": "Audit Log"
+    },
+    "audit": {
+      "tenantLabel": "Tenant",
+      "allTenants": "All tenants",
+      "actionLabel": "Action",
+      "fromLabel": "From",
+      "toLabel": "To",
+      "tableTenant": "Tenant",
+      "loadFailed": "Failed to load audit log",
+      "noneFound": "No audit entries found",
+      "previous": "Previous",
+      "next": "Next",
+      "pageOfTotal": "Page {{page}} of {{total}}"
+    },
+    "flags": {
+      "newFlag": "New Flag",
+      "keyLabel": "Key",
+      "descriptionLabel": "Description",
+      "enabledLabel": "Enabled",
+      "creating": "Creating…",
+      "createFailed": "Failed to save flag",
+      "loadFailed": "Failed to load flags",
+      "emptyTitle": "No feature flags yet",
+      "emptyDescription": "Create one to start gating a feature for specific rollout.",
+      "tableKey": "Key",
+      "tableDescription": "Description",
+      "tableUpdatedAt": "Updated At",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "enable": "Enable",
+      "disable": "Disable"
     }
   }
 }
