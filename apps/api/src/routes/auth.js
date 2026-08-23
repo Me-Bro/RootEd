@@ -19,7 +19,7 @@ import {
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { resolvePermissions, effectivePermissionsFor } from '../middleware/requirePermission.js';
-import { resolveTenantFromToken } from '../middleware/resolveTenant.js';
+import { resolveTenantFromToken, getSubdomainInfo } from '../middleware/resolveTenant.js';
 import { Tenant } from '../models/Tenant.js';
 import { TenantMembership } from '../models/TenantMembership.js';
 import { env } from '../config/env.js';
@@ -355,11 +355,10 @@ router.get('/me', authenticate, async (req, res, next) => {
     if (impersonatedPermissions) {
       tenant = await Tenant.findById(req.user.impersonatedTenantId, '_id orgType').lean();
     } else if (user.systemRole !== 'super_admin') {
-      const subdomain = req.hostname.replace(`.${env.APP_DOMAIN}`, '');
-      tenant =
-        subdomain && subdomain !== req.hostname
-          ? await Tenant.findOne({ subdomain, status: 'active' }, '_id orgType').lean()
-          : await resolveTenantFromToken(req);
+      const { subdomain, isPortalHost } = getSubdomainInfo(req);
+      tenant = !isPortalHost
+        ? await Tenant.findOne({ subdomain, status: 'active' }, '_id orgType').lean()
+        : await resolveTenantFromToken(req);
       if (tenant) permissions = await resolvePermissions(req.user.sub, tenant._id.toString());
     }
 

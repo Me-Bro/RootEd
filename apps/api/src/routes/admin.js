@@ -24,10 +24,14 @@ router.use(authenticate, requireSystemRole('super_admin'));
 
 const createTenantSchema = z.object({
   name: z.string().min(2),
-  subdomain: z
-    .string()
-    .min(2)
-    .regex(/^[a-z0-9-]+$/),
+  subdomain: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z
+      .string()
+      .min(2)
+      .regex(/^[a-z0-9-]+$/)
+      .optional()
+  ),
   plan: z.enum(['starter', 'growth', 'pro', 'enterprise']).default('starter'),
   orgType: z.enum(ORG_TYPES).default('school'),
   adminEmail: z.string().email(),

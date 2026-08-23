@@ -69,9 +69,11 @@ function CreateModal({ onClose }) {
               label={t('admin.tenants.subdomainLabel')}
               value={form.subdomain}
               onChange={update('subdomain')}
-              required
               placeholder="acme-school"
             />
+            <p className="-mt-2 text-xs text-gray-500">
+              {t('admin.tenants.subdomainOptionalHint')}
+            </p>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {t('admin.tenants.planLabel')}
@@ -199,7 +201,11 @@ export default function TenantsPage() {
                       {tenant.name}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">{tenant.subdomain}</td>
+                  <td className="px-4 py-3 text-gray-500">
+                    {tenant.subdomain || (
+                      <span className="italic">{t('admin.tenants.portalOnly')}</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 capitalize">{tenant.plan}</td>
                   <td className="px-4 py-3 capitalize">{tenant.orgType?.replace('_', ' ')}</td>
                   <td className="px-4 py-3">

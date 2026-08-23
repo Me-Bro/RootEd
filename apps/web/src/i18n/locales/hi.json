@@ -944,6 +944,8 @@
       "newTenant": "नया टेनेंट",
       "schoolNameLabel": "स्कूल का नाम",
       "subdomainLabel": "सबडोमेन",
+      "subdomainOptionalHint": "वैकल्पिक — खाली छोड़ें तो लॉगिन केवल सामान्य पोर्टल से होगा",
+      "portalOnly": "केवल पोर्टल",
       "planLabel": "योजना",
       "orgTypeLabel": "संगठन प्रकार",
       "adminEmailLabel": "एडमिन ईमेल",

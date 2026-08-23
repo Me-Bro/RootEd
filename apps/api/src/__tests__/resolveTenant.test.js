@@ -5,6 +5,7 @@ import { Tenant } from '../models/Tenant.js';
 import { resolveTenant } from '../middleware/resolveTenant.js';
 import { signAccessToken } from '../services/auth.service.js';
 import { redis } from '../config/redis.js';
+import { env } from '../config/env.js';
 
 let mongod;
 
@@ -88,4 +89,35 @@ test('no-subdomain Host + garbage token → 404, not a 500', async () => {
 
   const err = next.mock.calls[0][0];
   expect(err.status).toBe(404);
+});
+
+test('PORTAL_SUBDOMAIN Host is treated as the general portal, not a real tenant lookup', async () => {
+  env.PORTAL_SUBDOMAIN = 'portal';
+  try {
+    const tenant = await Tenant.create({ name: 'Delta', subdomain: 'delta', status: 'active' });
+    const token = signAccessToken({ sub: 'user-1', tenantId: tenant._id.toString() });
+
+    const req = mockReq({ hostname: 'portal.rooted.app', token });
+    const next = await run(req);
+
+    expect(next).toHaveBeenCalledWith();
+    expect(req.tenant._id.toString()).toBe(tenant._id.toString());
+  } finally {
+    env.PORTAL_SUBDOMAIN = undefined;
+  }
+});
+
+test('impersonatedTenantId claim resolves the tenant on the general-portal host', async () => {
+  const tenant = await Tenant.create({ name: 'Epsilon', status: 'active' });
+  const token = signAccessToken({
+    sub: 'super-admin-1',
+    systemRole: 'super_admin',
+    impersonatedTenantId: tenant._id.toString(),
+  });
+
+  const req = mockReq({ hostname: 'rooted.app', token });
+  const next = await run(req);
+
+  expect(next).toHaveBeenCalledWith();
+  expect(req.tenant._id.toString()).toBe(tenant._id.toString());
 });

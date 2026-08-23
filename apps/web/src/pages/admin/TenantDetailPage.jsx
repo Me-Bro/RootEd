@@ -40,7 +40,10 @@ function OverviewTab({ tenant }) {
   return (
     <div className="grid grid-cols-2 gap-6 sm:grid-cols-3">
       <InfoRow label={t('common.name')} value={tenant.name} />
-      <InfoRow label={t('admin.tenants.tableSubdomain')} value={tenant.subdomain} />
+      <InfoRow
+        label={t('admin.tenants.tableSubdomain')}
+        value={tenant.subdomain || t('admin.tenants.portalOnly')}
+      />
       <InfoRow label={t('admin.tenants.tablePlan')} value={tenant.plan} />
       <InfoRow
         label={t('common.status')}
