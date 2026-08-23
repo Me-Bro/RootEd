@@ -47,8 +47,13 @@ test.describe('My Schedule page', () => {
     );
 
     await link.click();
-    await expect(page).toHaveURL(/\/academic\/attendance/);
-    await expect(page.locator('select').first()).toHaveValue(section._id);
+    await expect(page).toHaveURL(
+      `/academic/attendance?sectionId=${section._id}&subjectId=${math._id}`
+    );
+    // Section picker on AttendancePage is a DropdownMenu (not a native <select>)
+    // — assert on the trigger's label, which the page derives from the
+    // sectionId query param via useState's lazy initializer.
+    await expect(page.getByRole('button', { name: /Grade 5-A/ })).toBeVisible();
   });
 
   test('shows a stacked card layout instead of the table on narrow viewports', async ({ page }) => {

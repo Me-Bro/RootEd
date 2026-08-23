@@ -39,6 +39,26 @@ export default defineConfig({
         storageState: 'tests/fixtures/.auth/super_admin.json',
       },
     },
+
+    // Viewport-agnostic specs only, mobile viewport — catches responsive
+    // overflow/layout bugs the desktop project can't see. Deliberately NOT
+    // the whole suite: most feature specs under tests/academic, tests/staff,
+    // etc. assert against desktop-only interactive elements (a <table> grid,
+    // native <select>s) for pages that intentionally swap to a different
+    // layout (cards/chips) below the md breakpoint — those already have their
+    // own dedicated narrow-viewport test via page.setViewportSize() within an
+    // otherwise-desktop spec (see e.g. timetable.spec.js, my-schedule.spec.js).
+    // Running them under a phone-width project too just breaks on the correct
+    // responsive behavior, not a real bug.
+    {
+      name: 'mobile',
+      testMatch: [/tests[\\/]sweep[\\/].*\.spec\.js$/, /tests[\\/]admin[\\/].*\.spec\.js$/],
+      dependencies: ['setup'],
+      use: {
+        ...devices['Pixel 7'],
+        storageState: 'tests/fixtures/.auth/super_admin.json',
+      },
+    },
   ],
 
   webServer: {
