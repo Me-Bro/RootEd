@@ -20,6 +20,7 @@ import {
   applyDiscountToAssignment,
   refundPayment,
 } from '../services/fee.service.js';
+import { summarizeFeeCollection } from '../utils/feeCollectionSummary.js';
 import { getSignedUrl } from '../services/storage.service.js';
 import { env } from '../config/env.js';
 import { auditLog } from '../services/audit.service.js';
@@ -521,6 +522,27 @@ router.get('/defaulters', requirePermission('fees:read'), async (req, res, next)
   try {
     const defaulters = await getDefaulters(req.tenant._id, req.query.yearId);
     res.json(defaulters);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// School-wide rollup for the dashboard — reuses getDefaulters() rather than
+// re-deriving overdue logic, so this can never drift from what the
+// Defaulters list itself shows.
+router.get('/collection-summary', requirePermission('fees:read'), async (req, res, next) => {
+  try {
+    const tenantId = req.tenant._id;
+    const { academicYearId } = req.query;
+    const filter = { tenantId };
+    if (academicYearId) filter.academicYearId = academicYearId;
+
+    const [assignments, defaulters] = await Promise.all([
+      FeeAssignment.find(filter).lean(),
+      getDefaulters(tenantId, academicYearId),
+    ]);
+
+    res.json(summarizeFeeCollection(assignments, defaulters));
   } catch (err) {
     next(err);
   }

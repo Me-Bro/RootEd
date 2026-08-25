@@ -23,10 +23,23 @@ export const markAttendanceSchema = z.object({
 export const attendanceQuerySchema = z.object({
   sectionId: objectId.optional(),
   entityId: objectId.optional(),
+  entityType: z.enum(['student', 'staff']).optional(),
   subjectId: objectId.optional(),
   date: dateString.optional(),
   from: dateString.optional(),
   to: dateString.optional(),
+});
+
+export const attendanceTrendQuerySchema = z.object({
+  days: z.coerce
+    .number()
+    .int()
+    .refine((v) => v === 7 || v === 30, 'days must be 7 or 30')
+    .default(7),
+});
+
+export const gradesSummaryQuerySchema = z.object({
+  termId: objectId.optional(),
 });
 
 export const attendanceReportQuerySchema = z.object({
