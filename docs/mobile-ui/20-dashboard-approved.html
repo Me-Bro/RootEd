@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Principal Dashboard — 2 mockups + 3 drill-downs · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page wide">
+  <p class="crumbs"><a href="index.html">← All modules</a> · Dashboard · <code>DashboardPage.jsx</code></p>
+
+  <div class="approved-band">
+    <span class="seal">✅ APPROVED FOR BUILD</span>
+    <span class="txt">Module 19 of 19, lightweight process: understand the real desktop screen (today it shows zero school data) → 2 mobile mockups of the Home screen (simple, then smart) → approve Smart Home plus its <b>3 drill-down screens</b> → write the full build spec.</span>
+  </div>
+
+  <h1 class="page-title">Principal Dashboard — mobile mock</h1>
+  <p class="page-sub">Real data, Test School, Fri 21 Aug 2026: 962 active students across 40 sections, 74 staff. Attendance 90.5% students / 94.6% staff. Fees ₹3.12Cr collected of ₹4.71Cr assigned (66.2%), 414 students in default. Grades: 74.6% average across 30,795 entries, 391 students with at least one F. Staff: 36 leave requests pending, oldest since 14 Jun.</p>
+
+  <div class="statrow" style="max-width:900px">
+    <div class="s"><div class="n">2</div><div class="l">Home mockups compared</div></div>
+    <div class="s hot"><div class="n">4</div><div class="l">Screens in approved flow</div></div>
+    <div class="s"><div class="n">1</div><div class="l">Approved</div></div>
+  </div>
+
+  <div class="toc">
+    <a href="#current"><b>0</b> · What the desktop does today</a>
+    <a href="#mocks"><b>1</b> · The 2 home mockups</a>
+    <a href="#drilldown"><b>2</b> · Home → 3 drill-downs</a>
+    <a href="#timetravel"><b>3</b> · Period toggle &amp; date picker</a>
+    <a href="#wiring"><b>4</b> · API contracts</a>
+    <a href="#state"><b>5</b> · State &amp; logic</a>
+    <a href="#components"><b>6</b> · File &amp; component plan</a>
+    <a href="#edge"><b>7</b> · Errors, empty, a11y</a>
+    <a href="#dod"><b>8</b> · Definition of done</a>
+    <a href="#signoff"><b>9</b> · Sign-off</a>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:34px" id="current">0 · What the desktop does today <span style="color:#6e7a8a;font-size:13px;font-weight:400">— read from the real code, not assumed</span></h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Behaviour</th><th>Where it lives</th></tr></thead>
+      <tbody>
+        <tr><td>Every non-super-admin tenant member — principal, teacher, accountant, librarian — sees the identical 4 cards: school name, plan, status, timezone. No attendance, fee, grade or staff data anywhere on the screen.</td><td>DashboardPage.jsx → TenantDashboard</td></tr>
+        <tr><td>Super admin sees a different branch: 4 cross-tenant counters + a recent audit-log table. Tenant-operator scope, not school-level — out of scope for a principal.</td><td>DashboardPage.jsx → SuperAdminDashboard</td></tr>
+        <tr><td>No role- or permission-aware branching exists beyond <code>systemRole === 'super_admin'</code>. A principal with full read access and a librarian with almost none land on the exact same screen.</td><td>DashboardPage.jsx</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="mocks">1 · The 2 home mockups</h2>
+
+  <div class="rail">
+    <div class="variant">
+      <div class="variant-head">
+        <span class="statechip" style="background:#3a4152;color:#e2e7ee">MOCK 1 · SIMPLE</span>
+        <div class="variant-title">Mirrors the desktop, exactly</div>
+        <p class="variant-for">Same 4 cards TenantDashboard renders today — school name, plan, status, timezone — stacked mobile-shaped instead of a 2×2 grid. Nothing invented, nothing added.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="grow"><h2>Dashboard</h2></div></div></div>
+          <div class="body">
+            <div class="card"><div class="small muted">School</div><div class="big" style="font-size:19px">Test School</div></div>
+            <div class="card"><div class="small muted">Plan</div><div class="big" style="font-size:19px">Standard</div></div>
+            <div class="card"><div class="small muted">Status</div><div class="big" style="font-size:19px">Active</div></div>
+            <div class="card"><div class="small muted">Timezone</div><div class="big" style="font-size:19px">Asia/Kolkata</div></div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant" style="position:relative">
+      <div class="variant-head">
+        <span class="statechip">MOCK 2 · SMART <span style="margin-left:6px">✅ APPROVED</span></span>
+        <div class="variant-title">Attention strip + KPI grid + health rings + trend, every element tappable</div>
+        <p class="variant-for">Four ways of reading the same morning, stacked in priority order: exceptions first, then exact numbers, then a colour-coded scan, then direction over time. Every row, card, ring and bar taps through to one of the 3 real drill-downs below.</p>
+      </div>
+      <div class="phone">
+        <div class="redline-dot" style="left:150px;top:60px">1</div>
+        <div class="redline-dot" style="left:120px;top:170px">2</div>
+        <div class="redline-dot" style="left:120px;top:320px">3</div>
+        <div class="redline-dot" style="left:120px;top:420px">4</div>
+        <div class="redline-dot" style="left:120px;top:560px">5</div>
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="grow"><h2>Good morning, Heena</h2><p class="sub">Test School · Fri, 21 Aug 2026 ▾</p></div></div></div>
+          <div class="body">
+            <div class="list">
+              <div class="li"><div class="grow"><div class="nm">414 fee defaulters</div><div class="meta">₹29.41L overdue</div></div><span class="badge bad">›</span></div>
+              <div class="li"><div class="grow"><div class="nm">36 leave approvals pending</div><div class="meta">oldest since 14 Jun</div></div><span class="badge warn">›</span></div>
+              <div class="li"><div class="grow"><div class="nm">51 students absent today</div><div class="meta">of 962</div></div><span class="badge warn">›</span></div>
+            </div>
+
+            <p class="sectionlabel">Key numbers</p>
+            <div class="row" style="gap:8px">
+              <div class="card tight grow"><div class="tiny muted">Attendance today</div><div style="font-weight:700;font-size:17px">90.5%</div></div>
+              <div class="card tight grow"><div class="tiny muted">Fee collected</div><div style="font-weight:700;font-size:17px">66.2%</div></div>
+            </div>
+            <div class="row" style="gap:8px">
+              <div class="card tight grow"><div class="tiny muted">Avg exam score</div><div style="font-weight:700;font-size:17px">74.6%</div></div>
+              <div class="card tight grow"><div class="tiny muted">Staff present</div><div style="font-weight:700;font-size:17px">94.6%</div></div>
+            </div>
+
+            <p class="sectionlabel">At a glance</p>
+            <div class="row" style="gap:6px;justify-content:space-between">
+              <div class="stack" style="align-items:center"><div class="ring" style="--accent:var(--present);--p:91%;width:56px;height:56px"><div style="font-size:10px;font-weight:700">90.5</div></div><div class="tiny muted">Attend.</div></div>
+              <div class="stack" style="align-items:center"><div class="ring" style="--accent:var(--late);--p:66%;width:56px;height:56px"><div style="font-size:10px;font-weight:700">66.2</div></div><div class="tiny muted">Fee</div></div>
+              <div class="stack" style="align-items:center"><div class="ring" style="--accent:var(--present);--p:75%;width:56px;height:56px"><div style="font-size:10px;font-weight:700">74.6</div></div><div class="tiny muted">Score</div></div>
+              <div class="stack" style="align-items:center"><div class="ring" style="--accent:var(--present);--p:95%;width:56px;height:56px"><div style="font-size:10px;font-weight:700">94.6</div></div><div class="tiny muted">Staff</div></div>
+            </div>
+
+            <div class="between" style="margin:6px 2px 0">
+              <p class="sectionlabel" style="margin:0">Attendance trend</p>
+              <div class="seg" style="width:150px"><div class="on">7D</div><div>30D</div><div>Year</div></div>
+            </div>
+            <div class="card">
+              <div class="row" style="align-items:baseline;gap:8px"><div class="big" style="font-size:20px">90.5%</div><div class="tiny muted">today · 7-day range 89.6–90.9%</div></div>
+              <div class="vbars" style="height:56px;margin-top:10px">
+                <div><div class="col g" style="height:46%"></div><div class="lbl">13</div></div>
+                <div><div class="col g" style="height:47%"></div><div class="lbl">14</div></div>
+                <div><div class="col g" style="height:56%"></div><div class="lbl">17</div></div>
+                <div><div class="col g" style="height:52%"></div><div class="lbl">18</div></div>
+                <div><div class="col g" style="height:59%"></div><div class="lbl">19</div></div>
+                <div><div class="col g" style="height:55%"></div><div class="lbl">20</div></div>
+                <div><div class="col g" style="height:55%"></div><div class="lbl">21</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div style="max-width:280px;padding-top:52px">
+      <ol class="speclist">
+        <li><b>Date ▾</b> — opens a calendar sheet; rewinds the whole screen to a past day. See §3.</li>
+        <li><b>Attention strip</b> — 3 rows, each already a real query (defaulters count, pending leave count, today's absentee count). Tapping a row jumps to its filtered drill-down, below.</li>
+        <li><b>Key numbers (plain grid)</b> — exact values for reporting; tapping a card opens the same drill-down as its matching ring.</li>
+        <li><b>At a glance (rings)</b> — colour-coded restatement of the same 4 numbers for a 2-second scan; same tap targets as the grid above it.</li>
+        <li><b>Attendance trend</b> — 7D/30D/Year toggle (§3) plus a tap-through to Academic Summary, which shows this same trend expanded.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="painbox" style="border-color:#2f5c4a;background:#12211b">
+    <b>Why Mock 2 is approved:</b> a principal's actual morning routine — check attendance, check fee collection, check who's absent/on leave — currently costs 4 separate module opens with zero rollup anywhere. The screen deliberately shows the same handful of numbers three ways (exact grid, colour ring, trend bar) because a principal reads differently at 7am (scan) than at a board meeting (exact figures) — but every reading still resolves to the same 3 real drill-downs. Every number is either a straight read of an existing endpoint or a small aggregate this spec adds (see §3); nothing here is decorative.
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="drilldown">2 · Home → 3 drill-downs <span style="color:#6e7a8a;font-size:13px;font-weight:400">— what each KPI card and attention row opens</span></h2>
+  <p class="page-sub" style="margin-bottom:16px">Same real morning, three taps deep. Each screen below is reachable from the approved Smart Home in one tap.</p>
+
+  <div class="rail step-chain">
+    <div class="variant">
+      <div class="variant-head">
+        <span class="variant-num">ACADEMIC</span>
+        <div class="variant-title">Attendance breakdown + exam performance</div>
+        <p class="variant-for">Opens from the "51 absent" row or either the attendance / avg-score card.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Academic Summary</h2><p class="sub">Fri, 21 Aug 2026</p></div></div></div>
+          <div class="body">
+            <div class="card">
+              <div class="card-title">Attendance today</div>
+              <div class="row" style="gap:14px">
+                <div class="ring" style="--p:91%"><div><div style="font-size:16px;font-weight:700">90.5%</div><div class="tiny muted">present</div></div></div>
+                <div class="stat3 grow">
+                  <div class="stat g"><div class="n">871</div><div class="l">present</div></div>
+                  <div class="stat r"><div class="n">51</div><div class="l">absent</div></div>
+                  <div class="stat a"><div class="n">27</div><div class="l">late</div></div>
+                </div>
+              </div>
+              <div class="tiny muted" style="margin-top:8px">+ 13 excused · 962 active students, 40 sections</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Attendance trend</div>
+              <div class="vbars" style="height:56px">
+                <div><div class="col g" style="height:46%"></div><div class="lbl">13</div></div>
+                <div><div class="col g" style="height:47%"></div><div class="lbl">14</div></div>
+                <div><div class="col g" style="height:56%"></div><div class="lbl">17</div></div>
+                <div><div class="col g" style="height:52%"></div><div class="lbl">18</div></div>
+                <div><div class="col g" style="height:59%"></div><div class="lbl">19</div></div>
+                <div><div class="col g" style="height:55%"></div><div class="lbl">20</div></div>
+                <div><div class="col g" style="height:55%"></div><div class="lbl">21</div></div>
+              </div>
+              <div class="tiny muted" style="margin-top:6px">89.6%–90.9% over the last 7 school days — stable, not trending down</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Exam performance</div>
+              <div class="row" style="gap:10px;align-items:baseline">
+                <div class="big">74.6%</div>
+                <div class="small muted">average score · 30,795 entries · 2 terms</div>
+              </div>
+              <div class="bar thick" style="margin-top:10px"><span style="width:74.6%"></span></div>
+              <div class="tiny muted" style="margin-top:8px">A 2,608 · B 7,421 · C 10,881 · D 7,475 · F 2,410</div>
+            </div>
+            <div class="banner warn">⚠️ 391 students have at least one F this year — <a href="#" style="color:inherit;font-weight:650">view grade report ›</a></div>
+            <div class="list">
+              <div class="li"><div class="grow nm">View full attendance report</div><span class="tiny muted">›</span></div>
+              <div class="li"><div class="grow nm">View grade report</div><span class="tiny muted">›</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="variant-head">
+        <span class="variant-num">FINANCE</span>
+        <div class="variant-title">Collection rate + defaulters</div>
+        <p class="variant-for">Opens from the "414 defaulters" row or the fee-collected card.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Finance Summary</h2><p class="sub">Academic year 2026-27</p></div></div></div>
+          <div class="body">
+            <div class="card">
+              <div class="card-title">Fee collection</div>
+              <div class="row" style="gap:10px;align-items:baseline">
+                <div class="big">66.2%</div>
+                <div class="small muted">collected</div>
+              </div>
+              <div class="bar thick" style="margin-top:10px"><span class="g" style="width:66.2%"></span></div>
+              <div class="tiny muted" style="margin-top:8px">₹3,11,81,010 of ₹4,70,89,500 assigned · 985 assignments</div>
+            </div>
+            <div class="card" style="border-color:var(--absent)">
+              <div class="row between">
+                <div><div class="big" style="color:var(--absent)">414</div><div class="tiny muted">students in default · ₹29,41,200 overdue</div></div>
+                <span class="tiny muted">›</span>
+              </div>
+            </div>
+            <div class="sectionlabel">Highest overdue</div>
+            <div class="list">
+              <div class="li"><div class="grow"><div class="nm">Ritika Verma</div><div class="meta">GPS/2026/0816 · Section A</div></div><span class="small" style="color:var(--absent);font-weight:650">₹62,000</span></div>
+              <div class="li"><div class="grow"><div class="nm">Vandana Sarkar</div><div class="meta">GPS/2026/0813 · Section A</div></div><span class="small" style="color:var(--absent);font-weight:650">₹62,000</span></div>
+              <div class="li"><div class="grow"><div class="nm">Dinesh Bhat</div><div class="meta">GPS/2026/0805 · Section A</div></div><span class="small" style="color:var(--absent);font-weight:650">₹62,000</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="variant-head">
+        <span class="variant-num">STAFF</span>
+        <div class="variant-title">Staff attendance + leave backlog</div>
+        <p class="variant-for">Opens from the "36 pending" row or the staff-present card.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="iconbtn plain">‹</div><div class="grow"><h2>Staff Summary</h2><p class="sub">Fri, 21 Aug 2026</p></div></div></div>
+          <div class="body">
+            <div class="card">
+              <div class="card-title">Staff attendance today</div>
+              <div class="stat3">
+                <div class="stat g"><div class="n">70</div><div class="l">present</div></div>
+                <div class="stat r"><div class="n">2</div><div class="l">absent</div></div>
+                <div class="stat a"><div class="n">2</div><div class="l">late</div></div>
+              </div>
+              <div class="tiny muted" style="margin-top:8px">94.6% present · 74 staff</div>
+            </div>
+            <div class="card" style="border-color:var(--late)">
+              <div class="row between">
+                <div><div class="big" style="color:var(--late)">36</div><div class="tiny muted">leave requests pending · oldest since 14 Jun</div></div>
+                <span class="tiny muted">›</span>
+              </div>
+            </div>
+            <div class="sectionlabel">Oldest pending</div>
+            <div class="list">
+              <div class="li"><div class="grow"><div class="nm">Shalini Pereira</div><div class="meta">Teacher · Unpaid · 14–16 Jun</div></div><span class="badge warn">3d</span></div>
+              <div class="li"><div class="grow"><div class="nm">Alok Biswas</div><div class="meta">Teacher · Casual · 16–18 Jun</div></div><span class="badge warn">3d</span></div>
+              <div class="li"><div class="grow"><div class="nm">Ansh Kulkarni</div><div class="meta">Teacher · Casual · 19–21 Jun</div></div><span class="badge warn">3d</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="timetravel">3 · Period toggle &amp; date picker <span style="color:#6e7a8a;font-size:13px;font-weight:400">— trend window + jump to any past date</span></h2>
+  <p class="page-sub" style="margin-bottom:16px">Two separate controls: a <b>period toggle</b> on the trend card (7 days / 30 days / year) that reshapes just that chart, and a <b>date picker</b> on the header that rewinds the whole Home screen to a past day. Both against real history — attendance data currently goes back to <b>27 Jul 2026</b>, 20 school days (the seed script's <code>--attendance-days</code> default).</p>
+
+  <p class="sectionlabel" style="margin-left:0">Trend card, 3 period states</p>
+  <div class="rail" style="gap:16px;align-items:flex-start">
+    <div class="variant" style="width:280px">
+      <div class="variant-head" style="max-width:280px"><div class="variant-title" style="font-size:14px">7 Days <span class="rec" style="margin-left:6px">default</span></div></div>
+      <div class="card" style="width:100%;box-sizing:border-box">
+        <div class="seg" style="margin-bottom:10px"><div class="on">7D</div><div>30D</div><div>Year</div></div>
+        <div class="row" style="align-items:baseline;gap:8px"><div class="big" style="font-size:18px">90.5%</div><div class="tiny muted">today · range 89.6–90.9%</div></div>
+        <div class="vbars" style="height:48px;margin-top:8px">
+          <div><div class="col g" style="height:46%"></div><div class="lbl">13</div></div>
+          <div><div class="col g" style="height:47%"></div><div class="lbl">14</div></div>
+          <div><div class="col g" style="height:56%"></div><div class="lbl">17</div></div>
+          <div><div class="col g" style="height:52%"></div><div class="lbl">18</div></div>
+          <div><div class="col g" style="height:59%"></div><div class="lbl">19</div></div>
+          <div><div class="col g" style="height:55%"></div><div class="lbl">20</div></div>
+          <div><div class="col g" style="height:55%"></div><div class="lbl">21</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="variant" style="width:280px">
+      <div class="variant-head" style="max-width:280px"><div class="variant-title" style="font-size:14px">30 Days</div></div>
+      <div class="card" style="width:100%;box-sizing:border-box">
+        <div class="seg" style="margin-bottom:10px"><div>7D</div><div class="on">30D</div><div>Year</div></div>
+        <div class="row" style="align-items:baseline;gap:8px"><div class="big" style="font-size:18px">90.1%</div><div class="tiny muted">4-week average</div></div>
+        <div class="vbars" style="height:48px;margin-top:8px">
+          <div><div class="col g" style="height:50%"></div><div class="lbl">Wk1</div></div>
+          <div><div class="col g" style="height:48%"></div><div class="lbl">Wk2</div></div>
+          <div><div class="col g" style="height:51%"></div><div class="lbl">Wk3</div></div>
+          <div><div class="col g" style="height:55%"></div><div class="lbl">Wk4</div></div>
+        </div>
+        <div class="tiny muted" style="margin-top:6px">27 Jul – 21 Aug · all 20 school days on record</div>
+      </div>
+    </div>
+
+    <div class="variant" style="width:280px">
+      <div class="variant-head" style="max-width:280px"><div class="variant-title" style="font-size:14px">Year</div></div>
+      <div class="card" style="width:100%;box-sizing:border-box">
+        <div class="seg" style="margin-bottom:10px"><div>7D</div><div>30D</div><div class="on">Year</div></div>
+        <div class="notebox warn" style="margin:0">
+          <b>Not enough history yet.</b> Attendance records go back to 27 Jul 2026 — 20 school days. This view fills in as the term progresses; showing a flat or extrapolated line here would be a claim the data hasn't earned.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="painbox" style="border-color:#2f5c4a;background:#12211b;margin-top:4px">
+    <b>Why "Year" is a notice, not a chart:</b> Rule 3 — never invent a data point. The honest move is to say so and default back to the 30-day view, not draw 12 months of line from 20 real days.
+  </div>
+
+  <p class="sectionlabel" style="margin-left:0;margin-top:28px">Date picker — jump the whole Home screen to a past day</p>
+  <div class="rail step-chain">
+    <div class="variant">
+      <div class="variant-head">
+        <div class="variant-title">Tap the date to open the picker</div>
+        <p class="variant-for">The header date is a button: <code>Fri, 21 Aug 2026 ▾</code>.</p>
+      </div>
+      <div class="phone">
+        <div class="redline-dot" style="left:150px;top:60px">1</div>
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="grow"><h2>Good morning, Heena</h2><p class="sub">Test School · Fri, 21 Aug 2026 ▾</p></div></div></div>
+          <div class="body">
+            <div class="list">
+              <div class="li"><div class="grow"><div class="nm">414 fee defaulters</div><div class="meta">₹29.41L overdue</div></div><span class="badge bad">›</span></div>
+            </div>
+            <div class="tiny muted" style="text-align:center;margin-top:20px">rest of Home scrolls below, unchanged</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="variant-head">
+        <div class="variant-title">Calendar sheet</div>
+        <p class="variant-for">Only days with recorded attendance (weekdays, 27 Jul – 21 Aug) are selectable — weekends and dates outside the seeded range are disabled, not just unstyled.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="scrim"></div>
+          <div class="sheet" style="bottom:0">
+            <div class="grab"></div>
+            <div class="between" style="margin-bottom:10px"><b style="font-size:15px">Jump to a date</b><span class="chip soft">Today</span></div>
+            <div class="between" style="margin-bottom:8px"><span class="iconbtn plain">‹</span><b style="font-size:13.5px">August 2026</b><span class="iconbtn plain">›</span></div>
+            <div class="grid-week" style="grid-template-columns:repeat(7,1fr)">
+              <div class="h">S</div><div class="h">M</div><div class="h">T</div><div class="h">W</div><div class="h">T</div><div class="h">F</div><div class="h">S</div>
+              <div class="c free"></div><div class="c free"></div><div class="c free"></div><div class="c free"></div><div class="c free"></div><div class="c free">1</div><div class="c free">2</div>
+              <div class="c free">3</div><div class="c">4</div><div class="c">5</div><div class="c">6</div><div class="c">7</div><div class="c free">8</div><div class="c free">9</div>
+              <div class="c free">10</div><div class="c">11</div><div class="c">12</div><div class="c">13</div><div class="c">14</div><div class="c free">15</div><div class="c free">16</div>
+              <div class="c free">17</div><div class="c" style="outline:2px solid var(--accent);outline-offset:1px">18</div><div class="c">19</div><div class="c">20</div><div class="c now">21</div><div class="c free">22</div><div class="c free">23</div>
+              <div class="c free">24</div><div class="c free">25</div><div class="c free">26</div><div class="c free">27</div><div class="c free">28</div><div class="c free">29</div><div class="c free">30</div>
+            </div>
+            <div class="tiny muted" style="margin-top:10px;text-align:center">Bold dates have attendance recorded · greyed dates don't (weekends, holidays, no data yet)</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="variant-head">
+        <div class="variant-title">Home, rewound to 18 Aug</div>
+        <p class="variant-for">Attendance &amp; academic numbers update to that day. Fee defaulters and leave approvals stay <b>current</b> — they're a live queue, not a fact that existed "as of" a past date.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="grow"><h2>Tue, 18 Aug 2026 ▾</h2><p class="sub">Test School · viewing a past day</p></div></div></div>
+          <div class="body">
+            <div class="banner info">Fee defaulters &amp; leave approvals always show today's live queue, even in a past view.</div>
+            <p class="sectionlabel">Key numbers · 18 Aug</p>
+            <div class="stat3">
+              <div class="stat g"><div class="n">868</div><div class="l">present</div></div>
+              <div class="stat r"><div class="n">43</div><div class="l">absent</div></div>
+              <div class="stat a"><div class="n">34</div><div class="l">late</div></div>
+            </div>
+            <div class="tiny muted" style="margin-top:6px">90.2% present · + 17 excused · of 962</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="wiring">4 · API contracts <span style="color:#6e7a8a;font-size:13px;font-weight:400">— 4 already exist, 4 are new</span></h2>
+  <div class="codeblock"><span class="k">GET</span> /academic/attendance?date=2026-08-18             <span class="c1">// existing, but returns BOTH student + staff records mixed — entityType isn't filterable today (staff.js's own /attendance route hardcodes entityType:'staff' server-side; academic's does not filter it at all). Add an `entityType` query param. The SAME endpoint, called with a different `date`, is what powers the date-picker's rewind — no separate "historical" endpoint needed.</span>
+<span class="k">GET</span> /staff/attendance?date=2026-08-18                <span class="c1">// existing, unchanged — already scoped server-side to entityType:'staff', 74 records max</span>
+<span class="k">GET</span> /staff/leave-requests?status=pending&limit=1     <span class="c1">// existing, unchanged — always "now", never re-queried by the date picker (see §3)</span>
+<span class="k">GET</span> /fee/defaulters                                <span class="c1">// existing, unchanged — always "now", never re-queried by the date picker</span>
+<span class="k">GET</span> /academic/grades/summary?termId=&lt;latest&gt;     <span class="c1">// NEW — avoids shipping 30,795 raw Grade docs to the client to render one average + a 5-bucket distribution</span>
+<span class="k">GET</span> /fee/collection-summary?academicYearId=&lt;current&gt; <span class="c1">// NEW — avoids shipping 985 populated FeeAssignment docs to compute one percentage; also returns defaulterCount + overdueTotal so Home doesn't have to fetch and sum the full /fee/defaulters array just for 2 numbers</span>
+<span class="k">GET</span> /academic/attendance/trend?days=7|30            <span class="c1">// NEW — returns up to 30 { date, presentPct } points (7 daily, or 30 pre-bucketed into 4 weekly averages); the raw alternative would ship ~19,000+ records to draw a handful of bars. "Year" makes no call — the client already knows the earliest date and shows the notice in §3 instead.</span>
+<span class="k">GET</span> /academic/attendance/available-dates?month=2026-08 <span class="c1">// NEW — returns which calendar dates in that month have attendance recorded, so the date-picker sheet can grey out the rest instead of guessing</span></div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="state">5 · State &amp; logic</h2>
+  <div class="codeblock"><span class="c1">// Home — one screen, five parallel reads, gated on permission</span>
+<span class="k">const</span> canSeeSchoolWide = hasAllPermissions([
+  <span class="s">'attendance:read'</span>, <span class="s">'fees:read'</span>, <span class="s">'leave:read'</span>, <span class="s">'grades:read'</span>
+]);
+<span class="k">if</span> (!canSeeSchoolWide) <span class="k">return</span> &lt;TenantDashboard /&gt;; <span class="c1">// unchanged fallback</span>
+
+<span class="k">const</span> [attendanceToday, staffAttendanceToday, leaveTotal, gradesSummary, feeSummary, attendanceTrend] =
+  <span class="k">await</span> Promise.all([...]);
+
+<span class="k">const</span> studentRecs = attendanceToday.filter(r => r.entityType === <span class="s">'student'</span>);
+<span class="k">const</span> presentPct = round(studentRecs.filter(r => r.status === <span class="s">'present'</span>).length / activeStudentCount * 100);
+<span class="k">const</span> absentToday = studentRecs.filter(r => r.status === <span class="s">'absent'</span>).length;
+<span class="c1">// attention strip hides any row whose count is 0 — same rule as Inventory's AttentionStrip</span>
+
+<span class="c1">// Date picker — only re-fetches the date-scoped calls, never the "live queue" ones</span>
+<span class="k">function</span> onDateSelected(date) {
+  refetch([<span class="s">'attendanceToday'</span>, <span class="s">'staffAttendanceToday'</span>, <span class="s">'gradesSummary'</span>], { date });
+  <span class="c1">// leaveTotal and feeSummary are intentionally NOT refetched — they're "now", not "as of"</span>
+}
+
+<span class="c1">// Trend period toggle</span>
+<span class="k">if</span> (period === <span class="s">'year'</span> && daysSinceEarliestRecord &lt; 365) {
+  showNotice(<span class="s">'Not enough history yet'</span>); <span class="c1">// no API call — the client already knows the earliest date</span>
+} <span class="k">else</span> {
+  fetchTrend({ days: period === <span class="s">'7d'</span> ? 7 : 30 });
+}</div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="components">6 · File &amp; component plan</h2>
+  <div class="rail" style="gap:16px">
+    <div class="variant" style="width:520px">
+      <div class="variant-head" style="max-width:520px"><div class="variant-title" style="font-size:15px">Files</div></div>
+      <div class="codeblock filetree" style="width:100%;box-sizing:border-box"><span class="mod">M</span> apps/web/src/pages/admin/DashboardPage.jsx <span class="c1">— 3rd branch: PrincipalDashboard when canSeeSchoolWide, else unchanged TenantDashboard</span>
+<span class="new">A</span> apps/web/src/components/dashboard/AttentionStrip.jsx
+<span class="new">A</span> apps/web/src/components/dashboard/KpiCard.jsx
+<span class="new">A</span> apps/web/src/components/dashboard/KpiRing.jsx
+<span class="new">A</span> apps/web/src/components/dashboard/TrendChart.jsx
+<span class="new">A</span> apps/web/src/components/dashboard/DatePickerSheet.jsx
+<span class="new">A</span> apps/web/src/pages/dashboard/AcademicSummaryPage.jsx
+<span class="new">A</span> apps/web/src/pages/dashboard/FinanceSummaryPage.jsx
+<span class="new">A</span> apps/web/src/pages/dashboard/StaffSummaryPage.jsx
+<span class="mod">M</span> apps/web/src/App.jsx <span class="c1">— routes: /dashboard/academic, /dashboard/finance, /dashboard/staff</span>
+<span class="mod">M</span> apps/api/src/routes/academic.js <span class="c1">— entityType query param on GET /attendance; new GET /grades/summary, /attendance/trend, /attendance/available-dates</span>
+<span class="mod">M</span> apps/api/src/routes/fee.js <span class="c1">— new GET /collection-summary</span>
+<span class="mod">M</span> packages/shared/src/schemas/academic.schema.js <span class="c1">— attendanceQuerySchema + entityType; new gradesSummaryQuerySchema, attendanceTrendQuerySchema</span></div>
+    </div>
+    <div class="variant" style="width:440px">
+      <div class="variant-head" style="max-width:440px"><div class="variant-title" style="font-size:15px">Component contracts</div></div>
+      <div class="card" style="width:100%">
+        <div class="kv"><span class="k">KpiCard</span><span class="v">{ label, value, onTap }</span></div>
+        <div class="kv"><span class="k">KpiRing</span><span class="v">{ label, pct, tone: 'good'|'warn'|'bad', onTap }</span></div>
+        <div class="kv"><span class="k">TrendChart</span><span class="v">{ points, period: '7d'|'30d'|'year', onPeriodChange, onTap }</span></div>
+        <div class="kv"><span class="k">DatePickerSheet</span><span class="v">{ availableDates, selectedDate, onSelect, onClose }</span></div>
+        <div class="kv"><span class="k">AttentionStrip</span><span class="v">{ items: [{ label, meta, count, tone, onTap }] }</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="edge">7 · Errors, empty states, accessibility</h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Situation</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td><b>No attendance marked yet today</b> (before first period, or a holiday)</td><td>attendance card reads "Not marked yet", not a misleading 0%</td></tr>
+        <tr><td><b>User lacks one of the 4 read permissions</b></td><td>falls back to today's unchanged TenantDashboard — never a partially-broken Smart view</td></tr>
+        <tr><td><b>An attention-strip count is 0</b> (e.g. zero defaulters)</td><td>that row hides — same rule as Inventory's AttentionStrip</td></tr>
+        <tr><td><b>KPI cards &amp; attention rows</b></td><td>real <code>&lt;button&gt;</code>/<code>&lt;Link&gt;</code> elements with descriptive <code>aria-label</code>s ("414 fee defaulters, view list"), not divs with onClick</td></tr>
+        <tr><td><b>Date picker: a date outside the seeded/school-day range</b></td><td>disabled in the calendar grid (not just unstyled — <code>aria-disabled</code>, no tap handler), so it can't be selected in the first place</td></tr>
+        <tr><td><b>Date picker: viewing a past date</b></td><td>header shows "viewing a past day" plus an inline banner clarifying fee/leave numbers are still current — never silently implies they're historical too</td></tr>
+        <tr><td><b>"Year" period requested with &lt;365 days of history</b></td><td>shows the notice from §3, not an extrapolated or flat line</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="dod">8 · Definition of done</h2>
+  <div class="painbox" style="max-width:900px">
+    <ul class="checklist">
+      <li>A user holding attendance:read + fees:read + leave:read + grades:read sees the Smart Home instead of the 4 metadata cards</li>
+      <li>Attention strip surfaces today's defaulter / pending-leave / absentee counts, each tapping through to its filtered drill-down</li>
+      <li>Academic, Finance and Staff summary screens each backed by a real endpoint — 2 of them new, both lightweight aggregates</li>
+      <li>Users without full visibility keep seeing today's TenantDashboard, unchanged</li>
+      <li>The trend card's 7D/30D/Year toggle reshapes the chart; Year shows an honest notice rather than invented history</li>
+      <li>The date picker rewinds attendance/academic numbers to any recorded past day, while fee defaulters and leave approvals always stay current</li>
+    </ul>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="signoff">9 · Sign-off</h2>
+  <div class="painbox" style="max-width:900px">
+    <div class="signoff">
+      <div class="field"><div class="l">Approved by</div><div class="v"></div></div>
+      <div class="field"><div class="l">Date</div><div class="v"></div></div>
+      <div class="field"><div class="l">Spec version</div><div class="v">v1.0 · 25 Aug 2026</div></div>
+      <div class="field"><div class="l">Module</div><div class="v">Dashboard · 19 of 19</div></div>
+    </div>
+  </div>
+
+</div>
+<nav class="reviewnav" title="← → move between screens · I gallery">
+  <a class="rn-btn" href="19-depreciation-approved.html" data-nav="prev">‹ <span class="rn-lbl">Depreciation</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">APPROVED</span><span class="rn-title">Dashboard · 19 of 19</span></a>
+  <a class="rn-btn" href="index.html" data-nav="next"><span class="rn-lbl">Back to tracker</span> ›</a>
+  <span class="rn-keys">← →  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>
