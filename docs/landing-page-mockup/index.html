@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RootEd landing page — approved mockups</title>
+<link rel="stylesheet" href="landing.css">
+</head>
+<body class="dark">
+<div class="page">
+  <p class="crumbs">RootEd · marketing landing page · design review · August 2026 · <b>✅ approved — desktop + mobile</b></p>
+  <h1 class="page-title">Landing page — approved</h1>
+  <p class="page-sub">RootEd has no public-facing page today — the domain resolves straight to <code>/login</code>. This replaces the earlier 8-concept exploration with two designs, now approved: desktop keeps the Product-led content direction, mobile was rebuilt from scratch. Every fact used is real — pulled from <a href="https://ruralrootcloud.com/" style="color:var(--brand-2)">ruralrootcloud.com</a> and this repo's own <code>README.md</code> — no fabricated stats, testimonials, or customer logos.</p>
+
+  <div class="painbox" style="border-left-color:#1f6b3a">
+    <b style="color:#4ade80">✅ Approved</b> — both mockups below are signed off. Next step when you're ready to build: wire <code>desktop.html</code>/<code>mobile.html</code> into a real <code>LandingPage.jsx</code> route, source real product screenshots to replace the labelled placeholder, and build the signup page the "Start free trial" CTA hands off to (see "Not in this batch" below).
+  </div>
+
+  <div class="painbox">
+    <b>What changed from the exploration:</b> no individual founder bios/quotes/avatars, no LinkedIn link — trust now comes from the product's own security substance and Rural Root Cloud as a company, not two named people. Mobile is a full redesign (bolder type, full-bleed alternating bands, editorial cards, a connected process stepper), not a refinement of the old concepts. Both now carry a small recurring brand motif — a root-branch line texture behind the hero and mission-statement band, the same visual language as concept 1 in the <a href="../logo-mockup/index.html" style="color:var(--brand-2)">logo exploration</a>. <b>Round 4:</b> the audience is broadened, honestly — RootEd genuinely supports schools, colleges, and coaching/tuition centers (5 real org types, <code>packages/shared/src/constants</code>), so the hero and multi-tenant copy now say so, without claiming a parent/student login that doesn't exist. Also fixed a real contrast bug in mobile (inherited light text on a white background — invisible) and a WCAG failure in the brand gradient itself (white text at ~2:1 against the cyan end, now ~5:1). Full reasoning in <a href="PLAN.md" style="color:var(--brand-2)">PLAN.md</a>.
+  </div>
+
+  <h2 class="section-h">Final mockups</h2>
+  <div class="gallery">
+    <a class="gcard" href="desktop.html">
+      <div class="n">DESKTOP</div>
+      <h3>Product-led</h3>
+      <p>Hero leads with the product pitch and a dashboard preview, then modules → why-RootEd → security → mission statement → about (company) → process → CTA.</p>
+      <span class="status-pill approved">✅ Approved</span>
+    </a>
+    <a class="gcard" href="mobile.html">
+      <div class="n">MOBILE</div>
+      <h3>Rebuilt</h3>
+      <p>Bold hero type, full-bleed alternating section bands, editorial swipe cards for modules, a connected stepper for process, sticky bottom CTA kept.</p>
+      <span class="status-pill approved">✅ Approved</span>
+    </a>
+  </div>
+
+  <h2 class="section-h" id="sources">Sources &amp; data</h2>
+  <div class="gallery">
+    <a class="gcard" href="PLAN.md">
+      <div class="n">DOCUMENT</div>
+      <h3>The written plan</h3>
+      <p>What changed and why, versus the earlier exploration — content decisions, the mobile redesign rationale, and the brand-motif addition.</p>
+    </a>
+    <div class="gcard" style="cursor:default">
+      <div class="n">COMPANY FACTS</div>
+      <h3>ruralrootcloud.com</h3>
+      <p>Mission line, the 4 "Why Rural Root Cloud" values, and the Understand→Plan→Build→Support process — fetched live 2026-08-26, quoted verbatim, company-level only.</p>
+    </div>
+    <div class="gcard" style="cursor:default">
+      <div class="n">PRODUCT FACTS</div>
+      <h3>README.md · CLAUDE.md</h3>
+      <p>Module list, 3-tier RBAC, tenant isolation, AES-256-GCM field encryption, audit logging, i18n coverage — and the real 14-day trial in <code>tenant.service.js</code>.</p>
+    </div>
+    <a class="gcard" href="../logo-mockup/index.html">
+      <div class="n">BRAND</div>
+      <h3>Logo/icon exploration</h3>
+      <p>The 5-concept logo exploration — Concept 1's root-branch line language is what these landing pages now reuse as a decorative motif.</p>
+    </a>
+  </div>
+
+  <div class="painbox" style="margin-top:8px">
+    <b>Not in this batch:</b> the actual signup/registration page these CTAs would lead to (doesn't exist in <code>apps/web/src</code> yet), a pricing page (no public pricing model yet), and real product screenshots (hero visuals reference the real approved <code>docs/mobile-ui/20-dashboard-approved.html</code> spec as a labelled placeholder, not a fabricated fake UI).
+  </div>
+</div>
+<nav class="reviewnav" title="Start the review">
+  <span class="rn-btn off">‹ <span class="rn-lbl">start</span></span>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">✅ APPROVED</span><span class="rn-title">Desktop + mobile</span></a>
+  <a class="rn-btn" href="desktop.html" data-nav="next"><span class="rn-lbl">Desktop</span> ›</a>
+  <span class="rn-keys">I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

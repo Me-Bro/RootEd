@@ -10,19 +10,19 @@
 <div class="page wide">
   <p class="crumbs">RootEd · design review · August 2026 · <b>one page, everything linked</b></p>
   <h1 class="page-title">Mobile UI — module tracker</h1>
-  <p class="page-sub">Every module across the app, one screen at a time. <b>18 of 18 screens approved.</b> All mockups use the real seeded dataset — 1000 students, 74 staff, Grade 1–10 × sections A–D, academic year 2026-27 — so names, admission numbers and figures match what the app actually returns.</p>
+  <p class="page-sub">Every module across the app, one screen at a time. <b>19 of 19 screens approved.</b> All mockups use the real seeded dataset — 1000 students, 74 staff, Grade 1–10 × sections A–D, academic year 2026-27 — so names, admission numbers and figures match what the app actually returns.</p>
 
   <div class="approved-band">
-    <span class="seal">✅ ALL 18 APPROVED</span>
-    <span class="txt">Every screen across Academic, Staff, Expense, Fee and Inventory now has an approved build spec: what the real desktop does today, 2 mockups (simple + smart — smart only where the actual data justifies it, never by default), why one was chosen, real API contracts, state &amp; logic, a file/component plan, error &amp; accessibility states, and a Definition of Done.</span>
+    <span class="seal">✅ ALL 19 APPROVED</span>
+    <span class="txt">Every screen across Academic, Staff, Expense, Fee, Inventory and Dashboard now has an approved build spec: what the real desktop does today, 2 mockups (simple + smart — smart only where the actual data justifies it, never by default), why one was chosen, real API contracts, state &amp; logic, a file/component plan, error &amp; accessibility states, and a Definition of Done.</span>
   </div>
 
   <div class="statrow">
-    <div class="s hot" style="border-color:#6b5a1f;background:#1a1710"><div class="n" style="color:#e3c25c">18</div><div class="l">Approved ✅</div></div>
-    <div class="s"><div class="n">18</div><div class="l">Screens total</div></div>
-    <div class="s"><div class="n">5</div><div class="l">Modules</div></div>
-    <div class="s"><div class="n">36</div><div class="l">Mockups (2 per screen)</div></div>
-    <div class="s"><div class="n">3</div><div class="l">New endpoints needed <span style="font-weight:400">(rest: 0 new)</span></div></div>
+    <div class="s hot" style="border-color:#6b5a1f;background:#1a1710"><div class="n" style="color:#e3c25c">19</div><div class="l">Approved ✅</div></div>
+    <div class="s"><div class="n">19</div><div class="l">Screens total</div></div>
+    <div class="s"><div class="n">6</div><div class="l">Modules</div></div>
+    <div class="s"><div class="n">38</div><div class="l">Mockups (2 per screen)</div></div>
+    <div class="s"><div class="n">8</div><div class="l">New endpoints needed <span style="font-weight:400">(rest: 0 new)</span></div></div>
   </div>
 
   <div class="toc">
@@ -41,6 +41,13 @@
   <table class="invtable modtracker">
     <thead><tr><th>#</th><th>Screen</th><th>Status</th><th>Open</th></tr></thead>
     <tbody>
+<tr class="modgrp-row"><td colspan="4">Home · 1 screen</td></tr>
+        <tr>
+          <td class="num">00</td>
+          <td><b style="color:#f2f4f7">Principal Dashboard</b><span class="src">DashboardPage.jsx</span></td>
+          <td><span class="status-pill approved">✅ Approved</span></td>
+          <td><div class="links"><a class="primary" href="20-dashboard-approved.html">✅ Approved spec</a><a href="20-dashboard.html">5-variant exploration</a></div></td>
+        </tr>
 <tr class="modgrp-row"><td colspan="4">Academic · 9 screens</td></tr>
         <tr>
           <td class="num">01</td>
@@ -212,7 +219,7 @@
   </div>
 
   <div class="painbox" style="border-color:#3a4152">
-    <b>3 small backend additions found while speccing</b> (everything else needs zero backend change): <code>AttendanceReportPage</code>'s guardian-call chip needs <code>parentContacts</code> added to the report projection · Inventory's "not returned" count needs a <code>returned=false</code> query param on <code>GET /inventory/movements</code> · Report Cards' push notification needs a completion hook in <code>reportCard.worker.js</code> (infra decision, not solved in this UI spec). Each is called out on its own approved page.
+    <b>8 small backend additions found while speccing</b> (everything else needs zero backend change): <code>AttendanceReportPage</code>'s guardian-call chip needs <code>parentContacts</code> added to the report projection · Inventory's "not returned" count needs a <code>returned=false</code> query param on <code>GET /inventory/movements</code> · Report Cards' push notification needs a completion hook in <code>reportCard.worker.js</code> (infra decision, not solved in this UI spec) · the Dashboard's Smart Home needs 5 more: an <code>entityType</code> filter on <code>GET /academic/attendance</code> (it returns student + staff records mixed today), a new <code>GET /academic/grades/summary</code> aggregate, a new <code>GET /fee/collection-summary</code> aggregate, a new <code>GET /academic/attendance/trend</code> aggregate for the 7D/30D chart, and a new <code>GET /academic/attendance/available-dates</code> lookup so the date picker knows what to grey out. Each is called out on its own approved page.
   </div>
 </div>
 <nav class="reviewnav" title="Start the review · I gallery">

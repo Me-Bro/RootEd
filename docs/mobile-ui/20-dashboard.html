@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard — 5 mobile concepts · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page">
+  <p class="crumbs"><a href="index.html">← All screens</a> · Home · <code>DashboardPage.jsx</code></p>
+  <h1 class="page-title">0 · Dashboard</h1>
+  <p class="page-sub">The first screen a principal sees after login, every day. Worth comparing more than 2 approaches before locking one in — a bad landing screen costs a principal something every single morning, not just once.</p>
+
+  <div class="painbox">
+    <b>Pain today:</b> every non-super-admin tenant member — principal, teacher, accountant, librarian — lands on the identical 4 cards: school name, plan, status, timezone. Zero attendance, fee, grade or staff data anywhere. No role- or permission-aware branching exists beyond <code>systemRole === 'super_admin'</code>.
+  </div>
+
+  <input type="checkbox" id="fit" class="vis-hidden">
+  <div class="zoombar"><label for="fit">▣ Fit all five on one screen (toggle)</label> · real data: Test School, Fri 21 Aug 2026 · 962 students, 74 staff, 40 sections</div>
+
+  <div class="rail">
+
+    <!-- V1 -->
+    <div class="variant" id="v1">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 1</span>
+        <div class="variant-title">Plain KPI grid</div>
+        <p class="variant-for"><b>Optimises:</b> zero new interaction to learn — the exact same static 2×2 grid the desktop already uses, just filled with real numbers instead of metadata. <b>Trades away:</b> no drill-down, no prioritisation; a principal still opens 4 separate modules to act on anything they see here.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="grow"><h2>Dashboard</h2><p class="sub">Test School · Fri, 21 Aug 2026</p></div></div></div>
+          <div class="body">
+            <div class="row" style="gap:8px">
+              <div class="card grow"><div class="small muted">Attendance today</div><div class="big" style="font-size:24px">90.5%</div></div>
+              <div class="card grow"><div class="small muted">Fee collected</div><div class="big" style="font-size:24px">66.2%</div></div>
+            </div>
+            <div class="row" style="gap:8px">
+              <div class="card grow"><div class="small muted">Avg exam score</div><div class="big" style="font-size:24px">74.6%</div></div>
+              <div class="card grow"><div class="small muted">Staff present</div><div class="big" style="font-size:24px">94.6%</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V2 -->
+    <div class="variant" id="v2">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 2</span>
+        <div class="variant-title">Attention-first list <span class="rec">SHIP</span></div>
+        <p class="variant-for"><b>Optimises:</b> today's 3 most actionable exceptions surface before any KPI, each tapping straight to a filtered view. This is what's already approved — see <code>20-dashboard-approved.html</code>. <b>Trades away:</b> leads with problems every morning; a calm day still opens with a (short) list.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="grow"><h2>Good morning, Heena</h2><p class="sub">Test School · Fri, 21 Aug 2026</p></div></div></div>
+          <div class="body">
+            <div class="list">
+              <div class="li"><div class="grow"><div class="nm">414 fee defaulters</div><div class="meta">₹29.41L overdue</div></div><span class="badge bad">›</span></div>
+              <div class="li"><div class="grow"><div class="nm">36 leave approvals pending</div><div class="meta">oldest since 14 Jun</div></div><span class="badge warn">›</span></div>
+              <div class="li"><div class="grow"><div class="nm">51 students absent today</div><div class="meta">of 962</div></div><span class="badge warn">›</span></div>
+            </div>
+            <div class="row" style="gap:8px">
+              <div class="card tight grow" style="border-color:var(--present)"><div class="small" style="font-weight:600">90.5%</div><div class="tiny muted">attendance today</div></div>
+              <div class="card tight grow" style="border-color:var(--late)"><div class="small" style="font-weight:600">66.2%</div><div class="tiny muted">fee collected</div></div>
+            </div>
+            <div class="row" style="gap:8px">
+              <div class="card tight grow" style="border-color:var(--present)"><div class="small" style="font-weight:600">74.6%</div><div class="tiny muted">avg exam score</div></div>
+              <div class="card tight grow" style="border-color:var(--present)"><div class="small" style="font-weight:600">94.6%</div><div class="tiny muted">staff present</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V3 -->
+    <div class="variant" id="v3">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 3</span>
+        <div class="variant-title">Health rings</div>
+        <p class="variant-for"><b>Optimises:</b> a colour-coded visual check in under 2 seconds — green/amber/red rings read without reading a single number, good for the 10×/day glance. <b>Trades away:</b> a ring alone doesn't say what to <i>do</i>; a ring can't distinguish "6 defaulters" from "600" within the same amber band.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="grow"><h2>Dashboard</h2><p class="sub">Test School · Fri, 21 Aug 2026</p></div></div></div>
+          <div class="body">
+            <div class="row" style="gap:14px;justify-content:space-around;padding:6px 0">
+              <div class="stack" style="align-items:center">
+                <div class="ring" style="--accent:var(--present);--p:91%;width:78px;height:78px"><div><div style="font-size:15px;font-weight:700">90.5%</div></div></div>
+                <div class="tiny muted">Attendance</div>
+              </div>
+              <div class="stack" style="align-items:center">
+                <div class="ring" style="--accent:var(--late);--p:66%;width:78px;height:78px"><div><div style="font-size:15px;font-weight:700">66.2%</div></div></div>
+                <div class="tiny muted">Fee collected</div>
+              </div>
+            </div>
+            <div class="row" style="gap:14px;justify-content:space-around;padding:6px 0">
+              <div class="stack" style="align-items:center">
+                <div class="ring" style="--accent:var(--present);--p:75%;width:78px;height:78px"><div><div style="font-size:15px;font-weight:700">74.6%</div></div></div>
+                <div class="tiny muted">Avg score</div>
+              </div>
+              <div class="stack" style="align-items:center">
+                <div class="ring" style="--accent:var(--present);--p:95%;width:78px;height:78px"><div><div style="font-size:15px;font-weight:700">94.6%</div></div></div>
+                <div class="tiny muted">Staff present</div>
+              </div>
+            </div>
+            <div class="tiny muted" style="text-align:center;margin-top:6px">Tap any ring to open that module</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V4 -->
+    <div class="variant" id="v4">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 4</span>
+        <div class="variant-title">Swipe story cards</div>
+        <p class="variant-for"><b>Optimises:</b> one domain, full attention, no competing numbers — good for a slow, deliberate read rather than a fast glance. <b>Trades away:</b> doesn't show all 4 domains at once; stop swiping after card 1 and card 3 (Finance) never gets seen.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row" style="justify-content:center"><div class="wizdots"><i class="on"></i><i></i><i></i><i></i></div></div></div>
+          <div class="body" style="justify-content:center;flex:1">
+            <div class="swipecard">
+              <div class="sectionlabel" style="text-align:left">Academic</div>
+              <div class="ring" style="--accent:var(--present);--p:91%;width:96px;height:96px;margin:14px auto"><div><div style="font-size:19px;font-weight:700">90.5%</div><div class="tiny muted">present</div></div></div>
+              <div class="small" style="font-weight:600">871 present · 51 absent · 27 late</div>
+              <div class="banner warn" style="margin-top:12px;text-align:left">391 students have at least one F this year</div>
+            </div>
+            <div class="swipecard behind" style="filter:blur(1px)">
+              <div class="sectionlabel" style="text-align:left">Finance</div>
+            </div>
+            <div class="tiny muted" style="text-align:center;margin-top:10px">‹ swipe for Finance, Staff, Inventory ›</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <!-- V5 -->
+    <div class="variant" id="v5">
+      <div class="variant-head">
+        <span class="variant-num">VARIANT 5</span>
+        <div class="variant-title">Morning briefing feed</div>
+        <p class="variant-for"><b>Optimises:</b> reads like a briefing, prioritised by recency not category — scan top to bottom, stop once satisfied. <b>Trades away:</b> only shows <i>change</i>; a fee structure stuck at low collection with no new activity today stays invisible — can't be the only view (Rule 5).</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>9:41</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="grow"><h2>Good morning, Heena</h2><p class="sub">Since yesterday</p></div></div></div>
+          <div class="body">
+            <div class="timeline">
+              <div class="ev r"><div class="step-time">7:40 AM</div><div class="small" style="font-weight:600">12 fee assignments crossed their due date overnight</div></div>
+              <div class="ev"><div class="step-time">Yesterday, 6:12 PM</div><div class="small" style="font-weight:600">3 new leave requests filed, still pending</div></div>
+              <div class="ev g"><div class="step-time">Yesterday, 3:00 PM</div><div class="small" style="font-weight:600">Grade 5-A hit 100% attendance for the first time this term</div></div>
+              <div class="ev"><div class="step-time">Yesterday, 11:20 AM</div><div class="small" style="font-weight:600">27 Term 1 report cards generated</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="painbox" style="margin-top:8px">
+    <b>Recommendation:</b> ship <b>V2 as the landing layout</b> — it's the only concept that both surfaces today's exceptions <i>and</i> keeps every KPI's exact value on screen, which is what a "first impression" screen needs to earn every morning, not just once. Borrow <b>V3's ring treatment</b> for the 4 KPI cards themselves — swapping a flat percentage for a small ring costs nothing and reads faster. V4 and V5 are strong ideas for a future "Insights" or "Digest" tab, but neither can be the <i>only</i> Home view: V4 hides 3 of 4 domains until you swipe, and V5 hides steady-state problems that had no new activity today.
+  </div>
+</div>
+
+<nav class="reviewnav" title="← → move between screens · F fit all five · I gallery">
+  <span class="rn-btn off">‹ <span class="rn-lbl">start</span></span>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">EXPLORATION</span><span class="rn-title">Dashboard · 5 concepts</span></a>
+  <a class="rn-btn" href="20-dashboard-approved.html" data-nav="next"><span class="rn-lbl">Approved spec</span> ›</a>
+  <span class="rn-keys">← →  ·  F fit  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

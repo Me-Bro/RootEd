@@ -31,6 +31,7 @@ import { scoreToLetter } from '@rooted/shared/utils';
 import { StaffMember } from '../models/StaffMember.js';
 import { LeaveType } from '../models/LeaveType.js';
 import { LeaveBalance } from '../models/LeaveBalance.js';
+import { LeaveRequest } from '../models/LeaveRequest.js';
 import { SalaryStructure } from '../models/SalaryStructure.js';
 import { SalarySlip } from '../models/SalarySlip.js';
 import { encryptField } from '../utils/fieldEncryption.js';
@@ -1099,6 +1100,99 @@ async function run() {
     );
   }
 
+  // ── Recent attendance (rolling window ending today) ──────────────────────
+  // The fixed-date block above (2025-06-02 + offsets) is over a year in the
+  // past by the time any spec actually runs, so it can never appear in the
+  // Principal Dashboard's rolling 7/30-day trend window (docs/mobile-ui/
+  // 20-dashboard-approved.html §3) — that needs dates anchored to "now" at
+  // seed time instead. Both entityType:'student' and 'staff' rows are added
+  // here since neither existed for a real "today" before this feature.
+  //
+  // sectionId is deliberately `sectionB`, not the students' actual `section`
+  // — attendance-report.spec.js's "default 30-day window has no history"
+  // test depends on `sectionId=${section._id}` staying empty for any date
+  // near "now". The school-wide dashboard queries these rows by entityId/date
+  // only (no sectionId filter), so which section they're tagged with doesn't
+  // affect the feature being tested here.
+  const recentDates = Array.from({ length: 5 }, (_, i) => {
+    const d = new Date();
+    d.setUTCHours(0, 0, 0, 0);
+    d.setUTCDate(d.getUTCDate() - i);
+    return d;
+  });
+  for (const date of recentDates) {
+    for (const student of activeStudents) {
+      const status =
+        student._id.toString() === lowAttendanceStudent._id.toString() && date.getUTCDay() % 2 === 0
+          ? 'absent'
+          : 'present';
+      await AttendanceRecord.findOneAndUpdate(
+        { tenantId, date, entityType: 'student', entityId: student._id, subjectId: null },
+        {
+          $setOnInsert: {
+            tenantId,
+            date,
+            entityType: 'student',
+            entityId: student._id,
+            sectionId: sectionB._id,
+            subjectId: null,
+            status,
+            markedBy: users.teacher._id,
+          },
+        },
+        { upsert: true, _bypassTenantScope: true }
+      );
+    }
+    for (const staff of [staffMembers[0], staffMembers[1]]) {
+      await AttendanceRecord.findOneAndUpdate(
+        { tenantId, date, entityType: 'staff', entityId: staff._id, subjectId: null },
+        {
+          $setOnInsert: {
+            tenantId,
+            date,
+            entityType: 'staff',
+            entityId: staff._id,
+            subjectId: null,
+            status: 'present',
+            markedBy: users.tenant_admin._id,
+          },
+        },
+        { upsert: true, _bypassTenantScope: true }
+      );
+    }
+  }
+
+  // ── One pending leave request (none existed before this feature — see
+  // agent-home/feature-tdd-seed-e2e.md step 3) — gives the Principal
+  // Dashboard's attention strip and Staff Summary a real, non-empty pending
+  // queue. Built directly rather than via POST /staff/leave-requests since
+  // the only side effect that route's service layer adds is the approval
+  // chain lookup, which a single fixed pending approver step replaces here.
+  const pendingLeaveFrom = new Date();
+  pendingLeaveFrom.setUTCHours(0, 0, 0, 0);
+  pendingLeaveFrom.setUTCDate(pendingLeaveFrom.getUTCDate() + 14);
+  const pendingLeaveTo = new Date(pendingLeaveFrom);
+  pendingLeaveTo.setUTCDate(pendingLeaveTo.getUTCDate() + 1);
+  let pendingLeaveRequest = await LeaveRequest.findOne(
+    { tenantId, staffId: staffMembers[1]._id, status: 'pending' },
+    null,
+    { _bypassTenantScope: true }
+  ).lean();
+  if (!pendingLeaveRequest) {
+    pendingLeaveRequest = await LeaveRequest.create({
+      tenantId,
+      staffId: staffMembers[1]._id,
+      leaveTypeId: leaveType._id,
+      fromDate: pendingLeaveFrom,
+      toDate: pendingLeaveTo,
+      totalDays: 2,
+      reason: 'Family function',
+      status: 'pending',
+      approvalChain: [{ approverId: users.tenant_admin._id, status: 'pending' }],
+    });
+    pendingLeaveRequest = pendingLeaveRequest.toObject();
+  }
+
   // ── Fee Assignments + one partial payment ────────────────────────────────
   const feeTotalAmount = feeStructure.components.reduce((sum, c) => sum + c.amount, 0);
   const feeAssignments = [];
@@ -1438,6 +1532,10 @@ async function run() {
       sectionId: timetablePublish.sectionId.toString(),
     },
     leaveType: { _id: leaveType._id.toString() },
+    pendingLeaveRequest: {
+      _id: pendingLeaveRequest._id.toString(),
+      staffId: pendingLeaveRequest.staffId.toString(),
+    },
     leaveBalances: leaveBalances.map((b) => ({
       _id: b._id.toString(),
       staffId: b.staffId.toString(),

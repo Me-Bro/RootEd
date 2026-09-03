@@ -242,7 +242,7 @@ function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 rounded-lg border border-border bg-popover text-popover-foreground shadow-lg z-50">
+        <div className="fixed inset-x-4 top-16 z-50 rounded-lg border border-border bg-popover text-popover-foreground shadow-lg sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-80">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <span className="text-sm font-semibold">Notifications</span>
             {unreadCount > 0 && (
@@ -342,15 +342,23 @@ export default function AppShell() {
             </Button>
           </div>
         )}
-        <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-card md:px-6">
-          <span className="text-sm text-muted-foreground">{user?.email ?? ''}</span>
-          <div className="flex items-center gap-2">
+        <header className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card md:px-6">
+          <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
+            {user?.email ?? ''}
+          </span>
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <LanguageSwitcherTrigger />
             <ThemeConfiguratorTrigger />
             {(!isSuperAdmin || isImpersonating) && <NotificationBell />}
-            <Button variant="ghost" size="sm" onClick={logout} className="gap-1.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={logout}
+              aria-label={t('auth.logout')}
+              className="gap-1.5 px-2 sm:px-2.5"
+            >
               <LogOut size={15} />
-              {t('auth.logout')}
+              <span className="hidden sm:inline">{t('auth.logout')}</span>
             </Button>
           </div>
         </header>

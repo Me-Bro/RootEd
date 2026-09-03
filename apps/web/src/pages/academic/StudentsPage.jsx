@@ -17,7 +17,6 @@ import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
 import SearchField from '../../components/attendance/SearchField.jsx';
 import ClassGrid from '../../components/students/ClassGrid.jsx';
-import SectionChips from '../../components/students/SectionChips.jsx';
 import RosterInfiniteList from '../../components/students/RosterInfiniteList.jsx';
 
 const LAST_SECTION_KEY = 'students:lastSectionId';
@@ -203,12 +202,22 @@ export default function StudentsPage() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Resolve which class owns the initially-restored section, once classes load.
+  // Resolve which class owns the initially-restored section, once classes load
+  // — but only once. Without initialResolvedRef, this effect re-fires any time
+  // a user later collapses a class manually (drillClassId -> null) while a
+  // section is still selected, silently re-expanding the class they just
+  // closed — it can't tell "still resolving on load" from "user just closed
+  // this on purpose".
+  const initialResolvedRef = useRef(false);
   useEffect(() => {
+    if (initialResolvedRef.current) return;
     if (!drillSectionId || drillClassId || classes.length === 0) return;
     const owner = classes.find((c) => (c.sections || []).some((s) => s._id === drillSectionId));
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional one-time resync once class data (an external source) finishes loading
-    if (owner) setDrillClassId(owner._id);
+    if (owner) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional one-time resync once class data (an external source) finishes loading
+      setDrillClassId(owner._id);
+      initialResolvedRef.current = true;
+    }
   }, [drillSectionId, drillClassId, classes]);
 
   useEffect(() => {
@@ -240,6 +249,7 @@ export default function StudentsPage() {
   });
 
   function handleExpandClass(classId) {
+    initialResolvedRef.current = true;
     const opening = classId !== drillClassId;
     setDrillClassId(opening ? classId : null);
     if (opening) {
@@ -253,11 +263,11 @@ export default function StudentsPage() {
   function jumpToLastUsed() {
     const sec = sectionsById[lastUsedSectionId];
     if (!sec) return;
+    initialResolvedRef.current = true;
     setDrillClassId(sec.classId ?? null);
     setDrillSectionId(sec._id);
   }
 
-  const expandedClass = classes.find((c) => c._id === drillClassId) || null;
   const lastUsedSection = lastUsedSectionId ? sectionsById[lastUsedSectionId] : null;
   const showRecentlyUsed = Boolean(
     !search && lastUsedSection && lastUsedSectionId !== drillSectionId
@@ -316,17 +326,13 @@ export default function StudentsPage() {
             </button>
           )}
 
-          <ClassGrid classes={classes} expandedId={drillClassId} onExpand={handleExpandClass} />
-
-          {expandedClass && (
-            <SectionChips
-              sections={expandedClass.sections || []}
-              activeId={drillSectionId}
-              onSelect={setDrillSectionId}
-            />
-          )}
-
-          {drillSectionId && <RosterInfiniteList sectionId={drillSectionId} />}
+          <ClassGrid
+            classes={classes}
+            expandedId={drillClassId}
+            onExpand={handleExpandClass}
+            activeSectionId={drillSectionId}
+            onSelectSection={setDrillSectionId}
+          />
         </div>
       )}
 

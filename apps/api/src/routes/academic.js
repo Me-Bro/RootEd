@@ -6,9 +6,11 @@ import {
   markAttendanceSchema,
   attendanceQuerySchema,
   attendanceReportQuerySchema,
+  attendanceTrendQuerySchema,
   saveGradesSchema,
   gradesQuerySchema,
   gradesReportQuerySchema,
+  gradesSummaryQuerySchema,
   gradeLockSchema,
   timetableEntrySchema,
   timetableQuerySchema,
@@ -43,6 +45,7 @@ import { ReportCardBatch } from '../models/ReportCardBatch.js';
 import { buildStudentFilter } from '../utils/studentFilter.js';
 import { computeAttendanceStats } from '../utils/attendanceStats.js';
 import { computeGradeStats } from '../utils/gradeStats.js';
+import { bucketAttendanceTrend } from '../utils/attendanceTrend.js';
 import { findMatchingJob } from '../utils/reportCardJobs.js';
 import { filterVisibleTimetableEntries } from '../utils/timetableVisibility.js';
 import { auditLog } from '../services/audit.service.js';
@@ -381,25 +384,21 @@ router.post(
   }
 );
 
-router.get(
-  '/students/:id/photo',
-  requirePermission('students:read'),
-  async (req, res, next) => {
-    try {
-      const student = await Student.findOne({
-        _id: req.params.id,
-        tenantId: req.tenant._id,
-      }).lean();
-      if (!student) return res.status(404).json({ error: 'Not found' });
-      if (!student.photoKey) return res.status(404).json({ error: 'No photo' });
+router.get('/students/:id/photo', requirePermission('students:read'), async (req, res, next) => {
+  try {
+    const student = await Student.findOne({
+      _id: req.params.id,
+      tenantId: req.tenant._id,
+    }).lean();
+    if (!student) return res.status(404).json({ error: 'Not found' });
+    if (!student.photoKey) return res.status(404).json({ error: 'No photo' });
 
-      const url = await getSignedUrl(student.photoKey, 3600);
-      res.json({ url });
-    } catch (err) {
-      next(err);
-    }
+    const url = await getSignedUrl(student.photoKey, 3600);
+    res.json({ url });
+  } catch (err) {
+    next(err);
   }
-);
+});
 
 router.post(
   '/students/:id/documents',
@@ -867,6 +866,7 @@ router.get('/attendance', requirePermission('attendance:read'), async (req, res,
     const filter = { tenantId: req.tenant._id };
     if (query.sectionId) filter.sectionId = query.sectionId;
     if (query.entityId) filter.entityId = query.entityId;
+    if (query.entityType) filter.entityType = query.entityType;
     if (query.subjectId) filter.subjectId = query.subjectId;
     if (query.date) filter.date = query.date;
     if (query.from || query.to) {
@@ -877,6 +877,39 @@ router.get('/attendance', requirePermission('attendance:read'), async (req, res,
 
     const records = await AttendanceRecord.find(filter).sort({ date: -1 }).lean();
     res.json(records);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/attendance/trend', requirePermission('attendance:read'), async (req, res, next) => {
+  try {
+    const { days } = attendanceTrendQuerySchema.parse(req.query);
+    const tenantId = req.tenant._id;
+    const to = new Date();
+    to.setUTCHours(0, 0, 0, 0);
+    const from = new Date(to.getTime() - (days - 1) * 24 * 60 * 60 * 1000);
+
+    const daily = await AttendanceRecord.aggregate([
+      { $match: { tenantId, entityType: 'student', date: { $gte: from, $lte: to } } },
+      {
+        $group: {
+          _id: '$date',
+          totalCount: { $sum: 1 },
+          presentCount: {
+            $sum: { $cond: [{ $in: ['$status', ['present', 'late']] }, 1, 0] },
+          },
+        },
+      },
+    ]);
+
+    const dailyStats = daily.map((d) => ({
+      date: d._id,
+      presentCount: d.presentCount,
+      totalCount: d.totalCount,
+    }));
+
+    res.json(bucketAttendanceTrend(dailyStats, days));
   } catch (err) {
     next(err);
   }
@@ -1055,6 +1088,27 @@ router.get('/grades/report', requirePermission('grades:read'), async (req, res, 
         termId,
         ...(assessmentType ? { assessmentType } : {}),
       }).lean(),
+    ]);
+
+    res.json(computeGradeStats(students, grades));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// School-wide, not per-section — unlike /grades/report, which requires a
+// sectionId. Only active students are counted, so a withdrawn/graduated
+// student's old grades don't drag the average down.
+router.get('/grades/summary', requirePermission('grades:read'), async (req, res, next) => {
+  try {
+    const { termId } = gradesSummaryQuerySchema.parse(req.query);
+    const tenantId = req.tenant._id;
+    const gradeFilter = { tenantId };
+    if (termId) gradeFilter.termId = termId;
+
+    const [students, grades] = await Promise.all([
+      Student.find({ tenantId, status: 'active' }).lean(),
+      Grade.find(gradeFilter).lean(),
     ]);
 
     res.json(computeGradeStats(students, grades));

@@ -23,6 +23,9 @@ import GradeReportPage from './pages/academic/GradeReportPage.jsx';
 import TimetablePage from './pages/academic/TimetablePage.jsx';
 import MySchedulePage from './pages/academic/MySchedulePage.jsx';
 import ReportCardPage from './pages/academic/ReportCardPage.jsx';
+import AcademicSummaryPage from './pages/dashboard/AcademicSummaryPage.jsx';
+import FinanceSummaryPage from './pages/dashboard/FinanceSummaryPage.jsx';
+import StaffSummaryPage from './pages/dashboard/StaffSummaryPage.jsx';
 import StaffPage from './pages/staff/StaffPage.jsx';
 import StaffDetailPage from './pages/staff/StaffDetailPage.jsx';
 import LeaveRequestsPage from './pages/staff/LeaveRequestsPage.jsx';
@@ -214,6 +217,14 @@ function AppRoutes() {
               </RequirePermission>
             }
           />
+          <Route
+            path="/dashboard/academic"
+            element={
+              <RequirePermission permission="attendance:read">
+                <AcademicSummaryPage />
+              </RequirePermission>
+            }
+          />
         </Route>
         <Route
           element={
@@ -262,6 +273,14 @@ function AppRoutes() {
               </RequirePermission>
             }
           />
+          <Route
+            path="/dashboard/staff"
+            element={
+              <RequirePermission permission="leave:read">
+                <StaffSummaryPage />
+              </RequirePermission>
+            }
+          />
         </Route>
         <Route
           element={
@@ -307,6 +326,14 @@ function AppRoutes() {
             element={
               <RequirePermission permission="fees:read">
                 <FeeStructuresPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/dashboard/finance"
+            element={
+              <RequirePermission permission="fees:read">
+                <FinanceSummaryPage />
               </RequirePermission>
             }
           />
