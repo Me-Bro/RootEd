@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RootEd — logo/icon exploration</title>
+<link rel="stylesheet" href="logo.css">
+</head>
+<body class="dark">
+
+<!-- Sprite sheet: each concept defined once as a <symbol>, reused via <use>
+     across every test frame below (favicon size, app icon, nav lockup, mono). -->
+<svg style="display:none">
+<defs>
+
+  <symbol id="m1-color" viewBox="0 0 48 48">
+    <linearGradient id="g1" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7e14ff"/><stop offset="1" stop-color="#47bfff"/>
+    </linearGradient>
+    <g fill="none" stroke="url(#g1)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M24 5 V21"/><path d="M24 21 Q14 24 9 40"/><path d="M24 21 Q34 24 39 40"/><path d="M24 21 V42"/>
+    </g>
+    <circle cx="24" cy="21" r="3" fill="#7e14ff"/>
+    <circle cx="9" cy="40" r="3.4" fill="#47bfff"/><circle cx="24" cy="42" r="3.4" fill="#47bfff"/><circle cx="39" cy="40" r="3.4" fill="#47bfff"/>
+  </symbol>
+  <symbol id="m1-mono" viewBox="0 0 48 48">
+    <g fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M24 5 V21"/><path d="M24 21 Q14 24 9 40"/><path d="M24 21 Q34 24 39 40"/><path d="M24 21 V42"/>
+    </g>
+    <circle cx="24" cy="21" r="3" fill="currentColor"/>
+    <circle cx="9" cy="40" r="3.4" fill="currentColor"/><circle cx="24" cy="42" r="3.4" fill="currentColor"/><circle cx="39" cy="40" r="3.4" fill="currentColor"/>
+  </symbol>
+
+  <symbol id="m2-color" viewBox="0 0 48 48">
+    <linearGradient id="g2" x1="10" y1="6" x2="38" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7e14ff"/><stop offset="1" stop-color="#47bfff"/>
+    </linearGradient>
+    <path fill="url(#g2)" d="M24 6 C34 10 38 22 34 32 C30 40 24 42 24 42 C24 42 18 40 14 32 C10 22 14 10 24 6 Z"/>
+    <path d="M24 9 V39" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.55"/>
+    <path d="M24 42 Q18 45 14 44" fill="none" stroke="url(#g2)" stroke-width="3" stroke-linecap="round"/>
+    <path d="M24 42 Q30 45 34 44" fill="none" stroke="url(#g2)" stroke-width="3" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="m2-mono" viewBox="0 0 48 48">
+    <path fill="currentColor" d="M24 6 C34 10 38 22 34 32 C30 40 24 42 24 42 C24 42 18 40 14 32 C10 22 14 10 24 6 Z"/>
+    <path d="M24 9 V39" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+    <path d="M24 42 Q18 45 14 44" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+    <path d="M24 42 Q30 45 34 44" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="m3-color" viewBox="0 0 48 48">
+    <linearGradient id="g3" x1="6" y1="6" x2="40" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7e14ff"/><stop offset="1" stop-color="#47bfff"/>
+    </linearGradient>
+    <rect x="9" y="6" width="8" height="36" rx="2" fill="url(#g3)"/>
+    <path fill="url(#g3)" d="M17 6 H27 C34 6 34 21 27 21 H17 Z"/>
+    <path d="M20 21 Q16 30 12 44" fill="none" stroke="url(#g3)" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M25 21 Q34 30 38 44" fill="none" stroke="url(#g3)" stroke-width="4.5" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="m3-mono" viewBox="0 0 48 48">
+    <rect x="9" y="6" width="8" height="36" rx="2" fill="currentColor"/>
+    <path fill="currentColor" d="M17 6 H27 C34 6 34 21 27 21 H17 Z"/>
+    <path d="M20 21 Q16 30 12 44" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M25 21 Q34 30 38 44" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="m4-color" viewBox="0 0 48 48">
+    <linearGradient id="g4" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7e14ff"/><stop offset="1" stop-color="#47bfff"/>
+    </linearGradient>
+    <polygon points="24,4 42,14 42,34 24,44 6,34 6,14" fill="none" stroke="url(#g4)" stroke-width="3.5" stroke-linejoin="round"/>
+    <g fill="none" stroke="#47bfff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M24 16 V24"/><path d="M24 24 Q19 26 16 32"/><path d="M24 24 Q29 26 32 32"/>
+    </g>
+    <circle cx="24" cy="24" r="2.2" fill="#7e14ff"/><circle cx="16" cy="32" r="2.2" fill="#7e14ff"/><circle cx="32" cy="32" r="2.2" fill="#7e14ff"/>
+  </symbol>
+  <symbol id="m4-mono" viewBox="0 0 48 48">
+    <polygon points="24,4 42,14 42,34 24,44 6,34 6,14" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round"/>
+    <g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M24 16 V24"/><path d="M24 24 Q19 26 16 32"/><path d="M24 24 Q29 26 32 32"/>
+    </g>
+    <circle cx="24" cy="24" r="2.2" fill="currentColor"/><circle cx="16" cy="32" r="2.2" fill="currentColor"/><circle cx="32" cy="32" r="2.2" fill="currentColor"/>
+  </symbol>
+
+  <symbol id="m5-color" viewBox="0 0 48 46">
+    <linearGradient id="g5" x1="0" y1="0" x2="48" y2="46" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7e14ff"/><stop offset="1" stop-color="#47bfff"/>
+    </linearGradient>
+    <path fill="url(#g5)" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z"/>
+  </symbol>
+  <symbol id="m5-mono" viewBox="0 0 48 46">
+    <path fill="currentColor" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z"/>
+  </symbol>
+
+</defs>
+</svg>
+
+<div class="page">
+  <p class="crumbs"><a href="../landing-page-mockup/index.html">← Landing page mockups</a> · Brand · Logo/icon exploration · August 2026</p>
+  <h1 class="page-title">Logo / icon exploration</h1>
+  <p class="page-sub">The current <code>apps/web/public/favicon.svg</code> is a generic slanted abstract mark — 15 layered, blurred gradient ellipses under a mask, which is expensive to render and won't hold up at 16px, and has no connection to the name "RootEd." These 5 concepts explore real, name-driven alternatives, each tested at the sizes that actually matter: a browser tab (16px), an app icon tile, and a nav-bar lockup next to the wordmark — plus a true single-color knockout, not just a desaturation filter.</p>
+
+  <div class="painbox">
+    <b>Recommendation: Concept 1, Root Network.</b> "RootEd" reads two ways at once here — a literal root system, and a branching data/org-chart network (school → classes → students; tenant → roles → users) — which is exactly what the product does. It also survives 16px better than any other concept here: 4 strokes and 4 dots, nothing finer. Concept 5 (Evolved current) is the safe fallback if you'd rather not spend any brand equity right now — it keeps the exact silhouette already shipped everywhere, just fixes the render-cost and small-size problems.
+  </div>
+
+  <h2 class="section-h">The 5 concepts <span class="sub">— color · reversed · favicon test · app icon · nav lockup · single-color knockout</span></h2>
+
+  <!-- Concept 1 -->
+  <div class="concept">
+    <div class="head"><span class="num">01</span><span class="name">Root Network</span><span class="rec">Recommended</span></div>
+    <p class="rationale"><b>Optimises:</b> the name pays off twice — roots, and a branching network/org-chart, which is literally the product (schools → classes → students). Reads clearly at 16px: 4 strokes, 4 dots, nothing finer. <b>Trades away:</b> the most different from what's shipped today — full brand-asset swap, not an evolution.</p>
+    <div class="frames">
+      <div class="frame"><div class="stage light"><svg class="mark-lg"><use href="#m1-color"/></svg></div><span class="cap">on light</span></div>
+      <div class="frame"><div class="stage dark"><svg class="mark-lg"><use href="#m1-color"/></svg></div><span class="cap">on dark</span></div>
+      <div class="frame"><div class="tab-mock"><div class="tab"><svg><use href="#m1-color"/></svg><span>RootEd</span><span class="x">✕</span></div></div><span class="cap">browser tab · 16px</span></div>
+      <div class="frame"><div class="icon-tile"><div class="sq"><svg><use href="#m1-color"/></svg></div></div><span class="cap">app icon</span></div>
+      <div class="frame"><div class="icon-tile"><div class="sq on-brand"><svg><use href="#m1-mono"/></svg></div></div><span class="cap">app icon · on-brand</span></div>
+      <div class="frame"><div class="lockup light"><svg><use href="#m1-color"/></svg><span class="word">RootEd</span></div><span class="cap">nav lockup · light</span></div>
+      <div class="frame"><div class="lockup dark"><svg><use href="#m1-color"/></svg><span class="word">RootEd</span></div><span class="cap">nav lockup · dark</span></div>
+      <div class="frame"><div class="stage mono light"><svg class="mark-md"><use href="#m1-mono"/></svg></div><span class="cap">1-color knockout</span></div>
+      <div class="frame"><div class="stage mono dark"><svg class="mark-md"><use href="#m1-mono"/></svg></div><span class="cap">1-color reversed</span></div>
+    </div>
+  </div>
+
+  <!-- Concept 2 -->
+  <div class="concept">
+    <div class="head"><span class="num">02</span><span class="name">Sprout / Leaf</span></div>
+    <p class="rationale"><b>Optimises:</b> warmest, most approachable concept — growth and education in one shape (the center vein reads as both a leaf vein and an open book spine), softest fit for a "for schools" product. <b>Trades away:</b> the softest, least technical-looking mark of the five — doesn't signal "data platform" the way Concepts 1 or 4 do.</p>
+    <div class="frames">
+      <div class="frame"><div class="stage light"><svg class="mark-lg"><use href="#m2-color"/></svg></div><span class="cap">on light</span></div>
+      <div class="frame"><div class="stage dark"><svg class="mark-lg"><use href="#m2-color"/></svg></div><span class="cap">on dark</span></div>
+      <div class="frame"><div class="tab-mock"><div class="tab"><svg><use href="#m2-color"/></svg><span>RootEd</span><span class="x">✕</span></div></div><span class="cap">browser tab · 16px</span></div>
+      <div class="frame"><div class="icon-tile"><div class="sq"><svg><use href="#m2-color"/></svg></div></div><span class="cap">app icon</span></div>
+      <div class="frame"><div class="icon-tile"><div class="sq on-brand"><svg><use href="#m2-mono"/></svg></div></div><span class="cap">app icon · on-brand</span></div>
+      <div class="frame"><div class="lockup light"><svg><use href="#m2-color"/></svg><span class="word">RootEd</span></div><span class="cap">nav lockup · light</span></div>
+      <div class="frame"><div class="lockup dark"><svg><use href="#m2-color"/></svg><span class="word">RootEd</span></div><span class="cap">nav lockup · dark</span></div>
+      <div class="frame"><div class="stage mono light"><svg class="mark-md"><use href="#m2-mono"/></svg></div><span class="cap">1-color knockout</span></div>
+      <div class="frame"><div class="stage mono dark"><svg class="mark-md"><use href="#m2-mono"/></svg></div><span class="cap">1-color reversed</span></div>
+    </div>
+  </div>
+
+  <!-- Concept 3 -->
+  <div class="concept">
+    <div class="head"><span class="num">03</span><span class="name">Monogram Root-R</span></div>
+    <p class="rationale"><b>Optimises:</b> an ownable, brandable letterform — a bold geometric "R" whose leg splits into two root tendrils. Works as a standalone monogram the way "M" does for Mongoose or "N" does for Notion. <b>Trades away:</b> the "R" reads as the company initial more than "root" on first glance — the root idea needs the tendril detail to land, which is the first thing lost at small sizes.</p>
+    <div class="frames">
+      <div class="frame"><div class="stage light"><svg class="mark-lg"><use href="#m3-color"/></svg></div><span class="cap">on light</span></div>
+      <div class="frame"><div class="stage dark"><svg class="mark-lg"><use href="#m3-color"/></svg></div><span class="cap">on dark</span></div>
+      <div class="frame"><div class="tab-mock"><div class="tab"><svg><use href="#m3-color"/></svg><span>RootEd</span><span class="x">✕</span></div></div><span class="cap">browser tab · 16px</span></div>
+      <div class="frame"><div class="icon-tile"><div class="sq"><svg><use href="#m3-color"/></svg></div></div><span class="cap">app icon</span></div>
+      <div class="frame"><div class="icon-tile"><div class="sq on-brand"><svg><use href="#m3-mono"/></svg></div></div><span class="cap">app icon · on-brand</span></div>
+      <div class="frame"><div class="lockup light"><svg><use href="#m3-color"/></svg><span class="word">RootEd</span></div><span class="cap">nav lockup · light</span></div>
+      <div class="frame"><div class="lockup dark"><svg><use href="#m3-color"/></svg><span class="word">RootEd</span></div><span class="cap">nav lockup · dark</span></div>
+      <div class="frame"><div class="stage mono light"><svg class="mark-md"><use href="#m3-mono"/></svg></div><span class="cap">1-color knockout</span></div>
+      <div class="frame"><div class="stage mono dark"><svg class="mark-md"><use href="#m3-mono"/></svg></div><span class="cap">1-color reversed</span></div>
+    </div>
+  </div>
+
+  <!-- Concept 4 -->
+  <div class="concept">
+    <div class="head"><span class="num">04</span><span class="name">Hex Node</span></div>
+    <p class="rationale"><b>Optimises:</b> leans into the product's real differentiators — tenant isolation, encryption, audit logs — the hexagon reads as "contained, secure system" (a common security/network visual language), with a tiny root-node glyph inside for the name tie-in. Most "future-looking / deep tech" of the five. <b>Trades away:</b> the root/education connection is the smallest and most abstract here — it needs the largest size to notice the inner glyph at all.</p>
+    <div class="frames">
+      <div class="frame"><div class="stage light"><svg class="mark-lg"><use href="#m4-color"/></svg></div><span class="cap">on light</span></div>
+      <div class="frame"><div class="stage dark"><svg class="mark-lg"><use href="#m4-color"/></svg></div><span class="cap">on dark</span></div>
+      <div class="frame"><div class="tab-mock"><div class="tab"><svg><use href="#m4-color"/></svg><span>RootEd</span><span class="x">✕</span></div></div><span class="cap">browser tab · 16px</span></div>
+      <div class="frame"><div class="icon-tile"><div class="sq"><svg><use href="#m4-color"/></svg></div></div><span class="cap">app icon</span></div>
+      <div class="frame"><div class="icon-tile"><div class="sq on-brand"><svg><use href="#m4-mono"/></svg></div></div><span class="cap">app icon · on-brand</span></div>
+      <div class="frame"><div class="lockup light"><svg><use href="#m4-color"/></svg><span class="word">RootEd</span></div><span class="cap">nav lockup · light</span></div>
+      <div class="frame"><div class="lockup dark"><svg><use href="#m4-color"/></svg><span class="word">RootEd</span></div><span class="cap">nav lockup · dark</span></div>
+      <div class="frame"><div class="stage mono light"><svg class="mark-md"><use href="#m4-mono"/></svg></div><span class="cap">1-color knockout</span></div>
+      <div class="frame"><div class="stage mono dark"><svg class="mark-md"><use href="#m4-mono"/></svg></div><span class="cap">1-color reversed</span></div>
+    </div>
+  </div>
+
+  <!-- Concept 5 -->
+  <div class="concept">
+    <div class="head"><span class="num">05</span><span class="name">Evolved current mark</span></div>
+    <p class="rationale"><b>Optimises:</b> zero brand-equity risk — this is the exact silhouette already live in <code>favicon.svg</code> and the login-page glow, just flattened to one gradient fill with the 15 blurred decorative ellipses and mask removed, so it's actually cheap to render and legible at 16px. <b>Trades away:</b> still has no connection to "Root" or "Ed" — this is a technical-debt fix, not a concept fix. Safe default if a full rebrand isn't the goal right now.</p>
+    <div class="frames">
+      <div class="frame"><div class="stage light"><svg class="mark-lg"><use href="#m5-color"/></svg></div><span class="cap">on light</span></div>
+      <div class="frame"><div class="stage dark"><svg class="mark-lg"><use href="#m5-color"/></svg></div><span class="cap">on dark</span></div>
+      <div class="frame"><div class="tab-mock"><div class="tab"><svg><use href="#m5-color"/></svg><span>RootEd</span><span class="x">✕</span></div></div><span class="cap">browser tab · 16px</span></div>
+      <div class="frame"><div class="icon-tile"><div class="sq"><svg><use href="#m5-color"/></svg></div></div><span class="cap">app icon</span></div>
+      <div class="frame"><div class="icon-tile"><div class="sq on-brand"><svg><use href="#m5-mono"/></svg></div></div><span class="cap">app icon · on-brand</span></div>
+      <div class="frame"><div class="lockup light"><svg><use href="#m5-color"/></svg><span class="word">RootEd</span></div><span class="cap">nav lockup · light</span></div>
+      <div class="frame"><div class="lockup dark"><svg><use href="#m5-color"/></svg><span class="word">RootEd</span></div><span class="cap">nav lockup · dark</span></div>
+      <div class="frame"><div class="stage mono light"><svg class="mark-md"><use href="#m5-mono"/></svg></div><span class="cap">1-color knockout</span></div>
+      <div class="frame"><div class="stage mono dark"><svg class="mark-md"><use href="#m5-mono"/></svg></div><span class="cap">1-color reversed</span></div>
+    </div>
+  </div>
+
+  <p class="legend"><b>How to read this page:</b> "on light/dark" is the mark at hero size. "Browser tab" is the real legibility test — everything else can look good large and still fail here. "App icon" shows both a white tile (icon in full brand gradient) and a gradient tile (icon knocked out to solid white), matching how most apps ship two variants. "Nav lockup" is the actual usage pattern already live in <code>LoginPage.jsx</code> (<code>&lt;img src="/favicon.svg"&gt;</code> next to the "RootEd" wordmark). "1-color knockout" is a true single-fill render (not a desaturation filter) — the real test for print, stamps, or a single-color favicon fallback. Standalone source files for all 5 marks are in <a href="marks/" style="color:var(--brand-2)">marks/</a>, ready to drop into <code>apps/web/public/favicon.svg</code> if one is approved.</p>
+</div>
+</body>
+</html>
