@@ -145,6 +145,7 @@ Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts 
 `agent-home/*.md` — repo-specific runbooks for Claude Code, not user-facing docs:
 - `feature-tdd-seed-e2e.md` — plan → TDD → extend seed data → Playwright e2e workflow for building a feature end-to-end
 - `restore-dev-stack.md` — **read this before touching Docker for local E2E**: switching between dev mode (`docker-compose.dev.yml`) and e2e mode (local API + `vite --mode test` on the same ports), the port-release race, and a `node_modules` corruption gotcha from the container's own `pnpm install` running against the bind-mounted volume
+- `local-dev-login-and-manual-verification.md` — **read this before answering any "show me the UI" / "give me login credentials" request**: the real seeded tenant subdomain (`testschool-rooted`, not `testschool`), which account to log in with, and why logging in as `super_admin` directly on a tenant subdomain silently renders almost no sidebar/data (needs an explicit impersonate step)
 - `branch-commit-pr-from-upstream.md` — cut a branch from `upstream/main`, commit with hooks, PR against upstream (fork workflow: `origin` = your fork, `upstream` = source repo)
 - `sync-main-with-upstream.md` — fast-forward local `main`/`origin/main` from `upstream/main`
 
