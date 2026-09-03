@@ -19,21 +19,21 @@ export default function MobileBottomBar({ navGroups, onOpenMenu }) {
           end
           className={({ isActive }) =>
             cn(
-              'flex flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium',
+              'flex min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium',
               isActive ? 'text-primary' : 'text-muted-foreground'
             )
           }
         >
           <Icon size={20} />
-          <span className="truncate px-1">{label}</span>
+          <span className="w-full truncate px-1 text-center">{label}</span>
         </NavLink>
       ))}
       <button
         onClick={onOpenMenu}
-        className="flex flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium text-muted-foreground"
+        className="flex min-w-0 flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium text-muted-foreground"
       >
         <Menu size={20} />
-        <span>{t('nav.menu')}</span>
+        <span className="w-full truncate px-1 text-center">{t('nav.menu')}</span>
       </button>
     </nav>
   );
