@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RootEd — Landing page (mobile, final)</title>
+<link rel="stylesheet" href="landing.css">
+</head>
+<body class="dark">
+
+<div class="meta">
+  <span class="crumbs"><a href="index.html">← Index</a> · Landing page · Mobile</span>
+  <span class="tag status approved">✅ Approved</span>
+  <span class="spacer"></span>
+  <span class="note">Cut content ~half, doubled visual confidence: bigger type, merged RBAC+security into one list, modules as an icon grid not 5 cards, motif is now a real hero element.</span>
+</div>
+
+<div class="phone-wrap">
+<div class="phone">
+  <div class="statusbar"><span>9:41</span><span>●●● ⏶ ▮</span></div>
+
+  <div class="screen">
+    <div class="m-nav">
+      <div class="brand"><img src="favicon.svg" alt="RootEd"> RootEd</div>
+      <div class="burger">≡</div>
+    </div>
+
+    <header class="m-hero motif-wrap">
+      <svg class="motif" viewBox="0 0 600 600" width="480" height="480" style="right:-160px;top:-30px;left:auto;opacity:.9" aria-hidden="true">
+        <defs>
+          <linearGradient id="mh1" x1="60" y1="580" x2="540" y2="220" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#7e14ff"/><stop offset="1" stop-color="#47bfff"/>
+          </linearGradient>
+        </defs>
+        <g fill="none" stroke="url(#mh1)" stroke-width="3" stroke-linecap="round">
+          <path d="M60 580 Q100 500 150 470"/><path d="M60 580 Q130 520 220 430"/><path d="M60 580 Q170 540 300 390"/>
+          <path d="M60 580 Q220 560 380 350"/><path d="M60 580 Q280 580 460 320"/><path d="M60 580 Q340 600 540 290"/>
+        </g>
+        <g fill="#47bfff"><circle cx="150" cy="470" r="5"/><circle cx="220" cy="430" r="5"/><circle cx="300" cy="390" r="5"/><circle cx="380" cy="350" r="5"/><circle cx="460" cy="320" r="5"/><circle cx="540" cy="290" r="5"/></g>
+      </svg>
+      <span class="badge dot">Built by Rural Root Cloud</span>
+      <h1>One system. <span class="grad">Every role.</span></h1>
+      <p>Attendance, fees, staff and inventory — for schools, colleges and coaching or tuition centers, not five spreadsheets.</p>
+      <a class="btn primary block" href="#">Start 14-day free trial</a>
+      <span class="fineprint">No credit card. Already a school? <a href="#" style="color:var(--brand-ink);font-weight:600">Log in →</a></span>
+    </header>
+
+    <section class="m-section on-dark">
+      <span class="eyebrow" style="color:var(--brand-2)">Why schools trust it</span>
+      <h2>Protected on purpose</h2>
+      <div class="m-fact"><span class="ic">01</span><div><h4>Tenant-isolated by design</h4><p>Enforced at the database layer — a bug can't leak another school's data.</p></div></div>
+      <div class="m-fact"><span class="ic">02</span><div><h4>Encrypted staff PII</h4><p>AES-256-GCM, a separate key per school.</p></div></div>
+      <div class="m-fact"><span class="ic">03</span><div><h4>Immutable audit log</h4><p>Every change, before/after, that can't be edited after the fact.</p></div></div>
+      <div class="m-fact"><span class="ic">04</span><div><h4>A view for every role</h4><p>Principal, teacher, accountant, librarian each see only what they're permitted to. Parents and students feel the results, without a login of their own to manage.</p></div></div>
+    </section>
+
+    <section class="m-section on-surface">
+      <span class="eyebrow">Product</span>
+      <h2>Five modules, one tenant</h2>
+      <div class="m-modgrid">
+        <div class="m"><div class="icon">Ac</div><span>Academics</span></div>
+        <div class="m"><div class="icon">St</div><span>Staff</span></div>
+        <div class="m"><div class="icon">Fe</div><span>Fee</span></div>
+        <div class="m"><div class="icon">Ex</div><span>Expense</span></div>
+        <div class="m"><div class="icon">In</div><span>Inventory</span></div>
+      </div>
+    </section>
+
+    <section class="m-statement motif-wrap">
+      <svg class="motif" viewBox="0 0 600 600" width="380" height="380" style="left:-120px;bottom:-100px;top:auto" aria-hidden="true">
+        <g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+          <path d="M60 580 Q100 500 150 470"/><path d="M60 580 Q130 520 220 430"/><path d="M60 580 Q170 540 300 390"/><path d="M60 580 Q220 560 380 350"/>
+        </g>
+        <g fill="currentColor"><circle cx="150" cy="470" r="4.5"/><circle cx="220" cy="430" r="4.5"/><circle cx="300" cy="390" r="4.5"/><circle cx="380" cy="350" r="4.5"/></g>
+      </svg>
+      <blockquote>&ldquo;World-class technology can grow from anywhere — including rural roots.&rdquo;</blockquote>
+      <cite>Rural Root Cloud — the company behind RootEd</cite>
+    </section>
+
+    <section class="m-section on-tint">
+      <span class="eyebrow">About</span>
+      <h2>Built by Rural Root Cloud</h2>
+      <p class="lead" style="margin-bottom:0">An IT company that designs, builds and maintains complete digital products and microservices — RootEd is one of them.</p>
+      <div class="m-tags">
+        <span>Reliability</span><span>Cloud-native</span><span>Knowledge sharing</span><span>Rural to global</span>
+      </div>
+    </section>
+
+    <section class="m-section on-surface">
+      <span class="eyebrow">How it works</span>
+      <h2>First call to going live</h2>
+      <div class="m-stepper">
+        <div class="m-process-step"><span class="n">1</span><h4>Understand</h4><p>A quick call about your school's setup.</p></div>
+        <div class="m-process-step"><span class="n">2</span><h4>Plan</h4><p>We map your school onto RootEd.</p></div>
+        <div class="m-process-step"><span class="n">3</span><h4>Go live</h4><p>Your tenant is provisioned, trial starts.</p></div>
+        <div class="m-process-step"><span class="n">4</span><h4>Support</h4><p>Training and support, not a one-time handoff.</p></div>
+      </div>
+    </section>
+
+    <div class="m-cta-band">
+      <h3>Ready to see it on your data?</h3>
+      <p>14-day free trial · no credit card</p>
+      <a class="btn primary block" href="#">Start free trial</a>
+    </div>
+
+    <footer class="m-footer">
+      <div class="brand">RootEd</div>
+      <p style="margin:0 0 8px">Where your school's roots grow digital. Built by Rural Root Cloud Tech Services And Training.</p>
+      <a href="mailto:ruralrootcloud@gmail.com">ruralrootcloud@gmail.com</a>
+    </footer>
+  </div>
+
+  <!-- Sticky CTA sits outside .screen (the scrollable region) so it's always
+       visible, the same way MobileBottomBar.jsx sits outside the app's page
+       content rather than scrolling with it. -->
+  <div class="m-sticky-cta">
+    <a class="btn ghost sm" href="#">Log in</a>
+    <a class="btn primary sm" href="#">Start free trial</a>
+  </div>
+
+  <div class="homebar"></div>
+</div>
+</div>
+
+<nav class="reviewnav" title="← go to desktop · I index">
+  <a class="rn-btn" href="desktop.html" data-nav="prev"><span class="rn-lbl">‹ Desktop</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">✅ APPROVED</span><span class="rn-title">Mobile</span></a>
+  <span class="rn-btn off">No more pages ›</span>
+  <span class="rn-keys">← → · I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

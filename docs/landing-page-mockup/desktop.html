@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RootEd — Landing page (desktop, final)</title>
+<link rel="stylesheet" href="landing.css">
+</head>
+<body>
+
+<div class="meta">
+  <span class="crumbs"><a href="index.html">← Index</a> · Landing page · Desktop</span>
+  <span class="tag status approved">✅ Approved</span>
+  <span class="spacer"></span>
+  <span class="note">Product-led structure, company-focused About (no individual founder bios/links), brand motif added.</span>
+</div>
+
+<nav class="lp-nav">
+  <div class="brand"><img src="favicon.svg" alt="RootEd"> RootEd</div>
+  <div class="links">
+    <a href="#modules">Product</a>
+    <a href="#security">Security</a>
+    <a href="#about">About</a>
+    <a href="#contact">Contact</a>
+  </div>
+  <div class="cta">
+    <a class="btn ghost sm" href="#">Log in</a>
+    <a class="btn primary sm" href="#">Start free trial</a>
+  </div>
+</nav>
+
+<header class="lp-hero motif-wrap">
+  <svg class="motif" viewBox="0 0 600 600" width="600" height="600" style="right:-80px;top:-60px;left:auto" aria-hidden="true">
+    <g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+      <path d="M60 580 Q100 500 150 470"/>
+      <path d="M60 580 Q130 520 220 430"/>
+      <path d="M60 580 Q170 540 300 390"/>
+      <path d="M60 580 Q220 560 380 350"/>
+      <path d="M60 580 Q280 580 460 320"/>
+      <path d="M60 580 Q340 600 540 290"/>
+      <path d="M220 430 Q260 400 300 350"/>
+      <path d="M300 390 Q330 360 360 320"/>
+    </g>
+    <g fill="currentColor">
+      <circle cx="150" cy="470" r="4"/><circle cx="220" cy="430" r="4"/><circle cx="300" cy="390" r="4"/>
+      <circle cx="380" cy="350" r="4"/><circle cx="460" cy="320" r="4"/><circle cx="540" cy="290" r="4"/>
+      <circle cx="300" cy="350" r="3"/><circle cx="360" cy="320" r="3"/>
+    </g>
+  </svg>
+  <span class="badge dot">Built by Rural Root Cloud</span>
+  <h1>Run your school, college or coaching center — <span class="grad">not five spreadsheets.</span></h1>
+  <p class="lead">RootEd is the system schools, colleges and coaching or tuition centers use to run attendance, fees, staff and inventory in one place. Multi-tenant, role-based, and built with the same data-safety discipline as a bank's back office.</p>
+  <div class="cta-row">
+    <a class="btn primary" href="#">Start 14-day free trial</a>
+    <a class="btn secondary" href="#">Log in to your school</a>
+  </div>
+  <p class="fineprint">No credit card to start. Already a RootEd school? <a href="#" style="color:var(--brand-ink);font-weight:600">Log in →</a></p>
+
+  <div class="lp-mockframe" style="max-width:900px;margin-top:44px">
+    <div class="bar"><i></i><i></i><i></i></div>
+    <div class="placeholder">
+      <div style="display:flex;gap:6px;justify-content:center;margin-bottom:16px;flex-wrap:wrap">
+        <span class="badge" style="background:var(--brand-grad);color:#fff">Principal</span>
+        <span class="badge">Teacher</span>
+        <span class="badge">Accountant</span>
+        <span class="badge">Librarian</span>
+        <span class="badge">Tenant Admin</span>
+      </div>
+      <b>A dashboard for every role — not just one</b>
+      Each login sees a view scoped to what they're permitted to see, enforced by RBAC, not just hidden nav items. Shown here: the principal's view — attention strip, attendance/fee/grade KPIs, 7D trend, date picker to rewind any past day. Parents and students feel the results too — fees paid on time, report cards that are accurate — without a login of their own to manage.
+      <div style="margin-top:10px;font-size:11.5px;color:var(--ink-4)">Reference: docs/mobile-ui/20-dashboard-approved.html — real seeded data, not fabricated</div>
+    </div>
+  </div>
+</header>
+
+<section class="lp-section on-surface" id="modules">
+  <div class="section-head">
+    <span class="eyebrow">Product</span>
+    <h2>Five modules. One tenant. Zero spreadsheets.</h2>
+    <p>Everything your organisation runs day to day, already wired together — a student's attendance record, fee balance and report card live in the same system, not three disconnected tools.</p>
+  </div>
+  <div class="lp-grid">
+    <div class="lp-card"><div class="icon">Ac</div><h3>Academics</h3><p>Attendance, grades, timetable, report cards and academic years — one record per student, not a spreadsheet per teacher.</p></div>
+    <div class="lp-card"><div class="icon">St</div><h3>Staff</h3><p>Staff directory, leave requests with approval chains, and salary/payroll — in one place, not a WhatsApp group and a register.</p></div>
+    <div class="lp-card"><div class="icon">Fe</div><h3>Fee</h3><p>Fee structures, collection, Razorpay online payments and receipts — parents pay online, you see it reconcile automatically.</p></div>
+    <div class="lp-card"><div class="icon">Ex</div><h3>Expense</h3><p>Expense entries with approval chains and auto-escalation, plus budgets — every rupee spent has a paper trail.</p></div>
+    <div class="lp-card"><div class="icon">In</div><h3>Inventory</h3><p>Stock tracking, depreciation, and overdue-return alerts — know what your school owns and where it went.</p></div>
+    <div class="lp-card" style="background:var(--brand-soft);border-color:transparent"><div class="icon" style="background:#fff">+</div><h3>All connected</h3><p>One login, one dataset, per school — a fee defaulter list and an attendance report can reference the same student record.</p></div>
+  </div>
+</section>
+
+<section class="lp-section on-dark tight" style="padding-top:0">
+  <div class="lp-values-row" style="margin-top:0">
+    <div class="lp-value-chip" style="background:#1a1d24"><h5 style="color:var(--brand-2)">Multi-tenant</h5><p style="color:#b7bcc4">One deployment, many schools, colleges and coaching centers — your data is tenant-scoped and enforced at the database-query layer, not just hidden in the UI.</p></div>
+    <div class="lp-value-chip" style="background:#1a1d24"><h5 style="color:var(--brand-2)">Three-tier RBAC</h5><p style="color:#b7bcc4">Super Admin → Tenant Admin → module-permissioned roles. A librarian can't see payroll. A teacher can't see budgets.</p></div>
+    <div class="lp-value-chip" style="background:#1a1d24"><h5 style="color:var(--brand-2)">English · Hindi · both</h5><p style="color:#b7bcc4">Full i18n including a merged Hindi+English interface — built for how staff actually read, not just English-only software.</p></div>
+    <div class="lp-value-chip" style="background:#1a1d24"><h5 style="color:var(--brand-2)">Approval workflows</h5><p style="color:#b7bcc4">Leave, expense and purchase requests move through a real approval chain with auto-escalation — nothing sits forgotten.</p></div>
+  </div>
+</section>
+
+<section class="lp-section on-surface" id="security">
+  <div class="section-head">
+    <span class="eyebrow">Security</span>
+    <h2>Your staff's bank details and your students' records — protected on purpose, not by accident.</h2>
+    <p>School data is sensitive: staff government IDs, bank accounts, salaries, student records. Here's specifically what protects it.</p>
+  </div>
+  <div>
+    <div class="lp-security-row"><span class="num">01</span><div><h4>Tenant isolation enforced at the database layer</h4><p>Every query is automatically checked for your school's tenant ID before it runs. A bug that tries to read another school's data fails outright — it doesn't quietly return the wrong rows.</p></div></div>
+    <div class="lp-security-row"><span class="num">02</span><div><h4>Encrypted staff PII</h4><p>Government ID, bank account and salary fields are encrypted with AES-256-GCM, with a separate encryption key derived per school — not one shared key for every tenant.</p></div></div>
+    <div class="lp-security-row"><span class="num">03</span><div><h4>Immutable audit log</h4><p>Every change to sensitive records is written to an audit log as a before/after diff that can't be edited after the fact — you can always answer "who changed this, and when."</p></div></div>
+  </div>
+</section>
+
+<section class="lp-statement motif-wrap">
+  <svg class="motif" viewBox="0 0 600 600" width="500" height="500" style="left:-100px;bottom:-140px;top:auto" aria-hidden="true">
+    <g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+      <path d="M60 580 Q100 500 150 470"/><path d="M60 580 Q130 520 220 430"/><path d="M60 580 Q170 540 300 390"/>
+      <path d="M60 580 Q220 560 380 350"/><path d="M60 580 Q280 580 460 320"/><path d="M60 580 Q340 600 540 290"/>
+    </g>
+    <g fill="currentColor"><circle cx="150" cy="470" r="4"/><circle cx="220" cy="430" r="4"/><circle cx="300" cy="390" r="4"/><circle cx="380" cy="350" r="4"/><circle cx="460" cy="320" r="4"/><circle cx="540" cy="290" r="4"/></g>
+  </svg>
+  <blockquote>&ldquo;World-class technology can grow from anywhere — including rural roots.&rdquo;</blockquote>
+  <cite>Rural Root Cloud — the company behind RootEd</cite>
+</section>
+
+<section class="lp-section on-surface" id="about">
+  <div class="section-head">
+    <span class="eyebrow">About</span>
+    <h2>Built by Rural Root Cloud</h2>
+    <p>Rural Root Cloud Tech Services And Training is an IT company that designs, builds and maintains complete digital products and microservices — and shares that knowledge through practical training. RootEd is one of its products, built and run with the same discipline.</p>
+  </div>
+  <div class="lp-values-row">
+    <div class="lp-value-chip"><h5>Rooted in Reliability</h5><p>We build products and services to be stable first, then fast.</p></div>
+    <div class="lp-value-chip"><h5>Cloud-Native Mindset</h5><p>Designed for scaling from day one, not patched later.</p></div>
+    <div class="lp-value-chip"><h5>Training &amp; Knowledge Sharing</h5><p>We don't hide complexity — we teach your team how things work.</p></div>
+    <div class="lp-value-chip"><h5>From Rural to Global</h5><p>We prove that great tech can come from anywhere, and reach everywhere.</p></div>
+  </div>
+</section>
+
+<section class="lp-section on-surface tight">
+  <div class="section-head" style="margin-bottom:20px">
+    <span class="eyebrow">How it works</span>
+    <h2>From first call to going live</h2>
+  </div>
+  <div class="lp-process">
+    <div class="step"><div class="n">1</div><h4>Understand</h4><p>A quick call to understand your school's classes, sections, staff and fee structure.</p></div>
+    <div class="step"><div class="n">2</div><h4>Plan</h4><p>We map your school onto RootEd's tenant — roles, sections and fee structures, before you touch it.</p></div>
+    <div class="step"><div class="n">3</div><h4>Go live</h4><p>Your school's RootEd tenant is provisioned and your 14-day trial starts.</p></div>
+    <div class="step"><div class="n">4</div><h4>Support</h4><p>We stay with you for training, updates and support — not a one-time handoff.</p></div>
+  </div>
+</section>
+
+<div class="lp-cta-band">
+  <div><h3>Ready to see it running on your school's data?</h3><p>14-day free trial · no credit card required</p></div>
+  <div style="display:flex;gap:12px;flex-shrink:0">
+    <a class="btn secondary" href="#">Log in</a>
+    <a class="btn primary" href="#">Start free trial</a>
+  </div>
+</div>
+
+<footer class="lp-footer" id="contact">
+  <div class="top">
+    <div>
+      <div class="brand"><img src="favicon.svg" alt="" style="width:20px;height:19px"> RootEd</div>
+      <p style="max-width:280px;margin:0">Where your school's roots grow digital. Built by Rural Root Cloud Tech Services And Training.</p>
+    </div>
+    <div class="cols">
+      <div><h6>Product</h6><a href="#modules">Modules</a><a href="#security">Security</a><a href="#">Log in</a></div>
+      <div><h6>Company</h6><a href="#about">About</a><a href="mailto:ruralrootcloud@gmail.com">Contact</a></div>
+    </div>
+  </div>
+  <div class="bottom"><span>© 2026 Rural Root Cloud Tech Services And Training</span><span>ruralrootcloud@gmail.com</span></div>
+</footer>
+
+<nav class="reviewnav" title="→ go to mobile · I index">
+  <span class="rn-btn off">‹ <span class="rn-lbl">start</span></span>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">✅ APPROVED</span><span class="rn-title">Desktop</span></a>
+  <a class="rn-btn" href="mobile.html" data-nav="next"><span class="rn-lbl">Mobile</span> ›</a>
+  <span class="rn-keys">← → · I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>
