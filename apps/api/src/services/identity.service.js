@@ -1,7 +1,18 @@
+import crypto from 'crypto';
 import { User } from '../models/User.js';
+import { Student } from '../models/Student.js';
+import { TenantMembership } from '../models/TenantMembership.js';
 import { UsernameHistory } from '../models/UsernameHistory.js';
 import { AppError } from '../middleware/errorHandler.js';
-import { generateToken, hashToken } from './auth.service.js';
+import {
+  generateToken,
+  hashToken,
+  hashPassword,
+  storeResetToken,
+  CLAIM_TOKEN_TTL_MS,
+} from './auth.service.js';
+import { queueEmail } from './email.service.js';
+import { env, getPortalHost } from '../config/env.js';
 
 export const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 export const EMAIL_CHANGE_TTL_MS = 60 * 60 * 1000;
@@ -123,4 +134,99 @@ export async function deriveUsernameFromEmail(email, { forUserId } = {}) {
     candidate = `${base.slice(0, 24 - String(n).length - 1)}-${n}`;
   }
   return candidate;
+}
+
+/**
+ * Gives a roster student a login they can claim.
+ *
+ * The account is created holding a random password nobody is ever told; the
+ * person sets their own through the emailed link, which is what activates it.
+ * That way an import can provision hundreds of accounts without inventing
+ * credentials or leaving usable ones lying around.
+ *
+ * Returns null when nothing was provisioned, with a reason the caller can
+ * report per row.
+ *
+ * `enqueue` is injectable because ES module exports are frozen and cannot be
+ * spied on — passing it in is how the claim mail is asserted without sending
+ * one, and it keeps the service honest about its one side effect.
+ */
+export async function provisionStudentAccount({
+  tenant,
+  student,
+  email,
+  studentRoleId,
+  enqueue = queueEmail,
+}) {
+  const existingUser = await User.findOne({ email }, '_id status').lean();
+
+  // A membership already exists for suspended people. An import must not be a
+  // way around a suspension, exactly as invites and join codes are not.
+  if (existingUser) {
+    const membership = await TenantMembership.findOne(
+      { tenantId: tenant._id, userId: existingUser._id },
+      'status'
+    ).lean();
+    if (membership?.status === 'suspended') {
+      return { user: null, reason: 'account suspended for this organization' };
+    }
+  }
+
+  let user = existingUser;
+  if (!user) {
+    const username = await deriveUsernameFromEmail(email);
+    user = await User.create({
+      email,
+      username,
+      usernameLower: username,
+      firstName: student.firstName,
+      lastName: student.lastName,
+      passwordHash: await hashPassword(crypto.randomUUID()),
+      status: 'pending_claim',
+      emailVerified: false,
+    });
+  }
+
+  // The partial unique index on (tenantId, userId) stops one account being
+  // linked to two students in the same school.
+  try {
+    await Student.updateOne(
+      { _id: student._id, tenantId: tenant._id },
+      { $set: { userId: user._id } }
+    );
+  } catch (err) {
+    if (err.code === 11000) {
+      return { user: null, reason: 'that email is already linked to another student' };
+    }
+    throw err;
+  }
+
+  await TenantMembership.findOneAndUpdate(
+    { tenantId: tenant._id, userId: user._id },
+    {
+      $setOnInsert: {
+        tenantId: tenant._id,
+        userId: user._id,
+        roleIds: [studentRoleId],
+        status: 'active',
+        joinMethod: 'import',
+      },
+    },
+    { upsert: true, setDefaultsOnInsert: true }
+  );
+
+  // Only somebody who has never set a password needs a claim link. An existing
+  // account already has working credentials.
+  if (user.status === 'pending_claim') {
+    const token = generateToken();
+    await storeResetToken(user._id, token, CLAIM_TOKEN_TTL_MS);
+    const host = tenant.subdomain ? `${tenant.subdomain}.${env.APP_DOMAIN}` : getPortalHost();
+    await enqueue('accountClaim', [
+      email,
+      tenant.name,
+      `https://${host}/accept-invite?token=${token}`,
+    ]);
+  }
+
+  return { user, reason: null };
 }

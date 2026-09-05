@@ -35,6 +35,8 @@ import { Class } from '../models/Class.js';
 import { Section } from '../models/Section.js';
 import { Subject } from '../models/Subject.js';
 import { Student } from '../models/Student.js';
+import { Role } from '../models/Role.js';
+import { provisionStudentAccount } from '../services/identity.service.js';
 import { StaffMember } from '../models/StaffMember.js';
 import { Timetable } from '../models/Timetable.js';
 import { TimetablePublish } from '../models/TimetablePublish.js';
@@ -467,7 +469,12 @@ router.post(
       const tenantId = req.tenant._id;
       let created = 0;
       let skipped = 0;
+      let accountsProvisioned = 0;
       const errors = [];
+
+      // Resolved once: an 'email' column provisions a claimable login for the
+      // student, which needs the tenant's student role.
+      const studentRole = await Role.findOne({ tenantId, templateKey: 'student' }, '_id').lean();
 
       for (const row of records) {
         try {
@@ -478,6 +485,7 @@ router.post(
             sectionId: sectionName,
             dateOfBirth,
             gender,
+            email,
           } = row;
 
           if (!admissionNo || !firstName || !lastName) {
@@ -497,7 +505,7 @@ router.post(
             if (section) resolvedSectionId = section._id;
           }
 
-          await Student.create({
+          const student = await Student.create({
             tenantId,
             admissionNo,
             firstName,
@@ -507,12 +515,29 @@ router.post(
             gender: gender || undefined,
           });
           created++;
+
+          // The email column is optional, and a row without one still imports:
+          // a pupil too young for an address is the normal case, not an error.
+          if (email) {
+            if (!studentRole) {
+              errors.push({ row, reason: 'No student role in this organization' });
+            } else {
+              const { user, reason } = await provisionStudentAccount({
+                tenant: req.tenant,
+                student,
+                email: String(email).trim().toLowerCase(),
+                studentRoleId: studentRole._id,
+              });
+              if (user) accountsProvisioned++;
+              else errors.push({ row, reason });
+            }
+          }
         } catch (rowErr) {
           errors.push({ row, reason: rowErr.message });
         }
       }
 
-      res.json({ created, skipped, errors });
+      res.json({ created, skipped, accountsProvisioned, errors });
     } catch (err) {
       next(err);
     }
