@@ -6,7 +6,7 @@ import { LeaveType, DEFAULT_LEAVE_TYPES } from '../models/LeaveType.js';
 import { TenantMembership } from '../models/TenantMembership.js';
 import {
   hashPassword,
-  generateResetToken,
+  generateToken,
   storeResetToken,
   INVITE_TOKEN_TTL_MS,
 } from './auth.service.js';
@@ -86,7 +86,7 @@ export async function createTenant({
   // else already has working credentials and only needed the membership above.
   let inviteUrl = `https://${inviteHost}/login`;
   if (isNewUser && !adminPassword) {
-    const token = generateResetToken();
+    const token = generateToken();
     await storeResetToken(adminUser._id, token, INVITE_TOKEN_TTL_MS);
     inviteUrl = `https://${inviteHost}/accept-invite?token=${token}`;
   }

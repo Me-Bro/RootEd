@@ -3,8 +3,8 @@ import mongoose from 'mongoose';
 import crypto from 'crypto';
 import { User } from '../models/User.js';
 import {
-  generateResetToken,
-  hashResetToken,
+  generateToken,
+  hashToken,
   storeResetToken,
   hashPassword,
   INVITE_TOKEN_TTL_MS,
@@ -30,7 +30,7 @@ async function makeUser(email) {
 
 test('the raw reset token is never persisted', async () => {
   const user = await makeUser('reset-raw@test.local');
-  const token = generateResetToken();
+  const token = generateToken();
   await storeResetToken(user._id, token);
 
   const stored = await User.findById(user._id).select('+passwordResetToken').lean();
@@ -40,7 +40,7 @@ test('the raw reset token is never persisted', async () => {
 
 test('a stolen database value cannot be replayed as a token', async () => {
   const user = await makeUser('reset-replay@test.local');
-  const token = generateResetToken();
+  const token = generateToken();
   await storeResetToken(user._id, token);
 
   const stored = await User.findById(user._id).select('+passwordResetToken').lean();
@@ -48,14 +48,14 @@ test('a stolen database value cannot be replayed as a token', async () => {
   // What the reset route does: hash whatever the caller supplied, then look up.
   // Feeding it the digest read out of the database must not find anybody.
   const replayed = await User.findOne({
-    passwordResetToken: hashResetToken(stored.passwordResetToken),
+    passwordResetToken: hashToken(stored.passwordResetToken),
     passwordResetExpires: { $gt: new Date() },
   }).lean();
   expect(replayed).toBeNull();
 
   // The raw token from the email still resolves.
   const legitimate = await User.findOne({
-    passwordResetToken: hashResetToken(token),
+    passwordResetToken: hashToken(token),
     passwordResetExpires: { $gt: new Date() },
   }).lean();
   expect(legitimate?._id.toString()).toBe(user._id.toString());
@@ -63,15 +63,15 @@ test('a stolen database value cannot be replayed as a token', async () => {
 
 test('two tokens for the same user never collide', async () => {
   const user = await makeUser('reset-rotate@test.local');
-  const first = generateResetToken();
+  const first = generateToken();
   await storeResetToken(user._id, first);
-  const second = generateResetToken();
+  const second = generateToken();
   await storeResetToken(user._id, second);
 
   expect(first).not.toBe(second);
 
-  const byFirst = await User.findOne({ passwordResetToken: hashResetToken(first) }).lean();
-  const bySecond = await User.findOne({ passwordResetToken: hashResetToken(second) }).lean();
+  const byFirst = await User.findOne({ passwordResetToken: hashToken(first) }).lean();
+  const bySecond = await User.findOne({ passwordResetToken: hashToken(second) }).lean();
   expect(byFirst).toBeNull();
   expect(bySecond?._id.toString()).toBe(user._id.toString());
 });
@@ -79,7 +79,7 @@ test('two tokens for the same user never collide', async () => {
 test('the invite TTL is honoured and is longer than the reset TTL', async () => {
   const user = await makeUser('reset-ttl@test.local');
   const before = Date.now();
-  await storeResetToken(user._id, generateResetToken(), INVITE_TOKEN_TTL_MS);
+  await storeResetToken(user._id, generateToken(), INVITE_TOKEN_TTL_MS);
 
   const stored = await User.findById(user._id).select('+passwordResetExpires').lean();
   const ttl = stored.passwordResetExpires.getTime() - before;
@@ -90,11 +90,11 @@ test('the invite TTL is honoured and is longer than the reset TTL', async () => 
 
 test('an expired token does not resolve', async () => {
   const user = await makeUser('reset-expired@test.local');
-  const token = generateResetToken();
+  const token = generateToken();
   await storeResetToken(user._id, token, -1000);
 
   const found = await User.findOne({
-    passwordResetToken: hashResetToken(token),
+    passwordResetToken: hashToken(token),
     passwordResetExpires: { $gt: new Date() },
   }).lean();
   expect(found).toBeNull();

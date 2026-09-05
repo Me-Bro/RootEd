@@ -1,6 +1,19 @@
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
+import {
+  loginSchema,
+  registerSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  verifyEmailSchema,
+  resendVerificationSchema,
+  updateProfileSchema,
+  changeEmailSchema,
+  confirmEmailChangeSchema,
+  changePasswordSchema,
+  usernameSchema,
+} from '@rooted/shared/schemas';
 import { User } from '../models/User.js';
 import {
   hashPassword,
@@ -12,11 +25,20 @@ import {
   isTokenBlocked,
   handleFailedLogin,
   clearFailedLogins,
-  generateResetToken,
+  generateToken,
   storeResetToken,
-  hashResetToken,
+  hashToken,
+  revokeUserSessions,
   getActiveTenantsForUser,
 } from '../services/auth.service.js';
+import {
+  loginFilterFor,
+  isUsernameAvailable,
+  applyUsernameChange,
+  issueEmailVerification,
+  issueEmailChange,
+} from '../services/identity.service.js';
+import { validate } from '../middleware/validate.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { resolvePermissions, effectivePermissionsFor } from '../middleware/requirePermission.js';
@@ -31,7 +53,13 @@ import {
   enableMfa,
   getMfaSecret,
 } from '../services/mfa.service.js';
-import { sendPasswordReset } from '../services/email.service.js';
+import {
+  sendPasswordReset,
+  sendEmailVerification,
+  sendEmailChangeConfirmation,
+  sendEmailChangeNotice,
+  sendAccountExistsNotice,
+} from '../services/email.service.js';
 
 const router = Router();
 
@@ -55,19 +83,29 @@ const REFRESH_COOKIE_OPTIONS = {
   path: '/',
 };
 
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  totpCode: z.string().optional(),
-});
-
-const forgotSchema = z.object({ email: z.string().email() });
-
+// Request schemas live in @rooted/shared/schemas so the API and the web forms
+// validate against one definition — these used to be duplicated here.
 const selectTenantSchema = z.object({ tenantId: z.string() });
 
-const resetSchema = z.object({
-  token: z.string(),
-  password: z.string().min(8),
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: env.NODE_ENV === 'production' ? 5 : 500,
+  message: { error: 'Too many registration attempts' },
+});
+
+const verificationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: env.NODE_ENV === 'production' ? 5 : 500,
+  message: { error: 'Too many requests, try again later' },
+});
+
+// Availability lookups are unauthenticated by necessity (they run while the
+// registration form is being filled in), so they are the cheapest username
+// enumeration oracle on the service. Rate limit accordingly.
+const usernameLookupLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: env.NODE_ENV === 'production' ? 60 : 1000,
+  message: { error: 'Too many lookups' },
 });
 
 /**
@@ -111,14 +149,20 @@ const resetSchema = z.object({
  */
 router.post('/login', loginLimiter, async (req, res, next) => {
   try {
-    const { email, password } = loginSchema.parse(req.body);
+    // `email` is still accepted so existing clients keep working; the field was
+    // renamed to `identifier` when username login landed.
+    const body = { ...req.body, identifier: req.body.identifier ?? req.body.email };
+    const { identifier, password } = loginSchema.parse(body);
 
-    const user = await User.findOne({ email })
+    const user = await User.findOne(loginFilterFor(identifier))
       .select('+passwordHash +failedLoginAttempts +lockedUntil +mfaSecret +mfaEnabled')
       .lean();
 
-    if (!user) throw new AppError('Invalid email or password', 401);
+    if (!user) throw new AppError('Invalid credentials', 401);
     if (user.status === 'suspended') throw new AppError('Account suspended', 403);
+    if (user.status === 'pending_verification') {
+      throw new AppError('Verify your email address before signing in', 403);
+    }
 
     const valid = await verifyPassword(user.passwordHash, password);
     if (!valid) {
@@ -129,7 +173,7 @@ router.post('/login', loginLimiter, async (req, res, next) => {
     await clearFailedLogins(user._id);
 
     if (user.systemRole === 'super_admin' && user.mfaEnabled) {
-      const { totpCode } = loginSchema.parse(req.body);
+      const { totpCode } = loginSchema.parse(body);
       if (!totpCode) throw new AppError('TOTP code required', 401);
       const plainSecret = getMfaSecret(user.mfaSecret);
       const valid = verifyMfaToken(plainSecret, totpCode);
@@ -347,7 +391,10 @@ router.post('/logout', authenticate, async (req, res, next) => {
 
 router.get('/me', authenticate, async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.sub, 'email systemRole status mfaEnabled').lean();
+    const user = await User.findById(
+      req.user.sub,
+      'email emailVerified pendingEmail username firstName lastName phone systemRole status mfaEnabled'
+    ).lean();
     if (!user) return next(new AppError('User not found', 404));
 
     const impersonatedPermissions = effectivePermissionsFor(req.user);
@@ -386,11 +433,11 @@ router.get('/me', authenticate, async (req, res, next) => {
 
 router.post('/forgot-password', async (req, res, next) => {
   try {
-    const { email } = forgotSchema.parse(req.body);
+    const { email } = forgotPasswordSchema.parse(req.body);
     const user = await User.findOne({ email }).lean();
 
     if (user) {
-      const token = generateResetToken();
+      const token = generateToken();
       await storeResetToken(user._id, token);
       // getPortalHost(), not APP_DOMAIN: when PORTAL_SUBDOMAIN is set (as it is
       // on the tunnel deployment) the app is served from that label, and the
@@ -407,10 +454,10 @@ router.post('/forgot-password', async (req, res, next) => {
 
 router.post('/reset-password', async (req, res, next) => {
   try {
-    const { token, password } = resetSchema.parse(req.body);
+    const { token, password } = resetPasswordSchema.parse(req.body);
 
     const user = await User.findOne({
-      passwordResetToken: hashResetToken(token),
+      passwordResetToken: hashToken(token),
       passwordResetExpires: { $gt: new Date() },
     }).select('+passwordResetToken +passwordResetExpires');
 
@@ -432,6 +479,274 @@ router.post('/reset-password', async (req, res, next) => {
     next(err);
   }
 });
+
+// ── Registration & email verification ────────────────────────────────────────
+
+router.post('/register', registerLimiter, validate(registerSchema), async (req, res, next) => {
+  try {
+    const { email, username, password, firstName, lastName } = req.body;
+    const portalHost = getPortalHost();
+    // Deliberately identical whether or not the address is already registered.
+    const accepted = { message: 'Check your email to continue.' };
+
+    const existing = await User.findOne({ email }, '_id').lean();
+    if (existing) {
+      await sendAccountExistsNotice(
+        email,
+        `https://${portalHost}/login`,
+        `https://${portalHost}/forgot-password`
+      );
+      return res.status(202).json(accepted);
+    }
+
+    if (!(await isUsernameAvailable(username))) {
+      throw new AppError('That username is taken', 409);
+    }
+
+    let user;
+    try {
+      user = await User.create({
+        email,
+        username,
+        usernameLower: username,
+        firstName,
+        lastName,
+        passwordHash: await hashPassword(password),
+        status: 'pending_verification',
+        emailVerified: false,
+      });
+    } catch (err) {
+      // The availability check above is not atomic; the unique indexes are.
+      if (err.code === 11000) {
+        const field = Object.keys(err.keyPattern ?? {})[0];
+        if (field === 'usernameLower') throw new AppError('That username is taken', 409);
+        return res.status(202).json(accepted);
+      }
+      throw err;
+    }
+
+    const token = await issueEmailVerification(user._id);
+    await sendEmailVerification(email, `https://${portalHost}/verify-email?token=${token}`);
+
+    await auditLog({
+      actorId: user._id,
+      action: 'auth.register',
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.status(202).json(accepted);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post(
+  '/verify-email',
+  verificationLimiter,
+  validate(verifyEmailSchema),
+  async (req, res, next) => {
+    try {
+      const user = await User.findOne({
+        emailVerificationToken: hashToken(req.body.token),
+        emailVerificationExpires: { $gt: new Date() },
+      }).select('+emailVerificationToken +emailVerificationExpires');
+
+      if (!user) throw new AppError('Invalid or expired verification link', 400);
+
+      user.emailVerified = true;
+      if (user.status === 'pending_verification') user.status = 'active';
+      user.emailVerificationToken = undefined;
+      user.emailVerificationExpires = undefined;
+      await user.save({ _bypassTenantScope: true });
+
+      res.json({ message: 'Email verified' });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/resend-verification',
+  verificationLimiter,
+  validate(resendVerificationSchema),
+  async (req, res, next) => {
+    try {
+      const { email } = req.body;
+      const user = await User.findOne({ email }, '_id emailVerified').lean();
+
+      if (user && !user.emailVerified) {
+        const token = await issueEmailVerification(user._id);
+        await sendEmailVerification(
+          email,
+          `https://${getPortalHost()}/verify-email?token=${token}`
+        );
+      }
+
+      // Same answer regardless, for the same reason as /auth/forgot-password.
+      res.json({ message: 'If that address needs verifying, a new link has been sent.' });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get('/username-available', usernameLookupLimiter, async (req, res, next) => {
+  try {
+    const parsed = usernameSchema.safeParse(req.query.username ?? '');
+    if (!parsed.success) {
+      return res.json({ available: false, reason: parsed.error.issues[0]?.message ?? 'invalid' });
+    }
+    res.json({ available: await isUsernameAvailable(parsed.data), username: parsed.data });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Account settings ─────────────────────────────────────────────────────────
+
+router.patch('/me', authenticate, validate(updateProfileSchema), async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.sub);
+    if (!user) throw new AppError('User not found', 404);
+
+    const { firstName, lastName, phone, username } = req.body;
+    if (firstName !== undefined) user.firstName = firstName;
+    if (lastName !== undefined) user.lastName = lastName;
+    if (phone !== undefined) user.phone = phone;
+    // Enforces the change cooldown and parks the old handle.
+    if (username !== undefined) await applyUsernameChange(user, username);
+
+    await user.save({ _bypassTenantScope: true });
+
+    res.json({
+      email: user.email,
+      username: user.username,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/change-email', authenticate, validate(changeEmailSchema), async (req, res, next) => {
+  try {
+    const { newEmail, currentPassword } = req.body;
+
+    const user = await User.findById(req.user.sub).select('+passwordHash');
+    if (!user) throw new AppError('User not found', 404);
+    if (!(await verifyPassword(user.passwordHash, currentPassword))) {
+      throw new AppError('Incorrect password', 401);
+    }
+    if (newEmail === user.email) throw new AppError('That is already your email address', 400);
+
+    // Unlike /register, this reports the conflict outright: the caller is
+    // already authenticated and has just re-entered their password, so it is a
+    // poor enumeration oracle and silence here would only confuse them.
+    const taken = await User.findOne({ email: newEmail }, '_id').lean();
+    if (taken) throw new AppError('That email address is not available', 409);
+
+    const token = await issueEmailChange(user._id, newEmail);
+    const confirmUrl = `https://${getPortalHost()}/confirm-email?token=${token}`;
+    await Promise.all([
+      sendEmailChangeConfirmation(newEmail, confirmUrl),
+      // The old address is told too, so a stolen session cannot move the
+      // account somewhere the real owner never sees.
+      sendEmailChangeNotice(user.email, newEmail),
+    ]);
+
+    await auditLog({
+      actorId: user._id,
+      action: 'auth.email_change_requested',
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.json({ message: 'Confirm the change from your new email address.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/confirm-email', validate(confirmEmailChangeSchema), async (req, res, next) => {
+  try {
+    const user = await User.findOne({
+      pendingEmailToken: hashToken(req.body.token),
+      pendingEmailExpires: { $gt: new Date() },
+    }).select('+pendingEmailToken +pendingEmailExpires');
+
+    if (!user?.pendingEmail) throw new AppError('Invalid or expired link', 400);
+
+    const taken = await User.findOne(
+      { email: user.pendingEmail, _id: { $ne: user._id } },
+      '_id'
+    ).lean();
+    if (taken) throw new AppError('That email address is no longer available', 409);
+
+    user.email = user.pendingEmail;
+    user.emailVerified = true;
+    user.pendingEmail = undefined;
+    user.pendingEmailToken = undefined;
+    user.pendingEmailExpires = undefined;
+    await user.save({ _bypassTenantScope: true });
+
+    // The address a session authenticates as has changed — drop every session.
+    await revokeUserSessions(user._id);
+
+    await auditLog({
+      actorId: user._id,
+      action: 'auth.email_changed',
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+
+    res.json({ message: 'Email updated. Sign in again.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post(
+  '/change-password',
+  authenticate,
+  validate(changePasswordSchema),
+  async (req, res, next) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+
+      const user = await User.findById(req.user.sub).select('+passwordHash');
+      if (!user) throw new AppError('User not found', 404);
+      if (!(await verifyPassword(user.passwordHash, currentPassword))) {
+        throw new AppError('Incorrect password', 401);
+      }
+      if (currentPassword === newPassword) {
+        throw new AppError('Choose a password you have not used here before', 400);
+      }
+
+      user.passwordHash = await hashPassword(newPassword);
+      await user.save({ _bypassTenantScope: true });
+
+      // Includes the caller's own session: a password change is how someone
+      // evicts an intruder, so it has to invalidate every token, not all but one.
+      await revokeUserSessions(user._id);
+      res.clearCookie('refreshToken', { path: '/' });
+
+      await auditLog({
+        actorId: user._id,
+        action: 'auth.password_changed',
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+      });
+
+      res.json({ message: 'Password updated. Sign in again.' });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.post('/mfa/setup', mfaLimiter, authenticate, async (req, res, next) => {
   try {
