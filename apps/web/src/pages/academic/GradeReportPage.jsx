@@ -6,6 +6,7 @@ import { ChevronDown } from 'lucide-react';
 import { ASSESSMENT_TYPES } from '@rooted/shared/constants';
 import api from '../../lib/api.js';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
+import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -138,7 +139,7 @@ export default function GradeReportPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">{t('academic.gradeReport.title')}</h1>
+      <PageHeader title={t('academic.gradeReport.title')} />
 
       <div className="flex flex-wrap items-center gap-2">
         <DropdownMenu>

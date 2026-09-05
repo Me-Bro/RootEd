@@ -5,6 +5,7 @@ import api from '../../lib/api.js';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
+import { PageHeader } from '../../components/ui/PageHeader.jsx';
 
 const EMPTY_FILTERS = { tenantId: '', module: '', ip: '', userEmail: '', statusCode: '' };
 
@@ -46,7 +47,7 @@ export default function RequestLogsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">{t('nav.requestLogs')}</h1>
+      <PageHeader title={t('nav.requestLogs')} />
 
       <form onSubmit={applyFilters} className="flex flex-wrap items-end gap-3">
         <Input

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, Zap } from 'lucide-react';
 import { Button } from '../../components/ui/Button.jsx';
+import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
 import {
@@ -89,24 +90,22 @@ export default function AttendancePage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">{t('academic.attendance.title')}</h1>
-          {currentSection && (
-            <p className="text-sm text-muted-foreground">
-              {currentSection.className} - {currentSection.name}
-            </p>
-          )}
-        </div>
-        {sectionId && (
-          <Link
-            to={`/academic/attendance/report?sectionId=${sectionId}`}
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            {t('academic.attendance.viewReport')}
-          </Link>
-        )}
-      </div>
+      <PageHeader
+        title={t('academic.attendance.title')}
+        description={
+          currentSection ? `${currentSection.className} - ${currentSection.name}` : undefined
+        }
+        action={
+          sectionId && (
+            <Link
+              to={`/academic/attendance/report?sectionId=${sectionId}`}
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              {t('academic.attendance.viewReport')}
+            </Link>
+          )
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <DropdownMenu>
