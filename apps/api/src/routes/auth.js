@@ -14,6 +14,7 @@ import {
   changePasswordSchema,
   usernameSchema,
   acceptInviteSchema,
+  submitJoinRequestSchema,
 } from '@rooted/shared/schemas';
 import { User } from '../models/User.js';
 import {
@@ -62,6 +63,8 @@ import {
   sendAccountExistsNotice,
 } from '../services/email.service.js';
 import { acceptInvite } from '../services/invite.service.js';
+import { tenantForJoinCode, submitJoinRequest } from '../services/joinRequest.service.js';
+import { broadcastToRole } from '../services/notification.service.js';
 
 const router = Router();
 
@@ -517,6 +520,94 @@ router.post(
         tenantId: tenantId.toString(),
         alreadyAccepted,
         accessToken: signAccessToken(tokenPayload),
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// Join codes are the cheapest thing on the service to guess at, so they are
+// limited twice: per IP, to slow a scanner, and per account, so a scanner
+// cannot simply rotate through addresses from one machine.
+const joinRequestIpLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: env.NODE_ENV === 'production' ? 20 : 1000,
+  message: { error: 'Too many attempts, try again later' },
+});
+
+const joinRequestUserLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: env.NODE_ENV === 'production' ? 10 : 1000,
+  keyGenerator: (req) => `join:${req.user.sub}`,
+  message: { error: 'Too many attempts, try again later' },
+});
+
+// Portal-mounted, like invite acceptance: the code identifies the tenant, so
+// the applicant never needs to know the subdomain.
+router.post(
+  '/join-requests',
+  joinRequestIpLimiter,
+  authenticate,
+  joinRequestUserLimiter,
+  validate(submitJoinRequestSchema),
+  async (req, res, next) => {
+    try {
+      const user = await User.findById(
+        req.user.sub,
+        'email emailVerified firstName lastName'
+      ).lean();
+      if (!user) throw new AppError('User not found', 404);
+      // Otherwise an unverified address is enough to put a stranger's name in
+      // front of an administrator, and to occupy a membership row.
+      if (!user.emailVerified) {
+        throw new AppError('Verify your email address before joining an organization', 403);
+      }
+
+      const tenant = await tenantForJoinCode(req.body.joinCode);
+      const { membership, autoApproved } = await submitJoinRequest({
+        tenant,
+        user,
+        note: req.body.note,
+      });
+
+      if (!autoApproved) {
+        const who = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
+        await broadcastToRole(
+          tenant._id,
+          'tenant_admin',
+          'New request to join',
+          `${who} has asked to join ${tenant.name}.`,
+          '/tenant/members'
+        );
+      }
+
+      await auditLog({
+        actorId: user._id,
+        tenantId: tenant._id.toString(),
+        action: autoApproved ? 'join_request.auto_approved' : 'join_request.submitted',
+        target: { model: 'TenantMembership', id: membership._id },
+        ip: req.ip,
+      });
+
+      // Auto-approved applicants are members already, so hand them a session
+      // scoped to the organization rather than making them pick it again.
+      let accessToken;
+      if (autoApproved) {
+        const tokenPayload = {
+          sub: req.user.sub,
+          systemRole: req.user.systemRole,
+          tenantId: tenant._id.toString(),
+        };
+        res.cookie('refreshToken', signRefreshToken(tokenPayload), REFRESH_COOKIE_OPTIONS);
+        accessToken = signAccessToken(tokenPayload);
+      }
+
+      res.status(autoApproved ? 200 : 202).json({
+        status: membership.status,
+        tenantId: tenant._id.toString(),
+        tenantName: tenant.name,
+        ...(accessToken ? { accessToken } : {}),
       });
     } catch (err) {
       next(err);

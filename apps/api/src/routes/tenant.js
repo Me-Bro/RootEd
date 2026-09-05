@@ -4,13 +4,24 @@ import { AuditLog } from '../models/AuditLog.js';
 import { User } from '../models/User.js';
 import { StaffMember } from '../models/StaffMember.js';
 import { TenantMembership } from '../models/TenantMembership.js';
-import { createInviteSchema, updateMemberRolesSchema } from '@rooted/shared/schemas';
+import {
+  createInviteSchema,
+  updateMemberRolesSchema,
+  approveJoinRequestSchema,
+  updateJoinPolicySchema,
+} from '@rooted/shared/schemas';
 import { authenticate } from '../middleware/authenticate.js';
 import { validate } from '../middleware/validate.js';
 import { requirePermission, invalidatePermissions } from '../middleware/requirePermission.js';
 import { Role } from '../models/Role.js';
 import { Invite } from '../models/Invite.js';
 import { createInvite, revokeInvite, inviteUrlFor } from '../services/invite.service.js';
+import {
+  approveJoinRequest,
+  rejectJoinRequest,
+  rotateJoinCode,
+  formatJoinCode,
+} from '../services/joinRequest.service.js';
 import { sendTenantInvite } from '../services/email.service.js';
 import { markRead, getUnread, broadcastToRole } from '../services/notification.service.js';
 import { auditLog } from '../services/audit.service.js';
@@ -93,7 +104,12 @@ router.get('/audit', requirePermission('audit:read'), async (req, res, next) => 
 
 router.get('/settings', async (req, res, next) => {
   try {
-    res.json(req.tenant);
+    // joinPolicy is withheld: this route has no permission check, so returning
+    // req.tenant wholesale would hand the join code to every member. It is
+    // exposed only through GET /tenant/join-policy, behind tenant:admin.
+    const tenant = { ...req.tenant };
+    delete tenant.joinPolicy;
+    res.json(tenant);
   } catch (err) {
     next(err);
   }
@@ -403,5 +419,170 @@ router.delete('/invites/:id', requirePermission('roles:write'), async (req, res,
     next(err);
   }
 });
+
+// ── Join policy & requests ───────────────────────────────────────────────────
+
+router.get('/join-policy', requirePermission('tenant:admin'), async (req, res, next) => {
+  try {
+    const policy = req.tenant.joinPolicy ?? {};
+    res.json({
+      mode: policy.mode ?? 'closed',
+      requireApproval: policy.requireApproval ?? true,
+      defaultRoleIds: policy.defaultRoleIds ?? [],
+      codeExpiresAt: policy.codeExpiresAt ?? null,
+      code: formatJoinCode(policy.code),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put(
+  '/join-policy',
+  requirePermission('tenant:admin'),
+  validate(updateJoinPolicySchema),
+  async (req, res, next) => {
+    try {
+      const { mode, requireApproval, defaultRoleIds, codeExpiresAt } = req.body;
+      const tenantId = req.tenant._id;
+
+      if (defaultRoleIds?.length) {
+        const roles = await Role.find({ _id: { $in: defaultRoleIds }, tenantId }, '_id').lean();
+        if (roles.length !== defaultRoleIds.length) {
+          throw new AppError('One or more roles do not belong to this organization', 400);
+        }
+      }
+      // Auto-approval hands out roles with nobody in the loop, so it cannot be
+      // switched on without saying which roles.
+      if (requireApproval === false && !defaultRoleIds?.length) {
+        throw new AppError('Choose the roles auto-approved members receive', 400);
+      }
+
+      // Opening the door needs a code to open it with. Allocate it *before*
+      // the update below, because rotation clears codeExpiresAt and would
+      // otherwise wipe an expiry set in this same request.
+      if (mode === 'code' && !req.tenant.joinPolicy?.code) {
+        await rotateJoinCode(tenantId);
+      }
+
+      const set = { 'joinPolicy.mode': mode };
+      if (requireApproval !== undefined) set['joinPolicy.requireApproval'] = requireApproval;
+      if (defaultRoleIds !== undefined) set['joinPolicy.defaultRoleIds'] = defaultRoleIds;
+      if (codeExpiresAt !== undefined) set['joinPolicy.codeExpiresAt'] = codeExpiresAt;
+
+      const tenant = await Tenant.findByIdAndUpdate(tenantId, { $set: set }, { new: true });
+      const code = tenant.joinPolicy?.code;
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'tenant.join_policy_changed',
+        after: { mode, requireApproval, defaultRoleIds },
+        ip: req.ip,
+      });
+
+      res.json({
+        mode: tenant.joinPolicy.mode,
+        requireApproval: tenant.joinPolicy.requireApproval,
+        defaultRoleIds: tenant.joinPolicy.defaultRoleIds,
+        codeExpiresAt: tenant.joinPolicy.codeExpiresAt ?? null,
+        code: formatJoinCode(code),
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/join-policy/rotate-code',
+  requirePermission('tenant:admin'),
+  async (req, res, next) => {
+    try {
+      const { code } = await rotateJoinCode(req.tenant._id);
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: req.tenant._id.toString(),
+        action: 'tenant.join_code_rotated',
+        ip: req.ip,
+      });
+
+      res.json({ code });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get('/join-requests', requirePermission('roles:write'), async (req, res, next) => {
+  try {
+    const requests = await TenantMembership.find({ tenantId: req.tenant._id, status: 'pending' })
+      .populate('userId', 'email username firstName lastName')
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .lean();
+
+    res.json(requests);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post(
+  '/join-requests/:id/approve',
+  requirePermission('roles:write'),
+  validate(approveJoinRequestSchema),
+  async (req, res, next) => {
+    try {
+      const membership = await approveJoinRequest({
+        tenantId: req.tenant._id,
+        membershipId: req.params.id,
+        roleIds: req.body.roleIds,
+        approvedBy: req.user.sub,
+      });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: req.tenant._id.toString(),
+        action: 'join_request.approved',
+        target: { model: 'TenantMembership', id: membership._id },
+        after: { userId: membership.userId, roleIds: membership.roleIds },
+        ip: req.ip,
+      });
+
+      res.json(membership);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/join-requests/:id/reject',
+  requirePermission('roles:write'),
+  async (req, res, next) => {
+    try {
+      const membership = await rejectJoinRequest({
+        tenantId: req.tenant._id,
+        membershipId: req.params.id,
+        rejectedBy: req.user.sub,
+      });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: req.tenant._id.toString(),
+        action: 'join_request.rejected',
+        target: { model: 'TenantMembership', id: membership._id },
+        after: { userId: membership.userId },
+        ip: req.ip,
+      });
+
+      res.json({ message: 'Request rejected' });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 export default router;
