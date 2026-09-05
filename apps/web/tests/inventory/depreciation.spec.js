@@ -57,8 +57,12 @@ test.describe('Depreciation page', () => {
     await page.waitForLoadState('networkidle');
 
     const yearSelect = page.locator('select').first();
-    const options = await yearSelect.locator('option').allTextContents();
-    expect(options.length).toBeGreaterThan(1);
+    // allTextContents() does not auto-wait, so reading straight after
+    // networkidle can catch the select before its options render and come back
+    // empty — a flake that only showed up under parallel load. Poll instead.
+    const optionLocator = yearSelect.locator('option');
+    await expect.poll(() => optionLocator.count(), { timeout: 10_000 }).toBeGreaterThan(1);
+    const options = await optionLocator.allTextContents();
 
     await yearSelect.selectOption(options[options.length - 1]);
     await page.waitForLoadState('networkidle');
