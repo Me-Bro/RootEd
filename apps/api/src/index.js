@@ -29,7 +29,9 @@ async function main() {
   startReportCardWorker();
   startExpenseEscalationWorker();
   startInventoryOverdueWorker();
-  startTrialExpiryWorker();
+  // Nothing to expire while the product is free; starting it would mail every
+  // existing tenant about a trial that no longer means anything.
+  if (env.BILLING_ENABLED) startTrialExpiryWorker();
   startStockValuationWorker();
   startFeeLateChargeWorker();
   startSalarySlipWorker();

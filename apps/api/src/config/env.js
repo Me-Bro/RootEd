@@ -39,6 +39,14 @@ const schema = z.object({
     .or(z.literal(''))
     .optional()
     .transform((v) => v || undefined),
+  // Registration and organization creation are free and unlimited while this is
+  // false: no trial is started, the trial-expiry worker stands down, /billing
+  // is unmounted, and capability checks pass. Turning it on is what makes the
+  // product paid — see docs/adr/006-free-tier-and-deferred-billing.txt.
+  BILLING_ENABLED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
   EMAIL_PROVIDER: z.enum(['smtp', 'postmark']).default('smtp'),
   POSTMARK_API_TOKEN: z.string().optional(),
 });

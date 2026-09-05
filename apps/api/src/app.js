@@ -27,6 +27,7 @@ import expenseRouter from './routes/expense.js';
 import feeRouter from './routes/fee.js';
 import inventoryRouter from './routes/inventory.js';
 import billingRouter from './routes/billing.js';
+import orgsRouter from './routes/orgs.js';
 
 const app = express();
 
@@ -164,6 +165,9 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/auth', authRouter);
 app.use('/admin', adminRouter);
+// Portal-mounted, before resolveTenant(): creating an organization happens on
+// the bare domain, where there is no tenant to resolve yet.
+app.use('/orgs', orgsRouter);
 
 app.use(resolveTenant);
 
@@ -173,7 +177,11 @@ app.use('/staff', requireModuleEnabled('staff'), staffRouter);
 app.use('/expense', requireModuleEnabled('expense'), expenseRouter);
 app.use('/fee', requireModuleEnabled('fee'), feeRouter);
 app.use('/inventory', requireModuleEnabled('inventory'), inventoryRouter);
-app.use('/billing', requireModuleEnabled('billing'), billingRouter);
+// Unmounted entirely while the product is free, so the subscribe and webhook
+// endpoints are not merely inert but absent.
+if (env.BILLING_ENABLED) {
+  app.use('/billing', requireModuleEnabled('billing'), billingRouter);
+}
 
 app.use(errorHandler);
 
