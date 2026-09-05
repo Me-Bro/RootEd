@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '../ui/Badge.jsx';
 import { cn } from '../../lib/utils.js';
@@ -30,14 +31,24 @@ const GRADE_VARIANT = {
 export default function MarkRow({ student, score, letterGrade, focused, onSelect }) {
   const { t } = useTranslation();
   const isAbsent = score === null;
+  const ref = useRef(null);
+
+  // Keyboard/keypad entry advances focus on its own, so on a long roster the
+  // focused row walks off-screen while the sticky footer stays put. `nearest`
+  // keeps the scroll minimal; the scroll-margin below reserves the footer's
+  // height so the row never lands underneath it.
+  useEffect(() => {
+    if (focused) ref.current?.scrollIntoView({ block: 'nearest' });
+  }, [focused]);
 
   return (
     <button
+      ref={ref}
       type="button"
       onClick={onSelect}
       disabled={!onSelect}
       className={cn(
-        'flex w-full items-center gap-3 border-l-2 p-3 text-left transition-colors disabled:cursor-default',
+        'flex w-full scroll-mb-72 scroll-mt-4 items-center gap-3 border-l-2 p-3 text-left transition-colors disabled:cursor-default md:scroll-mb-28',
         focused ? 'border-primary bg-primary/5' : 'border-transparent',
         onSelect && !focused && 'hover:bg-muted'
       )}

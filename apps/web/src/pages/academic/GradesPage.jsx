@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
 } from '../../components/ui/dropdown-menu.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
+import { useMarkEntryKeys } from '../../hooks/useMarkEntryKeys.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import DockedKeypad from '../../components/grades/DockedKeypad.jsx';
 import MarkRow from '../../components/grades/MarkRow.jsx';
@@ -250,6 +251,33 @@ export default function GradesPage() {
     setDraft('');
   }
 
+  // Arrow-key navigation. Wraps like nextUnmarkedId does, but walks *every*
+  // row rather than only unmarked ones — the point is correcting an entry you
+  // already committed, which is also why it re-enters the roster at the top
+  // (or bottom) once everything is marked and there's no focused row left.
+  function moveFocus(delta) {
+    if (locked || students.length === 0) return;
+    const idx = students.findIndex((s) => s._id === focusedId);
+    const nextIdx =
+      idx === -1
+        ? delta > 0
+          ? 0
+          : students.length - 1
+        : (idx + delta + students.length) % students.length;
+    setFocusedId(students[nextIdx]._id);
+    setDraft('');
+  }
+
+  const ready = gradesReady && students.length > 0;
+
+  useMarkEntryKeys({
+    enabled: ready && !locked,
+    onKey: keypadPress,
+    onNext: commitDraftAndAdvance,
+    onMove: moveFocus,
+    onClear: () => setDraft(''),
+  });
+
   function handleSave() {
     const grades = students
       .map((s) => ({
@@ -270,7 +298,6 @@ export default function GradesPage() {
     saveMutation.mutate(grades);
   }
 
-  const ready = gradesReady && students.length > 0;
   const enteredCount = Object.keys(scoreMap).length;
   const numericScores = Object.values(scoreMap).filter((v) => typeof v === 'number');
   const liveAverage = numericScores.length
@@ -472,13 +499,23 @@ export default function GradesPage() {
             </p>
           )}
 
-          {locked && <DockedKeypad value="" onKey={() => {}} onNext={() => {}} disabled />}
-          {!locked && focusedId && (
-            <DockedKeypad value={draft} onKey={keypadPress} onNext={commitDraftAndAdvance} />
-          )}
+          {/* The keypad is a small-viewport affordance only — above `md` a real
+              keyboard is assumed present and useMarkEntryKeys drives entry, so
+              the grid would just be a slower way to click twelve buttons. */}
+          <div className="md:hidden">
+            {locked && <DockedKeypad value="" onKey={() => {}} onNext={() => {}} disabled />}
+            {!locked && focusedId && (
+              <DockedKeypad value={draft} onKey={keypadPress} onNext={commitDraftAndAdvance} />
+            )}
+          </div>
           {!locked && !focusedId && (
             <p className="text-center text-sm text-muted-foreground">
               {t('academic.grades.allStudentsMarked')}
+            </p>
+          )}
+          {!locked && (
+            <p className="hidden text-center text-xs text-muted-foreground md:block">
+              {t('academic.grades.keyboardHint')}
             </p>
           )}
 

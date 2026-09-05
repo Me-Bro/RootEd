@@ -391,7 +391,8 @@
       "markAbsentAria": "अनुपस्थित चिह्नित करें",
       "backspaceAria": "बैकस्पेस",
       "digitAria": "अंक {{digit}}",
-      "nextStudent": "अगला छात्र ›"
+      "nextStudent": "अगला छात्र ›",
+      "keyboardHint": "अंक टाइप करें · Enter से अगला · A से अनुपस्थित · Backspace से मिटाएँ · ↑↓ से चलें"
     },
     "gradeReport": {
       "title": "ग्रेड रिपोर्ट",
