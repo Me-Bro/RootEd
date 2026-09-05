@@ -409,6 +409,10 @@ router.post('/reset-password', async (req, res, next) => {
     user.passwordResetExpires = undefined;
     user.failedLoginAttempts = 0;
     user.lockedUntil = undefined;
+    // Same endpoint backs the invite-acceptance page: an admin-provisioned user
+    // starts as 'invited' with a random password they were never told, and
+    // setting their own password is what activates the account.
+    if (user.status === 'invited') user.status = 'active';
     await user.save({ _bypassTenantScope: true });
 
     res.json({ message: 'Password reset successful' });
