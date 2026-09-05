@@ -1,4 +1,8 @@
-export const PLANS = ['starter', 'growth', 'pro', 'enterprise'];
+// 'free' is the default and, while BILLING_ENABLED is false, the only tier
+// anything is ever created on. The paid tiers are kept so existing tenants keep
+// validating and so pricing does not have to be reinvented later.
+export const PLANS = ['free', 'starter', 'growth', 'pro', 'enterprise'];
+export const DEFAULT_PLAN = 'free';
 
 export const ORG_TYPE_CONFIG = {
   school: {

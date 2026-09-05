@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { ORG_TYPES } from '@rooted/shared/constants';
 import { AuditLog } from '../models/AuditLog.js';
 import { User } from '../models/User.js';
 import { StaffMember } from '../models/StaffMember.js';
@@ -14,6 +15,7 @@ import { authenticate } from '../middleware/authenticate.js';
 import { validate } from '../middleware/validate.js';
 import { requirePermission, invalidatePermissions } from '../middleware/requirePermission.js';
 import { Role } from '../models/Role.js';
+import { Student } from '../models/Student.js';
 import { Invite } from '../models/Invite.js';
 import { createInvite, revokeInvite, inviteUrlFor } from '../services/invite.service.js';
 import {
@@ -120,11 +122,27 @@ const settingsUpdateSchema = z.object({
   timezone: z.string().optional(),
   locale: z.string().optional(),
   currency: z.string().optional(),
+  orgType: z.enum(ORG_TYPES).optional(),
 });
 
 router.patch('/settings', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
     const updates = settingsUpdateSchema.parse(req.body);
+
+    // orgType decides which modules exist and what a student is even called.
+    // Changing it once there are students strands their records in modules that
+    // disappear, so it is editable only while the organization is still empty —
+    // which, with self-serve signup, is when a wrong choice gets noticed.
+    if (updates.orgType && updates.orgType !== req.tenant.orgType) {
+      const students = await Student.countDocuments({ tenantId: req.tenant._id });
+      if (students > 0) {
+        throw new AppError(
+          'Organization type cannot be changed once students have been added',
+          409
+        );
+      }
+    }
+
     const tenant = await Tenant.findByIdAndUpdate(req.tenant._id, { $set: updates }, { new: true });
     if (!tenant) throw new AppError('Tenant not found', 404);
     res.json(tenant);

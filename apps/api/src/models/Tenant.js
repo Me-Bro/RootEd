@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { ORG_TYPES, JOIN_POLICY_MODES } from '@rooted/shared/constants';
+import { ORG_TYPES, JOIN_POLICY_MODES, PLANS, DEFAULT_PLAN } from '@rooted/shared/constants';
 
 const tenantSchema = new mongoose.Schema(
   {
@@ -7,8 +7,8 @@ const tenantSchema = new mongoose.Schema(
     subdomain: { type: String, lowercase: true, trim: true },
     plan: {
       type: String,
-      enum: ['starter', 'growth', 'pro', 'enterprise'],
-      default: 'starter',
+      enum: PLANS,
+      default: DEFAULT_PLAN,
     },
     orgType: {
       type: String,
