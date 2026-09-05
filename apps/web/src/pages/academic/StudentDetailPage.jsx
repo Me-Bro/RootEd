@@ -358,6 +358,11 @@ function PhotoPanel({ student, canWrite }) {
 
   const { data: photo } = useQuery({
     queryKey: ['student-photo', student._id],
+    // Most students have no photo, and the endpoint 404s when photoKey is
+    // unset — so asking unconditionally meant a pointless request and a
+    // console 404 on nearly every student view. The document already says
+    // whether there is one.
+    enabled: Boolean(student.photoKey),
     queryFn: () =>
       api
         .get(`/academic/students/${student._id}/photo`)
@@ -379,6 +384,9 @@ function PhotoPanel({ student, canWrite }) {
         .then((r) => r.data);
     },
     onSuccess: () => {
+      // The student document carries photoKey, which now gates the photo
+      // query — refetch it too, or the freshly uploaded photo never loads.
+      queryClient.invalidateQueries({ queryKey: ['student', student._id] });
       queryClient.invalidateQueries({ queryKey: ['student-photo', student._id] });
       setError('');
     },
