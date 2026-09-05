@@ -8,6 +8,7 @@ import { buildImpersonateUrl } from '../../lib/impersonation.js';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
+import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card.jsx';
 
 const planOptions = ['starter', 'growth', 'pro', 'enterprise'];
@@ -159,10 +160,14 @@ export default function TenantsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">{t('nav.tenants')}</h1>
-        <Button onClick={() => setShowCreate(true)}>{t('admin.tenants.newTenant')}</Button>
-      </div>
+      <PageHeader
+        title={t('nav.tenants')}
+        action={
+          <Button className="w-full sm:w-auto" onClick={() => setShowCreate(true)}>
+            {t('admin.tenants.newTenant')}
+          </Button>
+        }
+      />
 
       {isLoading && <p className="text-gray-500">{t('common.loading')}</p>}
       {error && <p className="text-red-500">{t('admin.tenants.loadFailed')}</p>}

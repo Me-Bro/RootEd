@@ -81,13 +81,22 @@ export default function MySchedulePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-4 print:hidden">
-        <PageHeader title={t('academic.mySchedule.title')} />
-        {effectiveYearId && (
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
-            {t('academic.mySchedule.print')}
-          </Button>
-        )}
+      <div className="print:hidden">
+        <PageHeader
+          title={t('academic.mySchedule.title')}
+          action={
+            effectiveYearId && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full sm:w-auto"
+                onClick={() => window.print()}
+              >
+                {t('academic.mySchedule.print')}
+              </Button>
+            )
+          }
+        />
       </div>
 
       <select

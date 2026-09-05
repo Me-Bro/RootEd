@@ -1058,6 +1058,7 @@
       "pageOf": "पृष्ठ {{page}} / {{pages}}"
     },
     "tenantDetail": {
+      "backToList": "सूची पर वापस जाएं",
       "localeLabel": "लोकेल",
       "timezoneLabel": "समय क्षेत्र",
       "currencyLabel": "मुद्रा",

@@ -7,6 +7,7 @@ import { scoreToLetter } from '@rooted/shared/utils';
 import { ASSESSMENT_TYPES } from '@rooted/shared/constants';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
+import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
 import {
   DropdownMenu,
@@ -315,41 +316,41 @@ export default function GradesPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">{t('academic.grades.title')}</h1>
-          {scopeLabel && <p className="text-sm text-muted-foreground">{scopeLabel}</p>}
-        </div>
-        <div className="flex items-center gap-4">
-          {sectionId && (
-            <Link
-              to={`/academic/grades/report?sectionId=${sectionId}`}
-              className="text-sm font-medium text-primary hover:underline"
+      <PageHeader
+        title={t('academic.grades.title')}
+        description={scopeLabel || undefined}
+        action={
+          <div className="flex flex-wrap items-center gap-4">
+            {sectionId && (
+              <Link
+                to={`/academic/grades/report?sectionId=${sectionId}`}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                {t('academic.grades.viewReport')}
+              </Link>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => fileRef.current?.click()}
+              disabled={!gradesReady || locked || importMutation.isPending}
             >
-              {t('academic.grades.viewReport')}
-            </Link>
-          )}
-          <Button
-            variant="outline"
-            onClick={() => fileRef.current?.click()}
-            disabled={!gradesReady || locked || importMutation.isPending}
-          >
-            {importMutation.isPending
-              ? t('academic.students.importing')
-              : t('academic.students.importCsv')}
-          </Button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".csv"
-            className="hidden"
-            onChange={(e) => {
-              if (e.target.files?.[0]) importMutation.mutate(e.target.files[0]);
-              e.target.value = '';
-            }}
-          />
-        </div>
-      </div>
+              {importMutation.isPending
+                ? t('academic.students.importing')
+                : t('academic.students.importCsv')}
+            </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files?.[0]) importMutation.mutate(e.target.files[0]);
+                e.target.value = '';
+              }}
+            />
+          </div>
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <DropdownMenu>

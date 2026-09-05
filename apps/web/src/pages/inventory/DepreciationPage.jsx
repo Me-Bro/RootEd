@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
+import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import FleetTotalCard from '../../components/depreciation/FleetTotalCard.jsx';
 import { formatCurrency } from '../../utils/intl.js';
 
@@ -54,25 +55,27 @@ export default function DepreciationPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-semibold">{t('inventory.depreciation.title')}</h1>
-        <div className="flex gap-3 items-center">
-          <select
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
-          >
-            {yearOptions.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
-          <Button variant="outline" onClick={exportCsv} disabled={records.length === 0}>
-            {t('inventory.depreciation.exportCsv')}
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title={t('inventory.depreciation.title')}
+        action={
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            >
+              {yearOptions.map((y) => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+            <Button variant="outline" onClick={exportCsv} disabled={records.length === 0}>
+              {t('inventory.depreciation.exportCsv')}
+            </Button>
+          </div>
+        }
+      />
 
       {isLoading && <p className="text-gray-500">{t('common.loading')}</p>}
 

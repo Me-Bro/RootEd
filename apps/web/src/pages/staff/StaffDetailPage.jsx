@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
@@ -300,13 +300,14 @@ export default function StaffDetailPage() {
       <PageHeader
         title={`${staff.firstName} ${staff.lastName}`}
         description={staff.employeeId}
+        backTo="/staff"
+        backLabel={t('staff.detail.backToList')}
         action={
-          <div className="flex gap-2">
-            <Link to="/staff">
-              <Button variant="outline">{t('staff.detail.backToList')}</Button>
-            </Link>
-            {canWrite && <Button onClick={() => setShowEdit(true)}>{t('common.edit')}</Button>}
-          </div>
+          canWrite && (
+            <Button className="w-full sm:w-auto" onClick={() => setShowEdit(true)}>
+              {t('common.edit')}
+            </Button>
+          )
         }
       />
 

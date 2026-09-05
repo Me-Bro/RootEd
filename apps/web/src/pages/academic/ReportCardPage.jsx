@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronDown, Bell, CheckCircle2 } from 'lucide-react';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
+import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Card } from '../../components/ui/Card.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
@@ -263,14 +264,14 @@ export default function ReportCardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold">{t('academic.reportCards.title')}</h1>
-        {currentSection && currentTerm && (
-          <p className="text-sm text-muted-foreground">
-            {currentSection.className} - {currentSection.name} · {currentTerm.name}
-          </p>
-        )}
-      </div>
+      <PageHeader
+        title={t('academic.reportCards.title')}
+        description={
+          currentSection && currentTerm
+            ? `${currentSection.className} - ${currentSection.name} · ${currentTerm.name}`
+            : undefined
+        }
+      />
 
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex flex-wrap items-center gap-2">

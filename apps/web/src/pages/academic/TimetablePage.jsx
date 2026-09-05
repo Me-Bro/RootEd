@@ -323,25 +323,34 @@ export default function TimetablePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <PageHeader title={t('academic.timetable.title')} />
-        {sectionId && yearId && isAdmin && (
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setCopyOpen(true)}>
-              {t('academic.timetable.copyFromAnotherYear')}
-            </Button>
-            <Button
-              variant={published ? 'outline' : 'default'}
-              onClick={() => publishMutation.mutate(published ? 'unpublish' : 'publish')}
-              disabled={publishMutation.isPending}
-            >
-              {published
-                ? t('academic.timetable.unpublishAction')
-                : t('academic.timetable.publishAction')}
-            </Button>
-          </div>
-        )}
-      </div>
+      <PageHeader
+        title={t('academic.timetable.title')}
+        action={
+          sectionId &&
+          yearId &&
+          isAdmin && (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={() => setCopyOpen(true)}
+              >
+                {t('academic.timetable.copyFromAnotherYear')}
+              </Button>
+              <Button
+                variant={published ? 'outline' : 'default'}
+                className="w-full sm:w-auto"
+                onClick={() => publishMutation.mutate(published ? 'unpublish' : 'publish')}
+                disabled={publishMutation.isPending}
+              >
+                {published
+                  ? t('academic.timetable.unpublishAction')
+                  : t('academic.timetable.publishAction')}
+              </Button>
+            </div>
+          )
+        }
+      />
 
       <div className="flex gap-3 flex-wrap items-center">
         <select

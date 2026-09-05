@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronDown } from 'lucide-react';
 import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
+import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
 import {
   DropdownMenu,
@@ -109,7 +110,7 @@ export default function AttendanceReportPage() {
 
   return (
     <div className="flex flex-col gap-4 pb-4">
-      <h1 className="text-2xl font-semibold">{t('academic.attendanceReport.title')}</h1>
+      <PageHeader title={t('academic.attendanceReport.title')} />
 
       <div className="flex flex-wrap items-center gap-2">
         <DropdownMenu>
