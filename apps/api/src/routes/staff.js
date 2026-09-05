@@ -18,7 +18,7 @@ import {
   payrollExportQuerySchema,
 } from '@rooted/shared/schemas';
 import { authenticate } from '../middleware/authenticate.js';
-import { requirePermission } from '../middleware/requirePermission.js';
+import { requirePermission, resolvePermissions } from '../middleware/requirePermission.js';
 import { validate } from '../middleware/validate.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { StaffMember } from '../models/StaffMember.js';
@@ -69,32 +69,17 @@ function hasPermission(req, perm) {
   return req._resolvedPermissions?.includes(perm) ?? false;
 }
 
+// Delegates to the shared resolver rather than repeating it. This used to be an
+// inline copy with its own `perms:` cache key, which meant
+// invalidatePermissions() cleared one cache and left this one holding a revoked
+// grant for up to 60s.
 async function resolveAndCachePermissions(req, _res, next) {
   try {
     if (req.user?.systemRole === 'super_admin') {
       req._resolvedPermissions = [];
       return next();
     }
-    const { TenantMembership: TM } = await import('../models/TenantMembership.js');
-    const { Role: R } = await import('../models/Role.js');
-    const { redis } = await import('../config/redis.js');
-    const tenantId = req.tenant._id.toString();
-    const userId = req.user.sub;
-    const cacheKey = `perms:${tenantId}:${userId}`;
-    const cached = await redis.get(cacheKey);
-    if (cached) {
-      req._resolvedPermissions = JSON.parse(cached);
-      return next();
-    }
-    const membership = await TM.findOne({ userId, tenantId, status: 'active' }).lean();
-    if (!membership) {
-      req._resolvedPermissions = [];
-      return next();
-    }
-    const roles = await R.find({ _id: { $in: membership.roleIds }, tenantId }).lean();
-    const permissions = [...new Set(roles.flatMap((r) => r.permissions))];
-    await redis.setex(cacheKey, 60, JSON.stringify(permissions));
-    req._resolvedPermissions = permissions;
+    req._resolvedPermissions = await resolvePermissions(req.user.sub, req.tenant._id.toString());
     next();
   } catch (err) {
     next(err);

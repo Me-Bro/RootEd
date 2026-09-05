@@ -1,26 +1,56 @@
 import { TenantMembership } from '../models/TenantMembership.js';
 import { Role, DEFAULT_ROLE_TEMPLATES } from '../models/Role.js';
+import { Student } from '../models/Student.js';
+import { StaffMember } from '../models/StaffMember.js';
 import { redis } from '../config/redis.js';
 import { AppError } from './errorHandler.js';
 
 const CACHE_TTL = 60;
 
-export async function resolvePermissions(userId, tenantId) {
-  const cacheKey = `perms:${tenantId}:${userId}`;
+const EMPTY_CONTEXT = { permissions: [], subjects: {} };
+
+/**
+ * What this member may do, and who they are, in one tenant.
+ *
+ * `subjects` is derived from the existing links (StaffMember.userId,
+ * Student.userId) rather than denormalised onto the membership: two writers
+ * for the same fact is how it drifts. It is cached alongside the permissions
+ * because every self-scoped request needs both, and they are invalidated by
+ * exactly the same events.
+ */
+export async function resolveContext(userId, tenantId) {
+  const cacheKey = `ctx:${tenantId}:${userId}`;
   const cached = await redis.get(cacheKey);
   if (cached) return JSON.parse(cached);
 
   const membership = await TenantMembership.findOne({ userId, tenantId, status: 'active' }).lean();
-  if (!membership) return [];
+  if (!membership) return EMPTY_CONTEXT;
 
-  const roles = await Role.find({
-    _id: { $in: membership.roleIds },
-    tenantId,
-  }).lean();
+  const [roles, staff, student] = await Promise.all([
+    Role.find({ _id: { $in: membership.roleIds }, tenantId }).lean(),
+    StaffMember.findOne({ tenantId, userId }, '_id').lean(),
+    Student.findOne({ tenantId, userId }, '_id sectionId').lean(),
+  ]);
 
-  const permissions = [...new Set(roles.flatMap((r) => r.permissions))];
-  await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(permissions));
-  return permissions;
+  const context = {
+    permissions: [...new Set(roles.flatMap((r) => r.permissions))],
+    subjects: {
+      ...(staff ? { staffId: staff._id.toString() } : {}),
+      ...(student
+        ? {
+            studentId: student._id.toString(),
+            sectionId: student.sectionId ? student.sectionId.toString() : null,
+          }
+        : {}),
+    },
+  };
+
+  await redis.setex(cacheKey, CACHE_TTL, JSON.stringify(context));
+  return context;
+}
+
+export async function resolvePermissions(userId, tenantId) {
+  return (await resolveContext(userId, tenantId)).permissions;
 }
 
 /**
@@ -29,7 +59,7 @@ export async function resolvePermissions(userId, tenantId) {
  * an admin just made or — much worse — an access they just revoked.
  */
 export async function invalidatePermissions(tenantId, userId) {
-  await redis.del(`perms:${tenantId}:${userId}`);
+  await redis.del(`ctx:${tenantId}:${userId}`);
 }
 
 /**
@@ -38,7 +68,7 @@ export async function invalidatePermissions(tenantId, userId) {
  * Redis on a large keyspace.
  */
 export async function invalidateTenantPermissions(tenantId) {
-  const match = `perms:${tenantId}:*`;
+  const match = `ctx:${tenantId}:*`;
   let cursor = '0';
   do {
     const [next, keys] = await redis.scan(cursor, 'MATCH', match, 'COUNT', 100);
