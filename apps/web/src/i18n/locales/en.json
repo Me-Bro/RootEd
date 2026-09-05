@@ -1058,6 +1058,7 @@
       "pageOf": "Page {{page}} of {{pages}}"
     },
     "tenantDetail": {
+      "backToList": "Back to list",
       "localeLabel": "Locale",
       "timezoneLabel": "Timezone",
       "currencyLabel": "Currency",

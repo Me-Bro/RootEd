@@ -7,6 +7,7 @@ import { buildImpersonateUrl } from '../../lib/impersonation.js';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
+import { PageHeader } from '../../components/ui/PageHeader.jsx';
 
 const PLAN_OPTIONS = ['starter', 'growth', 'pro', 'enterprise'];
 
@@ -365,16 +366,15 @@ export default function TenantDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold">{tenant.name}</h1>
-          <Badge variant={statusVariant(tenant.status)}>{tenant.status}</Badge>
-        </div>
-        <div className="flex gap-2">
-          {tenant.status === 'active' && (
+      <PageHeader
+        title={tenant.name}
+        description={tenant.subdomain || undefined}
+        backTo="/tenants"
+        backLabel={t('admin.tenantDetail.backToList')}
+        action={
+          tenant.status === 'active' && (
             <Button
-              variant="outline"
-              size="sm"
+              className="w-full sm:w-auto"
               onClick={() => impersonate.mutate()}
               disabled={impersonate.isPending}
             >
@@ -382,38 +382,42 @@ export default function TenantDetailPage() {
                 ? t('admin.tenantDetail.signingIn')
                 : t('admin.tenantDetail.loginAsTenantAdmin')}
             </Button>
-          )}
-          {tenant.status === 'active' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => suspend.mutate()}
-              disabled={suspend.isPending}
-            >
-              {t('admin.tenants.suspend')}
-            </Button>
-          )}
-          {(tenant.status === 'active' || tenant.status === 'suspended') && (
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => archive.mutate()}
-              disabled={archive.isPending}
-            >
-              {t('admin.tenants.archive')}
-            </Button>
-          )}
-          {tenant.status === 'archived' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => restore.mutate()}
-              disabled={restore.isPending}
-            >
-              {t('admin.tenants.restore')}
-            </Button>
-          )}
-        </div>
+          )
+        }
+      />
+
+      <div className="flex flex-wrap items-center gap-3">
+        <Badge variant={statusVariant(tenant.status)}>{tenant.status}</Badge>
+        {tenant.status === 'active' && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => suspend.mutate()}
+            disabled={suspend.isPending}
+          >
+            {t('admin.tenants.suspend')}
+          </Button>
+        )}
+        {(tenant.status === 'active' || tenant.status === 'suspended') && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => archive.mutate()}
+            disabled={archive.isPending}
+          >
+            {t('admin.tenants.archive')}
+          </Button>
+        )}
+        {tenant.status === 'archived' && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => restore.mutate()}
+            disabled={restore.isPending}
+          >
+            {t('admin.tenants.restore')}
+          </Button>
+        )}
       </div>
 
       <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
