@@ -15,6 +15,7 @@ import {
 import { formatCurrency } from '../../utils/intl.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
+import { RecordList, RecordListItem } from '../../components/ui/RecordList.jsx';
 
 // Defaulters leads: chasing 160 unpaid + 254 partial assignments (₹1.98Cr
 // outstanding) is this module's real job, not an afterthought behind two
@@ -406,7 +407,41 @@ function AssignmentsTab() {
         </select>
       </div>
 
+      <RecordList
+        isLoading={isLoading}
+        isEmpty={filtered.length === 0}
+        emptyMessage={t('fee.collection.noAssignmentsFound')}
+      >
+        {filtered.map((a) => (
+          <RecordListItem
+            key={a._id}
+            title={`${a.studentId?.firstName ?? ''} ${a.studentId?.lastName ?? ''}`.trim()}
+            meta={`${a.studentId?.admissionNo ?? '—'} · ${a.feeStructureId?.name ?? '—'} · ${formatCurrency(
+              a.totalAmount ?? 0
+            )}${a.dueDate ? ` · ${new Date(a.dueDate).toLocaleDateString()}` : ''}`}
+            trailing={<Badge variant={statusVariant(a.status)}>{a.status}</Badge>}
+            footer={
+              a.status !== 'paid' &&
+              a.status !== 'waived' && (
+                <div className="flex flex-wrap gap-1.5">
+                  <Button size="sm" onClick={() => setCollectFor(a)}>
+                    {t('fee.collection.collectButton')}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setDiscountFor(a)}>
+                    {t('fee.collection.discountButton')}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setWaiveFor(a)}>
+                    {t('fee.collection.waive')}
+                  </Button>
+                </div>
+              )
+            }
+          />
+        ))}
+      </RecordList>
+
       <DataTable
+        className="hidden md:block"
         headers={[
           t('fee.collection.tableStudent'),
           t('fee.collection.tableAdmissionNo'),
@@ -566,7 +601,41 @@ function PaymentsTab() {
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
       </div>
 
+      <RecordList
+        isLoading={isLoading}
+        isEmpty={payments.length === 0}
+        emptyMessage={t('fee.collection.noPaymentsFound')}
+      >
+        {payments.map((p) => (
+          <RecordListItem
+            key={p._id}
+            title={`${p.studentId?.firstName ?? ''} ${p.studentId?.lastName ?? ''}`.trim()}
+            meta={`${p.receiptNumber} · ${formatCurrency(p.amount ?? 0)} · ${p.paymentMethod}${
+              p.paymentDate ? ` · ${new Date(p.paymentDate).toLocaleDateString()}` : ''
+            }`}
+            trailing={
+              p.refunded ? (
+                <Badge variant="danger">{t('fee.collection.refundedBadge')}</Badge>
+              ) : null
+            }
+            footer={
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => downloadReceipt(p._id)}>
+                  {t('fee.collection.downloadButton')}
+                </Button>
+                {!p.refunded && (
+                  <Button size="sm" variant="outline" onClick={() => setRefundFor(p)}>
+                    {t('fee.collection.refundButton')}
+                  </Button>
+                )}
+              </div>
+            }
+          />
+        ))}
+      </RecordList>
+
       <DataTable
+        className="hidden md:block"
         headers={[
           t('fee.collection.tableReceiptNo'),
           t('fee.collection.tableStudent'),
@@ -676,7 +745,30 @@ function DefaultersTab() {
         </select>
       </div>
 
+      <RecordList
+        isLoading={isLoading}
+        isEmpty={sorted.length === 0}
+        emptyMessage={t('fee.collection.nothingOutstanding')}
+      >
+        {sorted.map((d) => (
+          <RecordListItem
+            key={d._id}
+            title={`${d.studentId?.firstName ?? ''} ${d.studentId?.lastName ?? ''}`.trim()}
+            meta={`${d.studentId?.admissionNo ?? '—'} · ${formatCurrency(
+              d.totalAmount - (d.discountAmount || 0)
+            )}${d.dueDate ? ` · ${new Date(d.dueDate).toLocaleDateString()}` : ''}`}
+            trailing={
+              <>
+                <Badge variant={statusVariant(d.status)}>{d.status}</Badge>
+                <span className="text-sm font-medium text-destructive">{d.daysOverdue}</span>
+              </>
+            }
+          />
+        ))}
+      </RecordList>
+
       <DataTable
+        className="hidden md:block"
         headers={[
           t('fee.collection.tableStudent'),
           t('fee.collection.tableAdmissionNo'),
@@ -730,13 +822,13 @@ export default function FeesPage() {
     <div className="flex flex-col gap-6">
       <PageHeader title={t('nav.feeCollection')} />
 
-      <div className="flex gap-1 border-b border-border">
+      <div className="flex gap-1 overflow-x-auto border-b border-border">
         {TAB_IDS.map((id) => (
           <button
             key={id}
             onClick={() => setActiveTab(id)}
             className={[
-              'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+              'shrink-0 whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 transition-colors',
               activeTab === id
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground',

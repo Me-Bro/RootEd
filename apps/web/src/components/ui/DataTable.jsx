@@ -8,6 +8,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 export { TableRow, TableCell } from '@/components/ui/table';
 
@@ -29,11 +30,12 @@ export function DataTable({
   isLoading = false,
   isEmpty = false,
   emptyMessage,
+  className,
 }) {
   const { t } = useTranslation();
   const resolvedEmptyMessage = emptyMessage ?? t('common.noRecordsFound');
   return (
-    <div className="rounded-lg border border-border overflow-hidden">
+    <div className={cn('rounded-lg border border-border overflow-hidden', className)}>
       <Table>
         <TableHeader>
           <TableRow className="hover:bg-transparent">

@@ -420,13 +420,13 @@ export default function TenantDetailPage() {
         )}
       </div>
 
-      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex gap-1 overflow-x-auto border-b border-gray-200 dark:border-gray-700">
         {TAB_IDS.map((tabId) => (
           <button
             key={tabId}
             onClick={() => setActiveTab(tabId)}
             className={[
-              'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+              'shrink-0 whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
               activeTab === tabId
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400'
                 : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400',

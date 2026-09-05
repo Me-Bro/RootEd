@@ -13,6 +13,7 @@ import {
 } from '../../components/ui/dialog.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
+import { RecordList, RecordListItem } from '../../components/ui/RecordList.jsx';
 import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
 
 // Returns the raw utilization ratio (spent/cap), or null when cap is 0/negative
@@ -214,7 +215,39 @@ export default function BudgetsPage() {
 
       {error && <p className="text-destructive">{t('expense.budgets.loadFailed')}</p>}
 
+      <RecordList
+        isLoading={isLoading}
+        isEmpty={budgets.length === 0}
+        emptyMessage={t('expense.budgets.noneConfigured')}
+      >
+        {sortedBudgets.map((b) => {
+          const remaining = b.cap - b.spent;
+          return (
+            <RecordListItem
+              key={b._id}
+              title={b.costCenterId?.name || '—'}
+              meta={`${b.period} · ${t('expense.budgets.tableCap')} ${b.cap?.toFixed(
+                2
+              )} · ${t('expense.budgets.tableSpent')} ${b.spent?.toFixed(2)}`}
+              trailing={
+                <span
+                  className={
+                    remaining < 0
+                      ? 'text-sm font-medium text-destructive'
+                      : 'text-sm font-medium text-emerald-600 dark:text-emerald-400'
+                  }
+                >
+                  {remaining.toFixed(2)}
+                </span>
+              }
+              footer={<UtilizationBar spent={b.spent} cap={b.cap} />}
+            />
+          );
+        })}
+      </RecordList>
+
       <DataTable
+        className="hidden md:block"
         headers={[
           t('expense.budgets.tableCostCenter'),
           t('expense.budgets.tablePeriod'),
