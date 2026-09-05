@@ -7,6 +7,10 @@ import LoginPage from './pages/auth/LoginPage.jsx';
 import SelectTenantPage from './pages/auth/SelectTenantPage.jsx';
 import ImpersonateCallbackPage from './pages/auth/ImpersonateCallbackPage.jsx';
 import SetPasswordPage from './pages/auth/SetPasswordPage.jsx';
+import RegisterPage from './pages/auth/RegisterPage.jsx';
+import CheckEmailPage from './pages/auth/CheckEmailPage.jsx';
+import VerifyEmailPage from './pages/auth/VerifyEmailPage.jsx';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.jsx';
 import AppShell from './components/layout/AppShell.jsx';
 import DashboardPage from './pages/admin/DashboardPage.jsx';
 import TenantsPage from './pages/admin/TenantsPage.jsx';
@@ -82,6 +86,10 @@ function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/select-tenant" element={<SelectTenantPage />} />
       <Route path="/impersonate" element={<ImpersonateCallbackPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/check-email" element={<CheckEmailPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/accept-invite" element={<SetPasswordPage mode="invite" />} />
       <Route path="/reset-password" element={<SetPasswordPage mode="reset" />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
