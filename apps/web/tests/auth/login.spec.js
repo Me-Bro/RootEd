@@ -33,14 +33,14 @@ test.describe('Login', () => {
     await dialog.getByLabel('Email').fill(TEST_USERS.super_admin.email);
     await dialog.getByLabel('Password').fill('WrongPassword999!');
     await dialog.getByRole('button', { name: 'Sign in' }).click();
-    await expect(dialog.getByText(/invalid email or password/i)).toBeVisible({ timeout: 8_000 });
+    await expect(dialog.getByText(/invalid credentials/i)).toBeVisible({ timeout: 8_000 });
   });
 
   test('wrong email → shows error', async () => {
     await dialog.getByLabel('Email').fill('nobody@nowhere.invalid');
     await dialog.getByLabel('Password').fill('SomePassword123!');
     await dialog.getByRole('button', { name: 'Sign in' }).click();
-    await expect(dialog.getByText(/invalid email or password/i)).toBeVisible({ timeout: 8_000 });
+    await expect(dialog.getByText(/invalid credentials/i)).toBeVisible({ timeout: 8_000 });
   });
 
   test('empty form → HTML5 required validation prevents submit', async ({ page }) => {
