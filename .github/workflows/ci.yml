@@ -64,7 +64,8 @@ jobs:
           S3_ACCESS_KEY: test
           S3_SECRET_KEY: test
 
-  accessibility:
+  e2e:
+    name: e2e (playwright)
     runs-on: ubuntu-latest
     needs: lint-and-test
     steps:
@@ -76,16 +77,84 @@ jobs:
         with:
           node-version: 20
           cache: pnpm
+
+      # Not service containers: apps/api/.env.test points MONGODB_URI at
+      # ?replicaSet=rs0, because tenant provisioning runs in a transaction and
+      # transactions need a replica set. A `services:` block cannot override the
+      # image command to pass --replSet, so Mongo comes up here instead.
+      - name: Start Mongo as a single-node replica set
+        run: |
+          docker run -d --name mongo -p 27017:27017 mongo:7 --replSet rs0 --bind_ip_all
+          for i in $(seq 1 30); do
+            docker exec mongo mongosh --quiet --eval 'db.adminCommand("ping")' && break
+            sleep 2
+          done
+          docker exec mongo mongosh --quiet --eval 'rs.initiate({_id:"rs0",members:[{_id:0,host:"localhost:27017"}]})'
+          for i in $(seq 1 30); do
+            docker exec mongo mongosh --quiet --eval 'if (!db.hello().isWritablePrimary) quit(1)' && break
+            sleep 2
+          done
+
+      - name: Start Redis
+        run: docker run -d --name redis -p 6379:6379 redis:7-alpine
+
+      # The expense-with-attachment spec uploads a file. The API calls
+      # ensureBucket() on boot, so no bucket step is needed here.
+      - name: Start Minio
+        run: |
+          docker run -d --name minio -p 9000:9000             -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin             minio/minio server /data
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:9000/minio/health/live && break
+            sleep 2
+          done
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Build web
-        run: pnpm --filter web build
+
+      - name: Install Playwright browser
+        run: pnpm --filter web exec playwright install --with-deps chromium
+
+      - name: Seed the test database
+        run: pnpm --filter api seed:test:clean
+
+      - name: Start the API
+        run: |
+          node --env-file=apps/api/.env.test apps/api/src/index.js > /tmp/api.log 2>&1 &
+          for i in $(seq 1 40); do
+            curl -sf -H 'Host: testschool.localhost' http://localhost:3001/csrf-token && break
+            sleep 2
+          done
+          curl -sf -H 'Host: testschool.localhost' http://localhost:3001/csrf-token > /dev/null
+
+      # No `|| true`. This is the suite that catches regressions the unit tests
+      # cannot see — an unenforced browser suite is how 20 failures accumulated
+      # on main unnoticed.
+      - name: Run Playwright e2e
+        run: pnpm --filter web test:e2e
+
       - name: Run axe accessibility check
-        run: pnpm --filter web exec playwright test --project=axe || true
+        if: always()
+        run: pnpm --filter web exec playwright test --project=axe
+
+      - name: API log
+        if: failure()
+        run: tail -100 /tmp/api.log
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          retention-days: 7
 
   build:
     runs-on: ubuntu-latest
-    needs: lint-and-test
+    # Also gated on e2e: pushing images to GHCR is a release step, and a red
+    # browser suite is exactly the signal that should stop one.
+    needs: [lint-and-test, e2e]
     if: github.ref == 'refs/heads/main'
 
     steps:

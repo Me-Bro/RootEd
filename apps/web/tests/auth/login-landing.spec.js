@@ -98,14 +98,14 @@ test.describe('Login landing page — desktop', () => {
     await dialog.getByLabel('Email').fill(TEST_USERS.tenant_admin.email);
     await dialog.getByLabel('Password').fill('WrongPassword999!');
     await dialog.getByRole('button', { name: 'Sign in' }).click();
-    await expect(dialog.getByText(/invalid email or password/i)).toBeVisible({ timeout: 8_000 });
+    await expect(dialog.getByText(/invalid credentials/i)).toBeVisible({ timeout: 8_000 });
 
     // Close without fixing it (Escape), then reopen.
     await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
     dialog = await openLoginDialog(page);
-    await expect(dialog.getByText(/invalid email or password/i)).not.toBeVisible();
+    await expect(dialog.getByText(/invalid credentials/i)).not.toBeVisible();
     await expect(dialog.getByLabel('Email')).toHaveValue('');
     await expect(dialog.getByLabel('Password')).toHaveValue('');
   });

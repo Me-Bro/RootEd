@@ -134,8 +134,22 @@ test.describe('Leave request hardening', () => {
     const ids = getTestIds();
     const adminClient = await createTestApiClient(request, 'tenant_admin');
 
+    // Its own staff member, not a seeded one. There are only two seeded, and
+    // tests/staff/leaves.spec.js mutates staffMembers[0] too — under
+    // fullyParallel that races on the shared leave balance, which is checked
+    // on create and deducted on final approval. POST /staff/members seeds
+    // leave balances for the new member, so it starts clean.
+    const stamp = Date.now();
+    const staffRes = await adminClient.post('/staff/members', {
+      email: `chain-${stamp}@testschool.local`,
+      firstName: 'Chain',
+      lastName: `Approver${stamp}`,
+    });
+    expect(staffRes.ok()).toBe(true);
+    const ownStaff = await staffRes.json();
+
     const created = await adminClient.post('/staff/leave-requests', {
-      staffId: ids.staffMembers[0]._id,
+      staffId: ownStaff._id,
       leaveTypeId: ids.leaveType._id,
       fromDate: daysFromNow(60),
       toDate: daysFromNow(61),
