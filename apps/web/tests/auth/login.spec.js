@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { TEST_USERS, openLoginDialog } from '../fixtures/auth.js';
+import { TEST_USERS, openLoginDialog, loginViaUi } from '../fixtures/auth.js';
 
 // Login tests run without any pre-loaded storageState
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -72,11 +72,16 @@ test.describe('Authenticated redirect', () => {
 });
 
 test.describe('Logout', () => {
-  test.use({ storageState: 'tests/fixtures/.auth/tenant_admin.json' });
+  // Deliberately NOT the shared tenant_admin storageState. POST /auth/logout
+  // blocklists the refresh token carried in the cookie — and that cookie *is*
+  // the shared credential, so logging out here revoked it in Redis for seven
+  // days and every other tenant_admin test in the run lost its session and got
+  // bounced to the landing page. Sign in fresh so this test can only destroy
+  // its own token.
+  test.use({ storageState: { cookies: [], origins: [] } });
 
   test('logout clears session and redirects to /login', async ({ page }) => {
-    await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
+    await loginViaUi(page, TEST_USERS.tenant_admin.email, TEST_USERS.tenant_admin.password);
 
     await page.getByRole('button', { name: 'Logout' }).click();
 
