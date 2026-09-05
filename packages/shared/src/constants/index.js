@@ -31,6 +31,9 @@ export const SYSTEM_ROLES = ['super_admin', 'support_agent'];
 
 export const ASSESSMENT_TYPES = ['quiz', 'midterm', 'final', 'other'];
 
+// The single source of truth for module permissions. apps/api/src/models/Role.js
+// re-exports this and uses it as the Role schema's enum — do not redeclare the
+// list there.
 export const PERMISSIONS = [
   'attendance:read',
   'attendance:write',

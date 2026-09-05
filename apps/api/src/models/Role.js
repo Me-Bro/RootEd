@@ -1,34 +1,12 @@
 import mongoose from 'mongoose';
+import { PERMISSIONS } from '@rooted/shared/constants';
 import { tenantScopePlugin } from './plugins/tenantScope.js';
 
-export const PERMISSIONS = [
-  'attendance:read',
-  'attendance:write',
-  'grades:read',
-  'grades:write',
-  'grades:publish',
-  'students:read',
-  'students:write',
-  'staff:read',
-  'staff:write',
-  'leave:read',
-  'leave:write',
-  'leave:approve',
-  'expense:read',
-  'expense:write',
-  'expense:approve',
-  'fees:read',
-  'fees:write',
-  'fees:collect',
-  'inventory:read',
-  'inventory:write',
-  'payroll:read',
-  'payroll:write',
-  'roles:read',
-  'roles:write',
-  'audit:read',
-  'tenant:admin',
-];
+// PERMISSIONS is defined once, in @rooted/shared, alongside ORG_TYPES and the
+// other cross-app constants. It is re-exported here so the API's existing
+// importers keep working and so the Role schema enum can never drift from the
+// list the rest of the workspace validates against.
+export { PERMISSIONS };
 
 export const DEFAULT_ROLE_TEMPLATES = {
   tenant_admin: PERMISSIONS,
