@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
+import { visibleText } from '../fixtures/dom.js';
 
 const FIXTURE_DIR = path.join(import.meta.dirname, '../fixtures/files');
 
@@ -43,7 +44,7 @@ test.describe('Expenses page', () => {
 
     // Dialog closes, entry appears in list (default "All" tab renders the table)
     await expect(dialog).not.toBeVisible({ timeout: 8_000 });
-    await expect(page.getByText(title)).toBeVisible({ timeout: 10_000 });
+    await expect(visibleText(page, title)).toBeVisible({ timeout: 10_000 });
   });
 
   test('expense entry created with attachment', async ({ page }) => {
@@ -64,7 +65,7 @@ test.describe('Expenses page', () => {
 
     await dialog.getByRole('button', { name: 'Submit' }).click();
     await expect(dialog).not.toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText(title)).toBeVisible({ timeout: 10_000 });
+    await expect(visibleText(page, title)).toBeVisible({ timeout: 10_000 });
   });
 
   test('approves a pending expense from the approval queue', async ({ page }) => {

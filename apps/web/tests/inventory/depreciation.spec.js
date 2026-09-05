@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { visibleText } from '../fixtures/dom.js';
 
 test.describe('Depreciation page', () => {
   test('shows the page with year select and CSV export', async ({ page }) => {
@@ -26,9 +27,9 @@ test.describe('Depreciation page', () => {
     // Single seeded fixed asset (Projector, unitCost 25000, no currentValue
     // override on the fixture) — fleet current value equals fleet original
     // cost, so retained sits at 100%.
-    await expect(page.getByText('Fleet value')).toBeVisible();
-    await expect(page.getByText(/25,000.*of.*25,000/)).toBeVisible();
-    await expect(page.getByText('100.0% of original value retained')).toBeVisible();
+    await expect(visibleText(page, 'Fleet value')).toBeVisible();
+    await expect(visibleText(page, /25,000.*of.*25,000/)).toBeVisible();
+    await expect(visibleText(page, '100.0% of original value retained')).toBeVisible();
   });
 
   test('near write-off section is hidden when no asset is under the threshold', async ({
@@ -39,7 +40,7 @@ test.describe('Depreciation page', () => {
 
     // Seeded Projector retains 100% of its value, well above the 10%
     // near-write-off cutoff, so the dedicated section should not render.
-    await expect(page.getByText(/Near write-off/)).not.toBeVisible();
+    await expect(visibleText(page, /Near write-off/)).not.toBeVisible();
   });
 
   test('CSV export stays enabled while records exist', async ({ page }) => {

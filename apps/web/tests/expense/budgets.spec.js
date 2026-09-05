@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
 import path from 'path';
+import { visibleText } from '../fixtures/dom.js';
 
 function getTestIds() {
   const p = path.join(import.meta.dirname, '../seed/.test-ids.json');
@@ -128,6 +129,6 @@ test.describe('Budgets page', () => {
     });
 
     await page.goto('/expense/budgets');
-    await expect(page.getByText('No budgets configured')).toBeVisible({ timeout: 10_000 });
+    await expect(visibleText(page, 'No budgets configured')).toBeVisible({ timeout: 10_000 });
   });
 });

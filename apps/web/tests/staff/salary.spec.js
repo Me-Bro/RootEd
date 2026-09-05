@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { createTestApiClient } from '../fixtures/data.js';
+import { visibleText } from '../fixtures/dom.js';
 
 function getTestIds() {
   const p = path.join(import.meta.dirname, '../seed/.test-ids.json');
@@ -26,9 +27,9 @@ test.describe('Salary', () => {
     await selects.nth(1).selectOption('2024');
     await page.waitForLoadState('networkidle');
 
-    await expect(page.getByText('Priya Menon')).toBeVisible();
-    await expect(page.getByText('generated', { exact: true })).toBeVisible();
-    await expect(page.getByText('Total payroll')).toBeVisible();
+    await expect(visibleText(page, 'Priya Menon')).toBeVisible();
+    await expect(visibleText(page, 'generated', { exact: true })).toBeVisible();
+    await expect(visibleText(page, 'Total payroll')).toBeVisible();
   });
 
   test('lists the seeded failed slip for its period', async ({ page }) => {
@@ -40,8 +41,8 @@ test.describe('Salary', () => {
     await selects.nth(1).selectOption('2024');
     await page.waitForLoadState('networkidle');
 
-    await expect(page.getByText('Bob Jones')).toBeVisible();
-    await expect(page.getByText('failed', { exact: true })).toBeVisible();
+    await expect(visibleText(page, 'Bob Jones')).toBeVisible();
+    await expect(visibleText(page, 'failed', { exact: true })).toBeVisible();
   });
 
   test('Download is disabled for a slip with no pdfKey', async ({ page }) => {
@@ -82,16 +83,16 @@ test.describe('Salary', () => {
       // seeded staff with a salaryStructureId set).
       await page.getByRole('button', { name: 'Generate All Slips' }).click();
 
-      await expect(page.getByText(/generating slips for/i)).toBeVisible();
+      await expect(visibleText(page, /generating slips for/i)).toBeVisible();
       // Live progress bar (docs/mobile-ui/13-salary-approved.html) replaces the old
       // silent "Status: active — polling…" text while the batch job is in flight.
       await expect(page.getByRole('progressbar')).toBeVisible();
-      await expect(page.getByText(/slip.*generated\./i)).toBeVisible({ timeout: 30_000 });
+      await expect(visibleText(page, /slip.*generated\./i)).toBeVisible({ timeout: 30_000 });
       await expect(page.getByRole('progressbar')).not.toBeVisible();
 
       const monthLabel = now.toLocaleString('default', { month: 'long' });
-      await expect(page.getByText('Priya Menon')).toBeVisible();
-      await expect(page.getByText('Total payroll')).toBeVisible();
+      await expect(visibleText(page, 'Priya Menon')).toBeVisible();
+      await expect(visibleText(page, 'Total payroll')).toBeVisible();
       void monthLabel;
     });
 
@@ -123,7 +124,7 @@ test.describe('Salary', () => {
       await page.waitForLoadState('networkidle');
 
       await expect(page.getByRole('heading', { name: 'Salary Structures' })).toBeVisible();
-      await expect(page.getByText('Basic Structure')).toBeVisible();
+      await expect(visibleText(page, 'Basic Structure')).toBeVisible();
 
       await page.getByRole('button', { name: 'New Structure' }).click();
       const dialog = page.getByRole('dialog');
@@ -135,7 +136,7 @@ test.describe('Salary', () => {
 
       await dialog.getByRole('button', { name: 'Create' }).click();
       await expect(dialog).not.toBeVisible({ timeout: 8_000 });
-      await expect(page.getByText('E2E Created Structure').first()).toBeVisible();
+      await expect(visibleText(page, 'E2E Created Structure')).toBeVisible();
     });
 
     test('salary structure cards show a staff-count badge', async ({ page }) => {

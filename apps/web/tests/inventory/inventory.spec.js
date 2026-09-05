@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'fs';
 import path from 'path';
+import { visibleText } from '../fixtures/dom.js';
 
 function getTestIds() {
   const p = path.join(import.meta.dirname, '../seed/.test-ids.json');
@@ -28,10 +29,10 @@ test.describe('Inventory page', () => {
   });
 
   test('items tab lists seeded items and search filters them', async ({ page }) => {
-    await expect(page.getByText('Whiteboard Marker')).toBeVisible();
+    await expect(visibleText(page, 'Whiteboard Marker')).toBeVisible();
     await page.getByPlaceholder('Search name or SKU…').fill('Projector');
-    await expect(page.getByText('Projector')).toBeVisible();
-    await expect(page.getByText('Whiteboard Marker')).not.toBeVisible();
+    await expect(visibleText(page, 'Projector')).toBeVisible();
+    await expect(visibleText(page, 'Whiteboard Marker')).not.toBeVisible();
   });
 
   test('creating a new item below its reorder level surfaces the low-stock strip and jumps to Low Stock', async ({
@@ -59,7 +60,7 @@ test.describe('Inventory page', () => {
     // Jumped to the Low Stock tab — its table has a "Reorder Level" column
     // that no other tab renders, and the new item shows up in it.
     await expect(page.getByRole('columnheader', { name: 'Reorder Level' })).toBeVisible();
-    await expect(page.getByText(name)).toBeVisible();
+    await expect(visibleText(page, name)).toBeVisible();
   });
 
   test('issuing an item surfaces the not-returned strip and jumps to filtered Movements', async ({
