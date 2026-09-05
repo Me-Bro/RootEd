@@ -391,7 +391,8 @@
       "markAbsentAria": "Mark absent",
       "backspaceAria": "Backspace",
       "digitAria": "Digit {{digit}}",
-      "nextStudent": "Next student ›"
+      "nextStudent": "Next student ›",
+      "keyboardHint": "Type a mark · Enter next · A absent · Backspace delete · ↑↓ move"
     },
     "gradeReport": {
       "title": "Grade Report",

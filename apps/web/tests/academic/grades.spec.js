@@ -7,6 +7,13 @@ import { createTestApiClient } from '../fixtures/data.js';
 // Rebuilt per docs/mobile-ui/05-grades-approved.html: 4 raw selects + a plain
 // table are replaced by chip pickers + a roster list driven by a docked
 // keypad, so the old select-based coverage no longer applies.
+//
+// The docked keypad is now `md:hidden` — above that breakpoint entry is driven
+// by useMarkEntryKeys off the real keyboard. This project runs at Desktop
+// Chrome width, so the entry tests below type; the keypad keeps its own
+// coverage via an explicit page.setViewportSize() test, matching how
+// timetable.spec.js/my-schedule.spec.js cover their responsive swaps.
+const PHONE_VIEWPORT = { width: 390, height: 844 };
 
 function getTestIds() {
   const p = path.join(import.meta.dirname, '../seed/.test-ids.json');
@@ -95,13 +102,76 @@ test.describe('Grades page', () => {
     await expect(page.getByRole('button', { name: 'Other' })).toBeVisible();
   });
 
-  test('docked keypad enters a score, updates the live class average, and Next advances focus', async ({
+  test('typing a score and pressing Enter commits it and updates the live class average', async ({
     page,
   }) => {
     const { section, term, subjects } = getTestIds();
     const english = subjects.find((s) => s.name === 'English');
 
     // 'other' has no seeded grades for English — a guaranteed clean slate.
+    await scopedGoto(page, { section, term, subject: english, assessmentType: 'other' });
+    await expect(page.getByText(/^0 of \d+ entered$/)).toBeVisible({ timeout: 10_000 });
+
+    // No on-screen keypad at desktop width — the hint strip stands in for it.
+    await expect(page.getByRole('button', { name: 'Digit 7' })).toBeHidden();
+    await expect(page.getByText(/Type a mark/)).toBeVisible();
+
+    await page.keyboard.press('7');
+    await page.keyboard.press('5');
+    await page.keyboard.press('Enter');
+
+    await expect(page.getByText(/^1 of \d+ entered/)).toBeVisible();
+    await expect(page.getByText(/class avg so far 75/)).toBeVisible();
+  });
+
+  test('Backspace deletes a digit and Escape clears the whole draft', async ({ page }) => {
+    const { section, term, subjects } = getTestIds();
+    const english = subjects.find((s) => s.name === 'English');
+
+    await scopedGoto(page, { section, term, subject: english, assessmentType: 'other' });
+    await expect(page.getByText(/^0 of \d+ entered$/)).toBeVisible({ timeout: 10_000 });
+
+    const focusedRow = page.getByRole('button').filter({ hasText: 'typing…' });
+
+    await page.keyboard.press('9');
+    await page.keyboard.press('4');
+    await expect(focusedRow).toContainText('94');
+
+    await page.keyboard.press('Backspace');
+    await expect(focusedRow).toContainText('9');
+    await expect(focusedRow).not.toContainText('94');
+
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Enter');
+    // Enter on an empty draft is a no-op — nothing was committed.
+    await expect(page.getByText(/^0 of \d+ entered$/)).toBeVisible();
+  });
+
+  test('arrow keys move the focused row and wrap back to where they started', async ({ page }) => {
+    const { section, term, subjects, students } = getTestIds();
+    const english = subjects.find((s) => s.name === 'English');
+    const roster = students.filter((s) => s.status === 'active');
+    test.skip(roster.length < 2, 'needs at least two active students in the section');
+
+    await scopedGoto(page, { section, term, subject: english, assessmentType: 'other' });
+    await expect(page.getByText(/^0 of \d+ entered$/)).toBeVisible({ timeout: 10_000 });
+
+    // Whichever row seeds as focused, ArrowDown then ArrowUp must return to it.
+    const typingRow = page.getByRole('button').filter({ hasText: 'typing…' });
+    const firstFocused = await typingRow.textContent();
+
+    await page.keyboard.press('ArrowDown');
+    await expect(typingRow).not.toHaveText(firstFocused);
+
+    await page.keyboard.press('ArrowUp');
+    await expect(typingRow).toHaveText(firstFocused);
+  });
+
+  test('the docked keypad still drives entry on a phone-width viewport', async ({ page }) => {
+    const { section, term, subjects } = getTestIds();
+    const english = subjects.find((s) => s.name === 'English');
+
+    await page.setViewportSize(PHONE_VIEWPORT);
     await scopedGoto(page, { section, term, subject: english, assessmentType: 'other' });
     await expect(page.getByText(/^0 of \d+ entered$/)).toBeVisible({ timeout: 10_000 });
 
@@ -117,7 +187,7 @@ test.describe('Grades page', () => {
     await expect(page.getByText(/class avg so far 75/)).toBeVisible();
   });
 
-  test('AB marks a student absent for this assessment, advances, and is excluded from the average', async ({
+  test('pressing A marks a student absent, advances, and is excluded from the average', async ({
     page,
   }) => {
     const { section, term, subjects } = getTestIds();
@@ -126,7 +196,7 @@ test.describe('Grades page', () => {
     await scopedGoto(page, { section, term, subject: english, assessmentType: 'other' });
     await expect(page.getByText(/^0 of \d+ entered$/)).toBeVisible({ timeout: 10_000 });
 
-    await page.getByRole('button', { name: 'Mark absent' }).click();
+    await page.keyboard.press('a');
 
     await expect(page.getByText(/^1 of \d+ entered$/)).toBeVisible();
     await expect(page.getByText('AB').first()).toBeVisible();
@@ -154,11 +224,11 @@ test.describe('Grades page', () => {
 
     // Roster may already be fully marked from a previous run of this test —
     // only type a mark in if there's still an unmarked student to focus.
-    const nextButton = page.getByRole('button', { name: /Next student/ });
-    if (await nextButton.isVisible().catch(() => false)) {
-      await page.getByRole('button', { name: 'Digit 8' }).click();
-      await page.getByRole('button', { name: 'Digit 8' }).click();
-      await nextButton.click();
+    const typingRow = page.getByRole('button').filter({ hasText: 'typing…' });
+    if (await typingRow.isVisible().catch(() => false)) {
+      await page.keyboard.press('8');
+      await page.keyboard.press('8');
+      await page.keyboard.press('Enter');
     }
 
     await page.getByRole('button', { name: 'Save Grades' }).click();
@@ -196,15 +266,21 @@ test.describe('Grades page', () => {
       await scopedGoto(page, { section, term, subject: science, assessmentType: 'midterm' });
       await expect(page.getByText(/entered/)).toBeVisible({ timeout: 10_000 });
 
+      const enteredBefore = await page.getByText(/of \d+ entered/).textContent();
+
       await page.getByRole('button', { name: 'Lock Grades' }).click();
       await expect(page.getByText(/Grades are locked/)).toBeVisible({ timeout: 10_000 });
-      // The sticky lock banner replaces the interactive keypad with a
-      // disabled one, matching today's lock behaviour.
-      await expect(page.getByRole('button', { name: 'Digit 1' })).toBeDisabled();
+      // Locking withdraws both entry paths: Save is disabled, the keyboard hint
+      // is gone, and keystrokes no longer reach the roster.
+      await expect(page.getByRole('button', { name: 'Save Grades' })).toBeDisabled();
+      await expect(page.getByText(/Type a mark/)).toBeHidden();
+      await page.keyboard.press('1');
+      await page.keyboard.press('Enter');
+      await expect(page.getByText(/of \d+ entered/)).toHaveText(enteredBefore);
 
       await page.getByRole('button', { name: 'Unlock Grades' }).click();
       await expect(page.getByText(/Grades are locked/)).toHaveCount(0, { timeout: 10_000 });
-      await expect(page.getByRole('button', { name: 'Digit 1' })).toBeEnabled();
+      await expect(page.getByText(/Type a mark/)).toBeVisible();
     });
   });
 
