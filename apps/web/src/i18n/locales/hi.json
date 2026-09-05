@@ -455,7 +455,9 @@
       "noClasses": "कोई कक्षा नहीं",
       "todaySuffix": " · आज",
       "periodNumber": "पीरियड {{period}}",
-      "takeAttendanceTooltip": "इस कक्षा की उपस्थिति लें"
+      "takeAttendanceTooltip": "इस कक्षा की उपस्थिति लें",
+      "emptyTitle": "कोई कक्षा निर्धारित नहीं",
+      "emptyDescription": "इस शैक्षणिक वर्ष के लिए अभी आपको कुछ भी नहीं सौंपा गया है। समय-सारणी तब तक छिपी रहती है जब तक व्यवस्थापक उसे प्रकाशित न कर दे।"
     },
     "reportCards": {
       "title": "रिपोर्ट कार्ड",

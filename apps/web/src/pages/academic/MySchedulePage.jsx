@@ -2,23 +2,28 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { CalendarDays } from 'lucide-react';
 import api from '../../lib/api.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Button } from '../../components/ui/Button.jsx';
+import { EmptyState } from '../../components/ui/EmptyState.jsx';
 import { useAuth } from '../../contexts/useAuth.js';
+import { useNow } from '../../hooks/useNow.js';
 import { isTodayColumn, isCurrentPeriodCell } from '../../utils/scheduleHighlight.js';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const PERIODS = [1, 2, 3, 4, 5, 6, 7, 8];
 const DAY_TO_NUMBER = { Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5 };
 
+// AttendancePage is a daily roll by design (see docs/mobile-ui/03-attendance-approved.html)
+// — it reads sectionId only, so passing the period's subjectId just produced a
+// param the destination silently dropped.
 function attendanceLink(entry) {
   const sectionId = entry.sectionId?._id ?? entry.sectionId;
-  const subjectId = entry.subjectId?._id ?? entry.subjectId;
-  return `/academic/attendance?sectionId=${sectionId}&subjectId=${subjectId}`;
+  return `/academic/attendance?sectionId=${sectionId}`;
 }
 
-function ScheduleCell({ day, entry, isCurrent }) {
+function ScheduleCell({ day, entry, isCurrent, now }) {
   const { t } = useTranslation();
   if (!entry) return <span className="text-xs text-muted-foreground">—</span>;
 
@@ -34,7 +39,7 @@ function ScheduleCell({ day, entry, isCurrent }) {
     </div>
   );
 
-  if (!isTodayColumn(day)) return body;
+  if (!isTodayColumn(day, now)) return body;
 
   return (
     <Link
@@ -50,6 +55,7 @@ function ScheduleCell({ day, entry, isCurrent }) {
 export default function MySchedulePage() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const now = useNow();
   const [yearId, setYearId] = useState('');
 
   const { data: years = [] } = useQuery({
@@ -105,7 +111,15 @@ export default function MySchedulePage() {
         <p className="text-muted-foreground text-sm">{t('common.loading')}</p>
       )}
 
-      {effectiveYearId && !isLoading && (
+      {effectiveYearId && !isLoading && timetable.length === 0 && (
+        <EmptyState
+          icon={CalendarDays}
+          title={t('academic.mySchedule.emptyTitle')}
+          description={t('academic.mySchedule.emptyDescription')}
+        />
+      )}
+
+      {effectiveYearId && !isLoading && timetable.length > 0 && (
         <>
           {/* Mobile: stacked day cards */}
           <div className="flex flex-col gap-4 md:hidden">
@@ -114,7 +128,7 @@ export default function MySchedulePage() {
                 period,
                 entry: cellEntry(day, period),
               })).filter((p) => p.entry);
-              const today = isTodayColumn(day);
+              const today = isTodayColumn(day, now);
 
               return (
                 <div
@@ -139,7 +153,8 @@ export default function MySchedulePage() {
                           <ScheduleCell
                             day={day}
                             entry={entry}
-                            isCurrent={isCurrentPeriodCell(day, entry)}
+                            isCurrent={isCurrentPeriodCell(day, entry, now)}
+                            now={now}
                           />
                         </div>
                       ))}
@@ -162,7 +177,9 @@ export default function MySchedulePage() {
                     <th
                       key={d}
                       className={`px-4 py-3 text-left font-medium ${
-                        isTodayColumn(d) ? 'text-foreground bg-primary/10' : 'text-muted-foreground'
+                        isTodayColumn(d, now)
+                          ? 'text-foreground bg-primary/10'
+                          : 'text-muted-foreground'
                       }`}
                     >
                       {t(`common.weekdays.${d.toLowerCase()}`)}
@@ -176,7 +193,7 @@ export default function MySchedulePage() {
                     <td className="px-4 py-3 font-medium text-muted-foreground">{period}</td>
                     {DAYS.map((day) => {
                       const entry = cellEntry(day, period);
-                      const current = isCurrentPeriodCell(day, entry);
+                      const current = isCurrentPeriodCell(day, entry, now);
                       return (
                         <td
                           key={day}
@@ -184,7 +201,7 @@ export default function MySchedulePage() {
                             current ? 'bg-primary/10' : ''
                           }`}
                         >
-                          <ScheduleCell day={day} entry={entry} isCurrent={current} />
+                          <ScheduleCell day={day} entry={entry} isCurrent={current} now={now} />
                         </td>
                       );
                     })}

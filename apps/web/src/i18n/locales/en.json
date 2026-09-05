@@ -455,7 +455,9 @@
       "noClasses": "No classes",
       "todaySuffix": " · Today",
       "periodNumber": "Period {{period}}",
-      "takeAttendanceTooltip": "Take attendance for this class"
+      "takeAttendanceTooltip": "Take attendance for this class",
+      "emptyTitle": "No classes scheduled",
+      "emptyDescription": "Nothing is assigned to you for this academic year yet. Timetables also stay hidden until an admin publishes them."
     },
     "reportCards": {
       "title": "Report Cards",
