@@ -19,6 +19,7 @@ const membershipSchema = new mongoose.Schema(
     invitedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     approvedAt: { type: Date },
+    rejectedAt: { type: Date },
     requestNote: { type: String, trim: true, maxlength: 500 },
     // Optional per-org display override; the canonical name lives on User.
     displayName: { type: String, trim: true },

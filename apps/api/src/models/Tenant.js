@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { ORG_TYPES } from '@rooted/shared/constants';
+import { ORG_TYPES, JOIN_POLICY_MODES } from '@rooted/shared/constants';
 
 const tenantSchema = new mongoose.Schema(
   {
@@ -24,6 +24,17 @@ const tenantSchema = new mongoose.Schema(
     timezone: { type: String, default: 'Asia/Kolkata' },
     currency: { type: String, default: 'INR' },
     settings: { type: mongoose.Schema.Types.Mixed, default: {} },
+    // Unlike every other secret in this codebase the join code is stored in
+    // clear: it is meant to be displayed to an admin and read off a whiteboard,
+    // so it has to be retrievable. It is a low-value credential — it buys a
+    // *pending* request, never access — and is rate limited and rotatable.
+    joinPolicy: {
+      mode: { type: String, enum: JOIN_POLICY_MODES, default: 'closed' },
+      code: { type: String, uppercase: true, trim: true },
+      codeExpiresAt: { type: Date },
+      defaultRoleIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Role' }],
+      requireApproval: { type: Boolean, default: true },
+    },
     archivedAt: { type: Date },
     dataRetentionUntil: { type: Date },
     trialEndsAt: { type: Date },
@@ -40,5 +51,6 @@ const tenantSchema = new mongoose.Schema(
 
 tenantSchema.index({ subdomain: 1 }, { unique: true, sparse: true });
 tenantSchema.index({ status: 1 });
+tenantSchema.index({ 'joinPolicy.code': 1 }, { unique: true, sparse: true });
 
 export const Tenant = mongoose.model('Tenant', tenantSchema);

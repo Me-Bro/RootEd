@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { JOIN_POLICY_MODES } from '../constants/index.js';
 
 const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id');
 
@@ -16,4 +17,20 @@ export const acceptInviteSchema = z.object({
 
 export const updateMemberRolesSchema = z.object({
   roleIds: z.array(objectId).min(1, 'A member needs at least one role'),
+});
+
+export const submitJoinRequestSchema = z.object({
+  joinCode: z.string().trim().min(4),
+  note: z.string().trim().max(500).optional(),
+});
+
+export const approveJoinRequestSchema = z.object({
+  roleIds: z.array(objectId).min(1, 'Pick at least one role'),
+});
+
+export const updateJoinPolicySchema = z.object({
+  mode: z.enum(JOIN_POLICY_MODES),
+  requireApproval: z.boolean().optional(),
+  defaultRoleIds: z.array(objectId).optional(),
+  codeExpiresAt: z.coerce.date().nullish(),
 });

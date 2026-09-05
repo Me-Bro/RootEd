@@ -41,6 +41,17 @@ export const JOIN_METHODS = ['invite', 'join_code', 'request', 'import', 'founde
 
 export const INVITE_STATUS = ['pending', 'accepted', 'revoked', 'expired'];
 
+// 'closed'  — the only way in is an invitation
+// 'code'    — anyone holding the join code may ask to join
+export const JOIN_POLICY_MODES = ['closed', 'code'];
+
+// Crockford base32. '0' and '1' are in the alphabet; the letters they are
+// confused with (I, L, O) are not, and are folded into them when a typed code
+// is normalised. U is omitted so the encoding cannot spell unfortunate words.
+export const JOIN_CODE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+export const JOIN_CODE_LENGTH = 10;
+export const JOIN_CODE_PREFIX = 'RTED';
+
 export const PASSWORD_MIN_LENGTH = 8;
 
 export const USERNAME_MIN_LENGTH = 3;
