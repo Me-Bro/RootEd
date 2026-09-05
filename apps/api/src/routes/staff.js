@@ -117,24 +117,28 @@ async function buildLeaveApprovalChain(staff, tenantId) {
     chain.push({ approverId: staff.reportingManagerId, status: 'pending' });
   }
 
+  // Keyed on 'leave:approve', which is what PATCH /leave-requests/:id/approve
+  // actually requires — not on 'tenant:admin'. Selecting administrators here
+  // put people in the chain who may hold no leave permission at all, and left
+  // out the principals whose job this is.
   const memberships = await TenantMembership.find({ tenantId, status: 'active' }).lean();
   const roleIds = memberships.flatMap((m) => m.roleIds.map((id) => id.toString()));
-  const adminRoles = await Role.find({
+  const approverRoles = await Role.find({
     _id: { $in: roleIds },
     tenantId,
-    permissions: 'tenant:admin',
+    permissions: 'leave:approve',
   }).lean();
-  const adminRoleIds = new Set(adminRoles.map((r) => r._id.toString()));
+  const approverRoleIds = new Set(approverRoles.map((r) => r._id.toString()));
 
-  const adminUserIds = new Set();
+  const approverUserIds = new Set();
   for (const m of memberships) {
-    if (m.roleIds.some((id) => adminRoleIds.has(id.toString()))) {
-      adminUserIds.add(m.userId.toString());
+    if (m.roleIds.some((id) => approverRoleIds.has(id.toString()))) {
+      approverUserIds.add(m.userId.toString());
     }
   }
 
   const existingApproverIds = new Set(chain.map((c) => c.approverId?.toString()));
-  for (const uid of adminUserIds) {
+  for (const uid of approverUserIds) {
     if (!existingApproverIds.has(uid)) {
       chain.push({ approverId: uid, status: 'pending' });
     }

@@ -2,7 +2,8 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { Tenant } from '../models/Tenant.js';
 import { TenantMembership } from '../models/TenantMembership.js';
-import { getActiveTenantsForUser } from '../services/auth.service.js';
+import { getActiveTenantsForUser, handleFailedLogin } from '../services/auth.service.js';
+import { User } from '../models/User.js';
 import { redis } from '../config/redis.js';
 
 let mongod;
@@ -65,4 +66,18 @@ test('multiple active memberships across active tenants are all returned', async
 
   const tenants = await getActiveTenantsForUser(userId);
   expect(tenants.map((t) => t.subdomain).sort()).toEqual(['auth-alpha', 'auth-beta']);
+});
+
+// POST /auth/login answers 'Invalid credentials' when the identifier matches
+// nobody. handleFailedLogin covers the other branch — a real account with the
+// wrong password — and the two must be indistinguishable. When they drifted
+// apart, comparing the responses revealed whether an account existed.
+test('a wrong password reports exactly what an unknown identifier reports', async () => {
+  const user = await User.create({
+    email: 'enumeration@test.local',
+    passwordHash: 'irrelevant',
+    failedLoginAttempts: 0,
+  });
+
+  await expect(handleFailedLogin(user)).rejects.toThrow('Invalid credentials');
 });

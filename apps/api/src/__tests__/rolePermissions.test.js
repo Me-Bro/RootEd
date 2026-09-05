@@ -32,6 +32,16 @@ test('no role template grants a permission outside its own module surface', () =
   expect(DEFAULT_ROLE_TEMPLATES.principal).not.toContain('students:write');
   expect(DEFAULT_ROLE_TEMPLATES.principal).toContain('leave:approve');
   expect(DEFAULT_ROLE_TEMPLATES.principal).toContain('expense:approve');
+  // 'tenant:admin' does not end in ':write', so the template's filter used to
+  // let it through and every principal was a de-facto tenant administrator.
+  expect(DEFAULT_ROLE_TEMPLATES.principal).not.toContain('tenant:admin');
   expect(DEFAULT_ROLE_TEMPLATES.teacher).not.toContain('tenant:admin');
   expect(DEFAULT_ROLE_TEMPLATES.librarian).toEqual(['inventory:read', 'inventory:write']);
+});
+
+test('tenant_admin is the only template granting tenant:admin', () => {
+  const granting = Object.entries(DEFAULT_ROLE_TEMPLATES)
+    .filter(([, perms]) => perms.includes('tenant:admin'))
+    .map(([key]) => key);
+  expect(granting).toEqual(['tenant_admin']);
 });

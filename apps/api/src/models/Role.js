@@ -10,9 +10,10 @@ export { PERMISSIONS };
 
 export const DEFAULT_ROLE_TEMPLATES = {
   tenant_admin: PERMISSIONS,
-  principal: PERMISSIONS.filter(
-    (p) => !p.endsWith(':write') || p === 'leave:approve' || p === 'expense:approve'
-  ),
+  // Reads and approvals, but no writes and — deliberately — no tenant:admin.
+  // The ':approve' permissions need no special case: they do not end in
+  // ':write', so the filter already keeps them.
+  principal: PERMISSIONS.filter((p) => !p.endsWith(':write') && p !== 'tenant:admin'),
   teacher: [
     'attendance:read',
     'attendance:write',

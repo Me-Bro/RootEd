@@ -79,7 +79,10 @@ export async function handleFailedLogin(user) {
   }
 
   await User.updateOne({ _id: user._id }, updateData, { _bypassTenantScope: true });
-  throw new AppError('Invalid email or password', 401);
+  // Must match the unknown-identifier message in POST /auth/login exactly.
+  // If the two differ, comparing them tells an attacker whether an account
+  // exists — and the identifier may now be a username, not just an email.
+  throw new AppError('Invalid credentials', 401);
 }
 
 export async function clearFailedLogins(userId) {
