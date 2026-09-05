@@ -1,53 +1,59 @@
 import { test, expect } from '@playwright/test';
-import { TEST_USERS } from '../fixtures/auth.js';
+import { TEST_USERS, openLoginDialog } from '../fixtures/auth.js';
 
 // Login tests run without any pre-loaded storageState
 test.use({ storageState: { cookies: [], origins: [] } });
 
+// /login renders the approved landing page UI with sign-in in a dialog (see
+// pages/auth/LoginPage.jsx), so each test opens that dialog first and scopes
+// its form queries to it.
 test.describe('Login', () => {
+  let dialog;
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
+    dialog = await openLoginDialog(page);
   });
 
-  test('renders login form', async ({ page }) => {
-    await expect(page.getByLabel('Email')).toBeVisible();
-    await expect(page.getByLabel('Password')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
-    await expect(page.getByText('RootEd')).toBeVisible();
+  test('renders login form', async () => {
+    await expect(dialog.getByLabel('Email')).toBeVisible();
+    await expect(dialog.getByLabel('Password')).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Sign in' })).toBeVisible();
   });
 
   test('valid credentials → redirect to /dashboard', async ({ page }) => {
-    await page.getByLabel('Email').fill(TEST_USERS.super_admin.email);
-    await page.getByLabel('Password').fill(TEST_USERS.super_admin.password);
-    await page.getByRole('button', { name: 'Sign in' }).click();
+    await dialog.getByLabel('Email').fill(TEST_USERS.super_admin.email);
+    await dialog.getByLabel('Password').fill(TEST_USERS.super_admin.password);
+    await dialog.getByRole('button', { name: 'Sign in' }).click();
     await page.waitForURL('**/dashboard', { timeout: 15_000 });
     await expect(page).toHaveURL(/\/dashboard/);
   });
 
-  test('invalid password → shows error', async ({ page }) => {
-    await page.getByLabel('Email').fill(TEST_USERS.super_admin.email);
-    await page.getByLabel('Password').fill('WrongPassword999!');
-    await page.getByRole('button', { name: 'Sign in' }).click();
-    await expect(page.getByText(/invalid email or password/i)).toBeVisible({ timeout: 8_000 });
+  test('invalid password → shows error', async () => {
+    await dialog.getByLabel('Email').fill(TEST_USERS.super_admin.email);
+    await dialog.getByLabel('Password').fill('WrongPassword999!');
+    await dialog.getByRole('button', { name: 'Sign in' }).click();
+    await expect(dialog.getByText(/invalid email or password/i)).toBeVisible({ timeout: 8_000 });
   });
 
-  test('wrong email → shows error', async ({ page }) => {
-    await page.getByLabel('Email').fill('nobody@nowhere.invalid');
-    await page.getByLabel('Password').fill('SomePassword123!');
-    await page.getByRole('button', { name: 'Sign in' }).click();
-    await expect(page.getByText(/invalid email or password/i)).toBeVisible({ timeout: 8_000 });
+  test('wrong email → shows error', async () => {
+    await dialog.getByLabel('Email').fill('nobody@nowhere.invalid');
+    await dialog.getByLabel('Password').fill('SomePassword123!');
+    await dialog.getByRole('button', { name: 'Sign in' }).click();
+    await expect(dialog.getByText(/invalid email or password/i)).toBeVisible({ timeout: 8_000 });
   });
 
   test('empty form → HTML5 required validation prevents submit', async ({ page }) => {
-    await page.getByRole('button', { name: 'Sign in' }).click();
-    // Still on login page — no redirect
+    await dialog.getByRole('button', { name: 'Sign in' }).click();
+    // Still on /login with the dialog open — no redirect
     await expect(page).toHaveURL(/\/login/);
+    await expect(dialog).toBeVisible();
   });
 
   test('tenant_admin login → redirect to /dashboard', async ({ page }) => {
-    await page.getByLabel('Email').fill(TEST_USERS.tenant_admin.email);
-    await page.getByLabel('Password').fill(TEST_USERS.tenant_admin.password);
-    await page.getByRole('button', { name: 'Sign in' }).click();
+    await dialog.getByLabel('Email').fill(TEST_USERS.tenant_admin.email);
+    await dialog.getByLabel('Password').fill(TEST_USERS.tenant_admin.password);
+    await dialog.getByRole('button', { name: 'Sign in' }).click();
     await page.waitForURL('**/dashboard', { timeout: 15_000 });
     await expect(page).toHaveURL(/\/dashboard/);
   });
