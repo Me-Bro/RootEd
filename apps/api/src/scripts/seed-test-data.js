@@ -51,19 +51,19 @@ const CLEAN = process.argv.includes('--clean');
 const PASS = 'TestPass123!';
 
 const USERS = {
-  super_admin: { email: 'admin@test.local', systemRole: 'super_admin' },
-  tenant_admin: { email: 'tadmin@testschool.local' },
-  teacher: { email: 'teacher@testschool.local' },
-  viewer: { email: 'viewer@testschool.local' },
-  principal: { email: 'principal@testschool.local' },
-  accountant: { email: 'accountant@testschool.local' },
+  super_admin: { email: 'admin@test.local', username: 'platform-admin', systemRole: 'super_admin' },
+  tenant_admin: { email: 'tadmin@testschool.local', username: 'test-tadmin' },
+  teacher: { email: 'teacher@testschool.local', username: 'test-teacher' },
+  viewer: { email: 'viewer@testschool.local', username: 'test-viewer' },
+  principal: { email: 'principal@testschool.local', username: 'test-principal' },
+  accountant: { email: 'accountant@testschool.local', username: 'test-accountant' },
   // Belongs to two tenants (testschool + secondschool) — exercises the
   // general-portal login's tenant-picker screen, which every other seeded
   // user (single membership) never triggers.
-  multiTenant: { email: 'multi@testschool.local' },
+  multiTenant: { email: 'multi@testschool.local', username: 'test-multi' },
   // Belongs to a tuition_center-orgType tenant — exercises org-type module/nav
   // gating (no expense/inventory modules, "Learner"/"Batch" terminology).
-  tuitionAdmin: { email: 'admin@tuitioncenter.local' },
+  tuitionAdmin: { email: 'admin@tuitioncenter.local', username: 'test-tuition-admin' },
 };
 
 async function upsertUser(data) {
@@ -76,6 +76,14 @@ async function upsertUser(data) {
         passwordHash: hash,
         systemRole: data.systemRole ?? null,
         status: 'active',
+      },
+      // Not $setOnInsert: re-running the seed over a DB created before these
+      // fields existed must still backfill them, or username login has nothing
+      // to resolve against.
+      $set: {
+        username: data.username,
+        usernameLower: data.username,
+        emailVerified: true,
       },
     },
     { upsert: true, new: true, setDefaultsOnInsert: true, _bypassTenantScope: true }
@@ -90,6 +98,7 @@ async function run() {
   // and Grade's gained assessmentType (multi-assessment support) — deleteMany
   // below doesn't drop indexes, so keep the test DB's indexes in sync with
   // the current schema on every seed run.
+  await User.syncIndexes();
   await AttendanceRecord.syncIndexes();
   await Grade.syncIndexes();
   await Timetable.syncIndexes();
