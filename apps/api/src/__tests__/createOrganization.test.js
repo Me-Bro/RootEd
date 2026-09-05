@@ -79,7 +79,7 @@ test('role templates and leave types are seeded', async () => {
   const leaveTypes = await LeaveType.find({ tenantId: tenant._id }).lean();
 
   expect(roles.map((r) => r.templateKey).sort()).toEqual(
-    ['accountant', 'librarian', 'principal', 'teacher', 'tenant_admin'].sort()
+    ['accountant', 'librarian', 'principal', 'student', 'teacher', 'tenant_admin'].sort()
   );
   expect(leaveTypes.length).toBeGreaterThan(0);
 });

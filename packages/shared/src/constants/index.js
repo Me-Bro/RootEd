@@ -133,4 +133,16 @@ export const PERMISSIONS = [
   'roles:write',
   'audit:read',
   'tenant:admin',
+  // Self-scoped reads. Prefixed 'self:' rather than suffixed ':self' on
+  // purpose: 'grades:read:self' sorts next to 'grades:read' and invites a
+  // startsWith() that silently over-grants, whereas 'self:grades:read' cannot
+  // be prefix-matched into a tenant-wide check. They return only the caller's
+  // own records and are served exclusively by the /me router.
+  'self:attendance:read',
+  'self:grades:read',
+  'self:fees:read',
+  'self:timetable:read',
 ];
+
+/** True for permissions that only ever expose the caller's own records. */
+export const isSelfScoped = (permission) => permission.startsWith('self:');

@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { PERMISSIONS } from '@rooted/shared/constants';
+import { PERMISSIONS, isSelfScoped } from '@rooted/shared/constants';
 import { tenantScopePlugin } from './plugins/tenantScope.js';
 
 // PERMISSIONS is defined once, in @rooted/shared, alongside ORG_TYPES and the
@@ -8,12 +8,17 @@ import { tenantScopePlugin } from './plugins/tenantScope.js';
 // list the rest of the workspace validates against.
 export { PERMISSIONS };
 
+// Tenant-wide roles never carry self: permissions. A tenant_admin has no
+// student record for them to resolve against, and granting both would mean two
+// code paths could answer the same question differently.
+const TENANT_WIDE = PERMISSIONS.filter((p) => !isSelfScoped(p));
+
 export const DEFAULT_ROLE_TEMPLATES = {
-  tenant_admin: PERMISSIONS,
+  tenant_admin: TENANT_WIDE,
   // Reads and approvals, but no writes and — deliberately — no tenant:admin.
   // The ':approve' permissions need no special case: they do not end in
   // ':write', so the filter already keeps them.
-  principal: PERMISSIONS.filter((p) => !p.endsWith(':write') && p !== 'tenant:admin'),
+  principal: TENANT_WIDE.filter((p) => !p.endsWith(':write') && p !== 'tenant:admin'),
   teacher: [
     'attendance:read',
     'attendance:write',
@@ -34,6 +39,9 @@ export const DEFAULT_ROLE_TEMPLATES = {
     'payroll:write',
   ],
   librarian: ['inventory:read', 'inventory:write'],
+  // Holds nothing tenant-wide. Every route a student can reach lives under
+  // /me and answers only about them.
+  student: PERMISSIONS.filter(isSelfScoped),
 };
 
 const roleSchema = new mongoose.Schema(
