@@ -8,6 +8,7 @@ import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
+import { RecordList, RecordListItem } from '../../components/ui/RecordList.jsx';
 import {
   Dialog,
   DialogContent,
@@ -240,7 +241,44 @@ export default function SalaryPage() {
 
       {error && <p className="text-destructive">{t('staff.salary.loadFailed')}</p>}
 
+      <RecordList
+        isLoading={isLoading}
+        isEmpty={slips.length === 0}
+        emptyMessage={t('staff.salary.noSlips')}
+      >
+        {slips.map((s) => (
+          <RecordListItem
+            key={s._id}
+            title={`${s.staffId?.firstName ?? ''} ${s.staffId?.lastName ?? ''}`.trim()}
+            meta={`${t('staff.salary.columnNetPay')}: ${formatCurrency(s.netPay ?? 0)} · ${t(
+              'staff.salary.columnGrossEarnings'
+            )} ${formatCurrency(s.grossEarnings ?? 0)} · ${t(
+              'staff.salary.columnDeductions'
+            )} ${formatCurrency(s.totalDeductions ?? 0)}`}
+            trailing={<Badge variant={statusVariant(s.status)}>{s.status}</Badge>}
+            footer={
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => downloadMutation.mutate(s._id)}
+                  disabled={!s.pdfKey || downloadMutation.isPending}
+                >
+                  {t('staff.salary.download')}
+                </Button>
+                {canWrite && s.status === 'generated' && (
+                  <Button size="sm" variant="outline" onClick={() => setMarkPaidFor(s)}>
+                    {t('staff.salary.markAsPaid')}
+                  </Button>
+                )}
+              </div>
+            }
+          />
+        ))}
+      </RecordList>
+
       <DataTable
+        className="hidden md:block"
         headers={[
           t('staff.salary.columnStaffName'),
           t('staff.salary.columnGrossEarnings'),

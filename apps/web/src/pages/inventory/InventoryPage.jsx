@@ -14,6 +14,7 @@ import {
 } from '../../components/ui/dialog.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
+import { RecordList, RecordListItem } from '../../components/ui/RecordList.jsx';
 import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
 import AttentionStrip from '../../components/inventory/AttentionStrip.jsx';
 
@@ -384,7 +385,43 @@ function ItemsTab() {
         <Button onClick={() => setShowAdd(true)}>{t('inventory.items.addItemButton')}</Button>
       </div>
 
+      <RecordList
+        isLoading={isLoading}
+        isEmpty={items.length === 0}
+        emptyMessage={t('inventory.items.noneFound')}
+      >
+        {items.map((item) => (
+          <RecordListItem
+            key={item._id}
+            title={item.name}
+            meta={`${item.sku} · ${item.category} · ${
+              item.itemType === 'consumable'
+                ? t('inventory.items.unitsCount', { count: item.quantity })
+                : item.condition || '—'
+            }${item.location ? ` · ${item.location}` : ''}`}
+            trailing={
+              <Badge variant={item.itemType === 'consumable' ? 'default' : 'warning'}>
+                {item.itemType === 'consumable'
+                  ? t('inventory.items.consumable')
+                  : t('inventory.items.fixedAsset')}
+              </Badge>
+            }
+            footer={
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => setIssueItem(item)}>
+                  {t('inventory.items.issue')}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setQrItem(item)}>
+                  {t('inventory.items.qrButton')}
+                </Button>
+              </div>
+            }
+          />
+        ))}
+      </RecordList>
+
       <DataTable
+        className="hidden md:block"
         headers={[
           t('inventory.items.tableSku'),
           t('common.name'),
@@ -501,7 +538,49 @@ function MovementsTab({ type, onTypeChange, openOnly, onOpenOnlyChange }) {
         </label>
       </div>
 
+      <RecordList
+        isLoading={isLoading}
+        isEmpty={movements.length === 0}
+        emptyMessage={t('inventory.items.noMovementsFound')}
+      >
+        {movements.map((m) => (
+          <RecordListItem
+            key={m._id}
+            title={m.itemId?.name}
+            meta={`${t('inventory.items.tableQty')} ${m.quantity} · ${
+              m.issuedTo?.entityType ? `${m.issuedTo.entityType}: ${m.issuedTo.entityId}` : '—'
+            } · ${new Date(m.createdAt).toLocaleDateString()}${
+              m.dueDate ? ` · ${new Date(m.dueDate).toLocaleDateString()}` : ''
+            }`}
+            trailing={
+              <>
+                <Badge variant={movementVariant(m.movementType)}>{m.movementType}</Badge>
+                {m.returnedAt ? (
+                  <Badge variant="success">{t('inventory.items.returnedBadge')}</Badge>
+                ) : m.movementType === 'issue' ? (
+                  <Badge variant="warning">{t('inventory.items.pendingBadge')}</Badge>
+                ) : null}
+              </>
+            }
+            footer={
+              m.movementType === 'issue' &&
+              !m.returnedAt && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => returnMutation.mutate(m._id)}
+                  disabled={returnMutation.isPending}
+                >
+                  {t('inventory.items.returnButton')}
+                </Button>
+              )
+            }
+          />
+        ))}
+      </RecordList>
+
       <DataTable
+        className="hidden md:block"
         headers={[
           t('inventory.items.tableItem'),
           t('inventory.items.tableType'),
@@ -595,7 +674,48 @@ function RequisitionsTab() {
         </select>
       </div>
 
+      <RecordList
+        isLoading={isLoading}
+        isEmpty={requisitions.length === 0}
+        emptyMessage={t('inventory.items.noRequisitionsFound')}
+      >
+        {requisitions.map((r) => (
+          <RecordListItem
+            key={r._id}
+            title={r.itemId?.name}
+            meta={`${r.itemId?.sku ?? '—'} · ${t('inventory.items.tableQtyRequested')} ${
+              r.requestedQuantity
+            }${r.reason ? ` · ${r.reason}` : ''}`}
+            trailing={
+              <Badge
+                variant={
+                  r.status === 'approved'
+                    ? 'success'
+                    : r.status === 'rejected'
+                      ? 'danger'
+                      : 'warning'
+                }
+              >
+                {r.status}
+              </Badge>
+            }
+            footer={
+              r.status === 'pending' && (
+                <Button
+                  size="sm"
+                  onClick={() => approveMutation.mutate(r._id)}
+                  disabled={approveMutation.isPending}
+                >
+                  {t('inventory.items.approve')}
+                </Button>
+              )
+            }
+          />
+        ))}
+      </RecordList>
+
       <DataTable
+        className="hidden md:block"
         headers={[
           t('inventory.items.tableItem'),
           t('inventory.items.tableSku'),
@@ -668,7 +788,35 @@ function LowStockTab() {
 
   return (
     <div className="flex flex-col gap-4">
+      <RecordList
+        isLoading={isLoading}
+        isEmpty={items.length === 0}
+        emptyMessage={t('inventory.items.noLowStockItems')}
+      >
+        {items.map((item) => (
+          <RecordListItem
+            key={item._id}
+            title={item.name}
+            meta={`${item.sku} · ${item.category} · ${t('inventory.items.reorderLevelLabel')} ${
+              item.reorderLevel
+            }`}
+            trailing={<span className="text-sm font-medium text-destructive">{item.quantity}</span>}
+            footer={
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => createRequisition.mutate(item._id)}
+                disabled={createRequisition.isPending}
+              >
+                {t('inventory.items.createRequisition')}
+              </Button>
+            }
+          />
+        ))}
+      </RecordList>
+
       <DataTable
+        className="hidden md:block"
         headers={[
           t('inventory.items.tableSku'),
           t('common.name'),
@@ -754,13 +902,13 @@ export default function InventoryPage() {
         onTapNotReturned={handleTapNotReturned}
       />
 
-      <div className="flex gap-1 border-b border-border">
+      <div className="flex gap-1 overflow-x-auto border-b border-border">
         {TAB_IDS.map((id) => (
           <button
             key={id}
             onClick={() => setActiveTab(id)}
             className={[
-              'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+              'shrink-0 whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 transition-colors',
               activeTab === id
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground',

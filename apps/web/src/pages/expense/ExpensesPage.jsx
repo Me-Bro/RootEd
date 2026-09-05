@@ -16,6 +16,7 @@ import {
 import { formatCurrency } from '../../utils/intl.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
+import { RecordList, RecordListItem } from '../../components/ui/RecordList.jsx';
 import ApprovalQueueCard from '../../components/expense/ApprovalQueueCard.jsx';
 
 const STATUS_TAB_IDS = ['all', 'pending', 'approved', 'rejected', 'paid'];
@@ -327,13 +328,13 @@ export default function ExpensesPage() {
         action={<Button onClick={() => setShowNew(true)}>{t('expense.entries.newExpense')}</Button>}
       />
 
-      <div className="flex gap-1 border-b border-border">
+      <div className="flex gap-1 overflow-x-auto border-b border-border">
         {STATUS_TAB_IDS.map((id) => (
           <button
             key={id}
             onClick={() => setActiveTab(id)}
             className={[
-              'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+              'shrink-0 whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 transition-colors',
               activeTab === id
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground',
@@ -390,55 +391,91 @@ export default function ExpensesPage() {
           </div>
         )
       ) : (
-        <DataTable
-          headers={[
-            t('expense.entries.tableTitle'),
-            t('expense.entries.tableCategory'),
-            t('expense.entries.tableAmount'),
-            t('expense.entries.tableVendor'),
-            t('expense.entries.tableCostCenter'),
-            t('common.status'),
-            t('expense.entries.tableSubmittedBy'),
-            t('common.actions'),
-          ]}
-          isLoading={isLoading}
-          isEmpty={entries.length === 0}
-          emptyMessage={t('expense.entries.noneFound')}
-        >
-          {entries.map((e) => (
-            <TableRow key={e._id} className="bg-card">
-              <TableCell className="px-4 py-3 font-medium">{e.title}</TableCell>
-              <TableCell className="px-4 py-3 text-muted-foreground">{e.category}</TableCell>
-              <TableCell className="px-4 py-3">{formatCurrency(e.amount ?? 0)}</TableCell>
-              <TableCell className="px-4 py-3 text-muted-foreground">{e.vendor || '—'}</TableCell>
-              <TableCell className="px-4 py-3 text-muted-foreground">
-                {e.costCenterId?.name || '—'}
-              </TableCell>
-              <TableCell className="px-4 py-3">
-                <Badge variant={statusVariant(e.status)}>{e.status}</Badge>
-              </TableCell>
-              <TableCell className="px-4 py-3 text-muted-foreground">
-                {e.submittedBy?.email || '—'}
-              </TableCell>
-              <TableCell className="px-4 py-3">
-                {e.status === 'pending' && (
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => approveMutation.mutate(e._id)}
-                      disabled={approveMutation.isPending}
-                    >
-                      {t('expense.entries.approve')}
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => setRejectId(e._id)}>
-                      {t('expense.entries.reject')}
-                    </Button>
-                  </div>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </DataTable>
+        <>
+          <RecordList
+            isLoading={isLoading}
+            isEmpty={entries.length === 0}
+            emptyMessage={t('expense.entries.noneFound')}
+          >
+            {entries.map((e) => (
+              <RecordListItem
+                key={e._id}
+                title={e.title}
+                meta={`${e.category} · ${formatCurrency(e.amount ?? 0)}${
+                  e.vendor ? ` · ${e.vendor}` : ''
+                }${e.costCenterId?.name ? ` · ${e.costCenterId.name}` : ''}`}
+                trailing={<Badge variant={statusVariant(e.status)}>{e.status}</Badge>}
+                footer={
+                  e.status === 'pending' && (
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => approveMutation.mutate(e._id)}
+                        disabled={approveMutation.isPending}
+                      >
+                        {t('expense.entries.approve')}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setRejectId(e._id)}>
+                        {t('expense.entries.reject')}
+                      </Button>
+                    </div>
+                  )
+                }
+              />
+            ))}
+          </RecordList>
+
+          <DataTable
+            className="hidden md:block"
+            headers={[
+              t('expense.entries.tableTitle'),
+              t('expense.entries.tableCategory'),
+              t('expense.entries.tableAmount'),
+              t('expense.entries.tableVendor'),
+              t('expense.entries.tableCostCenter'),
+              t('common.status'),
+              t('expense.entries.tableSubmittedBy'),
+              t('common.actions'),
+            ]}
+            isLoading={isLoading}
+            isEmpty={entries.length === 0}
+            emptyMessage={t('expense.entries.noneFound')}
+          >
+            {entries.map((e) => (
+              <TableRow key={e._id} className="bg-card">
+                <TableCell className="px-4 py-3 font-medium">{e.title}</TableCell>
+                <TableCell className="px-4 py-3 text-muted-foreground">{e.category}</TableCell>
+                <TableCell className="px-4 py-3">{formatCurrency(e.amount ?? 0)}</TableCell>
+                <TableCell className="px-4 py-3 text-muted-foreground">{e.vendor || '—'}</TableCell>
+                <TableCell className="px-4 py-3 text-muted-foreground">
+                  {e.costCenterId?.name || '—'}
+                </TableCell>
+                <TableCell className="px-4 py-3">
+                  <Badge variant={statusVariant(e.status)}>{e.status}</Badge>
+                </TableCell>
+                <TableCell className="px-4 py-3 text-muted-foreground">
+                  {e.submittedBy?.email || '—'}
+                </TableCell>
+                <TableCell className="px-4 py-3">
+                  {e.status === 'pending' && (
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => approveMutation.mutate(e._id)}
+                        disabled={approveMutation.isPending}
+                      >
+                        {t('expense.entries.approve')}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setRejectId(e._id)}>
+                        {t('expense.entries.reject')}
+                      </Button>
+                    </div>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </DataTable>
+        </>
       )}
 
       <NewExpenseModal open={showNew} onOpenChange={setShowNew} costCenters={costCenters} />

@@ -5,6 +5,7 @@ import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
+import { RecordList, RecordListItem } from '../../components/ui/RecordList.jsx';
 import FleetTotalCard from '../../components/depreciation/FleetTotalCard.jsx';
 import { formatCurrency } from '../../utils/intl.js';
 
@@ -118,7 +119,36 @@ export default function DepreciationPage() {
         </p>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+      <RecordList
+        isLoading={isLoading}
+        isEmpty={records.length === 0}
+        emptyMessage={t('inventory.depreciation.noneFound')}
+      >
+        {records.map((r) => {
+          const originalCost = r.item?.unitCost || 0;
+          const pct =
+            originalCost > 0
+              ? (((originalCost - r.currentValue) / originalCost) * 100).toFixed(1)
+              : '0.0';
+          return (
+            <RecordListItem
+              key={r.item?._id}
+              title={r.item?.name}
+              meta={`${r.item?.sku ?? '—'} · ${r.item?.depreciationMethod?.toUpperCase() ?? '—'} · ${t(
+                'inventory.depreciation.tableAnnualDepreciation'
+              )} ${r.annualDepreciation?.toFixed(2)}`}
+              trailing={
+                <div className="text-right">
+                  <p className="text-sm font-medium">{r.currentValue?.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">{pct}%</p>
+                </div>
+              }
+            />
+          );
+        })}
+      </RecordList>
+
+      <div className="hidden overflow-x-auto rounded-lg border border-gray-200 md:block dark:border-gray-700">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 dark:bg-gray-800 text-left">
             <tr>

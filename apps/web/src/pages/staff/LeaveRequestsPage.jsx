@@ -16,6 +16,7 @@ import {
 } from '../../components/ui/dialog.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
+import { RecordList, RecordListItem } from '../../components/ui/RecordList.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
 import { Progress } from '../../components/ui/progress.jsx';
 import ApprovalQueueCard from '../../components/leave/ApprovalQueueCard.jsx';
@@ -450,7 +451,7 @@ export default function LeaveRequestsPage() {
         </div>
       )}
 
-      <div className="flex gap-2 border-b border-border">
+      <div className="flex gap-2 overflow-x-auto border-b border-border">
         {['all', 'pending'].map((tabKey) => (
           <button
             key={tabKey}
@@ -459,7 +460,7 @@ export default function LeaveRequestsPage() {
               setPage(1);
             }}
             className={[
-              'px-4 py-2 text-sm font-medium capitalize border-b-2 transition-colors',
+              'shrink-0 whitespace-nowrap px-4 py-2 text-sm font-medium capitalize border-b-2 transition-colors',
               tab === tabKey
                 ? 'border-primary text-primary'
                 : 'border-transparent text-muted-foreground hover:text-foreground',
@@ -549,73 +550,132 @@ export default function LeaveRequestsPage() {
           </div>
         )
       ) : (
-        <DataTable
-          headers={[
-            t('staff.leaves.columnStaff'),
-            t('staff.leaves.leaveType'),
-            t('staff.leaves.from'),
-            t('staff.leaves.to'),
-            t('staff.leaves.columnDays'),
-            t('common.status'),
-            t('common.actions'),
-          ]}
-          isLoading={isLoading}
-          isEmpty={requests.length === 0}
-          emptyMessage={t('staff.leaves.noRequestsFound')}
-        >
-          {requests.map((r) => {
-            const isOwn = myStaff && r.staffId?._id === myStaff._id;
-            return (
-              <TableRow key={r._id} className="bg-card">
-                <TableCell className="px-4 py-3">
-                  {r.staffId?.firstName} {r.staffId?.lastName}
-                </TableCell>
-                <TableCell className="px-4 py-3 text-muted-foreground">
-                  {r.leaveTypeId?.name || '—'}
-                </TableCell>
-                <TableCell className="px-4 py-3">{formatDate(r.fromDate)}</TableCell>
-                <TableCell className="px-4 py-3">{formatDate(r.toDate)}</TableCell>
-                <TableCell className="px-4 py-3">{r.totalDays}</TableCell>
-                <TableCell className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <Badge variant={statusVariant(r.status)}>{r.status}</Badge>
-                    <ConflictBadge flags={r.conflictFlags} />
-                  </div>
-                </TableCell>
-                <TableCell className="px-4 py-3">
-                  {r.status === 'pending' && (
-                    <div className="flex gap-2">
-                      {canApprove && (
-                        <>
+        <>
+          <RecordList
+            isLoading={isLoading}
+            isEmpty={requests.length === 0}
+            emptyMessage={t('staff.leaves.noRequestsFound')}
+          >
+            {requests.map((r) => {
+              const isOwn = myStaff && r.staffId?._id === myStaff._id;
+              return (
+                <RecordListItem
+                  key={r._id}
+                  title={`${r.staffId?.firstName ?? ''} ${r.staffId?.lastName ?? ''}`.trim()}
+                  meta={`${r.leaveTypeId?.name || '—'} · ${formatDate(r.fromDate)} – ${formatDate(
+                    r.toDate
+                  )} · ${t('staff.leaves.dayCount', { count: r.totalDays })}`}
+                  trailing={
+                    <>
+                      <Badge variant={statusVariant(r.status)}>{r.status}</Badge>
+                      <ConflictBadge flags={r.conflictFlags} />
+                    </>
+                  }
+                  footer={
+                    r.status === 'pending' &&
+                    (canApprove || isOwn) && (
+                      <div className="flex flex-wrap gap-2">
+                        {canApprove && (
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => approveMutation.mutate(r._id)}
+                              disabled={approveMutation.isPending}
+                            >
+                              {t('staff.leaves.approve')}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setRejectId(r._id)}>
+                              {t('staff.leaves.reject')}
+                            </Button>
+                          </>
+                        )}
+                        {isOwn && (
                           <Button
                             size="sm"
-                            onClick={() => approveMutation.mutate(r._id)}
-                            disabled={approveMutation.isPending}
+                            variant="outline"
+                            onClick={() => cancelMutation.mutate(r._id)}
+                            disabled={cancelMutation.isPending}
                           >
-                            {t('staff.leaves.approve')}
+                            {t('common.cancel')}
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => setRejectId(r._id)}>
-                            {t('staff.leaves.reject')}
-                          </Button>
-                        </>
-                      )}
-                      {isOwn && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => cancelMutation.mutate(r._id)}
-                          disabled={cancelMutation.isPending}
-                        >
-                          {t('common.cancel')}
-                        </Button>
-                      )}
+                        )}
+                      </div>
+                    )
+                  }
+                />
+              );
+            })}
+          </RecordList>
+
+          <DataTable
+            className="hidden md:block"
+            headers={[
+              t('staff.leaves.columnStaff'),
+              t('staff.leaves.leaveType'),
+              t('staff.leaves.from'),
+              t('staff.leaves.to'),
+              t('staff.leaves.columnDays'),
+              t('common.status'),
+              t('common.actions'),
+            ]}
+            isLoading={isLoading}
+            isEmpty={requests.length === 0}
+            emptyMessage={t('staff.leaves.noRequestsFound')}
+          >
+            {requests.map((r) => {
+              const isOwn = myStaff && r.staffId?._id === myStaff._id;
+              return (
+                <TableRow key={r._id} className="bg-card">
+                  <TableCell className="px-4 py-3">
+                    {r.staffId?.firstName} {r.staffId?.lastName}
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-muted-foreground">
+                    {r.leaveTypeId?.name || '—'}
+                  </TableCell>
+                  <TableCell className="px-4 py-3">{formatDate(r.fromDate)}</TableCell>
+                  <TableCell className="px-4 py-3">{formatDate(r.toDate)}</TableCell>
+                  <TableCell className="px-4 py-3">{r.totalDays}</TableCell>
+                  <TableCell className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={statusVariant(r.status)}>{r.status}</Badge>
+                      <ConflictBadge flags={r.conflictFlags} />
                     </div>
-                  )}
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </DataTable>
+                  </TableCell>
+                  <TableCell className="px-4 py-3">
+                    {r.status === 'pending' && (
+                      <div className="flex gap-2">
+                        {canApprove && (
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => approveMutation.mutate(r._id)}
+                              disabled={approveMutation.isPending}
+                            >
+                              {t('staff.leaves.approve')}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setRejectId(r._id)}>
+                              {t('staff.leaves.reject')}
+                            </Button>
+                          </>
+                        )}
+                        {isOwn && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => cancelMutation.mutate(r._id)}
+                            disabled={cancelMutation.isPending}
+                          >
+                            {t('common.cancel')}
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </DataTable>
+        </>
       )}
 
       {!isApproverQueue && data && data.pages > 1 && (
