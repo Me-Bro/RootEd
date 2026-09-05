@@ -99,6 +99,10 @@ async function run() {
   // below doesn't drop indexes, so keep the test DB's indexes in sync with
   // the current schema on every seed run.
   await User.syncIndexes();
+  // Student's (tenantId, userId) index changed from sparse to partial; without
+  // a sync the old definition survives and every roster student without a
+  // linked account collides on userId: null.
+  await Student.syncIndexes();
   await AttendanceRecord.syncIndexes();
   await Grade.syncIndexes();
   await Timetable.syncIndexes();

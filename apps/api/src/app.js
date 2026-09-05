@@ -28,6 +28,7 @@ import feeRouter from './routes/fee.js';
 import inventoryRouter from './routes/inventory.js';
 import billingRouter from './routes/billing.js';
 import orgsRouter from './routes/orgs.js';
+import meRouter from './routes/me.js';
 
 const app = express();
 
@@ -171,6 +172,9 @@ app.use('/orgs', orgsRouter);
 
 app.use(resolveTenant);
 
+// Tenant-scoped, and the only surface a self-scoped role can reach. Its
+// handlers never accept an identity from the caller — see routes/me.js.
+app.use('/me', meRouter);
 app.use('/tenant', tenantRouter);
 app.use('/academic', requireModuleEnabled('academic'), academicRouter);
 app.use('/staff', requireModuleEnabled('staff'), staffRouter);
