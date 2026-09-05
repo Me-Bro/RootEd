@@ -56,12 +56,13 @@ export default function LoginForm() {
           autoComplete="current-password"
         />
         <div className="flex justify-end">
-          <a
-            href="/forgot-password"
-            className="text-xs text-muted-foreground hover:text-primary transition-colors"
+          <button
+            type="button"
+            onClick={() => navigate('/forgot-password')}
+            className="text-xs text-muted-foreground transition-colors hover:text-primary"
           >
             {t('auth.forgotPassword')}
-          </a>
+          </button>
         </div>
       </div>
       {needsTotp && (
@@ -78,6 +79,16 @@ export default function LoginForm() {
       <Button type="submit" disabled={loading} size="lg" className="w-full mt-1">
         {loading ? t('auth.signingIn') : t('auth.signIn')}
       </Button>
+      <p className="text-center text-sm text-muted-foreground">
+        {t('auth.noAccount')}{' '}
+        <button
+          type="button"
+          onClick={() => navigate('/register')}
+          className="text-primary hover:underline"
+        >
+          {t('auth.createAccount')}
+        </button>
+      </p>
     </form>
   );
 }
