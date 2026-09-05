@@ -25,9 +25,23 @@ test.describe('General-portal login — tenant picker', () => {
     await expect(page).toHaveURL(/\/dashboard/);
   });
 
-  test('visiting /select-tenant directly with no pending tenant list redirects to /login', async ({
-    page,
-  }) => {
+  test('the picker survives a reload', async ({ page }) => {
+    const dialog = await openLoginDialog(page);
+    await dialog.getByLabel('Email').fill(TEST_USERS.multiTenant.email);
+    await dialog.getByLabel('Password').fill(TEST_USERS.multiTenant.password);
+    await dialog.getByRole('button', { name: 'Sign in' }).click();
+    await page.waitForURL('**/select-tenant', { timeout: 15_000 });
+
+    // Regression: the org list used to live only in AuthContext state, set by
+    // login(). A reload runs /auth/refresh + /auth/me only, so the list came
+    // back empty and the page bounced to /login. It now comes from /auth/me.
+    await page.reload();
+    await expect(page).toHaveURL(/\/select-tenant/);
+    await expect(page.getByText('Test School')).toBeVisible();
+    await expect(page.getByText('Second School')).toBeVisible();
+  });
+
+  test('visiting /select-tenant unauthenticated redirects to /login', async ({ page }) => {
     await page.goto('/select-tenant');
     await expect(page).toHaveURL(/\/login/);
   });

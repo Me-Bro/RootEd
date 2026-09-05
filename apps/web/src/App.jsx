@@ -6,6 +6,7 @@ import { useAuth } from './contexts/useAuth.js';
 import LoginPage from './pages/auth/LoginPage.jsx';
 import SelectTenantPage from './pages/auth/SelectTenantPage.jsx';
 import ImpersonateCallbackPage from './pages/auth/ImpersonateCallbackPage.jsx';
+import SetPasswordPage from './pages/auth/SetPasswordPage.jsx';
 import AppShell from './components/layout/AppShell.jsx';
 import DashboardPage from './pages/admin/DashboardPage.jsx';
 import TenantsPage from './pages/admin/TenantsPage.jsx';
@@ -81,6 +82,8 @@ function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/select-tenant" element={<SelectTenantPage />} />
       <Route path="/impersonate" element={<ImpersonateCallbackPage />} />
+      <Route path="/accept-invite" element={<SetPasswordPage mode="invite" />} />
+      <Route path="/reset-password" element={<SetPasswordPage mode="reset" />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route
         element={

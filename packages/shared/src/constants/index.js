@@ -29,6 +29,53 @@ export const TENANT_STATUS = ['active', 'suspended', 'archived'];
 
 export const SYSTEM_ROLES = ['super_admin', 'support_agent'];
 
+export const USER_STATUS = ['active', 'invited', 'suspended', 'pending_verification'];
+
+export const PASSWORD_MIN_LENGTH = 8;
+
+export const USERNAME_MIN_LENGTH = 3;
+export const USERNAME_MAX_LENGTH = 30;
+
+// Deliberately excludes '@'. That is what makes the login identifier
+// unambiguous: an identifier containing '@' is an email address, anything else
+// is a username — no guessing, no double lookup. The anchors also stop a
+// username starting or ending with a separator.
+export const USERNAME_PATTERN = /^[a-z0-9][a-z0-9._-]*[a-z0-9]$/;
+
+// Names that would let someone impersonate the product, the platform team, or
+// a position of authority inside a school. Checked case-insensitively against
+// the normalised (lowercased) username.
+export const RESERVED_USERNAMES = [
+  'abuse',
+  'admin',
+  'administrator',
+  'api',
+  'auth',
+  'billing',
+  'help',
+  'hostmaster',
+  'mail',
+  'me',
+  'moderator',
+  'noreply',
+  'no-reply',
+  'owner',
+  'postmaster',
+  'principal',
+  'root',
+  'rooted',
+  'security',
+  'settings',
+  'staff',
+  'superadmin',
+  'super-admin',
+  'support',
+  'sysadmin',
+  'system',
+  'webmaster',
+  'www',
+];
+
 export const ASSESSMENT_TYPES = ['quiz', 'midterm', 'final', 'other'];
 
 // The single source of truth for module permissions. apps/api/src/models/Role.js

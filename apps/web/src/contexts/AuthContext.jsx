@@ -6,7 +6,6 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [accessToken, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [tenants, setTenants] = useState([]);
 
   const logout = useCallback(async () => {
     try {
@@ -59,7 +58,6 @@ export function AuthProvider({ children }) {
     });
     setAccessToken(data.accessToken);
     setToken(data.accessToken);
-    setTenants(data.tenants ?? []);
     try {
       const meRes = await api.get('/auth/me');
       setUser(meRes.data);
@@ -96,7 +94,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, accessToken, loading, tenants, login, loginWithToken, selectTenant, logout }}
+      value={{ user, accessToken, loading, login, loginWithToken, selectTenant, logout }}
     >
       {children}
     </AuthContext.Provider>

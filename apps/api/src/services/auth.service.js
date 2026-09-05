@@ -39,6 +39,23 @@ export async function blockToken(token, expiresInSeconds) {
   await redis.setex(`blocklist:${token}`, expiresInSeconds, '1');
 }
 
+// Invalidates every access token issued to this user before now, by the same
+// mechanism the revoke-all-sessions runbook uses: authenticate() compares each
+// token's `iat` against this timestamp. TTL matches the refresh-token lifetime,
+// after which no live token can predate it anyway.
+export async function revokeUserSessions(userId) {
+  // +1s is defensive, not a fix for an observed failure. authenticate() tests
+  // `iat < revokedAt` and `iat` only has one-second resolution, so a token
+  // minted during this same second would otherwise survive the revoke. In
+  // practice a login and a password change are separated by more than a
+  // second, but that is timing, not a guarantee.
+  await redis.setex(
+    `blocklist:user:${userId}`,
+    7 * 24 * 60 * 60,
+    String(Math.floor(Date.now() / 1000) + 1)
+  );
+}
+
 export async function isTokenBlocked(token) {
   const val = await redis.get(`blocklist:${token}`);
   return val === '1';
@@ -73,15 +90,27 @@ export async function clearFailedLogins(userId) {
   );
 }
 
-export function generateResetToken() {
+export const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
+export const INVITE_TOKEN_TTL_MS = 48 * 60 * 60 * 1000;
+
+export function generateToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
-export async function storeResetToken(userId, token) {
-  const expires = new Date(Date.now() + 30 * 60 * 1000);
+// Shared by every single-use token we mail out: password reset, invite
+// acceptance, email verification and email change. Only the SHA-256 digest is
+// persisted — the raw token exists solely in the email — so a database dump,
+// backup or log leak can't be replayed. The digest of a 256-bit random value
+// needs no salt or slow KDF: there is nothing to brute-force.
+export function hashToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+export async function storeResetToken(userId, token, ttlMs = RESET_TOKEN_TTL_MS) {
+  const expires = new Date(Date.now() + ttlMs);
   await User.updateOne(
     { _id: userId },
-    { passwordResetToken: token, passwordResetExpires: expires },
+    { passwordResetToken: hashToken(token), passwordResetExpires: expires },
     { _bypassTenantScope: true }
   );
 }
