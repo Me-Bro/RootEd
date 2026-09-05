@@ -103,6 +103,7 @@ async function run() {
   // a sync the old definition survives and every roster student without a
   // linked account collides on userId: null.
   await Student.syncIndexes();
+  await StaffMember.syncIndexes();
   await AttendanceRecord.syncIndexes();
   await Grade.syncIndexes();
   await Timetable.syncIndexes();
