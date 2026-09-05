@@ -363,9 +363,18 @@ router.get('/me', authenticate, async (req, res, next) => {
       if (tenant) permissions = await resolvePermissions(req.user.sub, tenant._id.toString());
     }
 
+    // Mirrors the tenants[] that POST /auth/login returns. Without it the org
+    // list is lost on reload, since a reload only runs /auth/refresh + /auth/me
+    // — which is what stranded the tenant picker on /login. super_admin is
+    // excluded for the same reason as in POST /auth/login: tenant access comes
+    // from impersonation, never from membership.
+    const orgs =
+      user.systemRole === 'super_admin' ? [] : await getActiveTenantsForUser(req.user.sub);
+
     res.json({
       ...user,
       permissions,
+      orgs,
       impersonatedTenantId: req.user.impersonatedTenantId ?? null,
       tenantId: tenant?._id?.toString() ?? req.user.tenantId ?? null,
       orgType: tenant?.orgType ?? null,

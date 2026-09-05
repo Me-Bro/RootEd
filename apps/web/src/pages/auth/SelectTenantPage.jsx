@@ -14,12 +14,17 @@ import { LanguageSwitcherTrigger } from '../../components/ui/LanguageSwitcher.js
 
 export default function SelectTenantPage() {
   const { t } = useTranslation();
-  const { tenants, selectTenant } = useAuth();
+  // Sourced from GET /auth/me rather than the POST /auth/login response, so the
+  // list survives a reload — a reload only runs /auth/refresh + /auth/me, which
+  // is why this page used to bounce straight back to /login.
+  const { user, loading, selectTenant } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [pendingId, setPendingId] = useState(null);
+  const orgs = user?.orgs ?? [];
 
-  if (!tenants || tenants.length === 0) {
+  if (loading) return null;
+  if (orgs.length === 0) {
     return <Navigate to="/login" replace />;
   }
 
@@ -58,7 +63,7 @@ export default function SelectTenantPage() {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-2">
-              {tenants.map((tenant) => (
+              {orgs.map((tenant) => (
                 <Button
                   key={tenant._id}
                   type="button"
