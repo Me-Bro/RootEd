@@ -1,0 +1,959 @@
+/* RootEd public landing page — ported from the approved mockups in
+   docs/landing-page-mockup/{desktop.html,mobile.html} (PLAN.md: "✅ Approved
+   — 2026-08-26"). Structure and copy are carried over verbatim; only the
+   review-harness chrome (.meta strip, .reviewnav, the simulated phone
+   bezel) is dropped since this renders as a real page, not a design review.
+   Every selector is scoped under .rooted-landing so nothing here leaks into
+   the rest of the (Tailwind-based) app — these are deliberately plain,
+   generic class names (.btn, .badge, .eyebrow) that would otherwise be too
+   easy to collide with. */
+
+.rooted-landing {
+  --ink: #0f1115;
+  --ink-2: #3a3f47;
+  --ink-3: #6b7280;
+  --ink-4: #9aa1ab;
+  --line: #e6e8ec;
+  --line-2: #f1f2f5;
+  --surface: #ffffff;
+  --surface-2: #f7f8fa;
+  --surface-3: #eef0f4;
+
+  --brand: #7e14ff;
+  --brand-2: #47bfff;
+  --brand-soft: #f3ebff;
+  --brand-ink: #4a0ecf;
+  /* #47bfff (--brand-2) only hits ~2:1 contrast against white text — fails
+     WCAG AA (4.5:1). Every background use of this gradient carries white
+     text, so its blue stop is darkened to #1971c2 (~5:1 on white) here.
+     --brand-2 itself stays bright — it's only ever used as a border/accent
+     color on dark backgrounds, where the original brighter blue is fine. */
+  --brand-grad: linear-gradient(135deg, #7e14ff 0%, #1971c2 100%);
+
+  --safe: #15803d;
+
+  --r-lg: 20px;
+  --r-md: 14px;
+  --r-sm: 8px;
+  --r-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(15, 17, 21, 0.06), 0 2px 8px rgba(15, 17, 21, 0.04);
+  --shadow-lg: 0 8px 24px rgba(15, 17, 21, 0.08), 0 24px 64px rgba(126, 20, 255, 0.08);
+  --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --maxw: 1180px;
+
+  font-family:
+    'Geist Variable',
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  background: var(--surface-2);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+.rooted-landing img,
+.rooted-landing svg {
+  display: block;
+  max-width: 100%;
+}
+.rooted-landing a {
+  color: inherit;
+  text-decoration: none;
+}
+.rooted-landing * {
+  box-sizing: border-box;
+}
+
+/* ── Responsive split: same md (768px) breakpoint the rest of the app uses
+   for MobileBottomBar.jsx's md:hidden ─────────────────────────────────── */
+.rooted-landing .lp-desktop-only {
+  display: none;
+}
+.rooted-landing .lp-mobile-only {
+  display: block;
+}
+@media (min-width: 768px) {
+  .rooted-landing .lp-desktop-only {
+    display: block;
+  }
+  .rooted-landing .lp-mobile-only {
+    display: none;
+  }
+}
+
+/* ── Buttons & badges (shared desktop + mobile) ─────────────────────────── */
+
+.rooted-landing .btn {
+  appearance: none;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border-radius: var(--r-pill);
+  font-weight: 600;
+  font-size: 14.5px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.rooted-landing .btn.primary {
+  background: var(--brand-grad);
+  color: #fff;
+  box-shadow: var(--shadow-lg);
+}
+.rooted-landing .btn.secondary {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+.rooted-landing .btn.ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+}
+.rooted-landing .btn.sm {
+  padding: 8px 14px;
+  font-size: 13px;
+}
+.rooted-landing .btn.block {
+  width: 100%;
+}
+
+.rooted-landing .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--r-pill);
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.rooted-landing .badge.dot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--safe);
+}
+
+.rooted-landing .eyebrow {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+
+/* ── Desktop nav / hero / sections ───────────────────────────────────────── */
+
+.rooted-landing .lp-nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 16px max(24px, calc((100% - var(--maxw)) / 2));
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+.rooted-landing .lp-nav .brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 700;
+  font-size: 17px;
+  margin-right: auto;
+}
+.rooted-landing .lp-nav .brand img {
+  width: 26px;
+  height: 25px;
+}
+.rooted-landing .lp-nav .links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-size: 14px;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+.rooted-landing .lp-nav .links a:hover {
+  color: var(--ink);
+}
+.rooted-landing .lp-nav .cta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rooted-landing .lp-hero {
+  padding: 72px max(24px, calc((100% - var(--maxw)) / 2)) 56px;
+  background: radial-gradient(ellipse 70% 55% at 50% -10%, var(--brand-soft) 0%, transparent 65%);
+}
+.rooted-landing .lp-hero h1 {
+  font-size: 46px;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  margin: 18px 0 16px;
+  max-width: 720px;
+}
+.rooted-landing .lp-hero h1 .grad {
+  background: var(--brand-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.rooted-landing .lp-hero p.lead {
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 560px;
+  margin: 0 0 26px;
+}
+.rooted-landing .lp-hero .cta-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+.rooted-landing .lp-hero .fineprint {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+/* Decorative root-branch motif — same visual language as the logo
+   exploration (docs/logo-mockup, concept 1). Purely decorative brand
+   texture, absolutely positioned behind hero/statement content, never
+   load-bearing information. */
+.rooted-landing .motif-wrap {
+  position: relative;
+  overflow: hidden;
+}
+.rooted-landing .motif-wrap > .motif {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+}
+.rooted-landing .motif-wrap > *:not(.motif) {
+  position: relative;
+  z-index: 1;
+}
+.rooted-landing .motif {
+  color: var(--brand);
+  opacity: 0.1;
+}
+.rooted-landing .on-dark .motif {
+  color: var(--brand-2);
+  opacity: 0.14;
+}
+
+.rooted-landing .lp-statement {
+  background: var(--ink);
+  color: #f2f4f7;
+  padding: 80px max(24px, calc((100% - var(--maxw)) / 2));
+  text-align: center;
+}
+.rooted-landing .lp-statement blockquote {
+  margin: 0 auto;
+  max-width: 780px;
+  font-size: 30px;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+.rooted-landing .lp-statement cite {
+  display: block;
+  margin-top: 22px;
+  font-size: 13.5px;
+  font-style: normal;
+  color: #8b93a0;
+}
+
+.rooted-landing .lp-section {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 64px 24px;
+}
+.rooted-landing .lp-section.tight {
+  padding-top: 0;
+}
+.rooted-landing .lp-section .section-head {
+  max-width: 640px;
+  margin: 0 0 36px;
+}
+.rooted-landing .lp-section .section-head h2 {
+  font-size: 30px;
+  letter-spacing: -0.01em;
+  margin: 10px 0 12px;
+}
+.rooted-landing .lp-section .section-head p {
+  font-size: 16px;
+  color: var(--ink-2);
+  line-height: 1.55;
+  margin: 0;
+}
+.rooted-landing .lp-section.on-surface {
+  background: var(--surface);
+}
+.rooted-landing .lp-section.on-dark {
+  background: var(--ink);
+  color: #e8eaee;
+}
+.rooted-landing .lp-section.on-dark .section-head p {
+  color: #b7bcc4;
+}
+
+.rooted-landing .lp-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.rooted-landing .lp-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+.rooted-landing .lp-card .icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-md);
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 14px;
+}
+.rooted-landing .lp-card h3 {
+  font-size: 16.5px;
+  margin: 0 0 8px;
+}
+.rooted-landing .lp-card.accent {
+  background: var(--brand-soft);
+  border-color: transparent;
+}
+.rooted-landing .lp-card.accent .icon {
+  background: #fff;
+}
+/* --ink-3 is tuned for the white cards; on --brand-soft it is 4.18:1, under
+   the WCAG AA 4.5:1 floor. --ink-2 gives 9.15:1 on the tint. */
+.rooted-landing .lp-card.accent p {
+  color: var(--ink-2);
+}
+.rooted-landing .lp-card p {
+  font-size: 14px;
+  color: var(--ink-3);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.rooted-landing .lp-security-row {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line-2);
+}
+.rooted-landing .lp-security-row:last-child {
+  border-bottom: none;
+}
+.rooted-landing .lp-security-row .num {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--brand);
+  font-weight: 700;
+  flex: 0 0 28px;
+}
+.rooted-landing .lp-security-row h3 {
+  font-size: 16px;
+  margin: 0 0 5px;
+}
+.rooted-landing .lp-security-row p {
+  font-size: 14px;
+  color: var(--ink-3);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 620px;
+}
+
+.rooted-landing .lp-values-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.rooted-landing .lp-value-chip {
+  flex: 1 1 220px;
+  background: var(--brand-soft);
+  border-radius: var(--r-md);
+  padding: 16px 18px;
+}
+.rooted-landing .lp-value-chip.on-dark-chip {
+  background: #1a1d24;
+}
+.rooted-landing .lp-value-chip h3 {
+  font-size: 14.5px;
+  margin: 0 0 6px;
+  color: var(--brand-ink);
+}
+.rooted-landing .lp-value-chip.on-dark-chip h3 {
+  color: var(--brand-2);
+}
+.rooted-landing .lp-value-chip p {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin: 0;
+  line-height: 1.5;
+}
+.rooted-landing .lp-value-chip.on-dark-chip p {
+  color: #b7bcc4;
+}
+
+.rooted-landing .lp-process {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+.rooted-landing .lp-process .step {
+  position: relative;
+  padding-top: 8px;
+}
+.rooted-landing .lp-process .step .n {
+  font-family: var(--mono);
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--brand-soft);
+  -webkit-text-stroke: 1.5px var(--brand);
+}
+.rooted-landing .lp-process .step h3 {
+  font-size: 15.5px;
+  margin: 8px 0 6px;
+}
+.rooted-landing .lp-process .step p {
+  font-size: 13.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.rooted-landing .lp-mockframe {
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.rooted-landing .lp-mockframe .bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: var(--surface-3);
+  border-bottom: 1px solid var(--line);
+}
+.rooted-landing .lp-mockframe .bar i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--line);
+}
+.rooted-landing .lp-mockframe .placeholder {
+  padding: 46px 24px;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 13px;
+  background:
+    linear-gradient(var(--surface-2) 1px, transparent 1px) 0 0/100% 34px,
+    var(--surface);
+}
+.rooted-landing .lp-mockframe .placeholder b {
+  display: block;
+  color: var(--ink-2);
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.rooted-landing .lp-cta-band {
+  background: var(--brand-grad);
+  color: #fff;
+  border-radius: var(--r-lg);
+  padding: 44px;
+  margin: 0 max(24px, calc((100% - var(--maxw)) / 2)) 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.rooted-landing .lp-cta-band h3 {
+  font-size: 24px;
+  margin: 0 0 6px;
+}
+.rooted-landing .lp-cta-band p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 14.5px;
+}
+.rooted-landing .lp-cta-band .btn.primary {
+  background: #fff;
+  color: var(--brand-ink);
+  box-shadow: none;
+}
+.rooted-landing .lp-cta-band .btn.secondary {
+  background: transparent;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.rooted-landing .lp-footer {
+  background: var(--ink);
+  color: #aeb4bf;
+  padding: 48px max(24px, calc((100% - var(--maxw)) / 2)) 28px;
+  font-size: 13.5px;
+}
+.rooted-landing .lp-footer .top {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid #262b36;
+  margin-bottom: 20px;
+}
+.rooted-landing .lp-footer .brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 700;
+  font-size: 16px;
+  color: #f2f4f7;
+  margin-bottom: 8px;
+}
+.rooted-landing .lp-footer a:hover,
+.rooted-landing .lp-footer button:hover {
+  color: #fff;
+}
+.rooted-landing .lp-footer .cols {
+  display: flex;
+  gap: 56px;
+}
+.rooted-landing .lp-footer .cols h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  /* #6b7280 on --ink is only 3.91:1 — fails WCAG AA. --ink-4 is the same
+     palette's muted tone and clears it at 7.25:1. */
+  color: var(--ink-4);
+  margin: 0 0 10px;
+}
+.rooted-landing .lp-footer .cols a,
+.rooted-landing .lp-footer .cols button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 4px 0;
+  background: none;
+  border: none;
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.rooted-landing .lp-footer .bottom {
+  display: flex;
+  justify-content: space-between;
+  color: var(--ink-4); /* was #6b7280 — 3.91:1 on --ink, fails WCAG AA */
+  font-size: 12.5px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ── Mobile: a real full-width page (not the phone-bezel review simulation
+   docs/landing-page-mockup/mobile.html uses) ────────────────────────────── */
+
+.rooted-landing .m-page {
+  background: var(--surface);
+  color: var(--ink);
+  padding-bottom: 76px; /* clears the fixed .m-sticky-cta bar */
+}
+
+.rooted-landing .m-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  position: sticky;
+  top: 0;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--line);
+  z-index: 30;
+}
+.rooted-landing .m-nav .brand {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+  font-size: 15px;
+}
+.rooted-landing .m-nav .brand img {
+  width: 20px;
+  height: 19px;
+}
+
+.rooted-landing .m-hero {
+  padding: 40px 20px 32px;
+  background: radial-gradient(ellipse 100% 60% at 50% -10%, var(--brand-soft) 0%, transparent 70%);
+}
+.rooted-landing .m-hero h1 {
+  font-size: 35px;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  margin: 18px 0 12px;
+  font-weight: 700;
+}
+.rooted-landing .m-hero h1 .grad {
+  background: var(--brand-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.rooted-landing .m-hero p {
+  font-size: 15px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+.rooted-landing .m-hero .fineprint {
+  display: block;
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 10px;
+}
+
+.rooted-landing .m-section {
+  padding: 34px 20px;
+}
+.rooted-landing .m-section.on-surface {
+  background: var(--surface);
+}
+.rooted-landing .m-section.on-tint {
+  background: var(--brand-soft);
+}
+.rooted-landing .m-section.on-dark {
+  background: var(--ink);
+  color: #e8eaee;
+}
+.rooted-landing .m-section.on-dark p {
+  color: #b7bcc4;
+}
+.rooted-landing .m-section .eyebrow {
+  display: block;
+  margin-bottom: 8px;
+}
+.rooted-landing .m-section h2 {
+  font-size: 22px;
+  margin: 0 0 10px;
+  letter-spacing: -0.02em;
+}
+.rooted-landing .m-section > p.lead {
+  font-size: 14px;
+  color: var(--ink-3);
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+.rooted-landing .m-statement {
+  background: var(--ink);
+  color: #f2f4f7;
+  padding: 54px 24px;
+  text-align: center;
+}
+.rooted-landing .m-statement blockquote {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.4;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.rooted-landing .m-statement cite {
+  display: block;
+  margin-top: 16px;
+  font-size: 12.5px;
+  font-style: normal;
+  color: #8b93a0;
+}
+
+.rooted-landing .m-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.rooted-landing .m-tags span {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+}
+
+.rooted-landing .m-fact {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line-2);
+}
+.rooted-landing .m-fact:last-child {
+  border-bottom: none;
+}
+.rooted-landing .m-fact .ic {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+.rooted-landing .m-fact h3 {
+  font-size: 14px;
+  margin: 0 0 3px;
+}
+.rooted-landing .m-fact p {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.rooted-landing .m-modgrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px 12px;
+  justify-content: center;
+  padding-top: 8px;
+}
+.rooted-landing .m-modgrid .m {
+  flex: 0 0 26%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  text-align: center;
+}
+.rooted-landing .m-modgrid .m .icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: var(--brand-grad);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 17px;
+}
+.rooted-landing .m-modgrid .m span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.rooted-landing .m-stepper {
+  position: relative;
+  padding-left: 40px;
+}
+.rooted-landing .m-stepper::before {
+  content: '';
+  position: absolute;
+  left: 13px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--line);
+}
+.rooted-landing .m-process-step {
+  position: relative;
+  padding: 0 0 26px;
+}
+.rooted-landing .m-process-step:last-child {
+  padding-bottom: 0;
+}
+.rooted-landing .m-process-step .n {
+  position: absolute;
+  left: -40px;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--brand-grad);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.rooted-landing .m-process-step h3 {
+  font-size: 14.5px;
+  margin: 0 0 4px;
+}
+.rooted-landing .m-process-step p {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.rooted-landing .m-cta-band {
+  background: var(--brand-grad);
+  color: #fff;
+  border-radius: var(--r-md);
+  padding: 22px 18px;
+  margin: 8px 18px 24px;
+  text-align: center;
+}
+.rooted-landing .m-cta-band h3 {
+  font-size: 17px;
+  margin: 0 0 6px;
+}
+.rooted-landing .m-cta-band p {
+  font-size: 12.5px;
+  opacity: 0.9;
+  margin: 0 0 14px;
+}
+.rooted-landing .m-cta-band .btn.primary {
+  background: #fff;
+  color: var(--brand-ink);
+}
+
+.rooted-landing .m-footer {
+  background: var(--ink);
+  color: #9aa1ab;
+  padding: 24px 18px 28px;
+  font-size: 12px;
+}
+.rooted-landing .m-footer .brand {
+  color: #f2f4f7;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+.rooted-landing .m-footer a {
+  display: inline-block;
+  margin: 3px 12px 3px 0;
+}
+
+/* Fixed (not sticky-inside-a-phone-frame) bottom CTA bar — mirrors how
+   MobileBottomBar.jsx sits outside the app's scrollable page content. Safe
+   area padding for real notched devices. */
+.rooted-landing .m-sticky-cta {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  gap: 10px;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--line);
+}
+.rooted-landing .m-sticky-cta .btn {
+  flex: 1;
+}
+
+/* ── Extracted from inline styles ─────────────────────────────────────────
+   These were inline `style={{...}}` objects in LandingView.jsx. Moved here
+   so the values live with the rest of the design tokens, and so the
+   text-styled "Log in →" button (which appeared twice with an identical
+   7-property reset) is defined once. Motif positioning stays inline: each
+   of the four instances is placed individually by design. */
+
+/* A button that has to read as inline text, not a button (the hero/mobile
+   "Log in →" links). */
+.rooted-landing .btn-inline {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  color: var(--brand-ink);
+  font-weight: 600;
+}
+
+.rooted-landing .lp-hero .lp-mockframe {
+  max-width: 900px;
+  margin-top: 44px;
+}
+.rooted-landing .lp-mockframe .role-pills {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.rooted-landing .lp-mockframe .ref {
+  margin-top: 10px;
+  font-size: 11.5px;
+  color: var(--ink-4);
+}
+.rooted-landing .badge.solid {
+  background: var(--brand-grad);
+  color: #fff;
+}
+
+.rooted-landing .lp-values-row.flush {
+  margin-top: 0;
+}
+.rooted-landing .section-head.flush {
+  margin-bottom: 20px;
+}
+.rooted-landing .lp-cta-band .actions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.rooted-landing .lp-footer .brand img {
+  width: 20px;
+  height: 19px;
+}
+.rooted-landing .lp-footer .blurb {
+  max-width: 280px;
+  margin: 0;
+}
+
+/* The mobile dark section's eyebrow needs the bright accent, since --brand
+   is unreadable on --ink. */
+.rooted-landing .m-section.on-dark .eyebrow {
+  color: var(--brand-2);
+}
+
+.rooted-landing .m-section > p.lead.flush {
+  margin-bottom: 0;
+}
+.rooted-landing .m-footer .blurb {
+  margin: 0 0 8px;
+}

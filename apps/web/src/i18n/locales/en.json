@@ -1132,5 +1132,198 @@
       "enable": "Enable",
       "disable": "Disable"
     }
+  },
+  "landing": {
+    "nav": {
+      "product": "Product",
+      "security": "Security",
+      "about": "About",
+      "contact": "Contact",
+      "login": "Log in",
+      "startTrial": "Start free trial"
+    },
+    "hero": {
+      "badge": "Built by Rural Root Cloud",
+      "titleMain": "Run your school, college or coaching center —",
+      "titleAccent": "not five spreadsheets.",
+      "lead": "RootEd is the system schools, colleges and coaching or tuition centers use to run attendance, fees, staff and inventory in one place. Multi-tenant, role-based, and built with the same data-safety discipline as a bank's back office.",
+      "ctaTrial": "Start 14-day free trial",
+      "ctaLogin": "Log in to your school",
+      "fineprint": "No credit card to start. Already a RootEd school?",
+      "fineprintLogin": "Log in →"
+    },
+    "preview": {
+      "rolePrincipal": "Principal",
+      "roleTeacher": "Teacher",
+      "roleAccountant": "Accountant",
+      "roleLibrarian": "Librarian",
+      "roleTenantAdmin": "Tenant Admin",
+      "heading": "A dashboard for every role — not just one",
+      "body": "Each login sees a view scoped to what they're permitted to see, enforced by RBAC, not just hidden nav items. Shown here: the principal's view — attention strip, attendance/fee/grade KPIs, 7D trend, date picker to rewind any past day. Parents and students feel the results too — fees paid on time, report cards that are accurate — without a login of their own to manage.",
+      "ref": "Reference: docs/mobile-ui/20-dashboard-approved.html — real seeded data, not fabricated"
+    },
+    "modulesSection": {
+      "eyebrow": "Product",
+      "heading": "Five modules. One tenant. Zero spreadsheets.",
+      "lead": "Everything your organisation runs day to day, already wired together — a student's attendance record, fee balance and report card live in the same system, not three disconnected tools.",
+      "allConnectedTitle": "All connected",
+      "allConnectedBody": "One login, one dataset, per school — a fee defaulter list and an attendance report can reference the same student record."
+    },
+    "modules": {
+      "academics": {
+        "title": "Academics",
+        "body": "Attendance, grades, timetable, report cards and academic years — one record per student, not a spreadsheet per teacher."
+      },
+      "staff": {
+        "title": "Staff",
+        "body": "Staff directory, leave requests with approval chains, and salary/payroll — in one place, not a WhatsApp group and a register."
+      },
+      "fee": {
+        "title": "Fee",
+        "body": "Fee structures, collection, Razorpay online payments and receipts — parents pay online, you see it reconcile automatically."
+      },
+      "expense": {
+        "title": "Expense",
+        "body": "Expense entries with approval chains and auto-escalation, plus budgets — every rupee spent has a paper trail."
+      },
+      "inventory": {
+        "title": "Inventory",
+        "body": "Stock tracking, depreciation, and overdue-return alerts — know what your school owns and where it went."
+      }
+    },
+    "why": {
+      "multiTenant": {
+        "title": "Multi-tenant",
+        "body": "One deployment, many schools, colleges and coaching centers — your data is tenant-scoped and enforced at the database-query layer, not just hidden in the UI."
+      },
+      "rbac": {
+        "title": "Three-tier RBAC",
+        "body": "Super Admin → Tenant Admin → module-permissioned roles. A librarian can't see payroll. A teacher can't see budgets."
+      },
+      "i18n": {
+        "title": "English · Hindi · both",
+        "body": "Full i18n including a merged Hindi+English interface — built for how staff actually read, not just English-only software."
+      },
+      "workflows": {
+        "title": "Approval workflows",
+        "body": "Leave, expense and purchase requests move through a real approval chain with auto-escalation — nothing sits forgotten."
+      }
+    },
+    "securitySection": {
+      "eyebrow": "Security",
+      "heading": "Your staff's bank details and your students' records — protected on purpose, not by accident.",
+      "lead": "School data is sensitive: staff government IDs, bank accounts, salaries, student records. Here's specifically what protects it."
+    },
+    "security": {
+      "isolation": {
+        "title": "Tenant isolation enforced at the database layer",
+        "body": "Every query is automatically checked for your school's tenant ID before it runs. A bug that tries to read another school's data fails outright — it doesn't quietly return the wrong rows."
+      },
+      "pii": {
+        "title": "Encrypted staff PII",
+        "body": "Government ID, bank account and salary fields are encrypted with AES-256-GCM, with a separate encryption key derived per school — not one shared key for every tenant."
+      },
+      "audit": {
+        "title": "Immutable audit log",
+        "body": "Every change to sensitive records is written to an audit log as a before/after diff that can't be edited after the fact — you can always answer \"who changed this, and when.\""
+      }
+    },
+    "statement": {
+      "quote": "“World-class technology can grow from anywhere — including rural roots.”",
+      "cite": "Rural Root Cloud — the company behind RootEd"
+    },
+    "aboutSection": {
+      "eyebrow": "About",
+      "heading": "Built by Rural Root Cloud",
+      "lead": "Rural Root Cloud Tech Services And Training is an IT company that designs, builds and maintains complete digital products and microservices — and shares that knowledge through practical training. RootEd is one of its products, built and run with the same discipline."
+    },
+    "values": {
+      "reliability": {
+        "title": "Rooted in Reliability",
+        "body": "We build products and services to be stable first, then fast."
+      },
+      "cloudNative": {
+        "title": "Cloud-Native Mindset",
+        "body": "Designed for scaling from day one, not patched later."
+      },
+      "training": {
+        "title": "Training & Knowledge Sharing",
+        "body": "We don't hide complexity — we teach your team how things work."
+      },
+      "rural": {
+        "title": "From Rural to Global",
+        "body": "We prove that great tech can come from anywhere, and reach everywhere."
+      }
+    },
+    "processSection": {
+      "eyebrow": "How it works",
+      "heading": "From first call to going live"
+    },
+    "process": {
+      "understand": {
+        "title": "Understand",
+        "body": "A quick call to understand your school's classes, sections, staff and fee structure."
+      },
+      "plan": {
+        "title": "Plan",
+        "body": "We map your school onto RootEd's tenant — roles, sections and fee structures, before you touch it."
+      },
+      "golive": {
+        "title": "Go live",
+        "body": "Your school's RootEd tenant is provisioned and your 14-day trial starts."
+      },
+      "support": {
+        "title": "Support",
+        "body": "We stay with you for training, updates and support — not a one-time handoff."
+      }
+    },
+    "ctaBand": {
+      "heading": "Ready to see it running on your school's data?",
+      "sub": "14-day free trial · no credit card required"
+    },
+    "footer": {
+      "blurb": "Where your school's roots grow digital. Built by Rural Root Cloud Tech Services And Training.",
+      "productHeading": "Product",
+      "companyHeading": "Company",
+      "modules": "Modules",
+      "copyright": "© 2026 Rural Root Cloud Tech Services And Training"
+    },
+    "mobile": {
+      "titleMain": "One system.",
+      "titleAccent": "Every role.",
+      "lead": "Attendance, fees, staff and inventory — for schools, colleges and coaching or tuition centers, not five spreadsheets.",
+      "fineprint": "No credit card. Already a school?",
+      "whyEyebrow": "Why schools trust it",
+      "whyHeading": "Protected on purpose",
+      "facts": {
+        "isolation": {
+          "title": "Tenant-isolated by design",
+          "body": "Enforced at the database layer — a bug can't leak another school's data."
+        },
+        "pii": {
+          "title": "Encrypted staff PII",
+          "body": "AES-256-GCM, a separate key per school."
+        },
+        "audit": {
+          "title": "Immutable audit log",
+          "body": "Every change, before/after, that can't be edited after the fact."
+        },
+        "roles": {
+          "title": "A view for every role",
+          "body": "Principal, teacher, accountant, librarian each see only what they're permitted to. Parents and students feel the results, without a login of their own to manage."
+        }
+      },
+      "modulesHeading": "Five modules, one tenant",
+      "aboutLead": "An IT company that designs, builds and maintains complete digital products and microservices — RootEd is one of them.",
+      "tags": {
+        "reliability": "Reliability",
+        "cloudNative": "Cloud-native",
+        "knowledge": "Knowledge sharing",
+        "rural": "Rural to global"
+      },
+      "processHeading": "First call to going live",
+      "ctaHeading": "Ready to see it on your data?",
+      "ctaSub": "14-day free trial · no credit card"
+    }
   }
 }

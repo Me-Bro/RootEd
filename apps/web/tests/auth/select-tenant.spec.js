@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { TEST_USERS } from '../fixtures/auth.js';
+import { TEST_USERS, openLoginDialog } from '../fixtures/auth.js';
 
 // Login tests run without any pre-loaded storageState
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -10,9 +10,11 @@ test.describe('General-portal login — tenant picker', () => {
   });
 
   test('multi-tenant user lands on the picker, single-tenant user does not', async ({ page }) => {
-    await page.getByLabel('Email').fill(TEST_USERS.multiTenant.email);
-    await page.getByLabel('Password').fill(TEST_USERS.multiTenant.password);
-    await page.getByRole('button', { name: 'Sign in' }).click();
+    // /login shows the landing page UI; sign-in lives in a dialog.
+    const dialog = await openLoginDialog(page);
+    await dialog.getByLabel('Email').fill(TEST_USERS.multiTenant.email);
+    await dialog.getByLabel('Password').fill(TEST_USERS.multiTenant.password);
+    await dialog.getByRole('button', { name: 'Sign in' }).click();
 
     await page.waitForURL('**/select-tenant', { timeout: 15_000 });
     await expect(page.getByText('Test School')).toBeVisible();
