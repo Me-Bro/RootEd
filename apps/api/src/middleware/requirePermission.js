@@ -23,6 +23,30 @@ export async function resolvePermissions(userId, tenantId) {
   return permissions;
 }
 
+/**
+ * Drops the cached permission set for one member. Every membership or role
+ * write must call this: the 60s TTL is fine for staleness, but not for a grant
+ * an admin just made or — much worse — an access they just revoked.
+ */
+export async function invalidatePermissions(tenantId, userId) {
+  await redis.del(`perms:${tenantId}:${userId}`);
+}
+
+/**
+ * Same, for every member of a tenant — used when a Role's permissions change,
+ * which affects everyone holding it. SCAN rather than KEYS so this cannot block
+ * Redis on a large keyspace.
+ */
+export async function invalidateTenantPermissions(tenantId) {
+  const match = `perms:${tenantId}:*`;
+  let cursor = '0';
+  do {
+    const [next, keys] = await redis.scan(cursor, 'MATCH', match, 'COUNT', 100);
+    cursor = next;
+    if (keys.length) await redis.del(...keys);
+  } while (cursor !== '0');
+}
+
 export function requirePermission(permission) {
   return async (req, _res, next) => {
     try {

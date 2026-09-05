@@ -31,6 +31,16 @@ export const SYSTEM_ROLES = ['super_admin', 'support_agent'];
 
 export const USER_STATUS = ['active', 'invited', 'suspended', 'pending_verification'];
 
+// 'invited'  — a seat exists but the person has not accepted it yet
+// 'pending'  — the person asked to join and an admin has not decided yet (P3)
+// 'rejected' — kept rather than deleted so a rejected request cannot simply be
+//              resubmitted, and so a suspended member cannot rejoin around it
+export const MEMBERSHIP_STATUS = ['active', 'invited', 'pending', 'suspended', 'rejected'];
+
+export const JOIN_METHODS = ['invite', 'join_code', 'request', 'import', 'founder'];
+
+export const INVITE_STATUS = ['pending', 'accepted', 'revoked', 'expired'];
+
 export const PASSWORD_MIN_LENGTH = 8;
 
 export const USERNAME_MIN_LENGTH = 3;

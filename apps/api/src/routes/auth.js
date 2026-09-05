@@ -13,6 +13,7 @@ import {
   confirmEmailChangeSchema,
   changePasswordSchema,
   usernameSchema,
+  acceptInviteSchema,
 } from '@rooted/shared/schemas';
 import { User } from '../models/User.js';
 import {
@@ -60,6 +61,7 @@ import {
   sendEmailChangeNotice,
   sendAccountExistsNotice,
 } from '../services/email.service.js';
+import { acceptInvite } from '../services/invite.service.js';
 
 const router = Router();
 
@@ -479,6 +481,48 @@ router.post('/reset-password', async (req, res, next) => {
     next(err);
   }
 });
+
+// Mounted here, before resolveTenant(), because acceptance happens on the
+// portal host — the token is what identifies the tenant, so the invitee never
+// needs to know the subdomain.
+router.post(
+  '/invites/accept',
+  authenticate,
+  validate(acceptInviteSchema),
+  async (req, res, next) => {
+    try {
+      const user = await User.findById(req.user.sub, 'email emailVerified status').lean();
+      if (!user) throw new AppError('User not found', 404);
+
+      const { tenantId, alreadyAccepted } = await acceptInvite({ token: req.body.token, user });
+
+      // Hand back a session already scoped to the organization just joined, so
+      // the client lands inside it instead of on the tenant picker.
+      const tokenPayload = {
+        sub: req.user.sub,
+        systemRole: req.user.systemRole,
+        tenantId: tenantId.toString(),
+      };
+      res.cookie('refreshToken', signRefreshToken(tokenPayload), REFRESH_COOKIE_OPTIONS);
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'invite.accepted',
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+      });
+
+      res.json({
+        tenantId: tenantId.toString(),
+        alreadyAccepted,
+        accessToken: signAccessToken(tokenPayload),
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 // ── Registration & email verification ────────────────────────────────────────
 

@@ -4,8 +4,14 @@ import { AuditLog } from '../models/AuditLog.js';
 import { User } from '../models/User.js';
 import { StaffMember } from '../models/StaffMember.js';
 import { TenantMembership } from '../models/TenantMembership.js';
+import { createInviteSchema, updateMemberRolesSchema } from '@rooted/shared/schemas';
 import { authenticate } from '../middleware/authenticate.js';
-import { requirePermission } from '../middleware/requirePermission.js';
+import { validate } from '../middleware/validate.js';
+import { requirePermission, invalidatePermissions } from '../middleware/requirePermission.js';
+import { Role } from '../models/Role.js';
+import { Invite } from '../models/Invite.js';
+import { createInvite, revokeInvite, inviteUrlFor } from '../services/invite.service.js';
+import { sendTenantInvite } from '../services/email.service.js';
 import { markRead, getUnread, broadcastToRole } from '../services/notification.service.js';
 import { auditLog } from '../services/audit.service.js';
 import { blockToken } from '../services/auth.service.js';
@@ -69,7 +75,11 @@ router.get('/audit', requirePermission('audit:read'), async (req, res, next) => 
     }
 
     const [logs, total] = await Promise.all([
-      AuditLog.find(filter).sort({ at: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+      AuditLog.find(filter)
+        .sort({ at: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
       AuditLog.countDocuments(filter),
     ]);
 
@@ -99,11 +109,7 @@ const settingsUpdateSchema = z.object({
 router.patch('/settings', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
     const updates = settingsUpdateSchema.parse(req.body);
-    const tenant = await Tenant.findByIdAndUpdate(
-      req.tenant._id,
-      { $set: updates },
-      { new: true }
-    );
+    const tenant = await Tenant.findByIdAndUpdate(req.tenant._id, { $set: updates }, { new: true });
     if (!tenant) throw new AppError('Tenant not found', 404);
     res.json(tenant);
   } catch (err) {
@@ -199,6 +205,200 @@ router.delete('/gdpr/delete', async (req, res, next) => {
     });
 
     res.json({ message: 'Your data has been deleted.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Members & invitations ────────────────────────────────────────────────────
+
+/** True when this member is the only active holder of tenant:admin. */
+async function isLastAdmin(tenantId, membershipId) {
+  const adminRoles = await Role.find({ tenantId, permissions: 'tenant:admin' }, '_id').lean();
+  if (!adminRoles.length) return false;
+  const adminRoleIds = adminRoles.map((r) => r._id);
+
+  const admins = await TenantMembership.find(
+    { tenantId, status: 'active', roleIds: { $in: adminRoleIds } },
+    '_id'
+  ).lean();
+
+  return admins.length === 1 && String(admins[0]._id) === String(membershipId);
+}
+
+router.get('/members', requirePermission('roles:read'), async (req, res, next) => {
+  try {
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Number(req.query.limit) || 20);
+    const filter = { tenantId: req.tenant._id };
+    if (req.query.status) filter.status = req.query.status;
+
+    const [members, total] = await Promise.all([
+      TenantMembership.find(filter)
+        .populate('userId', 'email username firstName lastName')
+        .populate('roleIds', 'name templateKey')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      TenantMembership.countDocuments(filter),
+    ]);
+
+    res.json({ members, total, page, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch(
+  '/members/:id/roles',
+  requirePermission('roles:write'),
+  validate(updateMemberRolesSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { roleIds } = req.body;
+
+      const membership = await TenantMembership.findOne({ _id: req.params.id, tenantId });
+      if (!membership) throw new AppError('Member not found', 404);
+
+      const roles = await Role.find({ _id: { $in: roleIds }, tenantId }, '_id permissions').lean();
+      if (roles.length !== roleIds.length) {
+        throw new AppError('One or more roles do not belong to this organization', 400);
+      }
+
+      // Removing tenant:admin from the last admin locks the organization out of
+      // its own settings, with no in-app way back.
+      const keepsAdmin = roles.some((r) => r.permissions.includes('tenant:admin'));
+      if (!keepsAdmin && (await isLastAdmin(tenantId, membership._id))) {
+        throw new AppError('This is the last administrator — assign another first', 409);
+      }
+
+      const before = membership.roleIds.map(String);
+      membership.roleIds = roleIds;
+      await membership.save();
+
+      await invalidatePermissions(tenantId, membership.userId);
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'member.roles_changed',
+        target: { model: 'TenantMembership', id: membership._id },
+        before: { roleIds: before },
+        after: { roleIds },
+        ip: req.ip,
+      });
+
+      res.json(membership);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.delete('/members/:id', requirePermission('roles:write'), async (req, res, next) => {
+  try {
+    const tenantId = req.tenant._id;
+    const membership = await TenantMembership.findOne({ _id: req.params.id, tenantId });
+    if (!membership) throw new AppError('Member not found', 404);
+
+    if (String(membership.userId) === String(req.user.sub)) {
+      throw new AppError('You cannot remove yourself', 400);
+    }
+    if (await isLastAdmin(tenantId, membership._id)) {
+      throw new AppError('This is the last administrator — assign another first', 409);
+    }
+
+    await TenantMembership.deleteOne({ _id: membership._id, tenantId });
+    await invalidatePermissions(tenantId, membership.userId);
+
+    await auditLog({
+      actorId: req.user.sub,
+      tenantId: tenantId.toString(),
+      action: 'member.removed',
+      target: { model: 'TenantMembership', id: membership._id },
+      before: { userId: membership.userId, roleIds: membership.roleIds },
+      ip: req.ip,
+    });
+
+    res.json({ message: 'Member removed' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post(
+  '/invites',
+  requirePermission('roles:write'),
+  validate(createInviteSchema),
+  async (req, res, next) => {
+    try {
+      const { email, roleIds } = req.body;
+      const { invite, token } = await createInvite({
+        tenantId: req.tenant._id,
+        email,
+        roleIds,
+        invitedBy: req.user.sub,
+      });
+
+      await sendTenantInvite(email, req.tenant.name, inviteUrlFor(req.tenant, token));
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: req.tenant._id.toString(),
+        action: 'invite.sent',
+        target: { model: 'Invite', id: invite._id },
+        after: { email, roleIds },
+        ip: req.ip,
+      });
+
+      // The raw token is never returned — it exists only in the email.
+      res.status(201).json({
+        _id: invite._id,
+        email: invite.email,
+        roleIds: invite.roleIds,
+        status: invite.status,
+        expiresAt: invite.expiresAt,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get('/invites', requirePermission('roles:read'), async (req, res, next) => {
+  try {
+    const filter = { tenantId: req.tenant._id };
+    filter.status = req.query.status ?? 'pending';
+
+    const invites = await Invite.find(filter, '-tokenHash')
+      .populate('invitedBy', 'email firstName lastName')
+      .populate('roleIds', 'name')
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .lean();
+
+    res.json(invites);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete('/invites/:id', requirePermission('roles:write'), async (req, res, next) => {
+  try {
+    const invite = await revokeInvite(req.tenant._id, req.params.id);
+
+    await auditLog({
+      actorId: req.user.sub,
+      tenantId: req.tenant._id.toString(),
+      action: 'invite.revoked',
+      target: { model: 'Invite', id: invite._id },
+      after: { email: invite.email },
+      ip: req.ip,
+    });
+
+    res.json({ message: 'Invitation revoked' });
   } catch (err) {
     next(err);
   }
