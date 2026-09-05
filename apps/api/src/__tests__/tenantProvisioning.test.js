@@ -1,4 +1,4 @@
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { User } from '../models/User.js';
 import { Role } from '../models/Role.js';
@@ -10,7 +10,11 @@ import { redis } from '../config/redis.js';
 let mongod;
 
 beforeAll(async () => {
-  mongod = await MongoMemoryServer.create();
+  // A replica set, not a standalone: tenant provisioning runs in a transaction
+  // so a half-created tenant cannot exist, and transactions need one. Dev and
+  // production both run rs0, so this matches them rather than working around
+  // the difference.
+  mongod = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
   await mongoose.connect(mongod.getUri());
 });
 

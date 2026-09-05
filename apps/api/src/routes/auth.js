@@ -41,6 +41,7 @@ import {
   issueEmailChange,
 } from '../services/identity.service.js';
 import { validate } from '../middleware/validate.js';
+import { REFRESH_COOKIE_OPTIONS, issueTenantSession } from '../utils/session.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { resolvePermissions, effectivePermissionsFor } from '../middleware/requirePermission.js';
@@ -79,14 +80,6 @@ const mfaLimiter = rateLimit({
   max: 5,
   message: { error: 'Too many MFA requests, try again in an hour' },
 });
-
-const REFRESH_COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: env.NODE_ENV === 'production',
-  sameSite: 'lax',
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-  path: '/',
-};
 
 // Request schemas live in @rooted/shared/schemas so the API and the web forms
 // validate against one definition — these used to be duplicated here.
@@ -303,11 +296,11 @@ router.post('/select-tenant', authenticate, async (req, res, next) => {
       throw new AppError('No active membership for this tenant', 403);
     }
 
-    const tokenPayload = { sub: req.user.sub, systemRole: req.user.systemRole, tenantId };
-    const accessToken = signAccessToken(tokenPayload);
-    const refreshToken = signRefreshToken(tokenPayload);
-
-    res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS);
+    const accessToken = issueTenantSession(res, {
+      sub: req.user.sub,
+      systemRole: req.user.systemRole,
+      tenantId,
+    });
 
     res.json({ accessToken });
   } catch (err) {
@@ -501,12 +494,11 @@ router.post(
 
       // Hand back a session already scoped to the organization just joined, so
       // the client lands inside it instead of on the tenant picker.
-      const tokenPayload = {
+      const accessToken = issueTenantSession(res, {
         sub: req.user.sub,
         systemRole: req.user.systemRole,
-        tenantId: tenantId.toString(),
-      };
-      res.cookie('refreshToken', signRefreshToken(tokenPayload), REFRESH_COOKIE_OPTIONS);
+        tenantId,
+      });
 
       await auditLog({
         actorId: req.user.sub,
@@ -519,7 +511,7 @@ router.post(
       res.json({
         tenantId: tenantId.toString(),
         alreadyAccepted,
-        accessToken: signAccessToken(tokenPayload),
+        accessToken,
       });
     } catch (err) {
       next(err);
@@ -594,13 +586,11 @@ router.post(
       // scoped to the organization rather than making them pick it again.
       let accessToken;
       if (autoApproved) {
-        const tokenPayload = {
+        accessToken = issueTenantSession(res, {
           sub: req.user.sub,
           systemRole: req.user.systemRole,
-          tenantId: tenant._id.toString(),
-        };
-        res.cookie('refreshToken', signRefreshToken(tokenPayload), REFRESH_COOKIE_OPTIONS);
-        accessToken = signAccessToken(tokenPayload);
+          tenantId: tenant._id,
+        });
       }
 
       res.status(autoApproved ? 200 : 202).json({
