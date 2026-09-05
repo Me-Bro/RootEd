@@ -33,7 +33,17 @@ export const TENANT_STATUS = ['active', 'suspended', 'archived'];
 
 export const SYSTEM_ROLES = ['super_admin', 'support_agent'];
 
-export const USER_STATUS = ['active', 'invited', 'suspended', 'pending_verification'];
+export const USER_STATUS = [
+  'active',
+  'invited',
+  'suspended',
+  // Registered themselves, has not confirmed their address yet.
+  'pending_verification',
+  // Provisioned from a roster import. The account exists and is linked, but
+  // holds a random password nobody was ever told; the person sets their own
+  // through a claim link.
+  'pending_claim',
+];
 
 // 'invited'  — a seat exists but the person has not accepted it yet
 // 'pending'  — the person asked to join and an admin has not decided yet (P3)

@@ -160,3 +160,33 @@ export async function sendAccountExistsNotice(email, loginUrl, resetUrl) {
     `,
   });
 }
+
+export async function sendAccountClaim(email, orgName, claimUrl) {
+  await sendEmail({
+    to: email,
+    subject: `Set up your RootEd account for ${orgName}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
+        <h2>Your account is ready</h2>
+        <p><strong>${escapeHtml(orgName)}</strong> has created a RootEd account for you. Choose a password to start using it.</p>
+        <a href="${claimUrl}" style="display:inline-block;padding:12px 24px;background:#3b82f6;color:#fff;border-radius:6px;text-decoration:none;font-weight:600">Set Your Password</a>
+        <p style="margin-top:24px;color:#6b7280;font-size:14px">This link expires in 30 days. If you were not expecting this, ignore this email.</p>
+      </div>
+    `,
+  });
+}
+
+let bulkEmailQueue;
+
+/**
+ * Queues an email instead of sending it inline. A roster import can produce
+ * hundreds: sending them in the request times it out, and a partial send cannot
+ * be resumed or told apart from a complete one.
+ */
+export async function queueEmail(kind, args) {
+  const { Queue } = await import('bullmq');
+  const { redis } = await import('../config/redis.js');
+  const { BULK_EMAIL_QUEUE } = await import('../workers/bulkEmail.worker.js');
+  if (!bulkEmailQueue) bulkEmailQueue = new Queue(BULK_EMAIL_QUEUE, { connection: redis });
+  await bulkEmailQueue.add(kind, { kind, args }, { removeOnComplete: 500, attempts: 3 });
+}

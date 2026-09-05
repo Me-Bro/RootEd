@@ -95,6 +95,9 @@ export async function clearFailedLogins(userId) {
 
 export const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
 export const INVITE_TOKEN_TTL_MS = 48 * 60 * 60 * 1000;
+// Long, because a claim link is mailed to somebody who never asked for it —
+// often a parent forwarding it to a child — and a school term is not a weekend.
+export const CLAIM_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
 export function generateToken() {
   return crypto.randomBytes(32).toString('hex');

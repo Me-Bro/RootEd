@@ -466,10 +466,14 @@ router.post('/reset-password', async (req, res, next) => {
     user.passwordResetExpires = undefined;
     user.failedLoginAttempts = 0;
     user.lockedUntil = undefined;
-    // Same endpoint backs the invite-acceptance page: an admin-provisioned user
-    // starts as 'invited' with a random password they were never told, and
-    // setting their own password is what activates the account.
-    if (user.status === 'invited') user.status = 'active';
+    // The same endpoint backs invite acceptance and roster claim. Both start as
+    // an account holding a random password nobody was told; setting their own
+    // is what activates it.
+    if (user.status === 'invited' || user.status === 'pending_claim') user.status = 'active';
+    // Redeeming a token that was mailed to this address is proof of control of
+    // it, so a claimed or reset account does not also have to chase a separate
+    // verification email.
+    if (!user.emailVerified) user.emailVerified = true;
     await user.save({ _bypassTenantScope: true });
 
     res.json({ message: 'Password reset successful' });

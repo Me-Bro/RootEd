@@ -16,6 +16,7 @@ import { startStockValuationWorker } from './workers/stockValuation.worker.js';
 import { startFeeLateChargeWorker } from './workers/feeLateCharge.worker.js';
 import { startSalarySlipWorker } from './workers/salarySlip.worker.js';
 import { startRequestLogWorker } from './workers/requestLog.worker.js';
+import { startBulkEmailWorker } from './workers/bulkEmail.worker.js';
 
 async function main() {
   if (env.SENTRY_DSN) {
@@ -36,6 +37,7 @@ async function main() {
   startFeeLateChargeWorker();
   startSalarySlipWorker();
   startRequestLogWorker();
+  startBulkEmailWorker();
 
   app.listen(env.PORT, () => {
     logger.info({ port: env.PORT }, 'API server started');
