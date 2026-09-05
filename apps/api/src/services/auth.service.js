@@ -73,15 +73,26 @@ export async function clearFailedLogins(userId) {
   );
 }
 
+export const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
+export const INVITE_TOKEN_TTL_MS = 48 * 60 * 60 * 1000;
+
 export function generateResetToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
-export async function storeResetToken(userId, token) {
-  const expires = new Date(Date.now() + 30 * 60 * 1000);
+// Only the SHA-256 digest is persisted — the raw token exists solely in the
+// email we send. A database dump, backup or log leak therefore can't be
+// replayed against /auth/reset-password. The digest of a 256-bit random value
+// needs no salt or slow KDF: there is nothing to brute-force.
+export function hashResetToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+export async function storeResetToken(userId, token, ttlMs = RESET_TOKEN_TTL_MS) {
+  const expires = new Date(Date.now() + ttlMs);
   await User.updateOne(
     { _id: userId },
-    { passwordResetToken: token, passwordResetExpires: expires },
+    { passwordResetToken: hashResetToken(token), passwordResetExpires: expires },
     { _bypassTenantScope: true }
   );
 }

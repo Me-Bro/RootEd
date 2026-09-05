@@ -14,6 +14,7 @@ import {
   clearFailedLogins,
   generateResetToken,
   storeResetToken,
+  hashResetToken,
   getActiveTenantsForUser,
 } from '../services/auth.service.js';
 import { AppError } from '../middleware/errorHandler.js';
@@ -397,7 +398,7 @@ router.post('/reset-password', async (req, res, next) => {
     const { token, password } = resetSchema.parse(req.body);
 
     const user = await User.findOne({
-      passwordResetToken: token,
+      passwordResetToken: hashResetToken(token),
       passwordResetExpires: { $gt: new Date() },
     }).select('+passwordResetToken +passwordResetExpires');
 

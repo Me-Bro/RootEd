@@ -27,5 +27,8 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.index({ email: 1 }, { unique: true });
+// Reset/invite acceptance looks users up by this digest — without an index it
+// is a full collection scan on every attempt.
+userSchema.index({ passwordResetToken: 1 }, { sparse: true });
 
 export const User = mongoose.model('User', userSchema);
