@@ -23,7 +23,7 @@ import { resolvePermissions, effectivePermissionsFor } from '../middleware/requi
 import { resolveTenantFromToken, getSubdomainInfo } from '../middleware/resolveTenant.js';
 import { Tenant } from '../models/Tenant.js';
 import { TenantMembership } from '../models/TenantMembership.js';
-import { env } from '../config/env.js';
+import { env, getPortalHost } from '../config/env.js';
 import { auditLog } from '../services/audit.service.js';
 import {
   generateMfaSecret,
@@ -392,7 +392,10 @@ router.post('/forgot-password', async (req, res, next) => {
     if (user) {
       const token = generateResetToken();
       await storeResetToken(user._id, token);
-      const resetUrl = `https://${env.APP_DOMAIN}/reset-password?token=${token}`;
+      // getPortalHost(), not APP_DOMAIN: when PORTAL_SUBDOMAIN is set (as it is
+      // on the tunnel deployment) the app is served from that label, and the
+      // bare apex doesn't route — the reset link would go nowhere.
+      const resetUrl = `https://${getPortalHost()}/reset-password?token=${token}`;
       await sendPasswordReset(email, resetUrl);
     }
 
