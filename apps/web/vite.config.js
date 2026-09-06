@@ -23,13 +23,20 @@ export default defineConfig(({ mode }) => {
         '/__api': {
           target: apiProxyTarget,
           rewrite: (path) => path.replace(/^\/__api/, ''),
-          changeOrigin: true,
-          headers: { Host: `testschool.${appDomain}` },
+          // Only e2e pins the Host: its fixtures live in the seeded `testschool`
+          // tenant and Playwright browses 127.0.0.1, which carries no subdomain.
+          // In dev, forward the browser's own Host instead — pinning it sent every
+          // request to `testschool` regardless of who was logged in, so an org
+          // without a `subdomain` (created via the org-creation flow, reachable
+          // only through resolveTenant()'s token-claim fallback on the apex host)
+          // 403'd on every tenant-scoped call.
+          changeOrigin: mode === 'test',
+          ...(mode === 'test' ? { headers: { Host: `testschool.${appDomain}` } } : {}),
         },
         // General-portal path — bare apex Host (no subdomain), exercises
-        // resolveTenant()'s tenantId-claim fallback for tests. The default
-        // /__api proxy above always pins Host to the testschool subdomain,
-        // so this is the only way to reach that branch locally/in e2e.
+        // resolveTenant()'s tenantId-claim fallback for tests. In `--mode test`
+        // the /__api proxy above pins Host to the testschool subdomain, so this
+        // is the only way to reach that branch there.
         // Vite matches proxy prefixes with a plain startsWith (no path-segment
         // boundary check) — this key must NOT itself start with '/__api' or
         // the rule above silently swallows it first.
