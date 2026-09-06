@@ -14,6 +14,9 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.jsx';
 import OnboardingPage from './pages/org/OnboardingPage.jsx';
 import CreateOrgPage from './pages/org/CreateOrgPage.jsx';
 import JoinOrgPage from './pages/org/JoinOrgPage.jsx';
+import AccountSettingsPage from './pages/account/AccountSettingsPage.jsx';
+import MembersPage from './pages/tenant/MembersPage.jsx';
+import JoinPolicyPage from './pages/tenant/JoinPolicyPage.jsx';
 import AppShell from './components/layout/AppShell.jsx';
 import DashboardPage from './pages/admin/DashboardPage.jsx';
 import TenantsPage from './pages/admin/TenantsPage.jsx';
@@ -55,16 +58,27 @@ function ProtectedRoute({ children }) {
   const { accessToken, user, loading } = useAuth();
   if (loading) return null;
   if (!accessToken) return <Navigate to="/login" replace />;
+  // Render nothing rather than redirecting when the user has not loaded yet:
+  // LoginPage redirects on accessToken alone, so bouncing to /login here made
+  // the two guards disagree and loop. AuthContext drops the token outright if
+  // /auth/me fails, so this is a brief in-flight state, not a stuck one.
+  if (!user) return null;
 
   // A super_admin reaches tenants by impersonation, never by membership, so
   // none of the organization checks below apply to them.
-  if (user && user.systemRole !== 'super_admin') {
+  if (user.systemRole !== 'super_admin') {
     // Belongs to nothing yet. Without this the first thing a newly verified
     // user saw was /dashboard fetching /tenant/settings, resolveTenant()
     // 404ing for want of a tenantId claim, and a broken card explaining
     // nothing.
     if ((user.orgs ?? []).length === 0) return <Navigate to="/onboarding" replace />;
     // Belongs to something, but this session is not scoped to one — pick.
+    //
+    // Only for tenant-scoped routes, and only when there is genuinely nothing
+    // selected. /select-tenant is itself reachable while a tenantId exists:
+    // /auth/me derives one from the request Host, so a multi-org user who has
+    // chosen nothing still arrives with a tenantId and would otherwise be
+    // bounced off the very page that lets them choose.
     if (!user.tenantId) return <Navigate to="/select-tenant" replace />;
   }
 
@@ -73,9 +87,10 @@ function ProtectedRoute({ children }) {
 
 /** Authenticated, but deliberately outside the tenant-scoped AppShell. */
 function PortalRoute({ children }) {
-  const { accessToken, loading } = useAuth();
+  const { accessToken, user, loading } = useAuth();
   if (loading) return null;
   if (!accessToken) return <Navigate to="/login" replace />;
+  if (!user) return null;
   return children;
 }
 
@@ -96,6 +111,9 @@ function RequireModuleEnabled({ moduleName, children }) {
 function RequirePermission({ permission, children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
+  // Not a redirect: see ProtectedRoute — bouncing to /login while the user is
+  // still loading fights LoginPage's own guard.
+  if (!user) return null;
   // Backend already folds an active impersonation session into `permissions`
   // (see GET /auth/me) — a bare super_admin token with no impersonation claim
   // gets none, so it must not be special-cased here.
@@ -421,6 +439,25 @@ function AppRoutes() {
             }
           />
         </Route>
+        {/* Account settings are personal, not tenant-scoped — every signed-in
+            user has them regardless of role. */}
+        <Route path="/settings/account" element={<AccountSettingsPage />} />
+        <Route
+          path="/tenant/members"
+          element={
+            <RequirePermission permission="roles:read">
+              <MembersPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/tenant/join-policy"
+          element={
+            <RequirePermission permission="tenant:admin">
+              <JoinPolicyPage />
+            </RequirePermission>
+          }
+        />
         <Route path="/setup" element={<SetupWizardPage />} />
       </Route>
     </Routes>
