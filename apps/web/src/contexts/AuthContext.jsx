@@ -50,6 +50,15 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
+  // Re-reads GET /auth/me. Anything that changes which organizations the caller
+  // belongs to — creating one, joining one, switching — has to call this, or
+  // the switcher and the route guards keep showing the previous answer.
+  const refreshUser = useCallback(async () => {
+    const { data } = await api.get('/auth/me');
+    setUser(data);
+    return data;
+  }, []);
+
   const login = useCallback(async (email, password, totpCode) => {
     const { data } = await api.post('/auth/login', {
       email,
@@ -94,7 +103,16 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, accessToken, loading, login, loginWithToken, selectTenant, logout }}
+      value={{
+        user,
+        accessToken,
+        loading,
+        login,
+        loginWithToken,
+        selectTenant,
+        refreshUser,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>

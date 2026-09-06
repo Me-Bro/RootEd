@@ -39,6 +39,7 @@ import NavList from './NavList.jsx';
 import MobileBottomBar from './MobileBottomBar.jsx';
 import { cn } from '../../lib/utils.js';
 import api from '../../lib/api.js';
+import OrgSwitcher from './OrgSwitcher.jsx';
 
 function getNavGroups(t, orgType) {
   // Only override the translated label for org types whose terminology actually
@@ -343,9 +344,11 @@ export default function AppShell() {
           </div>
         )}
         <header className="flex items-center gap-2 px-4 py-3 border-b border-border bg-card md:px-6">
-          <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
+          <OrgSwitcher />
+          <span className="hidden min-w-0 flex-1 truncate text-sm text-muted-foreground sm:block">
             {user?.email ?? ''}
           </span>
+          <span className="flex-1 sm:hidden" />
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <LanguageSwitcherTrigger />
             <ThemeConfiguratorTrigger />
