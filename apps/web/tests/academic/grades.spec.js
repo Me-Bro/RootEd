@@ -23,6 +23,12 @@ function getTestIds() {
 // Ids are passed via URL query params rather than clicking through pickers —
 // more robust, and matches how other rebuilt specs (e.g. attendance.spec.js)
 // deep-link into a scope.
+//
+// Every test that asserts a clean "0 of N entered" slate owns its own
+// (subject, assessmentType) pair. Six tests previously shared English + 'other'
+// while three of them committed marks into it, so under fullyParallel whichever
+// writer won the race broke the others' precondition — a different test failed
+// each run, which read as flakiness rather than as shared state.
 function scopedUrl({ section, term, subject, assessmentType }) {
   const params = new URLSearchParams({
     sectionId: section._id,
@@ -33,9 +39,32 @@ function scopedUrl({ section, term, subject, assessmentType }) {
   return `/academic/grades?${params.toString()}`;
 }
 
+// GradesPage seeds its scoreMap and its focused row from GET /academic/grades,
+// and until that lands it renders a complete-looking '0 of N entered' off an
+// empty map. Anything typed in that window is wiped when the seed effect
+// finally runs, leaving exactly the state a clean slate has — which is why the
+// failure read as 'the keystrokes were dropped'. 'networkidle' does not close
+// the window: under a loaded full-suite run the browser can sit idle for the
+// 500ms threshold while it parses Vite's module graph, before React has fired
+// the query at all.
 async function scopedGoto(page, scope) {
+  const roster = page.waitForResponse(
+    (res) => res.request().method() === 'GET' && /\/academic\/grades\?/.test(res.url())
+  );
   await page.goto(scopedUrl(scope));
+  await roster;
   await page.waitForLoadState('networkidle');
+}
+
+// focusedId is only ever set by that seed effect (or by a click), so a row in
+// the 'typing…' state is proof the roster finished seeding and keystrokes will
+// survive. Every test that types waits on this first.
+function focusedRow(page) {
+  return page.getByRole('button').filter({ hasText: 'typing…' });
+}
+
+async function waitForSeededRoster(page) {
+  await expect(focusedRow(page)).toBeVisible({ timeout: 10_000 });
 }
 
 // The admission number is always rendered (as the row's secondary line, even
@@ -111,6 +140,7 @@ test.describe('Grades page', () => {
     // 'other' has no seeded grades for English — a guaranteed clean slate.
     await scopedGoto(page, { section, term, subject: english, assessmentType: 'other' });
     await expect(page.getByText(/^0 of \d+ entered$/)).toBeVisible({ timeout: 10_000 });
+    await waitForSeededRoster(page);
 
     // No on-screen keypad at desktop width — the hint strip stands in for it.
     await expect(page.getByRole('button', { name: 'Digit 7' })).toBeHidden();
@@ -128,18 +158,20 @@ test.describe('Grades page', () => {
     const { section, term, subjects } = getTestIds();
     const english = subjects.find((s) => s.name === 'English');
 
-    await scopedGoto(page, { section, term, subject: english, assessmentType: 'other' });
+    // Own scope: asserts an empty slate both before and after.
+    await scopedGoto(page, { section, term, subject: english, assessmentType: 'quiz' });
     await expect(page.getByText(/^0 of \d+ entered$/)).toBeVisible({ timeout: 10_000 });
+    await waitForSeededRoster(page);
 
-    const focusedRow = page.getByRole('button').filter({ hasText: 'typing…' });
+    const typingRow = focusedRow(page);
 
     await page.keyboard.press('9');
     await page.keyboard.press('4');
-    await expect(focusedRow).toContainText('94');
+    await expect(typingRow).toContainText('94');
 
     await page.keyboard.press('Backspace');
-    await expect(focusedRow).toContainText('9');
-    await expect(focusedRow).not.toContainText('94');
+    await expect(typingRow).toContainText('9');
+    await expect(typingRow).not.toContainText('94');
 
     await page.keyboard.press('Escape');
     await page.keyboard.press('Enter');
@@ -149,15 +181,23 @@ test.describe('Grades page', () => {
 
   test('arrow keys move the focused row and wrap back to where they started', async ({ page }) => {
     const { section, term, subjects, students } = getTestIds();
-    const english = subjects.find((s) => s.name === 'English');
+    const math = subjects.find((s) => s.name === 'Mathematics');
     const roster = students.filter((s) => s.status === 'active');
     test.skip(roster.length < 2, 'needs at least two active students in the section');
 
-    await scopedGoto(page, { section, term, subject: english, assessmentType: 'other' });
-    await expect(page.getByText(/^0 of \d+ entered$/)).toBeVisible({ timeout: 10_000 });
+    await scopedGoto(page, { section, term, subject: math, assessmentType: 'midterm' });
+    await expect(page.getByText(/entered/)).toBeVisible({ timeout: 10_000 });
 
-    // Whichever row seeds as focused, ArrowDown then ArrowUp must return to it.
-    const typingRow = page.getByRole('button').filter({ hasText: 'typing…' });
+    // Focus is established by clicking, not inherited from whichever row the
+    // page happens to auto-focus. That auto-focus only lands on an ungraded
+    // row, so a scope another spec had written to left nothing in draft state
+    // and this timed out waiting for 'typing…'.
+    const firstRow = page.getByRole('button').filter({ hasText: roster[0].admissionNo });
+    await firstRow.click();
+
+    // ArrowDown then ArrowUp must return to wherever it started.
+    const typingRow = focusedRow(page);
+    await expect(typingRow).toBeVisible({ timeout: 10_000 });
     const firstFocused = await typingRow.textContent();
 
     await page.keyboard.press('ArrowDown');
@@ -169,11 +209,13 @@ test.describe('Grades page', () => {
 
   test('the docked keypad still drives entry on a phone-width viewport', async ({ page }) => {
     const { section, term, subjects } = getTestIds();
-    const english = subjects.find((s) => s.name === 'English');
+    const science = subjects.find((s) => s.name === 'Science');
 
     await page.setViewportSize(PHONE_VIEWPORT);
-    await scopedGoto(page, { section, term, subject: english, assessmentType: 'other' });
+    // Own scope: this commits a mark.
+    await scopedGoto(page, { section, term, subject: science, assessmentType: 'other' });
     await expect(page.getByText(/^0 of \d+ entered$/)).toBeVisible({ timeout: 10_000 });
+    await waitForSeededRoster(page);
 
     const nextButton = page.getByRole('button', { name: /Next student/ });
     await expect(nextButton).toBeDisabled();
@@ -191,10 +233,12 @@ test.describe('Grades page', () => {
     page,
   }) => {
     const { section, term, subjects } = getTestIds();
-    const english = subjects.find((s) => s.name === 'English');
+    const science = subjects.find((s) => s.name === 'Science');
 
-    await scopedGoto(page, { section, term, subject: english, assessmentType: 'other' });
+    // Own scope: this commits an absent mark.
+    await scopedGoto(page, { section, term, subject: science, assessmentType: 'quiz' });
     await expect(page.getByText(/^0 of \d+ entered$/)).toBeVisible({ timeout: 10_000 });
+    await waitForSeededRoster(page);
 
     await page.keyboard.press('a');
 
@@ -205,10 +249,12 @@ test.describe('Grades page', () => {
 
   test('tapping a row jumps the docked keypad focus to it', async ({ page }) => {
     const { section, term, subjects, students } = getTestIds();
-    const english = subjects.find((s) => s.name === 'English');
+    const science = subjects.find((s) => s.name === 'Science');
     const student = students.find((s) => s.status === 'active');
 
-    await scopedGoto(page, { section, term, subject: english, assessmentType: 'other' });
+    // Read-only, and no test writes here: tapping focuses a row regardless of
+    // what is already entered, so a seeded scope is fine.
+    await scopedGoto(page, { section, term, subject: science, assessmentType: 'final' });
     await expect(page.getByText(/entered/)).toBeVisible({ timeout: 10_000 });
 
     await rowFor(page, student).click();
@@ -224,7 +270,7 @@ test.describe('Grades page', () => {
 
     // Roster may already be fully marked from a previous run of this test —
     // only type a mark in if there's still an unmarked student to focus.
-    const typingRow = page.getByRole('button').filter({ hasText: 'typing…' });
+    const typingRow = focusedRow(page);
     if (await typingRow.isVisible().catch(() => false)) {
       await page.keyboard.press('8');
       await page.keyboard.press('8');
