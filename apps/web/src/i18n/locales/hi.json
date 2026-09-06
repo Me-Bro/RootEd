@@ -14,6 +14,10 @@
     "timetable": "समय सारणी",
     "mySchedule": "मेरा कार्यक्रम",
     "reportCards": "रिपोर्ट कार्ड",
+    "myTimetable": "मेरी समय सारणी",
+    "myAttendance": "मेरी उपस्थिति",
+    "myGrades": "मेरे ग्रेड",
+    "myFees": "मेरी फीस",
     "staffDirectory": "स्टाफ निर्देशिका",
     "leaves": "अवकाश अनुरोध",
     "salary": "वेतन",
@@ -145,6 +149,18 @@
     "columnActor": "कर्ता",
     "columnIp": "आईपी",
     "columnTime": "समय",
+    "student": {
+      "greeting": "नमस्ते, {{name}}",
+      "notLinked": "आपका खाता अभी तक किसी छात्र रिकॉर्ड से जुड़ा नहीं है। अपने स्कूल प्रशासक से संपर्क करें।",
+      "attendanceLabel": "उपस्थिति",
+      "averageScoreLabel": "औसत स्कोर",
+      "feeBalanceLabel": "शेष फीस",
+      "noGradesYet": "अभी तक कोई ग्रेड नहीं",
+      "viewTimetable": "समय सारणी देखें",
+      "viewAttendance": "उपस्थिति देखें",
+      "viewGrades": "ग्रेड देखें",
+      "viewFees": "फीस देखें"
+    },
     "principal": {
       "greeting": "सुप्रभात, {{name}}",
       "subtitle": "{{school}} · {{date}}",
@@ -508,6 +524,17 @@
       "emptyTitle": "कोई कक्षा निर्धारित नहीं",
       "emptyDescription": "इस शैक्षणिक वर्ष के लिए अभी आपको कुछ भी नहीं सौंपा गया है। समय-सारणी तब तक छिपी रहती है जब तक व्यवस्थापक उसे प्रकाशित न कर दे।"
     },
+    "myTimetable": {
+      "title": "मेरी समय सारणी"
+    },
+    "myAttendance": {
+      "title": "मेरी उपस्थिति",
+      "columnDate": "तारीख"
+    },
+    "myGrades": {
+      "title": "मेरे ग्रेड",
+      "note": "यहां केवल प्रकाशित ग्रेड दिखाए जाते हैं।"
+    },
     "reportCards": {
       "title": "रिपोर्ट कार्ड",
       "selectTerm": "टर्म चुनें",
@@ -774,6 +801,18 @@
     }
   },
   "fee": {
+    "myFees": {
+      "title": "मेरी फीस",
+      "assignmentsTitle": "देय फीस",
+      "paymentsTitle": "भुगतान इतिहास",
+      "noAssignments": "अभी तक कोई फीस निर्धारित नहीं है।",
+      "noPayments": "अभी तक कोई भुगतान दर्ज नहीं है।",
+      "columnDueDate": "देय तिथि",
+      "columnAmount": "राशि",
+      "columnPaidOn": "भुगतान की तारीख",
+      "columnMethod": "तरीका",
+      "columnReceipt": "रसीद"
+    },
     "structures": {
       "components": "घटक",
       "addRow": "+ पंक्ति जोड़ें",
