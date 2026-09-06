@@ -440,6 +440,7 @@
       "importedCount_one": "{{count}} ग्रेड आयात किया गया",
       "importedCount_other": "{{count}} ग्रेड आयात किए गए",
       "importedErrorsSuffix": ", {{count}} त्रुटि(याँ)",
+      "importFailed": "आयात विफल",
       "selectToEnter": "ग्रेड दर्ज करने के लिए सेक्शन, टर्म और विषय चुनें",
       "noActiveStudents": "इस सेक्शन में कोई सक्रिय छात्र नहीं है।",
       "lockedNotice": "इस चयन के लिए ग्रेड लॉक हैं।",
