@@ -260,6 +260,20 @@ async function isLastAdmin(tenantId, membershipId) {
   return admins.length === 1 && String(admins[0]._id) === String(membershipId);
 }
 
+// The roles a member can be assigned. roles:read already exists for exactly
+// this, but nothing exposed the list, so the members screen had no way to
+// populate a role picker.
+router.get('/roles', requirePermission('roles:read'), async (req, res, next) => {
+  try {
+    const roles = await Role.find({ tenantId: req.tenant._id }, 'name templateKey permissions')
+      .sort({ name: 1 })
+      .lean();
+    res.json(roles);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/members', requirePermission('roles:read'), async (req, res, next) => {
   try {
     const page = Math.max(1, Number(req.query.page) || 1);
