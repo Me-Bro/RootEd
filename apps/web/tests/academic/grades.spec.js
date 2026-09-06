@@ -292,6 +292,17 @@ test.describe('Grades page', () => {
     const csv =
       'admissionNo,score\n' + activeStudents.map((s) => `${s.admissionNo},91`).join('\n') + '\n';
 
+    // The button is disabled until the /academic/terms fetch resolves — a
+    // separate request from the one that gates the roster above, so it can
+    // still be in flight even once students/grades have rendered. Importing
+    // before it lands sent a request with no academicYearId, which the API
+    // 400s and the UI had no way to surface (see the importFailed message
+    // this now renders). setInputFiles bypasses a disabled button's click
+    // handler entirely, so the wait has to be on the button, not the input.
+    await expect(page.getByRole('button', { name: 'Import CSV' })).toBeEnabled({
+      timeout: 10_000,
+    });
+
     await page.locator('input[type="file"]').setInputFiles({
       name: 'grades.csv',
       mimeType: 'text/csv',

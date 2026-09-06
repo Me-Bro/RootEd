@@ -440,6 +440,7 @@
       "importedCount_one": "Imported {{count}} grade",
       "importedCount_other": "Imported {{count}} grades",
       "importedErrorsSuffix": ", {{count}} error(s)",
+      "importFailed": "Import failed",
       "selectToEnter": "Select section, term, and subject to enter grades",
       "noActiveStudents": "No active students in this section.",
       "lockedNotice": "Grades are locked for this selection.",

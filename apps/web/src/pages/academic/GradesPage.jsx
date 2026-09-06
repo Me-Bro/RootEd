@@ -332,7 +332,12 @@ export default function GradesPage() {
             <Button
               variant="outline"
               onClick={() => fileRef.current?.click()}
-              disabled={!gradesReady || locked || importMutation.isPending}
+              // selectedTerm backs the academicYearId the import request sends —
+              // it comes from a separate /academic/terms fetch than the one that
+              // gates gradesReady, so it can still be unresolved even once the
+              // roster itself is ready. Importing before it lands sent a 400
+              // with no error surfaced anywhere (see importMutation.isError below).
+              disabled={!gradesReady || !selectedTerm || locked || importMutation.isPending}
             >
               {importMutation.isPending
                 ? t('academic.students.importing')
@@ -422,6 +427,10 @@ export default function GradesPage() {
           </span>
         )}
       </div>
+
+      {importMutation.isError && (
+        <p className="text-sm text-destructive">{t('academic.grades.importFailed')}</p>
+      )}
 
       {importResult && (
         <div className="flex items-center justify-between rounded-md border border-border bg-muted px-4 py-2 text-sm">
