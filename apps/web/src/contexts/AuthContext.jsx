@@ -38,14 +38,19 @@ export function AuthProvider({ children }) {
       .then(({ data }) => {
         setAccessToken(data.accessToken);
         setToken(data.accessToken);
-        return api.get('/auth/me').catch(() => null);
+        return api.get('/auth/me');
       })
       .then((res) => {
-        if (res?.data) setUser(res.data);
+        setUser(res.data);
       })
       .catch(() => {
+        // A token without a user is worse than no token: every guard reads
+        // user.permissions and user.orgs, so a swallowed /auth/me failure left
+        // them evaluating against null and letting the route through. Drop the
+        // session instead and let the caller sign in again.
         setAccessToken(null);
         setToken(null);
+        setUser(null);
       })
       .finally(() => setLoading(false));
   }, []);

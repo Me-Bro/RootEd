@@ -27,7 +27,11 @@
     "fees": "Fees",
     "inventory": "Inventory",
     "depreciation": "Depreciation",
-    "menu": "Menu"
+    "menu": "Menu",
+    "organization": "Organization",
+    "members": "Members",
+    "joinPolicy": "Joining",
+    "accountSettings": "Account settings"
   },
   "auth": {
     "login": "Login",
@@ -1405,5 +1409,62 @@
       "coaching_center": "Coaching centre",
       "study_center": "Study centre"
     }
+  },
+  "account": {
+    "title": "Account settings",
+    "description": "Your name, sign-in details and password.",
+    "profile": "Profile",
+    "profileSaved": "Profile saved.",
+    "phone": "Phone",
+    "username": "Username",
+    "usernameHint": "You can change this once every 30 days. Your old username stays reserved for 90 days so nobody else can take it.",
+    "changeUsername": "Change username",
+    "usernameSaved": "Username updated.",
+    "email": "Email address",
+    "currentEmail": "Currently {{email}}",
+    "pendingEmail": "Waiting for confirmation at {{email}}.",
+    "newEmail": "New email address",
+    "currentPassword": "Current password",
+    "changeEmail": "Send confirmation",
+    "emailChangeRequested": "Confirm the change from your new email address.",
+    "emailChangeHint": "Nothing changes until you click the link sent to the new address. Your current address is told either way.",
+    "password": "Password",
+    "changePassword": "Change password",
+    "passwordChangeHint": "Changing your password signs you out everywhere, including here.",
+    "nothingToSave": "Nothing to save."
+  },
+  "members": {
+    "title": "Members",
+    "description": "Who belongs to this organization, and who is waiting to.",
+    "tab": {
+      "members": "Members",
+      "invites": "Invitations",
+      "requests": "Requests"
+    },
+    "noRoles": "no roles",
+    "changeRoles": "Change roles",
+    "remove": "Remove",
+    "inviteEmail": "Email address to invite",
+    "sendInvite": "Send invitation",
+    "noInvites": "No pending invitations.",
+    "revoke": "Revoke",
+    "noRequests": "No requests waiting.",
+    "approve": "Approve",
+    "reject": "Reject"
+  },
+  "joinPolicy": {
+    "title": "Joining",
+    "description": "How people can ask to join this organization.",
+    "mode": "Who can join",
+    "mode_closed": "Invitation only",
+    "modeHint_closed": "The only way in is an invitation you send.",
+    "mode_code": "Anyone with the join code",
+    "modeHint_code": "Share a code; requests still come to you unless you turn that off.",
+    "autoApprove": "Approve automatically",
+    "autoApproveHint": "Anyone with the code joins immediately, with the roles you choose below. Use this only for a code you can control.",
+    "currentCode": "Current join code",
+    "codeHint": "Case and spacing do not matter when it is typed in.",
+    "rotateCode": "Generate a new code",
+    "rotateHint": "The old code stops working immediately."
   }
 }

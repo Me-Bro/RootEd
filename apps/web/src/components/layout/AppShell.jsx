@@ -3,30 +3,31 @@ import { Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import {
-  LayoutDashboard,
-  Building2,
-  ScrollText,
   Activity,
-  ToggleLeft,
-  LogOut,
-  Menu,
-  X,
-  CalendarDays,
-  Users,
-  ClipboardList,
-  BookOpen,
-  Briefcase,
-  CalendarCheck,
-  Wallet,
-  DollarSign,
-  PieChart,
-  CreditCard,
-  Settings2,
   Archive,
   BarChart2,
   Bell,
-  Grid,
+  BookOpen,
+  Briefcase,
+  Building2,
+  CalendarCheck,
+  CalendarDays,
+  ClipboardList,
+  CreditCard,
+  DollarSign,
   FileText,
+  Grid,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  PieChart,
+  ScrollText,
+  Settings2,
+  ToggleLeft,
+  UserCog,
+  Users,
+  Wallet,
+  X,
 } from 'lucide-react';
 
 import { isModuleEnabled, resolveOrgTerm } from '@rooted/shared/utils';
@@ -185,6 +186,21 @@ function getNavGroups(t, orgType) {
           icon: BarChart2,
           permission: 'inventory:read',
         },
+      ],
+    },
+    {
+      label: t('nav.organization'),
+      items: [
+        { to: '/tenant/members', label: t('nav.members'), icon: Users, permission: 'roles:read' },
+        {
+          to: '/tenant/join-policy',
+          label: t('nav.joinPolicy'),
+          icon: Settings2,
+          permission: 'tenant:admin',
+        },
+        // No permission: account settings belong to the person, not the
+        // organization, so every signed-in user has them.
+        { to: '/settings/account', label: t('nav.accountSettings'), icon: UserCog },
       ],
     },
   ];
