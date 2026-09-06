@@ -64,6 +64,16 @@ const USERS = {
   // Belongs to a tuition_center-orgType tenant — exercises org-type module/nav
   // gating (no expense/inventory modules, "Learner"/"Batch" terminology).
   tuitionAdmin: { email: 'admin@tuitioncenter.local', username: 'test-tuition-admin' },
+  // Verified, but belonging to no tenant at all — the state every
+  // self-registered account starts in, and the only way to exercise
+  // /onboarding. Deliberately given no membership below.
+  //
+  // Several, not one: a test that joins or creates an organization consumes the
+  // account it used, so a single shared one would leave every later test seeing
+  // a member rather than a newcomer.
+  noOrg: { email: 'noorg@test.local', username: 'test-no-org' },
+  noOrg2: { email: 'noorg2@test.local', username: 'test-no-org-2' },
+  noOrg3: { email: 'noorg3@test.local', username: 'test-no-org-3' },
 };
 
 async function upsertUser(data) {

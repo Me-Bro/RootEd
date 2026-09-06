@@ -17,8 +17,11 @@ test.describe('General-portal login — tenant picker', () => {
     await dialog.getByRole('button', { name: 'Sign in' }).click();
 
     await page.waitForURL('**/select-tenant', { timeout: 15_000 });
-    await expect(page.getByText('Test School')).toBeVisible();
-    await expect(page.getByText('Second School')).toBeVisible();
+    // Scoped to the picker's own buttons: the organization name also appears in
+    // the header switcher and on the dashboard, so a bare getByText matches
+    // more than one element once the session is inside an organization.
+    await expect(page.getByRole('button', { name: 'Test School' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Second School' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Test School' }).click();
     await page.waitForURL('**/dashboard', { timeout: 15_000 });
@@ -37,8 +40,8 @@ test.describe('General-portal login — tenant picker', () => {
     // back empty and the page bounced to /login. It now comes from /auth/me.
     await page.reload();
     await expect(page).toHaveURL(/\/select-tenant/);
-    await expect(page.getByText('Test School')).toBeVisible();
-    await expect(page.getByText('Second School')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Test School' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Second School' })).toBeVisible();
   });
 
   test('visiting /select-tenant unauthenticated redirects to /login', async ({ page }) => {
