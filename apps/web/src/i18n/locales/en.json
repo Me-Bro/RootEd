@@ -121,7 +121,8 @@
       "wednesday": "Wednesday",
       "thursday": "Thursday",
       "friday": "Friday"
-    }
+    },
+    "done": "Done"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -1369,6 +1370,40 @@
       "processHeading": "First call to going live",
       "ctaHeading": "Ready to see it on your data?",
       "ctaSub": "14-day free trial · no credit card"
+    }
+  },
+  "org": {
+    "noOrganization": "No organization",
+    "yourOrganizations": "Your organizations",
+    "createOrganization": "Create an organization",
+    "joinOrganization": "Join an organization",
+    "onboardingTitle": "Get started",
+    "onboardingDescription": "Your account is ready. Join an organization you have been given a code for, or create your own.",
+    "joinHint": "You will need a join code from whoever runs it.",
+    "createHint": "You become its administrator and can invite everyone else.",
+    "pendingRequests_one": "You have 1 request waiting for approval.",
+    "pendingRequests_other": "You have {{count}} requests waiting for approval.",
+    "createOrgDescription": "You will be its administrator. You can invite people once it exists.",
+    "organizationName": "Organization name",
+    "organizationType": "Organization type",
+    "orgTypeHint": "This decides which modules you get and what a student is called. It can only be changed while the organization has no students.",
+    "creating": "Creating…",
+    "createFailed": "Could not create the organization.",
+    "joinOrgDescription": "Enter the join code you were given.",
+    "joinCode": "Join code",
+    "joinNote": "Note for the administrator (optional)",
+    "joinNotePlaceholder": "Who you are, and why you are joining",
+    "requestToJoin": "Request to join",
+    "requesting": "Sending…",
+    "joinFailed": "Could not send your request.",
+    "requestSentTitle": "Request sent",
+    "requestSentDescription": "An administrator at {{org}} will review it. You will see the organization here once approved.",
+    "orgType": {
+      "school": "School",
+      "college": "College",
+      "tuition_center": "Tuition centre",
+      "coaching_center": "Coaching centre",
+      "study_center": "Study centre"
     }
   }
 }

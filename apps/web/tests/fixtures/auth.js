@@ -9,6 +9,21 @@ export const TEST_USERS = {
     email: 'admin@test.local',
     password: 'TestPass123!',
   },
+  // Verified but belonging to no tenant — the state a self-registered account
+  // starts in, and the only way to reach /onboarding. Three of them, because a
+  // test that joins or creates an organization consumes the one it used.
+  noOrg: {
+    email: 'noorg@test.local',
+    password: 'TestPass123!',
+  },
+  noOrg2: {
+    email: 'noorg2@test.local',
+    password: 'TestPass123!',
+  },
+  noOrg3: {
+    email: 'noorg3@test.local',
+    password: 'TestPass123!',
+  },
   tenant_admin: {
     email: 'tadmin@testschool.local',
     password: 'TestPass123!',

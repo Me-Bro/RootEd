@@ -11,6 +11,9 @@ import RegisterPage from './pages/auth/RegisterPage.jsx';
 import CheckEmailPage from './pages/auth/CheckEmailPage.jsx';
 import VerifyEmailPage from './pages/auth/VerifyEmailPage.jsx';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.jsx';
+import OnboardingPage from './pages/org/OnboardingPage.jsx';
+import CreateOrgPage from './pages/org/CreateOrgPage.jsx';
+import JoinOrgPage from './pages/org/JoinOrgPage.jsx';
 import AppShell from './components/layout/AppShell.jsx';
 import DashboardPage from './pages/admin/DashboardPage.jsx';
 import TenantsPage from './pages/admin/TenantsPage.jsx';
@@ -49,6 +52,27 @@ import './index.css';
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }) {
+  const { accessToken, user, loading } = useAuth();
+  if (loading) return null;
+  if (!accessToken) return <Navigate to="/login" replace />;
+
+  // A super_admin reaches tenants by impersonation, never by membership, so
+  // none of the organization checks below apply to them.
+  if (user && user.systemRole !== 'super_admin') {
+    // Belongs to nothing yet. Without this the first thing a newly verified
+    // user saw was /dashboard fetching /tenant/settings, resolveTenant()
+    // 404ing for want of a tenantId claim, and a broken card explaining
+    // nothing.
+    if ((user.orgs ?? []).length === 0) return <Navigate to="/onboarding" replace />;
+    // Belongs to something, but this session is not scoped to one — pick.
+    if (!user.tenantId) return <Navigate to="/select-tenant" replace />;
+  }
+
+  return children;
+}
+
+/** Authenticated, but deliberately outside the tenant-scoped AppShell. */
+function PortalRoute({ children }) {
   const { accessToken, loading } = useAuth();
   if (loading) return null;
   if (!accessToken) return <Navigate to="/login" replace />;
@@ -92,6 +116,30 @@ function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/accept-invite" element={<SetPasswordPage mode="invite" />} />
       <Route path="/reset-password" element={<SetPasswordPage mode="reset" />} />
+      <Route
+        path="/onboarding"
+        element={
+          <PortalRoute>
+            <OnboardingPage />
+          </PortalRoute>
+        }
+      />
+      <Route
+        path="/orgs/new"
+        element={
+          <PortalRoute>
+            <CreateOrgPage />
+          </PortalRoute>
+        }
+      />
+      <Route
+        path="/orgs/join"
+        element={
+          <PortalRoute>
+            <JoinOrgPage />
+          </PortalRoute>
+        }
+      />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route
         element={
