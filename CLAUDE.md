@@ -68,6 +68,14 @@ pnpm --filter web test:seed:docker
 pnpm --filter web test:snapshot:dump
 pnpm --filter web test:snapshot:restore
 
+# Reconcile every collection's indexes with its schema (Mongo will not redefine
+# an index in place, so a changed sparse/unique/partial option needs this).
+# --dry-run reports drift and exits 1, usable as a pre-deploy gate.
+# Run inside the api container so it uses the container's MONGODB_URI.
+docker exec -w /app/apps/api rooted-api-1 node src/scripts/migrate-sync-indexes.js --dry-run
+docker exec -w /app/apps/api rooted-api-1 node src/scripts/migrate-sync-indexes.js
+docker exec -w /app/apps/api rooted-api-1 node src/scripts/migrate-sync-indexes.js --model=Tenant
+
 # Bootstrap a super_admin user against whatever MONGODB_URI is active
 node apps/api/src/scripts/seed-super-admin.js --email=admin@rooted.app --password=SecurePass123
 
@@ -131,6 +139,9 @@ Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts 
 | `apps/api/src/models/plugins/tenantScope.js` | Enforces `tenantId` on every tenant-scoped query/write |
 | `apps/api/src/routes/` | 9 routers: auth, admin, tenant, academic, staff, expense, fee, inventory, billing |
 | `apps/api/src/scripts/seed-test-data.js` | Deterministic seed for `rooted_test` (tenant `testschool`, 4 users, academic/staff/fee/inventory data); `--clean` wipes all collections first |
+| `apps/api/src/models/index.js` | Barrel of all 39 models — the list index tooling iterates |
+| `apps/api/src/utils/indexDrift.js` | Read-only schema-vs-database index diff; boot logs a warning on drift |
+| `apps/api/src/scripts/migrate-sync-indexes.js` | Drops/recreates drifted indexes (`--dry-run`, `--model=`) |
 | `apps/api/src/scripts/seed-super-admin.js` | Bootstraps one `systemRole: super_admin` user against whatever `MONGODB_URI` is active |
 | `apps/web/src/App.jsx` | React Router setup |
 | `apps/web/src/lib/api.js` | Axios client — same-origin `/__api` base URL logic |
