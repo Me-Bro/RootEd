@@ -122,7 +122,20 @@ export async function storeResetToken(userId, token, ttlMs = RESET_TOKEN_TTL_MS)
 }
 
 export async function getActiveTenantsForUser(userId) {
-  const memberships = await TenantMembership.find({ userId, status: 'active' }, 'tenantId', {
+  return getTenantsForUser(userId, 'active');
+}
+
+/**
+ * Organizations this person has asked to join and is waiting on. Without it the
+ * onboarding screen cannot tell "waiting for an admin" from "nothing yet", and
+ * an applicant re-applies into a queue they are already in.
+ */
+export async function getPendingTenantsForUser(userId) {
+  return getTenantsForUser(userId, 'pending');
+}
+
+async function getTenantsForUser(userId, status) {
+  const memberships = await TenantMembership.find({ userId, status }, 'tenantId', {
     _bypassTenantScope: true,
   }).lean();
   if (memberships.length === 0) return [];
