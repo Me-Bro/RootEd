@@ -32,6 +32,7 @@ import {
   hashToken,
   revokeUserSessions,
   getActiveTenantsForUser,
+  getPendingTenantsForUser,
 } from '../services/auth.service.js';
 import {
   loginFilterFor,
@@ -405,7 +406,21 @@ router.get('/me', authenticate, async (req, res, next) => {
       tenant = !isPortalHost
         ? await Tenant.findOne({ subdomain, status: 'active' }, '_id orgType').lean()
         : await resolveTenantFromToken(req);
-      if (tenant) permissions = await resolvePermissions(req.user.sub, tenant._id.toString());
+
+      // Resolving by Host alone reports whichever tenant owns the subdomain,
+      // even to someone with no membership in it — and it silently overrides
+      // the tenantId the caller's own token carries. Fall back to the token
+      // when the host's tenant is not one of theirs.
+      if (tenant) {
+        permissions = await resolvePermissions(req.user.sub, tenant._id.toString());
+        if (permissions.length === 0) {
+          const fromToken = await resolveTenantFromToken(req);
+          if (fromToken && String(fromToken._id) !== String(tenant._id)) {
+            tenant = fromToken;
+            permissions = await resolvePermissions(req.user.sub, tenant._id.toString());
+          }
+        }
+      }
     }
 
     // Mirrors the tenants[] that POST /auth/login returns. Without it the org
@@ -413,13 +428,19 @@ router.get('/me', authenticate, async (req, res, next) => {
     // — which is what stranded the tenant picker on /login. super_admin is
     // excluded for the same reason as in POST /auth/login: tenant access comes
     // from impersonation, never from membership.
-    const orgs =
-      user.systemRole === 'super_admin' ? [] : await getActiveTenantsForUser(req.user.sub);
+    const [orgs, pendingOrgs] =
+      user.systemRole === 'super_admin'
+        ? [[], []]
+        : await Promise.all([
+            getActiveTenantsForUser(req.user.sub),
+            getPendingTenantsForUser(req.user.sub),
+          ]);
 
     res.json({
       ...user,
       permissions,
       orgs,
+      pendingOrgs,
       impersonatedTenantId: req.user.impersonatedTenantId ?? null,
       tenantId: tenant?._id?.toString() ?? req.user.tenantId ?? null,
       orgType: tenant?.orgType ?? null,
