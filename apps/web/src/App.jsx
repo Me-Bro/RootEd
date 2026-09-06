@@ -34,6 +34,10 @@ import GradeReportPage from './pages/academic/GradeReportPage.jsx';
 import TimetablePage from './pages/academic/TimetablePage.jsx';
 import MySchedulePage from './pages/academic/MySchedulePage.jsx';
 import ReportCardPage from './pages/academic/ReportCardPage.jsx';
+import MyTimetablePage from './pages/me/MyTimetablePage.jsx';
+import MyAttendancePage from './pages/me/MyAttendancePage.jsx';
+import MyGradesPage from './pages/me/MyGradesPage.jsx';
+import MyFeesPage from './pages/me/MyFeesPage.jsx';
 import AcademicSummaryPage from './pages/dashboard/AcademicSummaryPage.jsx';
 import FinanceSummaryPage from './pages/dashboard/FinanceSummaryPage.jsx';
 import StaffSummaryPage from './pages/dashboard/StaffSummaryPage.jsx';
@@ -302,6 +306,30 @@ function AppRoutes() {
               </RequirePermission>
             }
           />
+          <Route
+            path="/me/timetable"
+            element={
+              <RequirePermission permission="self:timetable:read">
+                <MyTimetablePage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/me/attendance"
+            element={
+              <RequirePermission permission="self:attendance:read">
+                <MyAttendancePage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/me/grades"
+            element={
+              <RequirePermission permission="self:grades:read">
+                <MyGradesPage />
+              </RequirePermission>
+            }
+          />
         </Route>
         <Route
           element={
@@ -411,6 +439,14 @@ function AppRoutes() {
             element={
               <RequirePermission permission="fees:read">
                 <FinanceSummaryPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/me/fees"
+            element={
+              <RequirePermission permission="self:fees:read">
+                <MyFeesPage />
               </RequirePermission>
             }
           />

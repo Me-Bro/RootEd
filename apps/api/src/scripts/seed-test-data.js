@@ -24,6 +24,7 @@ import { Section } from '../models/Section.js';
 import { Subject } from '../models/Subject.js';
 import { Student } from '../models/Student.js';
 import { Grade } from '../models/Grade.js';
+import { GradeLock } from '../models/GradeLock.js';
 import { ReportCardBatch } from '../models/ReportCardBatch.js';
 import { Timetable } from '../models/Timetable.js';
 import { TimetablePublish } from '../models/TimetablePublish.js';
@@ -61,6 +62,9 @@ const USERS = {
   // general-portal login's tenant-picker screen, which every other seeded
   // user (single membership) never triggers.
   multiTenant: { email: 'multi@testschool.local', username: 'test-multi' },
+  // Linked to Student1 Test (2025-TEST-001) below — holds only self:* permissions,
+  // the account shape the /me/* self-service portal exists for.
+  student: { email: 'student@testschool.local', username: 'test-student' },
   // Belongs to a tuition_center-orgType tenant — exercises org-type module/nav
   // gating (no expense/inventory modules, "Learner"/"Batch" terminology).
   tuitionAdmin: { email: 'admin@tuitioncenter.local', username: 'test-tuition-admin' },
@@ -174,6 +178,7 @@ async function run() {
     viewer: roleByKey['librarian'], // use librarian as minimal-permission viewer
     principal: roleByKey['principal'],
     accountant: roleByKey['accountant'],
+    student: roleByKey['student'],
   };
 
   for (const [key, role] of Object.entries(membershipMap)) {
@@ -445,6 +450,15 @@ async function run() {
   }
   const activeStudents = students.filter((s) => s.status === 'active');
 
+  // Links the 'student' test login to Student1 Test, so /me/* self-service
+  // e2e coverage has real seeded attendance/grades/fee data to assert against
+  // instead of empty states.
+  await Student.findOneAndUpdate(
+    { tenantId, admissionNo: '2025-TEST-001' },
+    { $set: { userId: users.student._id } },
+    { _bypassTenantScope: true }
+  );
+
   // ── Grades ────────────────────────────────────────────────────────────────
   const grades = [];
   for (const student of students) {
@@ -516,6 +530,31 @@ async function run() {
       quizGrade = quizGrade.toObject();
     }
     grades.push(quizGrade);
+  }
+
+  // Publishes Mathematics/final for the primary section so /me/grades (which
+  // only shows published grades — see GradeLock) has at least one visible
+  // row for the seeded 'student' login.
+  const gradeLock = await GradeLock.findOne(
+    {
+      tenantId,
+      sectionId: section._id,
+      subjectId: mathSubject._id,
+      termId: term._id,
+      assessmentType: 'final',
+    },
+    null,
+    { _bypassTenantScope: true }
+  ).lean();
+  if (!gradeLock) {
+    await GradeLock.create({
+      tenantId,
+      sectionId: section._id,
+      subjectId: mathSubject._id,
+      termId: term._id,
+      assessmentType: 'final',
+      publishedBy: users.tenant_admin._id,
+    });
   }
 
   // ── Report Card Batches ───────────────────────────────────────────────────

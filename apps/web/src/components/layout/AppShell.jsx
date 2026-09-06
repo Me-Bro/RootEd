@@ -122,6 +122,27 @@ function getNavGroups(t, orgType) {
           icon: FileText,
           permission: 'grades:read',
         },
+        // Self-scoped: held only by the student role, never alongside the
+        // tenant-wide permissions above, so exactly one of the two sets ever
+        // renders for a given user.
+        {
+          to: '/me/timetable',
+          label: t('nav.myTimetable'),
+          icon: CalendarDays,
+          permission: 'self:timetable:read',
+        },
+        {
+          to: '/me/attendance',
+          label: t('nav.myAttendance'),
+          icon: ClipboardList,
+          permission: 'self:attendance:read',
+        },
+        {
+          to: '/me/grades',
+          label: t('nav.myGrades'),
+          icon: BookOpen,
+          permission: 'self:grades:read',
+        },
       ],
     },
     {
@@ -168,6 +189,12 @@ function getNavGroups(t, orgType) {
           permission: 'fees:read',
         },
         { to: '/fee', label: t('nav.feeCollection'), icon: Wallet, permission: 'fees:read' },
+        {
+          to: '/me/fees',
+          label: t('nav.myFees'),
+          icon: Wallet,
+          permission: 'self:fees:read',
+        },
       ],
     },
     {

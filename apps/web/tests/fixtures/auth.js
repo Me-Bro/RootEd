@@ -48,6 +48,12 @@ export const TEST_USERS = {
     email: 'multi@testschool.local',
     password: 'TestPass123!',
   },
+  // Linked to Student1 Test (2025-TEST-001) — holds only self:* permissions,
+  // the account shape the /me/* self-service portal exists for.
+  student: {
+    email: 'student@testschool.local',
+    password: 'TestPass123!',
+  },
 };
 
 export const TEST_TENANT = {
@@ -63,6 +69,7 @@ export const AUTH_STATES = {
   teacher: path.join(AUTH_DIR, 'teacher.json'),
   viewer: path.join(AUTH_DIR, 'viewer.json'),
   principal: path.join(AUTH_DIR, 'principal.json'),
+  student: path.join(AUTH_DIR, 'student.json'),
 };
 
 /**

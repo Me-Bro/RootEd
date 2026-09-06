@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { isSelfScoped } from '@rooted/shared/constants';
+import { isModuleEnabled } from '@rooted/shared/utils';
 import api from '../../lib/api.js';
-import { formatDate } from '../../utils/intl.js';
+import { formatDate, formatCurrency } from '../../utils/intl.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
@@ -141,6 +143,126 @@ const SCHOOL_WIDE_PERMISSIONS = ['attendance:read', 'fees:read', 'leave:read', '
 function hasSchoolWideVisibility(user) {
   const permissions = user?.permissions ?? [];
   return SCHOOL_WIDE_PERMISSIONS.every((p) => permissions.includes(p));
+}
+
+// A student holds no tenant-wide permission at all — hasSchoolWideVisibility
+// is always false for them — so without this branch they fell through to
+// TenantDashboard and saw a metadata card meant for staff (school name,
+// plan, status, timezone). Checked ahead of hasSchoolWideVisibility so the
+// two branches never have to agree on precedence: the permission sets are
+// disjoint by construction (see DEFAULT_ROLE_TEMPLATES.student).
+function hasSelfScopedVisibility(user) {
+  return (user?.permissions ?? []).some(isSelfScoped);
+}
+
+function StudentDashboard() {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const academicEnabled = isModuleEnabled(user?.orgType, 'academic');
+  const feeEnabled = isModuleEnabled(user?.orgType, 'fee');
+
+  const { data: profile, isLoading: loadingProfile } = useQuery({
+    queryKey: ['me', 'profile'],
+    queryFn: () => api.get('/me/profile').then((r) => r.data),
+  });
+  const isStudent = Boolean(profile?.isStudent);
+
+  const { data: attendance = [] } = useQuery({
+    queryKey: ['me', 'attendance', 'dashboard'],
+    queryFn: () => api.get('/me/attendance').then((r) => r.data),
+    enabled: isStudent && academicEnabled,
+  });
+  const { data: grades = [] } = useQuery({
+    queryKey: ['me', 'grades', 'dashboard'],
+    queryFn: () => api.get('/me/grades').then((r) => r.data),
+    enabled: isStudent && academicEnabled,
+  });
+  const { data: fees } = useQuery({
+    queryKey: ['me', 'fees', 'dashboard'],
+    queryFn: () => api.get('/me/fees').then((r) => r.data),
+    enabled: isStudent && feeEnabled,
+  });
+
+  if (loadingProfile) return <p className="text-sm text-muted-foreground">{t('common.loading')}</p>;
+
+  if (!isStudent) {
+    return (
+      <Card>
+        <CardContent className="pt-4">
+          <p className="text-sm text-muted-foreground">{t('dashboard.student.notLinked')}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const student = profile.student;
+  const present = attendance.filter((r) => r.status === 'present' || r.status === 'late').length;
+  const attendancePct = attendance.length ? Math.round((present / attendance.length) * 100) : null;
+
+  const numericScores = grades.map((g) => g.score).filter((v) => typeof v === 'number');
+  const avgScore = numericScores.length
+    ? Math.round(numericScores.reduce((a, b) => a + b, 0) / numericScores.length)
+    : null;
+
+  const totalDue = (fees?.assignments ?? []).reduce(
+    (sum, a) => sum + a.totalAmount - (a.discountAmount || 0),
+    0
+  );
+  const totalPaid = (fees?.payments ?? []).reduce((sum, p) => sum + p.amount, 0);
+  const balance = totalDue - totalPaid;
+
+  return (
+    <div className="flex flex-col gap-6">
+      <p className="text-lg font-medium text-foreground">
+        {t('dashboard.student.greeting', {
+          name: student ? `${student.firstName} ${student.lastName}` : '',
+        })}
+      </p>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {academicEnabled && (
+          <StatCard
+            label={t('dashboard.student.attendanceLabel')}
+            value={attendancePct !== null ? `${attendancePct}%` : '—'}
+          />
+        )}
+        {academicEnabled && (
+          <StatCard
+            label={t('dashboard.student.averageScoreLabel')}
+            value={avgScore !== null ? avgScore : t('dashboard.student.noGradesYet')}
+          />
+        )}
+        {feeEnabled && (
+          <StatCard
+            label={t('dashboard.student.feeBalanceLabel')}
+            value={formatCurrency(balance)}
+          />
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {academicEnabled && (
+          <>
+            <Button variant="outline" onClick={() => navigate('/me/timetable')}>
+              {t('dashboard.student.viewTimetable')}
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/me/attendance')}>
+              {t('dashboard.student.viewAttendance')}
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/me/grades')}>
+              {t('dashboard.student.viewGrades')}
+            </Button>
+          </>
+        )}
+        {feeEnabled && (
+          <Button variant="outline" onClick={() => navigate('/me/fees')}>
+            {t('dashboard.student.viewFees')}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function todayParam() {
@@ -407,7 +529,8 @@ export default function DashboardPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const isSuperAdmin = user?.systemRole === 'super_admin';
-  const isPrincipalView = !isSuperAdmin && hasSchoolWideVisibility(user);
+  const isStudentView = !isSuperAdmin && hasSelfScopedVisibility(user);
+  const isPrincipalView = !isSuperAdmin && !isStudentView && hasSchoolWideVisibility(user);
 
   return (
     <div className="flex flex-col gap-6">
@@ -417,6 +540,8 @@ export default function DashboardPage() {
       />
       {isSuperAdmin ? (
         <SuperAdminDashboard />
+      ) : isStudentView ? (
+        <StudentDashboard />
       ) : isPrincipalView ? (
         <PrincipalDashboard />
       ) : (
