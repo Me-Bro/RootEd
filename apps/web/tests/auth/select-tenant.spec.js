@@ -17,11 +17,20 @@ test.describe('General-portal login — tenant picker', () => {
     await dialog.getByRole('button', { name: 'Sign in' }).click();
 
     await page.waitForURL('**/select-tenant', { timeout: 15_000 });
-    // Scoped to the picker's own buttons: the organization name also appears in
-    // the header switcher and on the dashboard, so a bare getByText matches
-    // more than one element once the session is inside an organization.
-    await expect(page.getByRole('button', { name: 'Test School' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Second School' })).toBeVisible();
+
+    // Scoped to the picker itself, by its heading's card, not to the page: the
+    // organization name now also appears in the header switcher, and asserting
+    // page-wide matched that instead — masking a redirect away from the picker
+    // entirely.
+    const picker = page
+      .locator('form, [role="main"]')
+      .filter({ hasText: 'Choose an organization' });
+    await expect(picker.getByRole('button', { name: 'Test School' })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(picker.getByRole('button', { name: 'Second School' })).toBeVisible({
+      timeout: 15_000,
+    });
 
     await page.getByRole('button', { name: 'Test School' }).click();
     await page.waitForURL('**/dashboard', { timeout: 15_000 });
@@ -40,8 +49,15 @@ test.describe('General-portal login — tenant picker', () => {
     // back empty and the page bounced to /login. It now comes from /auth/me.
     await page.reload();
     await expect(page).toHaveURL(/\/select-tenant/);
-    await expect(page.getByRole('button', { name: 'Test School' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Second School' })).toBeVisible();
+    const reloaded = page
+      .locator('form, [role="main"]')
+      .filter({ hasText: 'Choose an organization' });
+    await expect(reloaded.getByRole('button', { name: 'Test School' })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(reloaded.getByRole('button', { name: 'Second School' })).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test('visiting /select-tenant unauthenticated redirects to /login', async ({ page }) => {
