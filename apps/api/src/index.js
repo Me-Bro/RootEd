@@ -5,6 +5,7 @@ import { connectMonitoringDB } from './config/monitoringDb.js';
 import { connectRedis } from './config/redis.js';
 import { ensureBucket } from './services/storage.service.js';
 import { logger } from './utils/logger.js';
+import { warnOnIndexDrift } from './utils/indexDrift.js';
 import { env } from './config/env.js';
 import app from './app.js';
 import { startAuditWorker } from './workers/audit.worker.js';
@@ -42,6 +43,10 @@ async function main() {
   app.listen(env.PORT, () => {
     logger.info({ port: env.PORT }, 'API server started');
   });
+
+  // Not awaited: it waits on autoIndex finishing, and a schema/database index
+  // mismatch is something to shout about, not something to hold the port for.
+  void warnOnIndexDrift();
 }
 
 main().catch((err) => {
