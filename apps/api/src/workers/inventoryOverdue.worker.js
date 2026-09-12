@@ -2,8 +2,6 @@ import { Worker, Queue } from 'bullmq';
 import { redis } from '../config/redis.js';
 import { logger } from '../utils/logger.js';
 import { StockMovement } from '../models/StockMovement.js';
-import { User } from '../models/User.js';
-import { sendEmail } from '../services/email.service.js';
 import { auditLog } from '../services/audit.service.js';
 
 const QUEUE_NAME = 'inventory-overdue';
@@ -40,24 +38,6 @@ export function startInventoryOverdueWorker() {
       for (const movement of overdueMovements) {
         const item = movement.itemId;
         if (!item) continue;
-
-        const custodianId = item.custodianId;
-        if (custodianId) {
-          const custodian = await User.findById(custodianId).lean();
-          if (custodian?.email) {
-            await sendEmail({
-              to: custodian.email,
-              subject: 'Overdue Inventory Item Return',
-              html: `
-                <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
-                  <h2>Overdue Item Return</h2>
-                  <p>Item <strong>${item.name}</strong> (SKU: ${item.sku}) was due for return on ${movement.dueDate?.toLocaleDateString() ?? 'N/A'}.</p>
-                  <p>Please ensure the item is returned immediately.</p>
-                </div>
-              `,
-            });
-          }
-        }
 
         await auditLog({
           actorId: 'system',
