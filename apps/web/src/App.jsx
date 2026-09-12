@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { isModuleEnabled } from '@rooted/shared/utils';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { useAuth } from './contexts/useAuth.js';
-import LoginPage from './pages/auth/LoginPage.jsx';
+import HomePage from './pages/marketing/HomePage.jsx';
 import SelectTenantPage from './pages/auth/SelectTenantPage.jsx';
 import ImpersonateCallbackPage from './pages/auth/ImpersonateCallbackPage.jsx';
 import SetPasswordPage from './pages/auth/SetPasswordPage.jsx';
@@ -63,10 +63,9 @@ function ProtectedRoute({ children }) {
   const { accessToken, user, loading } = useAuth();
   if (loading) return null;
   if (!accessToken) return <Navigate to="/login" replace />;
-  // Render nothing rather than redirecting when the user has not loaded yet:
-  // LoginPage redirects on accessToken alone, so bouncing to /login here made
-  // the two guards disagree and loop. AuthContext drops the token outright if
-  // /auth/me fails, so this is a brief in-flight state, not a stuck one.
+  // Render nothing rather than redirecting when the user has not loaded yet —
+  // AuthContext drops the token outright if /auth/me fails, so this is a
+  // brief in-flight state, not a stuck one.
   if (!user) return null;
 
   // A super_admin reaches tenants by impersonation, never by membership, so
@@ -116,8 +115,8 @@ function RequireModuleEnabled({ moduleName, children }) {
 function RequirePermission({ permission, children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
-  // Not a redirect: see ProtectedRoute — bouncing to /login while the user is
-  // still loading fights LoginPage's own guard.
+  // Not a redirect: see ProtectedRoute — permissions can't be evaluated until
+  // `user` has loaded, so wait rather than bounce.
   if (!user) return null;
   // Backend already folds an active impersonation session into `permissions`
   // (see GET /auth/me) — a bare super_admin token with no impersonation claim
@@ -130,7 +129,7 @@ function RequirePermission({ permission, children }) {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      <Route path="/login" element={<HomePage />} />
       <Route path="/select-tenant" element={<SelectTenantPage />} />
       <Route path="/impersonate" element={<ImpersonateCallbackPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -163,7 +162,7 @@ function AppRoutes() {
           </PortalRoute>
         }
       />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<HomePage />} />
       <Route
         element={
           <ProtectedRoute>

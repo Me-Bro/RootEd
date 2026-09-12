@@ -1,7 +1,7 @@
 /**
  * `/login` renders the approved landing page UI
  * (apps/web/src/components/marketing/LandingView.jsx) with sign-in in a
- * dialog — see pages/auth/LoginPage.jsx. The behaviors this guards:
+ * dialog — see pages/marketing/HomePage.jsx. The behaviors this guards:
  * `/login` shows the landing UI rather than a bare form, both the desktop
  * and mobile layouts render at their breakpoints, and login still works
  * end-to-end through the dialog.
@@ -225,8 +225,22 @@ test.describe('Login landing page — already authenticated', () => {
   // and this test doesn't care which role is authenticated.
   test.use({ storageState: AUTH_STATES.principal });
 
-  test('visiting /login redirects straight to /dashboard, no landing page', async ({ page }) => {
+  test('visiting /login stays on the landing page, with Dashboard/Log out instead of Log in', async ({
+    page,
+  }) => {
     await page.goto('/login');
+    await expect(page).toHaveURL(/\/login/);
+
+    const nav = page.locator('.lp-nav');
+    await expect(nav.getByRole('button', { name: 'Dashboard' })).toBeVisible();
+    await expect(nav.getByRole('button', { name: 'Log out' })).toBeVisible();
+    await expect(nav.getByRole('button', { name: 'Log in' })).not.toBeVisible();
+    await expect(nav.getByRole('link', { name: 'Start free trial' })).not.toBeVisible();
+  });
+
+  test('"Dashboard" navigates to /dashboard', async ({ page }) => {
+    await page.goto('/login');
+    await page.locator('.lp-nav').getByRole('button', { name: 'Dashboard' }).click();
     await page.waitForURL('**/dashboard', { timeout: 15_000 });
     await expect(page).toHaveURL(/\/dashboard/);
   });

@@ -18,7 +18,17 @@ import {
   PREVIEW_ROLES,
 } from './landingContent.js';
 
-function DesktopLanding({ onLoginClick, languageSwitcher, t }) {
+function DesktopLanding({
+  onLoginClick,
+  isAuthenticated,
+  onDashboardClick,
+  onLogoutClick,
+  languageSwitcher,
+  t,
+}) {
+  const loginLabel = isAuthenticated ? t('landing.nav.dashboard') : t('landing.nav.login');
+  const handleLoginClick = isAuthenticated ? onDashboardClick : onLoginClick;
+
   return (
     <div className="lp-desktop-only">
       <nav className="lp-nav">
@@ -34,12 +44,18 @@ function DesktopLanding({ onLoginClick, languageSwitcher, t }) {
         </div>
         <div className="cta">
           {languageSwitcher}
-          <button type="button" className="btn ghost sm" onClick={onLoginClick}>
-            {t('landing.nav.login')}
+          <button type="button" className="btn ghost sm" onClick={handleLoginClick}>
+            {loginLabel}
           </button>
-          <a className="btn primary sm" href={TRIAL_HREF}>
-            {t('landing.nav.startTrial')}
-          </a>
+          {isAuthenticated ? (
+            <button type="button" className="btn primary sm" onClick={onLogoutClick}>
+              {t('landing.nav.logout')}
+            </button>
+          ) : (
+            <a className="btn primary sm" href={TRIAL_HREF}>
+              {t('landing.nav.startTrial')}
+            </a>
+          )}
         </div>
       </nav>
 
@@ -67,14 +83,14 @@ function DesktopLanding({ onLoginClick, languageSwitcher, t }) {
             <a className="btn primary" href={TRIAL_HREF}>
               {t('landing.hero.ctaTrial')}
             </a>
-            <button type="button" className="btn secondary" onClick={onLoginClick}>
-              {t('landing.hero.ctaLogin')}
+            <button type="button" className="btn secondary" onClick={handleLoginClick}>
+              {isAuthenticated ? loginLabel : t('landing.hero.ctaLogin')}
             </button>
           </div>
           <p className="fineprint">
             {t('landing.hero.fineprint')}{' '}
-            <button type="button" className="btn-inline" onClick={onLoginClick}>
-              {t('landing.hero.fineprintLogin')}
+            <button type="button" className="btn-inline" onClick={handleLoginClick}>
+              {isAuthenticated ? loginLabel : t('landing.hero.fineprintLogin')}
             </button>
           </p>
 
@@ -199,8 +215,8 @@ function DesktopLanding({ onLoginClick, languageSwitcher, t }) {
             <p>{t('landing.ctaBand.sub')}</p>
           </div>
           <div className="actions">
-            <button type="button" className="btn secondary" onClick={onLoginClick}>
-              {t('landing.nav.login')}
+            <button type="button" className="btn secondary" onClick={handleLoginClick}>
+              {loginLabel}
             </button>
             <a className="btn primary" href={TRIAL_HREF}>
               {t('landing.nav.startTrial')}
@@ -223,8 +239,8 @@ function DesktopLanding({ onLoginClick, languageSwitcher, t }) {
               <h3>{t('landing.footer.productHeading')}</h3>
               <a href="#modules">{t('landing.footer.modules')}</a>
               <a href="#security">{t('landing.nav.security')}</a>
-              <button type="button" onClick={onLoginClick}>
-                {t('landing.nav.login')}
+              <button type="button" onClick={handleLoginClick}>
+                {loginLabel}
               </button>
             </div>
             <div>
@@ -243,7 +259,17 @@ function DesktopLanding({ onLoginClick, languageSwitcher, t }) {
   );
 }
 
-function MobileLanding({ onLoginClick, languageSwitcher, t }) {
+function MobileLanding({
+  onLoginClick,
+  isAuthenticated,
+  onDashboardClick,
+  onLogoutClick,
+  languageSwitcher,
+  t,
+}) {
+  const loginLabel = isAuthenticated ? t('landing.nav.dashboard') : t('landing.nav.login');
+  const handleLoginClick = isAuthenticated ? onDashboardClick : onLoginClick;
+
   return (
     <div className="lp-mobile-only m-page">
       <nav className="m-nav">
@@ -272,8 +298,8 @@ function MobileLanding({ onLoginClick, languageSwitcher, t }) {
           </a>
           <span className="fineprint">
             {t('landing.mobile.fineprint')}{' '}
-            <button type="button" className="btn-inline" onClick={onLoginClick}>
-              {t('landing.hero.fineprintLogin')}
+            <button type="button" className="btn-inline" onClick={handleLoginClick}>
+              {isAuthenticated ? loginLabel : t('landing.hero.fineprintLogin')}
             </button>
           </span>
         </section>
@@ -356,39 +382,63 @@ function MobileLanding({ onLoginClick, languageSwitcher, t }) {
       </footer>
 
       <div className="m-sticky-cta">
-        <button type="button" className="btn ghost sm" onClick={onLoginClick}>
-          {t('landing.nav.login')}
+        <button type="button" className="btn ghost sm" onClick={handleLoginClick}>
+          {loginLabel}
         </button>
-        <a className="btn primary sm" href={TRIAL_HREF}>
-          {t('landing.nav.startTrial')}
-        </a>
+        {isAuthenticated ? (
+          <button type="button" className="btn primary sm" onClick={onLogoutClick}>
+            {t('landing.nav.logout')}
+          </button>
+        ) : (
+          <a className="btn primary sm" href={TRIAL_HREF}>
+            {t('landing.nav.startTrial')}
+          </a>
+        )}
       </div>
     </div>
   );
 }
 
 /**
- * The approved landing page UI (docs/landing-page-mockup/{desktop,mobile}.html)
- * as a purely presentational component — no auth state, no routing, no
- * redirect logic. It renders both the desktop and mobile trees and lets CSS
- * pick one at the `md` breakpoint (see landing.css), matching how the two
- * mockups were signed off as one responsive page.
+ * The approved landing page UI (docs/landing-page-mockup/{desktop,mobile}.html),
+ * still no routing/redirect logic of its own — it renders both the desktop
+ * and mobile trees and lets CSS pick one at the `md` breakpoint (see
+ * landing.css), matching how the two mockups were signed off as one
+ * responsive page.
  *
  * Copy comes from the `landing` namespace in src/i18n/locales/{en,hi}.json;
  * the "Hindi / English" option is derived from those two by
  * i18n/mergeHiEn.js, so nothing extra is needed for it here.
  *
- * `onLoginClick` is called by every "Log in" CTA; the owning page decides
- * what that means (LoginPage opens the login dialog). `languageSwitcher` is
- * a slot rendered into the nav's right-hand cluster, keeping the language
- * control in the same top-right spot it occupies on the old login screen.
+ * `onLoginClick` is called by every "Log in" CTA when `isAuthenticated` is
+ * false; the owning page decides what that means (HomePage opens the login
+ * dialog). When `isAuthenticated` is true, those same CTAs relabel to
+ * "Dashboard" and call `onDashboardClick` instead, and the nav/mobile-sticky
+ * button clusters additionally swap their "Start trial" slot for a "Log out"
+ * button calling `onLogoutClick`. `languageSwitcher` is a slot rendered into
+ * the nav's right-hand cluster, keeping the language control in the same
+ * top-right spot it occupies on the old login screen.
  */
-export default function LandingView({ onLoginClick, languageSwitcher }) {
+export default function LandingView({
+  onLoginClick,
+  isAuthenticated = false,
+  onDashboardClick,
+  onLogoutClick,
+  languageSwitcher,
+}) {
   const { t } = useTranslation();
+  const shared = {
+    onLoginClick,
+    isAuthenticated,
+    onDashboardClick,
+    onLogoutClick,
+    languageSwitcher,
+    t,
+  };
   return (
     <div className="rooted-landing">
-      <DesktopLanding onLoginClick={onLoginClick} languageSwitcher={languageSwitcher} t={t} />
-      <MobileLanding onLoginClick={onLoginClick} languageSwitcher={languageSwitcher} t={t} />
+      <DesktopLanding {...shared} />
+      <MobileLanding {...shared} />
     </div>
   );
 }
