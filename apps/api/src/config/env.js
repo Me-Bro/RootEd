@@ -47,7 +47,9 @@ const schema = z.object({
     .enum(['true', 'false'])
     .default('false')
     .transform((v) => v === 'true'),
-  EMAIL_PROVIDER: z.enum(['smtp', 'postmark']).default('smtp'),
+  // 'console' delivers nothing — it logs the message and its link. For
+  // self-hosted/demo boxes with no mail provider; see consoleAdapter.js.
+  EMAIL_PROVIDER: z.enum(['smtp', 'postmark', 'console']).default('smtp'),
   POSTMARK_API_TOKEN: z.string().optional(),
 });
 
