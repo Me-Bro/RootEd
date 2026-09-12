@@ -1211,7 +1211,10 @@
       "tabOverview": "Overview",
       "tabMembers": "Members",
       "tabBilling": "Billing",
-      "tabAuditLog": "Audit Log"
+      "tabModules": "Modules",
+      "tabAuditLog": "Audit Log",
+      "modulesHint": "Choose which modules this tenant can access. Overrides the default set for its organization type.",
+      "modulesUpdateFailed": "Failed to update modules"
     },
     "audit": {
       "tenantLabel": "Tenant",

@@ -32,6 +32,13 @@ beforeAll(async () => {
     orgType: 'tuition_center',
     status: 'active',
   });
+  await Tenant.create({
+    name: 'Gating School No Inventory',
+    subdomain: 'gatingschoolnoinventory',
+    orgType: 'school',
+    status: 'active',
+    enabledModules: ['academic', 'staff', 'fee', 'billing'],
+  });
 
   app = express();
   app.use(resolveTenant);
@@ -59,6 +66,14 @@ test('inventory route is 403-blocked by requireModuleEnabled for a tuition_cente
 test('fee route (enabled for every orgType) is reachable for a tuition_center tenant', async () => {
   const res = await request(app).get('/fee').set('Host', 'gatingtuition.rooted.app');
   expect(res.status).toBe(200);
+});
+
+test('a tenant enabledModules override wins over its orgType default', async () => {
+  const res = await request(app)
+    .get('/inventory')
+    .set('Host', 'gatingschoolnoinventory.rooted.app');
+  expect(res.status).toBe(403);
+  expect(res.body.error).toMatch(/not enabled/i);
 });
 
 test('unresolvable tenant subdomain 404s before module gating runs', async () => {

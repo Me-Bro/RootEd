@@ -1,5 +1,11 @@
 import mongoose from 'mongoose';
-import { ORG_TYPES, JOIN_POLICY_MODES, PLANS, DEFAULT_PLAN } from '@rooted/shared/constants';
+import {
+  ORG_TYPES,
+  JOIN_POLICY_MODES,
+  PLANS,
+  DEFAULT_PLAN,
+  ALL_MODULES,
+} from '@rooted/shared/constants';
 
 const tenantSchema = new mongoose.Schema(
   {
@@ -15,6 +21,10 @@ const tenantSchema = new mongoose.Schema(
       enum: ORG_TYPES,
       default: 'school',
     },
+    // Unset by default — falls back to ORG_TYPE_CONFIG[orgType].enabledModules
+    // (see isModuleEnabled). Only set once a super_admin explicitly overrides
+    // a module for this specific tenant.
+    enabledModules: { type: [{ type: String, enum: ALL_MODULES }], default: undefined },
     status: {
       type: String,
       enum: ['active', 'suspended', 'archived'],

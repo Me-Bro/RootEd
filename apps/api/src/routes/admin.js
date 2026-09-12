@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { ORG_TYPES, PLANS, DEFAULT_PLAN } from '@rooted/shared/constants';
+import { ORG_TYPES, PLANS, DEFAULT_PLAN, ALL_MODULES } from '@rooted/shared/constants';
 import { authenticate, requireSystemRole } from '../middleware/authenticate.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { Tenant } from '../models/Tenant.js';
@@ -302,6 +302,33 @@ router.patch('/tenants/:id/discount', async (req, res, next) => {
 
     const pricing = calculateFinalPrice(tenant.plan, studentCount, discountType);
     res.json({ tenant, pricing });
+  } catch (err) {
+    next(err);
+  }
+});
+
+const modulesSchema = z.object({ enabledModules: z.array(z.enum(ALL_MODULES)) });
+
+router.patch('/tenants/:id/modules', async (req, res, next) => {
+  try {
+    const { enabledModules } = modulesSchema.parse(req.body);
+    const tenant = await Tenant.findById(req.params.id);
+    if (!tenant) return res.status(404).json({ error: 'Tenant not found' });
+
+    const before = { enabledModules: tenant.enabledModules ?? null };
+    tenant.enabledModules = enabledModules;
+    await tenant.save();
+
+    await auditLog({
+      actorId: req.user.sub,
+      action: 'tenant.modules.updated',
+      target: { model: 'Tenant', id: tenant._id },
+      before,
+      after: { enabledModules },
+      ip: req.ip,
+    });
+
+    res.json(tenant);
   } catch (err) {
     next(err);
   }

@@ -159,8 +159,8 @@ function StudentDashboard() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const academicEnabled = isModuleEnabled(user?.orgType, 'academic');
-  const feeEnabled = isModuleEnabled(user?.orgType, 'fee');
+  const academicEnabled = isModuleEnabled(user, 'academic');
+  const feeEnabled = isModuleEnabled(user, 'fee');
 
   const { data: profile, isLoading: loadingProfile } = useQuery({
     queryKey: ['me', 'profile'],

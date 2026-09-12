@@ -109,7 +109,7 @@ function RequireSystemRole({ roles, children }) {
 function RequireModuleEnabled({ moduleName, children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
-  if (!isModuleEnabled(user?.orgType, moduleName)) return <Navigate to="/dashboard" replace />;
+  if (!isModuleEnabled(user, moduleName)) return <Navigate to="/dashboard" replace />;
   return children;
 }
 

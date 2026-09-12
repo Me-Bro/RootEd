@@ -4,6 +4,11 @@
 export const PLANS = ['free', 'starter', 'growth', 'pro', 'enterprise'];
 export const DEFAULT_PLAN = 'free';
 
+// Single source of truth for the module enum — every module any orgType can
+// grant in ORG_TYPE_CONFIG below, plus what a tenant's enabledModules override
+// (Tenant.enabledModules) is validated against.
+export const ALL_MODULES = ['academic', 'staff', 'expense', 'fee', 'inventory', 'billing'];
+
 export const ORG_TYPE_CONFIG = {
   school: {
     enabledModules: ['academic', 'staff', 'expense', 'fee', 'inventory', 'billing'],

@@ -1211,7 +1211,10 @@
       "tabOverview": "अवलोकन",
       "tabMembers": "सदस्य",
       "tabBilling": "बिलिंग",
-      "tabAuditLog": "ऑडिट लॉग"
+      "tabModules": "मॉड्यूल",
+      "tabAuditLog": "ऑडिट लॉग",
+      "modulesHint": "चुनें कि यह किरायेदार कौन से मॉड्यूल एक्सेस कर सकता है। यह उसके संगठन प्रकार के डिफ़ॉल्ट सेट को ओवरराइड करता है।",
+      "modulesUpdateFailed": "मॉड्यूल अपडेट करने में विफल"
     },
     "audit": {
       "tenantLabel": "टेनेंट",

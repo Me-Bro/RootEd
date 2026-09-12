@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { ALL_MODULES } from '@rooted/shared/constants';
+import { isModuleEnabled } from '@rooted/shared/utils';
 import api from '../../lib/api.js';
 import { buildImpersonateUrl } from '../../lib/impersonation.js';
 import { Badge } from '../../components/ui/Badge.jsx';
@@ -316,7 +318,72 @@ function BillingTab({ tenant, tenantId }) {
   );
 }
 
-const TAB_IDS = ['overview', 'members', 'billing', 'auditLog'];
+// Maps each module key to an i18n key that already exists elsewhere in the
+// app (nav labels, or the Billing tab's own title) — avoids adding a second,
+// slightly-different translated label for the same concept.
+const MODULE_LABEL_KEYS = {
+  academic: 'nav.academic',
+  staff: 'nav.staff',
+  expense: 'nav.expenses',
+  fee: 'nav.fees',
+  inventory: 'nav.inventory',
+  billing: 'admin.tenantDetail.tabBilling',
+};
+
+function ModulesTab({ tenant, tenantId }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [selected, setSelected] = useState(
+    () => new Set(ALL_MODULES.filter((m) => isModuleEnabled(tenant, m)))
+  );
+
+  const mutation = useMutation({
+    mutationFn: (enabledModules) =>
+      api.patch(`/admin/tenants/${tenantId}/modules`, { enabledModules }).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tenant', tenantId] }),
+  });
+
+  function toggle(moduleName) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(moduleName)) next.delete(moduleName);
+      else next.add(moduleName);
+      return next;
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-sm text-gray-500 dark:text-gray-400">
+        {t('admin.tenantDetail.modulesHint')}
+      </p>
+      <div className="flex flex-col gap-2">
+        {ALL_MODULES.map((moduleName) => (
+          <label key={moduleName} className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={selected.has(moduleName)}
+              onChange={() => toggle(moduleName)}
+            />
+            <span>{t(MODULE_LABEL_KEYS[moduleName])}</span>
+          </label>
+        ))}
+      </div>
+      <Button
+        className="w-fit"
+        onClick={() => mutation.mutate([...selected])}
+        disabled={mutation.isPending}
+      >
+        {mutation.isPending ? t('common.saving') : t('common.save')}
+      </Button>
+      {mutation.isError && (
+        <p className="text-sm text-red-500">{t('admin.tenantDetail.modulesUpdateFailed')}</p>
+      )}
+    </div>
+  );
+}
+
+const TAB_IDS = ['overview', 'members', 'billing', 'modules', 'auditLog'];
 
 export default function TenantDetailPage() {
   const { t } = useTranslation();
@@ -361,6 +428,7 @@ export default function TenantDetailPage() {
     overview: t('admin.tenantDetail.tabOverview'),
     members: t('admin.tenantDetail.tabMembers'),
     billing: t('admin.tenantDetail.tabBilling'),
+    modules: t('admin.tenantDetail.tabModules'),
     auditLog: t('admin.tenantDetail.tabAuditLog'),
   };
 
@@ -442,6 +510,7 @@ export default function TenantDetailPage() {
           {activeTab === 'overview' && <OverviewTab tenant={tenant} />}
           {activeTab === 'members' && <MembersTab tenantId={id} />}
           {activeTab === 'billing' && <BillingTab tenant={tenant} tenantId={id} />}
+          {activeTab === 'modules' && <ModulesTab tenant={tenant} tenantId={id} />}
           {activeTab === 'auditLog' && <AuditTab tenantId={id} />}
         </CardContent>
       </Card>
