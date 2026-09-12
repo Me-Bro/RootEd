@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Building2, Plus } from 'lucide-react';
 import { useAuth } from '../../contexts/useAuth.js';
@@ -16,6 +16,14 @@ export default function OnboardingPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // A join request approved while this tab sat here doesn't push any update
+  // to it (no real-time notifications) — but the next /auth/me this tab does
+  // fetch (e.g. a reload) does carry the new org, and PortalRoute doesn't
+  // otherwise route someone with orgs back out of here.
+  if ((user?.orgs ?? []).length > 0) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const pending = (user?.pendingOrgs ?? []).length;
 

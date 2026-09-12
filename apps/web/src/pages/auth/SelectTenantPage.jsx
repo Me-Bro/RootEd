@@ -17,7 +17,7 @@ export default function SelectTenantPage() {
   // Sourced from GET /auth/me rather than the POST /auth/login response, so the
   // list survives a reload — a reload only runs /auth/refresh + /auth/me, which
   // is why this page used to bounce straight back to /login.
-  const { user, loading, selectTenant } = useAuth();
+  const { user, loading, selectTenant, logout } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [pendingId, setPendingId] = useState(null);
@@ -80,6 +80,10 @@ export default function SelectTenantPage() {
             </div>
           </CardContent>
         </Card>
+
+        <Button type="button" variant="ghost" onClick={logout}>
+          {t('auth.logout')}
+        </Button>
       </div>
     </div>
   );
