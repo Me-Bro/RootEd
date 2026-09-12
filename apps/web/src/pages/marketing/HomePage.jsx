@@ -9,7 +9,7 @@ import { LanguageSwitcherTrigger } from '../../components/ui/LanguageSwitcher.js
  * `/` and `/login` both render this — the public marketing page, reachable
  * whether or not the visitor is logged in. Nothing here auto-redirects: a
  * logged-in visitor just sees "Dashboard"/"Log out" instead of "Log
- * in"/"Start trial" (see LandingView's `isAuthenticated` prop). `/login`
+ * in"/"Get started free" (see LandingView's `isAuthenticated` prop). `/login`
  * stays a distinct route because every existing "you need to log in"
  * redirect (ProtectedRoute in App.jsx, AuthContext.logout(), SelectTenantPage
  * and ImpersonateCallbackPage's fallbacks) already targets it.
@@ -28,6 +28,7 @@ export default function HomePage() {
         onLoginClick={() => setLoginOpen(true)}
         onDashboardClick={() => navigate('/dashboard')}
         onLogoutClick={logout}
+        onGetStartedClick={() => navigate('/register')}
         languageSwitcher={<LanguageSwitcherTrigger />}
       />
 
