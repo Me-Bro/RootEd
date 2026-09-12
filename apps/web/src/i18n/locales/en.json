@@ -1255,7 +1255,9 @@
       "about": "About",
       "contact": "Contact",
       "login": "Log in",
-      "startTrial": "Start free trial"
+      "startTrial": "Start free trial",
+      "dashboard": "Dashboard",
+      "logout": "Log out"
     },
     "hero": {
       "badge": "Built by Rural Root Cloud",

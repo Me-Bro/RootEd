@@ -1255,7 +1255,9 @@
       "about": "हमारे बारे में",
       "contact": "संपर्क",
       "login": "लॉग इन",
-      "startTrial": "फ्री ट्रायल शुरू करें"
+      "startTrial": "फ्री ट्रायल शुरू करें",
+      "dashboard": "डैशबोर्ड",
+      "logout": "लॉग आउट"
     },
     "hero": {
       "badge": "Rural Root Cloud द्वारा निर्मित",

@@ -5,8 +5,8 @@ import { TEST_USERS, openLoginDialog, loginViaUi } from '../fixtures/auth.js';
 test.use({ storageState: { cookies: [], origins: [] } });
 
 // /login renders the approved landing page UI with sign-in in a dialog (see
-// pages/auth/LoginPage.jsx), so each test opens that dialog first and scopes
-// its form queries to it.
+// pages/marketing/HomePage.jsx), so each test opens that dialog first and
+// scopes its form queries to it.
 test.describe('Login', () => {
   let dialog;
 
