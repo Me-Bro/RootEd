@@ -10,9 +10,12 @@ version: '3.9'
 services:
   api:
     environment:
-      MONGODB_URI: mongodb://mongo:27017/rooted_test?replicaSet=rs0
+      MONGODB_URI: ${MONGODB_URI_TEST}
       APP_DOMAIN: localhost
       NODE_ENV: development
+    networks:
+      - rooted
+      - shared
 
   # Disable web and nginx — Playwright drives the Vite dev server locally
   web:

@@ -1,0 +1,53 @@
+# Tunnel overlay for the rooted-uat STAGING environment. Same architecture as
+# docker-compose.tunnel.yml (plain-HTTP nginx behind the Cloudflare Tunnel,
+# TLS terminates at the Cloudflare edge) but:
+#   - host ports shifted so this stack can run alongside the prod checkout's
+#     tunnel stack on the same box without colliding (prod: nginx 80, api
+#     3001, web 5173)
+#   - redis stays unpublished from the host — the api container reaches it by
+#     Docker-internal service name (redis:6379), never via a host port
+#   - minio IS published, loopback-only, on 9002 (prod uses 9000) — the
+#     Cloudflare Tunnel process runs on the host, so storage-rooted-uat's
+#     ingress rule needs a localhost:PORT target to proxy to, same as prod's
+#     storage-rooted rule targets localhost:9000
+#   - PORTAL_SUBDOMAIN=rooted-uat instead of rooted — see
+#     agent-home/prod-staging-mongo-migration.md for why this (not a second
+#     APP_DOMAIN) is how staging stays under the same *.ruralrootcloud.com
+#     Cloudflare Universal SSL cert
+#
+# Needs a matching cloudflared ingress rule (rooted-uat.ruralrootcloud.com /
+# *-rooted-uat.ruralrootcloud.com -> http://localhost:8080) and DNS route
+# before it's reachable externally — not part of this file. See the migration
+# doc's Phase 3 for the exact steps.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.tunnel.uat.yml up -d --build
+
+services:
+  redis:
+    ports: !override []
+  minio:
+    ports: !override
+      - '127.0.0.1:9002:9000'
+  nginx:
+    volumes:
+      - ./nginx/nginx.tunnel.conf:/etc/nginx/nginx.conf:ro
+    ports: !override
+      - '8080:80'
+  web:
+    build:
+      args:
+        VITE_APP_DOMAIN: ruralrootcloud.com
+        VITE_PORTAL_SUBDOMAIN: rooted-uat
+    ports: !override
+      - '5174:80'
+  api:
+    ports: !override
+      - '3002:3001'
+    environment:
+      APP_DOMAIN: ruralrootcloud.com
+      PORTAL_SUBDOMAIN: rooted-uat
+      NODE_ENV: production
+      # Needs its own tunnel ingress rule + DNS route (Phase 3) before this
+      # host is actually reachable — see file header.
+      S3_PUBLIC_ENDPOINT: https://storage-rooted-uat.ruralrootcloud.com

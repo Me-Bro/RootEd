@@ -77,6 +77,10 @@ pnpm dev:api    # Express API on :3001
 pnpm dev:web    # Vite frontend on :5173
 ```
 
+## Deployment
+
+Runs via Docker Compose in several modes — self-managed TLS, behind a Cloudflare Tunnel, hot-reload dev, or fully local — see [CLAUDE.md](CLAUDE.md#commands) for the exact compose invocations. Production and staging run as independent stacks sharing a single MongoDB instance (separate databases, separate credentials per environment).
+
 ## Tech Stack
 
 **Backend:** Express 4, Mongoose 8, BullMQ 5, Redis, Argon2id, JWT, Zod
