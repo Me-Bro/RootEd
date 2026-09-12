@@ -101,7 +101,12 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports:
+    # !override: base docker-compose.yml publishes '127.0.0.1:6379:6379'; same
+    # concatenation issue documented above for `web` — without this both rules
+    # try to publish host port 6379 and the merged container gets no working
+    # network attachment at all (silently, healthcheck still passes because it
+    # runs inside the container's own namespace).
+    ports: !override
       - '6379:6379'
     volumes:
       - redis_data:/data
@@ -116,7 +121,9 @@ services:
   minio:
     image: minio/minio
     command: server /data --console-address ":9001"
-    ports:
+    # !override: same reason as redis above — base publishes
+    # '127.0.0.1:9000:9000'/'127.0.0.1:9001:9001'.
+    ports: !override
       - '9000:9000'
       - '9001:9001'
     environment:
