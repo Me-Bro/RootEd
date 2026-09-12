@@ -6,6 +6,7 @@ import { connectRedis } from './config/redis.js';
 import { ensureBucket } from './services/storage.service.js';
 import { logger } from './utils/logger.js';
 import { warnOnIndexDrift } from './utils/indexDrift.js';
+import { loadMigrations, runMigrations } from './utils/migrations.js';
 import { env } from './config/env.js';
 import app from './app.js';
 import { startAuditWorker } from './workers/audit.worker.js';
@@ -27,6 +28,7 @@ async function main() {
   await connectMonitoringDB();
   await connectRedis();
   await ensureBucket();
+  await runMigrations(await loadMigrations());
   startAuditWorker();
   startReportCardWorker();
   startExpenseEscalationWorker();

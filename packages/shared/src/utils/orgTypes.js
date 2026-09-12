@@ -18,3 +18,11 @@ export function isModuleEnabled(tenantOrOrgType, moduleName) {
 export function resolveOrgTerm(orgType, key) {
   return resolveConfig(orgType).terms[key];
 }
+
+// True for tuition/coaching/study-center orgTypes — anywhere a "section" is a
+// batch a learner drops in and out of rather than a fixed annual homeroom.
+// Derived from the terms config (classLevel === 'Batch') instead of listing
+// orgType names, so a new batch-style orgType picks this up automatically.
+export function isBatchOrgType(orgType) {
+  return resolveConfig(orgType).terms.classLevel === 'Batch';
+}

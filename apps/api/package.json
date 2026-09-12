@@ -14,7 +14,8 @@
     "seed:bulk": "node --env-file=.env src/scripts/seed-bulk-data.js",
     "seed:bulk:reset": "node --env-file=.env src/scripts/seed-bulk-data.js --reset",
     "migrate:indexes": "node src/scripts/migrate-sync-indexes.js",
-    "migrate:indexes:check": "node src/scripts/migrate-sync-indexes.js --dry-run"
+    "migrate:indexes:check": "node src/scripts/migrate-sync-indexes.js --dry-run",
+    "migrate:run": "node src/scripts/run-migrations.js"
   },
   "dependencies": {
     "@rooted/shared": "workspace:*",

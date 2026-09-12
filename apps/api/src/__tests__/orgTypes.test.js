@@ -1,4 +1,4 @@
-import { isModuleEnabled, resolveOrgTerm } from '@rooted/shared/utils';
+import { isModuleEnabled, resolveOrgTerm, isBatchOrgType } from '@rooted/shared/utils';
 
 test.each([
   ['school', 'inventory', true],
@@ -41,4 +41,15 @@ test('resolveOrgTerm falls back to school terms for an unknown orgType', () => {
 
 test('resolveOrgTerm returns undefined for an unknown term key', () => {
   expect(resolveOrgTerm('school', 'nonexistent_key')).toBeUndefined();
+});
+
+test.each([
+  ['school', false],
+  ['college', false],
+  ['tuition_center', true],
+  ['coaching_center', true],
+  ['study_center', true],
+  ['nonexistent_type', false],
+])('isBatchOrgType(%s) -> %s', (orgType, expected) => {
+  expect(isBatchOrgType(orgType)).toBe(expected);
 });
