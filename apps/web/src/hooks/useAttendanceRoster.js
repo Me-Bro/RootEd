@@ -55,7 +55,7 @@ export function useAttendanceRoster({ sectionId, date }) {
   const roster = report?.students ?? EMPTY_ARRAY;
   const thresholdPct = report?.thresholdPct ?? 75;
 
-  const { data: todayRecords = EMPTY_ARRAY } = useQuery({
+  const { data: todayRecords = EMPTY_ARRAY, isLoading: todayLoading } = useQuery({
     queryKey: ['attendance', sectionId, date],
     queryFn: () =>
       api.get(`/academic/attendance?sectionId=${sectionId}&date=${date}`).then((r) => r.data),
@@ -78,12 +78,17 @@ export function useAttendanceRoster({ sectionId, date }) {
   // Restore in-progress marking from sessionStorage (survives backgrounding mid-roll);
   // otherwise seed from what the server already has saved for this section/date.
   // Runs once per (sectionId, date) so a later manual edit is never clobbered by a refetch.
+  // Waits for todayRecords to actually finish loading before locking in the key — otherwise
+  // this fires with the query's still-loading placeholder and never re-seeds once the real
+  // (already-saved) records arrive, leaving an already-marked roster looking unmarked.
   useEffect(() => {
     if (!sectionId || !date) return;
     const key = storageKey(sectionId, date);
     if (initializedKeyRef.current === key) return;
 
     const saved = sessionStorage.getItem(key);
+    if (!saved && todayLoading) return;
+
     let initial;
     if (saved) {
       initial = JSON.parse(saved);
@@ -93,9 +98,10 @@ export function useAttendanceRoster({ sectionId, date }) {
         initial[r.entityId] = { status: r.status, ...(r.note ? { note: r.note } : {}) };
       }
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional one-time resync once todayRecords (an external source) finishes loading
     setStatusMap(initial);
     initializedKeyRef.current = key;
-  }, [sectionId, date, todayRecords]);
+  }, [sectionId, date, todayRecords, todayLoading]);
 
   useEffect(() => {
     if (!sectionId || !date) return;
