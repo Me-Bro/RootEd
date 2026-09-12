@@ -17,6 +17,7 @@ export { Budget } from './Budget.js';
 export { Class } from './Class.js';
 export { CostCenter } from './CostCenter.js';
 export { Counter } from './Counter.js';
+export { Enrollment } from './Enrollment.js';
 export { ExpenseEntry } from './ExpenseEntry.js';
 export { FeatureFlag } from './FeatureFlag.js';
 export { FeeAssignment } from './FeeAssignment.js';

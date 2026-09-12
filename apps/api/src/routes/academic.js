@@ -19,7 +19,7 @@ import {
   reportCardGenerateSchema,
   reportCardHistoryQuerySchema,
 } from '@rooted/shared/schemas';
-import { scoreToLetter } from '@rooted/shared/utils';
+import { scoreToLetter, isBatchOrgType } from '@rooted/shared/utils';
 import { authenticate } from '../middleware/authenticate.js';
 import {
   requirePermission,
@@ -35,6 +35,7 @@ import { Class } from '../models/Class.js';
 import { Section } from '../models/Section.js';
 import { Subject } from '../models/Subject.js';
 import { Student } from '../models/Student.js';
+import { Enrollment } from '../models/Enrollment.js';
 import { Role } from '../models/Role.js';
 import { provisionStudentAccount } from '../services/identity.service.js';
 import { StaffMember } from '../models/StaffMember.js';
@@ -336,7 +337,21 @@ router.get('/students', requirePermission('students:read'), async (req, res, nex
   try {
     const page = Math.max(1, Number(req.query.page) || 1);
     const limit = Math.min(100, Number(req.query.limit) || 20);
-    const filter = buildStudentFilter(req.tenant._id, req.query);
+    const tenantId = req.tenant._id;
+
+    let enrolledStudentIds;
+    if (req.query.sectionId && isBatchOrgType(req.tenant.orgType)) {
+      const enrollments = await Enrollment.find(
+        { tenantId, sectionId: req.query.sectionId, status: 'active' },
+        'studentId'
+      ).lean();
+      enrolledStudentIds = enrollments.map((e) => e.studentId);
+    }
+
+    const filter = buildStudentFilter(tenantId, req.query, {
+      orgType: req.tenant.orgType,
+      enrolledStudentIds,
+    });
 
     const [students, total] = await Promise.all([
       Student.find(filter)
@@ -558,6 +573,71 @@ router.post(
     }
   }
 );
+
+// ── Enrollments ───────────────────────────────────────────────────────────────
+// Batch/section roster membership. Independent of Student.sectionId (a single
+// homeroom) so a learner can be active in several sections at once — the
+// shape tuition/coaching/study-center orgTypes need, where "section" means
+// batch, not annual homeroom.
+
+router.post('/enrollments', requirePermission('students:write'), async (req, res, next) => {
+  try {
+    const { studentId, sectionId, startDate, notes } = req.body;
+    const tenantId = req.tenant._id;
+
+    const enrollment = await Enrollment.findOneAndUpdate(
+      { tenantId, studentId, sectionId },
+      {
+        $set: {
+          status: 'active',
+          startDate: startDate ? new Date(startDate) : new Date(),
+          endDate: null,
+          enrolledBy: req.user.sub,
+          notes,
+        },
+      },
+      { upsert: true, new: true, runValidators: true }
+    );
+
+    res.status(201).json(enrollment);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/enrollments', requirePermission('students:read'), async (req, res, next) => {
+  try {
+    const filter = { tenantId: req.tenant._id };
+    if (req.query.studentId) filter.studentId = req.query.studentId;
+    if (req.query.sectionId) filter.sectionId = req.query.sectionId;
+    if (req.query.status) filter.status = req.query.status;
+
+    const enrollments = await Enrollment.find(filter).sort({ createdAt: -1 }).lean();
+    res.json(enrollments);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch('/enrollments/:id', requirePermission('students:write'), async (req, res, next) => {
+  try {
+    const { status, endDate, notes } = req.body;
+    const update = {};
+    if (status) update.status = status;
+    if (endDate !== undefined) update.endDate = endDate ? new Date(endDate) : null;
+    if (notes !== undefined) update.notes = notes;
+
+    const enrollment = await Enrollment.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenant._id },
+      { $set: update },
+      { new: true, runValidators: true }
+    );
+    if (!enrollment) return res.status(404).json({ error: 'Not found' });
+    res.json(enrollment);
+  } catch (err) {
+    next(err);
+  }
+});
 
 // ── Timetable ─────────────────────────────────────────────────────────────────
 
