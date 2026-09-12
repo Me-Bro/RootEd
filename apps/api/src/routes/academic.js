@@ -205,6 +205,21 @@ router.get('/classes', requirePermission('students:read'), async (req, res, next
   }
 });
 
+router.patch('/classes/:id', requirePermission('tenant:admin'), async (req, res, next) => {
+  try {
+    const { name, gradeLevel } = req.body;
+    const cls = await Class.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenant._id },
+      { $set: { name, gradeLevel } },
+      { new: true }
+    );
+    if (!cls) return res.status(404).json({ error: 'Not found' });
+    res.json(cls);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ── Sections ──────────────────────────────────────────────────────────────────
 
 router.post('/sections', requirePermission('tenant:admin'), async (req, res, next) => {

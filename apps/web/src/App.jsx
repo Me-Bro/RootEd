@@ -25,6 +25,7 @@ import AuditPage from './pages/admin/AuditPage.jsx';
 import RequestLogsPage from './pages/admin/RequestLogsPage.jsx';
 import FlagsPage from './pages/admin/FlagsPage.jsx';
 import AcademicYearsPage from './pages/academic/AcademicYearsPage.jsx';
+import ClassesSectionsPage from './pages/academic/ClassesSectionsPage.jsx';
 import StudentsPage from './pages/academic/StudentsPage.jsx';
 import StudentDetailPage from './pages/academic/StudentDetailPage.jsx';
 import AttendancePage from './pages/academic/AttendancePage.jsx';
@@ -223,6 +224,14 @@ function AppRoutes() {
             element={
               <RequirePermission permission="students:read">
                 <AcademicYearsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/academic/classes-sections"
+            element={
+              <RequirePermission permission="students:read">
+                <ClassesSectionsPage />
               </RequirePermission>
             }
           />

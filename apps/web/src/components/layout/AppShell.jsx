@@ -17,6 +17,7 @@ import {
   DollarSign,
   FileText,
   Grid,
+  Layers,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -48,6 +49,10 @@ function getNavGroups(t, orgType) {
   // coverage stays intact for the common case.
   const studentLabel =
     orgType && orgType !== 'school' ? resolveOrgTerm(orgType, 'student') : t('nav.students');
+  const classesSectionsLabel =
+    orgType && orgType !== 'school'
+      ? `${resolveOrgTerm(orgType, 'classLevel')} & ${resolveOrgTerm(orgType, 'section')}`
+      : t('nav.classesSections');
 
   return [
     {
@@ -72,6 +77,12 @@ function getNavGroups(t, orgType) {
           to: '/academic/years',
           label: t('nav.academicYears'),
           icon: CalendarDays,
+          permission: 'students:read',
+        },
+        {
+          to: '/academic/classes-sections',
+          label: classesSectionsLabel,
+          icon: Layers,
           permission: 'students:read',
         },
         {
