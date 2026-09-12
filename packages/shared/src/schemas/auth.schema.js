@@ -83,3 +83,13 @@ export const changePasswordSchema = z.object({
   currentPassword: passwordSchema,
   newPassword: passwordSchema,
 });
+
+// Account deletion is irreversible, so it asks for two independent things: the
+// current password (proves it is really them, not a stolen session) and a typed
+// confirmation phrase (proves they meant this button and not the one above it).
+export const DELETE_ACCOUNT_CONFIRMATION = 'DELETE';
+
+export const deleteAccountSchema = z.object({
+  currentPassword: passwordSchema,
+  confirmation: z.literal(DELETE_ACCOUNT_CONFIRMATION),
+});

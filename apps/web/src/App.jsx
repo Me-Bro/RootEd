@@ -15,6 +15,9 @@ import OnboardingPage from './pages/org/OnboardingPage.jsx';
 import CreateOrgPage from './pages/org/CreateOrgPage.jsx';
 import JoinOrgPage from './pages/org/JoinOrgPage.jsx';
 import AccountSettingsPage from './pages/account/AccountSettingsPage.jsx';
+import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage.jsx';
+import TermsPage from './pages/legal/TermsPage.jsx';
+import AccountDeletionPage from './pages/legal/AccountDeletionPage.jsx';
 import MembersPage from './pages/tenant/MembersPage.jsx';
 import JoinPolicyPage from './pages/tenant/JoinPolicyPage.jsx';
 import AppShell from './components/layout/AppShell.jsx';
@@ -136,6 +139,12 @@ function AppRoutes() {
       <Route path="/check-email" element={<CheckEmailPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      {/* Public on purpose: Play Console requires the privacy policy and the
+          data-deletion URL to be reachable without an account, and a reviewer
+          opens both before signing in. */}
+      <Route path="/legal/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/legal/terms" element={<TermsPage />} />
+      <Route path="/legal/account-deletion" element={<AccountDeletionPage />} />
       <Route path="/accept-invite" element={<SetPasswordPage mode="invite" />} />
       <Route path="/reset-password" element={<SetPasswordPage mode="reset" />} />
       <Route

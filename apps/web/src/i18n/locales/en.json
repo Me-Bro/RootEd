@@ -1431,7 +1431,8 @@
       "companyHeading": "Company",
       "modules": "Modules",
       "parentSite": "Rural Root Cloud",
-      "copyright": "© 2026 Rural Root Cloud Tech Services And Training"
+      "copyright": "© 2026 Rural Root Cloud Tech Services And Training",
+      "legalHeading": "Legal"
     },
     "mobile": {
       "titleMain": "One system.",
@@ -1529,7 +1530,14 @@
     "password": "Password",
     "changePassword": "Change password",
     "passwordChangeHint": "Changing your password signs you out everywhere, including here.",
-    "nothingToSave": "Nothing to save."
+    "nothingToSave": "Nothing to save.",
+    "deleteTitle": "Delete account",
+    "deleteWarning": "This permanently removes your name, email, phone, username, password and two-factor setup, and drops you from every organization. It cannot be undone.",
+    "deleteKept": "Your school's records — attendance, grades, fee receipts, payroll — are kept, with your name removed, because they belong to the school and it is often required to retain them.",
+    "deleteConfirmLabel": "Type {{word}} to confirm",
+    "deleteButton": "Delete my account",
+    "deleting": "Deleting…",
+    "deleteLearnMore": "What exactly is deleted, and what is kept"
   },
   "members": {
     "title": "Members",
@@ -1564,5 +1572,160 @@
     "codeHint": "Case and spacing do not matter when it is typed in.",
     "rotateCode": "Generate a new code",
     "rotateHint": "The old code stops working immediately."
+  },
+  "legal": {
+    "lastUpdated": "Last updated {{date}}",
+    "nav": {
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "accountDeletion": "Delete your account",
+      "backToSite": "Back to RootEd"
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "intro": "How Rural Root Cloud Tech Services And Training handles personal data in RootEd, the school management platform at rooted.ruralrootcloud.com.",
+      "sections": {
+        "whoWeAre": {
+          "title": "Who we are",
+          "body": "RootEd is operated by Rural Root Cloud Tech Services And Training (“we”, “us”), India.\n\nRootEd is a business tool sold to schools, colleges and coaching centres. Two different relationships matter throughout this policy:\n\n- For the account you sign in with, we are the data fiduciary: we decide how your name, email and sign-in details are handled.\n- For the records your school keeps in RootEd — students, attendance, grades, fees, staff — your school is the data fiduciary and we act on its instructions as a data processor. Questions about those records should go to your school first."
+        },
+        "whatWeCollect": {
+          "title": "What we collect",
+          "body": "Account data you give us: first and last name, email address, username, phone number (optional), profile photo (optional), and a password, which is stored only as an Argon2id hash and never in readable form.\n\nSecurity data we generate: sign-in timestamps and IP address, failed sign-in counts, and a two-factor secret if you enable it.\n\nSchool records your organization enters: student and staff details, attendance, grades and report cards, timetables, fee structures and payments, expenses, payroll and inventory. Staff government ID numbers, bank account details and salary figures are additionally encrypted field by field.\n\nTechnical data: browser and device type, and server request logs used to keep the service running and secure.\n\nWe do not use advertising SDKs, we do not sell personal data, and the Android app requests no contacts, location, SMS or call-log permission."
+        },
+        "howWeUse": {
+          "title": "How we use it",
+          "body": "- To run the service: authenticate you, apply your role's permissions, and show you your organization's data.\n- To keep it secure: rate limiting, session revocation, and an immutable audit log of changes.\n- To communicate: email verification, password resets, invitations, and approval notifications.\n- To meet legal obligations and resolve disputes.\n\nWe do not use your data or your school's records to train machine-learning models."
+        },
+        "childrenData": {
+          "title": "Children's data",
+          "body": "RootEd is not directed at children and has no student sign-in. Accounts are held by adults — administrators, principals, teachers, accountants and librarians.\n\nRootEd does hold records about students, some of whom are minors, but those records are entered and controlled by the school. The school is responsible for obtaining any consent required from parents or guardians under the Digital Personal Data Protection Act, 2023, and for deciding who on its staff may see them.\n\nIf you believe a child's data is in RootEd without a proper basis, contact your school, and contact us at the address below."
+        },
+        "sharing": {
+          "title": "Who we share it with",
+          "body": "We share personal data only with processors that are needed to run the service:\n\n- Razorpay Software Private Limited — processes online fee payments. Card and bank details are entered on Razorpay's own checkout and never reach our servers.\n- Cloudflare — routes and protects traffic to the service.\n- Our own object storage, used for documents and photos uploaded to RootEd.\n\nWe also disclose data where the law requires it, and to a successor if the business is transferred. We do not sell personal data or share it with advertisers."
+        },
+        "security": {
+          "title": "How we protect it",
+          "body": "- All traffic is encrypted in transit with HTTPS.\n- Passwords are hashed with Argon2id.\n- Staff government ID, bank account and salary fields are encrypted at rest with AES-256-GCM, using a key derived separately for each organization.\n- Every organization's data is isolated at the database-query layer, not by application convention, so one school cannot read another's records.\n- Access inside an organization is limited by role, and optional two-factor authentication is available on every account.\n- Changes are recorded in an audit log that cannot be edited.\n\nNo system is perfectly secure. If you discover a vulnerability, please report it to us rather than disclosing it publicly."
+        },
+        "retention": {
+          "title": "How long we keep it",
+          "body": "- Account data: for as long as your account exists, then removed as described in Deleting your account.\n- School records: for as long as your school keeps them. Schools frequently have statutory retention duties for academic and financial records.\n- Audit logs: 90 days, then deleted automatically.\n- Sessions: access tokens last 15 minutes, sign-in sessions 7 days."
+        },
+        "yourRights": {
+          "title": "Your rights",
+          "body": "Subject to applicable law, including the Digital Personal Data Protection Act, 2023, you may ask to access the personal data we hold about you, correct it if it is wrong, have it deleted, or complain to a supervisory authority.\n\nYou can change your name, phone number, username, email address and password yourself in Settings → Account.\n\nWhere the data belongs to your school's records rather than your account, we will pass your request to the school, because it decides what happens to those records."
+        },
+        "deletion": {
+          "title": "Deleting your account",
+          "body": "You can delete your account at any time from Settings → Account → Delete account, or by writing to us.\n\nThe full description of what is deleted, what is kept, and why, is on the Delete your account page."
+        },
+        "cookies": {
+          "title": "Cookies",
+          "body": "RootEd sets only the cookies it needs to work: a sign-in session cookie and a cross-site request forgery protection cookie. There are no advertising or tracking cookies, so there is nothing to opt out of."
+        },
+        "changes": {
+          "title": "Changes to this policy",
+          "body": "We will update this page when our practices change and move the date at the top. If a change materially affects you, we will also tell you in the app or by email."
+        },
+        "contact": {
+          "title": "Contact us",
+          "body": "Rural Root Cloud Tech Services And Training\nEmail: info@ruralrootcloud.com\n\nWe aim to answer privacy requests within 30 days."
+        }
+      }
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "intro": "The agreement between you and Rural Root Cloud Tech Services And Training for using RootEd.",
+      "sections": {
+        "acceptance": {
+          "title": "Accepting these terms",
+          "body": "By creating an account or using RootEd, you agree to these terms. If you are agreeing on behalf of a school or company, you confirm you are authorised to bind it.\n\nIf you do not agree, do not use the service."
+        },
+        "service": {
+          "title": "What RootEd is",
+          "body": "RootEd is a multi-tenant school management platform covering academics, staff, fees, expenses and inventory. It is provided as a hosted service; we may add, change or remove features.\n\nRootEd is an administrative tool. It is not a substitute for your own statutory records, and it does not provide legal, financial or educational advice."
+        },
+        "accounts": {
+          "title": "Your account",
+          "body": "You must give accurate details, keep your password confidential, and tell us promptly if you suspect unauthorised access. You are responsible for what happens under your account.\n\nAccounts are personal. Do not share one login between people — the audit log attributes every change to the account that made it.\n\nWe may suspend an account that is being used in breach of these terms."
+        },
+        "acceptableUse": {
+          "title": "Acceptable use",
+          "body": "You agree not to:\n\n- upload unlawful content, or personal data you have no basis to hold;\n- attempt to access another organization's data, or probe, scan or test our security without written permission;\n- interfere with or overload the service;\n- reverse engineer or resell the service; or\n- use the service to send unsolicited messages."
+        },
+        "customerData": {
+          "title": "Your organization's data",
+          "body": "The records your organization enters remain your organization's. We claim no ownership of them.\n\nYou grant us the limited permission needed to host, back up, transmit and display those records in order to operate the service for you.\n\nYou are responsible for having a lawful basis for the personal data you put into RootEd, including students' data, and for obtaining any parental consent the law requires."
+        },
+        "fees": {
+          "title": "Fees and payments",
+          "body": "RootEd is currently offered free of charge; paid plans may be introduced with notice.\n\nWhere RootEd is used to collect school fees, the contract for those fees is between the school and the payer. We provide the software. Online payments are handled by Razorpay under its own terms, and refunds of school fees are a matter for the school."
+        },
+        "availability": {
+          "title": "Availability",
+          "body": "We work to keep RootEd available but do not guarantee uninterrupted service. Maintenance, upgrades and events outside our control may cause downtime.\n\nThe service is provided “as is”, without warranties of any kind to the fullest extent the law allows."
+        },
+        "intellectualProperty": {
+          "title": "Intellectual property",
+          "body": "The RootEd software, brand and design belong to Rural Root Cloud Tech Services And Training. These terms grant you a limited, non-exclusive, non-transferable right to use the service, and nothing more."
+        },
+        "termination": {
+          "title": "Ending the agreement",
+          "body": "You may stop using RootEd and delete your account at any time.\n\nWe may suspend or end access if these terms are breached, if required by law, or if we discontinue the service, in which case we will give reasonable notice and a chance to export your data."
+        },
+        "liability": {
+          "title": "Limitation of liability",
+          "body": "To the fullest extent permitted by law, we are not liable for indirect, incidental or consequential loss, or for lost profits, goodwill or data.\n\nOur total liability arising out of or relating to the service is limited to the amount you paid us for it in the twelve months before the claim, or INR 10,000 where the service was provided free of charge.\n\nNothing here excludes liability that cannot lawfully be excluded."
+        },
+        "governingLaw": {
+          "title": "Governing law",
+          "body": "These terms are governed by the laws of India, and the courts of Uttar Pradesh have exclusive jurisdiction over any dispute."
+        },
+        "changes": {
+          "title": "Changes to these terms",
+          "body": "We may update these terms and will move the date at the top. Continuing to use RootEd after a change means you accept the updated terms."
+        },
+        "contact": {
+          "title": "Contact us",
+          "body": "Rural Root Cloud Tech Services And Training\nEmail: info@ruralrootcloud.com"
+        }
+      }
+    },
+    "accountDeletion": {
+      "title": "Delete your account",
+      "intro": "How to delete your RootEd account and what happens to your data when you do.",
+      "sections": {
+        "whatHappens": {
+          "title": "What gets deleted",
+          "body": "When you delete your RootEd account, we permanently remove:\n\n- your name, phone number and profile photo;\n- your email address, which is replaced by a placeholder that can never receive mail;\n- your username;\n- your password and your two-factor authentication secret;\n- every pending invitation, verification and password-reset token; and\n- your membership of every organization.\n\nAll your sessions are revoked immediately and you cannot sign in again. This cannot be undone."
+        },
+        "whatIsKept": {
+          "title": "What is kept, and why",
+          "body": "Records that belong to your school rather than to you are kept, with your name removed:\n\n- attendance registers, grades and report cards;\n- fee receipts, payroll and expense records; and\n- security audit entries, which are automatically deleted after 90 days.\n\nThese are the school's statutory records. Deleting them would destroy the school's own accounts and academic history, and schools are required to retain many of them. After your deletion they no longer identify you — actions you took appear against a deleted user.\n\nIf you want school records about you removed as well, ask your school directly; it controls them."
+        },
+        "inApp": {
+          "title": "Deleting from inside the app",
+          "body": "1. Sign in to RootEd.\n2. Open Settings → Account.\n3. Scroll to Delete account.\n4. Enter your current password and type DELETE to confirm.\n5. Press Delete my account.\n\nDeletion happens immediately."
+        },
+        "onlyAdmin": {
+          "title": "If you are the only administrator",
+          "body": "If you are the last administrator of an active organization, deletion is refused and RootEd tells you which organization is blocking it.\n\nThis protects your colleagues: with no administrator left, nobody could invite members, assign roles or manage the organization, and there would be no way back in.\n\nMake another member an administrator first, or delete the organization, then delete your account."
+        },
+        "byEmail": {
+          "title": "If you cannot sign in",
+          "body": "Email info@ruralrootcloud.com from the address on your account with the subject “Delete my RootEd account”.\n\nWe will verify that you own the address before acting, and may ask your organization's administrator to confirm. We will not act on a request we cannot verify."
+        },
+        "timeline": {
+          "title": "How long it takes",
+          "body": "Deletion from inside the app is immediate.\n\nEmail requests are completed within 30 days. Encrypted backups are rotated out within a further 30 days, after which no copy remains."
+        },
+        "contact": {
+          "title": "Questions",
+          "body": "Rural Root Cloud Tech Services And Training\nEmail: info@ruralrootcloud.com"
+        }
+      }
+    }
   }
 }

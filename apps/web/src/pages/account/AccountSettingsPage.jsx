@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { PASSWORD_MIN_LENGTH } from '@rooted/shared/constants';
+import { DELETE_ACCOUNT_CONFIRMATION } from '@rooted/shared/schemas';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card.jsx';
@@ -9,7 +11,16 @@ import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 
 /** A card that owns its own submit state, so one failure cannot blank another. */
-function SettingsCard({ title, children, onSubmit, submitLabel, busyLabel }) {
+function SettingsCard({
+  title,
+  children,
+  onSubmit,
+  submitLabel,
+  busyLabel,
+  submitVariant = 'default',
+  submitDisabled = false,
+  className,
+}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
@@ -30,7 +41,7 @@ function SettingsCard({ title, children, onSubmit, submitLabel, busyLabel }) {
   }
 
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
         <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
@@ -48,7 +59,7 @@ function SettingsCard({ title, children, onSubmit, submitLabel, busyLabel }) {
             </p>
           )}
           <div>
-            <Button type="submit" disabled={busy}>
+            <Button type="submit" variant={submitVariant} disabled={busy || submitDisabled}>
               {busy ? busyLabel : submitLabel}
             </Button>
           </div>
@@ -71,6 +82,7 @@ export default function AccountSettingsPage() {
   const [newEmail, setNewEmail] = useState('');
   const [emailPassword, setEmailPassword] = useState('');
   const [passwords, setPasswords] = useState({ current: '', next: '', confirm: '' });
+  const [deletion, setDeletion] = useState({ password: '', confirmation: '' });
 
   return (
     <div className="flex flex-col gap-6">
@@ -223,6 +235,51 @@ export default function AccountSettingsPage() {
           autoComplete="new-password"
         />
         <p className="text-xs text-muted-foreground">{t('account.passwordChangeHint')}</p>
+      </SettingsCard>
+
+      {/* Danger zone. Google Play requires an in-app path to delete the account
+          for any app that offers account creation, which /register does. The
+          server refuses if this person is the last admin of an active org. */}
+      <SettingsCard
+        title={t('account.deleteTitle')}
+        className="ring-destructive/40"
+        submitLabel={t('account.deleteButton')}
+        busyLabel={t('account.deleting')}
+        submitVariant="destructive"
+        submitDisabled={deletion.confirmation.trim() !== DELETE_ACCOUNT_CONFIRMATION}
+        onSubmit={async () => {
+          await api.post('/auth/delete-account', {
+            currentPassword: deletion.password,
+            confirmation: deletion.confirmation.trim(),
+          });
+          // Every session is gone, including this one.
+          window.location.href = '/login';
+          return null;
+        }}
+      >
+        <p className="text-sm text-destructive">{t('account.deleteWarning')}</p>
+        <p className="text-sm text-muted-foreground">{t('account.deleteKept')}</p>
+        <Input
+          label={t('account.currentPassword')}
+          type="password"
+          value={deletion.password}
+          onChange={(e) => setDeletion((d) => ({ ...d, password: e.target.value }))}
+          required
+          minLength={PASSWORD_MIN_LENGTH}
+          autoComplete="current-password"
+        />
+        <Input
+          label={t('account.deleteConfirmLabel', { word: DELETE_ACCOUNT_CONFIRMATION })}
+          value={deletion.confirmation}
+          onChange={(e) => setDeletion((d) => ({ ...d, confirmation: e.target.value }))}
+          required
+          autoComplete="off"
+        />
+        <p className="text-xs text-muted-foreground">
+          <Link to="/legal/account-deletion" className="underline">
+            {t('account.deleteLearnMore')}
+          </Link>
+        </p>
       </SettingsCard>
     </div>
   );

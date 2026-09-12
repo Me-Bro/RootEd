@@ -48,6 +48,10 @@ export const USER_STATUS = [
   // holds a random password nobody was ever told; the person sets their own
   // through a claim link.
   'pending_claim',
+  // Terminal. The person asked for deletion and their identifying fields have
+  // been scrubbed; the row survives only so tenant-owned academic and financial
+  // records keep a valid actor reference. Nothing can sign in as one of these.
+  'deleted',
 ];
 
 // 'invited'  — a seat exists but the person has not accepted it yet
