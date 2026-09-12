@@ -1,6 +1,7 @@
 import { env } from '../config/env.js';
 import { createSmtpTransport, sendViaSmtp } from './email/smtpAdapter.js';
 import { sendViaPostmark } from './email/postmarkAdapter.js';
+import { sendViaConsole } from './email/consoleAdapter.js';
 
 let smtpTransporter = null;
 if (env.EMAIL_PROVIDER === 'smtp') {
@@ -20,6 +21,9 @@ export function escapeHtml(value) {
 }
 
 export async function sendEmail({ to, subject, html }) {
+  if (env.EMAIL_PROVIDER === 'console') {
+    return sendViaConsole({ to, subject, html });
+  }
   if (env.EMAIL_PROVIDER === 'postmark') {
     return sendViaPostmark({ to, subject, html });
   }

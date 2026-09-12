@@ -211,5 +211,5 @@ MVP largely complete. Known gaps and open bugs:
 - Playwright E2E specs exist for auth, academic (attendance/students), fee payments, staff leaves, and expense entries, plus an axe accessibility spec — but coverage is not exhaustive
 - i18n: `en` and `hi` (plus merged `hi_en`) done across all modules; `ta`/`es`/`fr` not created
 - Real-time notifications not implemented — the notification bell polls every 60s
-- `SES` is not a valid `EMAIL_PROVIDER` yet (only `smtp` and `postmark`)
+- `SES` is not a valid `EMAIL_PROVIDER` yet — the options are `smtp`, `postmark`, and `console` (logs each message and its link instead of sending; what the tunnel deployment runs, since it has no mail provider). Never point `EMAIL_PROVIDER=smtp` at an unresolvable `SMTP_HOST`: it builds a transport that throws on every send, breaking registration, password reset and invites. A blank `SMTP_HOST` no-ops safely; a fake one does not.
 - `/audit` and `/flags` web pages are placeholders ("Coming soon")

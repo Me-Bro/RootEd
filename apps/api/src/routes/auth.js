@@ -44,6 +44,7 @@ import {
 import { validate } from '../middleware/validate.js';
 import { REFRESH_COOKIE_OPTIONS, issueTenantSession } from '../utils/session.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { logger } from '../utils/logger.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { resolvePermissions, effectivePermissionsFor } from '../middleware/requirePermission.js';
 import { resolveTenantFromToken, getSubdomainInfo } from '../middleware/resolveTenant.js';
@@ -632,6 +633,23 @@ router.post(
 
 // ── Registration & email verification ────────────────────────────────────────
 
+/**
+ * Delivers a registration email without letting a mail failure fail the
+ * request. /register answers 202 "check your email" and deliberately reveals
+ * nothing about the address, so there is no useful way to report a send error
+ * to the caller anyway — and raising one after User.create has committed
+ * leaves an account that can neither verify nor re-register (every retry hits
+ * the already-exists branch, which mails too). Failures are logged and the
+ * user recovers via /auth/resend-verification.
+ */
+async function deliverOrLog(promise, { email, kind }) {
+  try {
+    await promise;
+  } catch (err) {
+    logger.error({ err, email, kind }, 'Registration email failed to send');
+  }
+}
+
 router.post('/register', registerLimiter, validate(registerSchema), async (req, res, next) => {
   try {
     const { email, username, password, firstName, lastName } = req.body;
@@ -641,10 +659,13 @@ router.post('/register', registerLimiter, validate(registerSchema), async (req, 
 
     const existing = await User.findOne({ email }, '_id').lean();
     if (existing) {
-      await sendAccountExistsNotice(
-        email,
-        `https://${portalHost}/login`,
-        `https://${portalHost}/forgot-password`
+      await deliverOrLog(
+        sendAccountExistsNotice(
+          email,
+          `https://${portalHost}/login`,
+          `https://${portalHost}/forgot-password`
+        ),
+        { email, kind: 'account-exists' }
       );
       return res.status(202).json(accepted);
     }
@@ -676,7 +697,10 @@ router.post('/register', registerLimiter, validate(registerSchema), async (req, 
     }
 
     const token = await issueEmailVerification(user._id);
-    await sendEmailVerification(email, `https://${portalHost}/verify-email?token=${token}`);
+    await deliverOrLog(
+      sendEmailVerification(email, `https://${portalHost}/verify-email?token=${token}`),
+      { email, kind: 'verification' }
+    );
 
     await auditLog({
       actorId: user._id,
