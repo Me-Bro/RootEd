@@ -15,6 +15,17 @@ test('isModuleEnabled falls back to school for an unknown orgType', () => {
   expect(isModuleEnabled(undefined, 'inventory')).toBe(true);
 });
 
+test('isModuleEnabled falls back to the orgType default when a tenant-like object has no enabledModules override', () => {
+  expect(isModuleEnabled({ orgType: 'tuition_center' }, 'inventory')).toBe(false);
+  expect(isModuleEnabled({ orgType: 'school' }, 'inventory')).toBe(true);
+});
+
+test('isModuleEnabled uses enabledModules as a full override when set, ignoring the orgType default', () => {
+  const tenant = { orgType: 'school', enabledModules: ['academic', 'staff'] };
+  expect(isModuleEnabled(tenant, 'academic')).toBe(true);
+  expect(isModuleEnabled(tenant, 'inventory')).toBe(false); // school would normally grant this
+});
+
 test.each([
   ['school', 'classLevel', 'Grade'],
   ['college', 'classLevel', 'Semester'],

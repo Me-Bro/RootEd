@@ -347,7 +347,7 @@ export default function AppShell() {
     // than showing links that 404 against /tenant/* endpoints. Once impersonating
     // a tenant, treat them like any tenant_admin and let the permission filter below decide.
     .filter((g) => !isSuperAdmin || isImpersonating || g.label === null)
-    .filter((g) => !g.module || isModuleEnabled(user?.orgType, g.module))
+    .filter((g) => !g.module || isModuleEnabled(user, g.module))
     .map((g) => ({ ...g, items: g.items.filter((item) => hasPermission(item.permission)) }))
     .filter((g) => g.items.length > 0);
 

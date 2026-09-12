@@ -401,11 +401,14 @@ router.get('/me', authenticate, async (req, res, next) => {
     let permissions = impersonatedPermissions ?? [];
     let tenant = null;
     if (impersonatedPermissions) {
-      tenant = await Tenant.findById(req.user.impersonatedTenantId, '_id orgType').lean();
+      tenant = await Tenant.findById(
+        req.user.impersonatedTenantId,
+        '_id orgType enabledModules'
+      ).lean();
     } else if (user.systemRole !== 'super_admin') {
       const { subdomain, isPortalHost } = getSubdomainInfo(req);
       tenant = !isPortalHost
-        ? await Tenant.findOne({ subdomain, status: 'active' }, '_id orgType').lean()
+        ? await Tenant.findOne({ subdomain, status: 'active' }, '_id orgType enabledModules').lean()
         : await resolveTenantFromToken(req);
 
       // Resolving by Host alone reports whichever tenant owns the subdomain,
@@ -445,6 +448,7 @@ router.get('/me', authenticate, async (req, res, next) => {
       impersonatedTenantId: req.user.impersonatedTenantId ?? null,
       tenantId: tenant?._id?.toString() ?? req.user.tenantId ?? null,
       orgType: tenant?.orgType ?? null,
+      enabledModules: tenant?.enabledModules ?? null,
     });
   } catch (err) {
     next(err);
