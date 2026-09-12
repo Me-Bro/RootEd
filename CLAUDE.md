@@ -25,6 +25,16 @@ docker compose up -d
 # the tunnel UUID and DNS-onboarding gotcha.
 docker compose -f docker-compose.yml -f docker-compose.tunnel.yml up -d --build
 
+# "tunnel mode — staging" — the same tunnel-mode stack, run from a SEPARATE
+# checkout (a sibling clone of this repo, e.g. RootEd_uat next to RootEd_prod)
+# so it doesn't collide with the prod containers above. Reachable at
+# rooted-uat.ruralrootcloud.com instead of rooted.ruralrootcloud.com; shares
+# prod's Mongo instance (separate rooted_uat database/credentials) but runs
+# its own Redis/Minio. Never run this from the SAME checkout as prod mode —
+# see agent-home/prod-staging-mongo-migration.md for the full setup, the
+# COMPOSE_PROJECT_NAME pin this depends on, and cloudflared ingress gotchas.
+docker compose -f docker-compose.yml -f docker-compose.tunnel.uat.yml up -d --build
+
 # "dev mode" — full stack with hot reload (API node --watch + Vite HMR, plain-HTTP nginx)
 docker compose -f docker-compose.dev.yml up
 
@@ -104,6 +114,8 @@ seeded users share password `TestPass123!`.
 
 **Multi-tenant model:** Shared MongoDB database, tenant-scoped via `tenantId` field. `apps/api/src/models/plugins/tenantScope.js` is a Mongoose plugin (applied to every model except `Tenant` and `User`) that throws on any find/update/save missing `tenantId` in its filter — this is the tenant-isolation guarantee, not an app-level convention. Callers that must cross tenants (e.g. super-admin routes) pass `{ _bypassTenantScope: true }` in query options. Compound indexes follow `{tenantId:1, ...}` pattern.
 
+**Prod + staging split:** The live deployment runs as two independent checkouts on the same box — prod (`rooted.ruralrootcloud.com`) and staging (`rooted-uat.ruralrootcloud.com`) — sharing **one** Mongo instance (separate `rooted`/`rooted_uat` databases, separate credentials) that lives outside either app checkout so neither owns its lifecycle. Staging reuses the `PORTAL_SUBDOMAIN` mechanism (`getPortalHost()` in `apps/api/src/config/env.js`) instead of a second-level `APP_DOMAIN`, since Cloudflare's free wildcard cert only covers one subdomain level. Each checkout runs its own Redis/Minio. See `agent-home/prod-staging-mongo-migration.md` for the full setup, including a cloudflared gotcha: its wildcard ingress matching is full-label only, so each staging hostname (not just prod's) needs an explicit config line, not a shared wildcard rule.
+
 **Auth flow:** JWT (15m access token) + refresh token in httpOnly cookie (7d, `SameSite=Lax`). Revocation via Redis blocklist, checked two ways in `authenticate()`: per-token (`isTokenBlocked`) and per-user (`blocklist:user:<id>` timestamp set by the revoke-all-sessions runbook, compared against the token's `iat`). MFA via TOTP (otplib). Three-layer RBAC: System (`user.systemRole`, e.g. `super_admin`) → Tenant (`TenantMembership`) → Module permissions (`Role.permissions`, from a fixed `PERMISSIONS` list in `models/Role.js`); 5 role templates seeded per tenant (`tenant_admin`, `principal`, `teacher`, `accountant`, `librarian`). Resolved permissions are cached in Redis for 60s per `(tenantId, userId)` — role/membership changes can take up to a minute to take effect.
 
 **Request lifecycle** (see `apps/api/src/app.js` for the actual middleware order — routers are mounted, not chained in one file):
@@ -159,6 +171,7 @@ Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts 
 - `local-dev-login-and-manual-verification.md` — **read this before answering any "show me the UI" / "give me login credentials" request**: the real seeded tenant subdomain (`testschool-rooted`, not `testschool`), which account to log in with, and why logging in as `super_admin` directly on a tenant subdomain silently renders almost no sidebar/data (needs an explicit impersonate step)
 - `branch-commit-pr-from-upstream.md` — cut a branch from `upstream/main`, commit with hooks, PR against upstream (fork workflow: `origin` = your fork, `upstream` = source repo)
 - `sync-main-with-upstream.md` — fast-forward local `main`/`origin/main` from `upstream/main`
+- `prod-staging-mongo-migration.md` — **read this before touching the shared Mongo instance, the prod/staging split, or the Cloudflare Tunnel config**: how `rooted-uat.ruralrootcloud.com` shares one Mongo instance with prod, the `COMPOSE_PROJECT_NAME` pin a renamed checkout directory depends on, and why a bind-mounted container (nginx, redis) can't just be `docker restart`ed after such a rename
 
 ## Environment Setup
 
