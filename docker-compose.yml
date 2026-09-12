@@ -1,38 +1,18 @@
 version: '3.9'
 
 services:
-  mongo:
-    image: mongo:7
-    command: ['--replSet', 'rs0', '--bind_ip_all']
-    ports:
-      - '27017:27017'
-    volumes:
-      - mongo_data:/data/db
-    healthcheck:
-      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - rooted
-
-  mongo-init:
-    image: mongo:7
-    depends_on:
-      mongo:
-        condition: service_healthy
-    command: >
-      mongosh --host mongo:27017 --eval
-      "try { rs.status() } catch(e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongo:27017' }] }) }"
-    networks:
-      - rooted
-
   redis:
     image: redis:7-alpine
+    command: ['redis-server', '/usr/local/etc/redis/redis.conf']
+    environment:
+      # redis-cli picks this up automatically — keeps the password out of the
+      # healthcheck command line (and out of `docker inspect`'s process args).
+      REDISCLI_AUTH: ${REDIS_PW}
     ports:
-      - '6379:6379'
+      - '127.0.0.1:6379:6379'
     volumes:
       - redis_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
@@ -44,12 +24,12 @@ services:
   minio:
     image: minio/minio
     command: server /data --console-address ":9001"
-    ports:
-      - '9000:9000'
-      - '9001:9001'
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - '127.0.0.1:9000:9000'
+      - '127.0.0.1:9001:9001'
     volumes:
       - minio_data:/data
     healthcheck:
@@ -69,19 +49,15 @@ services:
     env_file:
       - ./apps/api/.env
     environment:
-      MONGODB_URI: mongodb://mongo:27017/rooted?replicaSet=rs0
-      REDIS_URL: redis://redis:6379
+      MONGODB_URI: ${MONGODB_URI}
+      REDIS_URL: ${REDIS_URL}
       S3_ENDPOINT: http://minio:9000
       S3_PUBLIC_ENDPOINT: http://localhost:9000
     depends_on:
-      mongo:
-        condition: service_healthy
       redis:
         condition: service_healthy
       minio:
         condition: service_healthy
-      mongo-init:
-        condition: service_completed_successfully
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://localhost:3001/health']
       interval: 15s
@@ -89,6 +65,7 @@ services:
       retries: 5
     networks:
       - rooted
+      - shared
 
   web:
     build:
@@ -120,10 +97,15 @@ services:
       - rooted
 
 volumes:
-  mongo_data:
   redis_data:
   minio_data:
 
 networks:
   rooted:
     driver: bridge
+  # Mongo lives outside this project (~/Desktop/rooted-mongo-shared) so both
+  # rooted-prod and rooted-uat checkouts can share it without either owning
+  # its lifecycle. Create it once on the host: `docker network create rooted-shared-net`.
+  shared:
+    external: true
+    name: rooted-shared-net

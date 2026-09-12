@@ -5,6 +5,7 @@ build
 .env
 .env.local
 .env.*.local
+apps/api/.env.test
 coverage
 *.log
 .DS_Store
@@ -27,3 +28,6 @@ private-doc/*
 
 # Locally-generated TLS material — never commit private keys
 nginx/certs/
+
+# Redis auth secret
+redis/redis.conf
