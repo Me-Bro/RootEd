@@ -7,7 +7,8 @@ import {
   StatementMobileMotif,
 } from './RootMotif.jsx';
 import {
-  TRIAL_HREF,
+  CONTACT_HREF,
+  PARENT_SITE_HREF,
   MODULES,
   WHY_ROOTED,
   SECURITY,
@@ -16,6 +17,7 @@ import {
   MOBILE_FACTS,
   MOBILE_TAGS,
   PREVIEW_ROLES,
+  PREMIUM_FEATURES,
 } from './landingContent.js';
 
 function DesktopLanding({
@@ -23,6 +25,7 @@ function DesktopLanding({
   isAuthenticated,
   onDashboardClick,
   onLogoutClick,
+  onGetStartedClick,
   languageSwitcher,
   t,
 }) {
@@ -38,6 +41,7 @@ function DesktopLanding({
         </div>
         <div className="links">
           <a href="#modules">{t('landing.nav.product')}</a>
+          <a href="#pricing">{t('landing.nav.pricing')}</a>
           <a href="#security">{t('landing.nav.security')}</a>
           <a href="#about">{t('landing.nav.about')}</a>
           <a href="#contact">{t('landing.nav.contact')}</a>
@@ -52,9 +56,9 @@ function DesktopLanding({
               {t('landing.nav.logout')}
             </button>
           ) : (
-            <a className="btn primary sm" href={TRIAL_HREF}>
-              {t('landing.nav.startTrial')}
-            </a>
+            <button type="button" className="btn primary sm" onClick={onGetStartedClick}>
+              {t('landing.nav.getStarted')}
+            </button>
           )}
         </div>
       </nav>
@@ -80,9 +84,9 @@ function DesktopLanding({
           </h1>
           <p className="lead">{t('landing.hero.lead')}</p>
           <div className="cta-row">
-            <a className="btn primary" href={TRIAL_HREF}>
-              {t('landing.hero.ctaTrial')}
-            </a>
+            <button type="button" className="btn primary" onClick={onGetStartedClick}>
+              {t('landing.hero.ctaStart')}
+            </button>
             <button type="button" className="btn secondary" onClick={handleLoginClick}>
               {isAuthenticated ? loginLabel : t('landing.hero.ctaLogin')}
             </button>
@@ -135,6 +139,33 @@ function DesktopLanding({
               <p>{t('landing.modulesSection.allConnectedBody')}</p>
             </div>
           </div>
+        </section>
+
+        <section className="lp-section on-surface" id="pricing">
+          <div className="section-head">
+            <span className="eyebrow">{t('landing.pricingSection.eyebrow')}</span>
+            <h2>{t('landing.pricingSection.heading')}</h2>
+            <p>{t('landing.pricingSection.lead')}</p>
+          </div>
+          <div className="lp-grid">
+            <div className="lp-card accent">
+              <div className="icon">Fr</div>
+              <h3>{t('landing.pricingSection.freeTitle')}</h3>
+              <p>{t('landing.pricingSection.freeBody')}</p>
+            </div>
+            {PREMIUM_FEATURES.map((f) => (
+              <div className="lp-card" key={f.titleKey}>
+                <div className="icon">{f.icon}</div>
+                <h3>{t(f.titleKey)}</h3>
+                <p>{t(f.bodyKey)}</p>
+              </div>
+            ))}
+          </div>
+          <p className="fineprint">
+            <a className="btn-inline" href={CONTACT_HREF}>
+              {t('landing.pricingSection.cta')}
+            </a>
+          </p>
         </section>
 
         <section className="lp-section on-dark tight">
@@ -218,9 +249,9 @@ function DesktopLanding({
             <button type="button" className="btn secondary" onClick={handleLoginClick}>
               {loginLabel}
             </button>
-            <a className="btn primary" href={TRIAL_HREF}>
-              {t('landing.nav.startTrial')}
-            </a>
+            <button type="button" className="btn primary" onClick={onGetStartedClick}>
+              {t('landing.nav.getStarted')}
+            </button>
           </div>
         </div>
       </main>
@@ -238,6 +269,7 @@ function DesktopLanding({
             <div>
               <h3>{t('landing.footer.productHeading')}</h3>
               <a href="#modules">{t('landing.footer.modules')}</a>
+              <a href="#pricing">{t('landing.nav.pricing')}</a>
               <a href="#security">{t('landing.nav.security')}</a>
               <button type="button" onClick={handleLoginClick}>
                 {loginLabel}
@@ -246,13 +278,16 @@ function DesktopLanding({
             <div>
               <h3>{t('landing.footer.companyHeading')}</h3>
               <a href="#about">{t('landing.nav.about')}</a>
-              <a href="mailto:ruralrootcloud@gmail.com">{t('landing.nav.contact')}</a>
+              <a href="mailto:info@ruralrootcloud.com">{t('landing.nav.contact')}</a>
+              <a href={PARENT_SITE_HREF} target="_blank" rel="noopener noreferrer">
+                {t('landing.footer.parentSite')}
+              </a>
             </div>
           </div>
         </div>
         <div className="bottom">
           <span>{t('landing.footer.copyright')}</span>
-          <span>ruralrootcloud@gmail.com</span>
+          <span>info@ruralrootcloud.com</span>
         </div>
       </footer>
     </div>
@@ -264,6 +299,7 @@ function MobileLanding({
   isAuthenticated,
   onDashboardClick,
   onLogoutClick,
+  onGetStartedClick,
   languageSwitcher,
   t,
 }) {
@@ -293,9 +329,9 @@ function MobileLanding({
             <span className="grad">{t('landing.mobile.titleAccent')}</span>
           </h1>
           <p>{t('landing.mobile.lead')}</p>
-          <a className="btn primary block" href={TRIAL_HREF}>
-            {t('landing.hero.ctaTrial')}
-          </a>
+          <button type="button" className="btn primary block" onClick={onGetStartedClick}>
+            {t('landing.hero.ctaStart')}
+          </button>
           <span className="fineprint">
             {t('landing.mobile.fineprint')}{' '}
             <button type="button" className="btn-inline" onClick={handleLoginClick}>
@@ -329,6 +365,31 @@ function MobileLanding({
               </div>
             ))}
           </div>
+        </section>
+
+        <section className="m-section on-tint" id="pricing">
+          <span className="eyebrow">{t('landing.pricingSection.eyebrow')}</span>
+          <h2>{t('landing.mobile.pricingHeading')}</h2>
+          <p className="lead">{t('landing.mobile.pricingLead')}</p>
+          <div className="m-fact">
+            <span className="ic">Fr</span>
+            <div>
+              <h3>{t('landing.pricingSection.freeTitle')}</h3>
+              <p>{t('landing.pricingSection.freeBody')}</p>
+            </div>
+          </div>
+          {PREMIUM_FEATURES.map((f) => (
+            <div className="m-fact" key={f.titleKey}>
+              <span className="ic">{f.icon}</span>
+              <div>
+                <h3>{t(f.titleKey)}</h3>
+                <p>{t(f.bodyKey)}</p>
+              </div>
+            </div>
+          ))}
+          <a className="btn-inline" href={CONTACT_HREF}>
+            {t('landing.mobile.pricingCta')}
+          </a>
         </section>
 
         <section className="m-statement motif-wrap">
@@ -369,16 +430,19 @@ function MobileLanding({
         <div className="m-cta-band">
           <h3>{t('landing.mobile.ctaHeading')}</h3>
           <p>{t('landing.mobile.ctaSub')}</p>
-          <a className="btn primary block" href={TRIAL_HREF}>
-            {t('landing.nav.startTrial')}
-          </a>
+          <button type="button" className="btn primary block" onClick={onGetStartedClick}>
+            {t('landing.nav.getStarted')}
+          </button>
         </div>
       </main>
 
       <footer className="m-footer">
         <div className="brand">RootEd</div>
         <p className="blurb">{t('landing.footer.blurb')}</p>
-        <a href="mailto:ruralrootcloud@gmail.com">ruralrootcloud@gmail.com</a>
+        <a href="mailto:info@ruralrootcloud.com">info@ruralrootcloud.com</a>
+        <a href={PARENT_SITE_HREF} target="_blank" rel="noopener noreferrer">
+          {t('landing.footer.parentSite')}
+        </a>
       </footer>
 
       <div className="m-sticky-cta">
@@ -390,9 +454,9 @@ function MobileLanding({
             {t('landing.nav.logout')}
           </button>
         ) : (
-          <a className="btn primary sm" href={TRIAL_HREF}>
-            {t('landing.nav.startTrial')}
-          </a>
+          <button type="button" className="btn primary sm" onClick={onGetStartedClick}>
+            {t('landing.nav.getStarted')}
+          </button>
         )}
       </div>
     </div>
@@ -412,9 +476,11 @@ function MobileLanding({
  *
  * `onLoginClick` is called by every "Log in" CTA when `isAuthenticated` is
  * false; the owning page decides what that means (HomePage opens the login
- * dialog). When `isAuthenticated` is true, those same CTAs relabel to
+ * dialog). `onGetStartedClick` is called by every "Get started free" CTA the
+ * same way — HomePage routes it to `/register` (RootEd is free, no signup
+ * gate). When `isAuthenticated` is true, all of those CTAs relabel to
  * "Dashboard" and call `onDashboardClick` instead, and the nav/mobile-sticky
- * button clusters additionally swap their "Start trial" slot for a "Log out"
+ * button clusters additionally swap their "Get started" slot for a "Log out"
  * button calling `onLogoutClick`. `languageSwitcher` is a slot rendered into
  * the nav's right-hand cluster, keeping the language control in the same
  * top-right spot it occupies on the old login screen.
@@ -424,6 +490,7 @@ export default function LandingView({
   isAuthenticated = false,
   onDashboardClick,
   onLogoutClick,
+  onGetStartedClick,
   languageSwitcher,
 }) {
   const { t } = useTranslation();
@@ -432,6 +499,7 @@ export default function LandingView({
     isAuthenticated,
     onDashboardClick,
     onLogoutClick,
+    onGetStartedClick,
     languageSwitcher,
     t,
   };

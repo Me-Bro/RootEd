@@ -1,9 +1,10 @@
 # Landing Page — Final Direction
 
 **Status: ✅ Approved — 2026-08-26.** `desktop.html` and `mobile.html` are signed off. Next
-step when ready to build: a real `LandingPage.jsx` route, real product screenshots in place
-of the labelled placeholder, and the signup page the "Start free trial" CTA hands off to
-(see "Explicitly out of scope for this batch" below — still true post-approval).
+step when ready to build: a real `LandingPage.jsx` route and real product screenshots in
+place of the labelled placeholder. The signup page the CTA hands off to has since shipped
+(ADR 005/006) — see "Round 5" below, which supersedes the trial/no-signup/no-outbound-links
+assumptions this plan originally shipped with.
 
 This supersedes the earlier 8-concept exploration (4 desktop, 4 mobile). Based on review:
 desktop's **Product-led** concept content is the one to build on; mobile needed a real
@@ -140,6 +141,41 @@ patched per-instance.** Two separate bugs were stacked:
   (~5:1 against white) — rather than touching seven separate call sites; `--brand-2`, the
   standalone bright cyan used for borders/accents on *dark* backgrounds elsewhere, is
   untouched, since darkening it there would only make that usage worse, not better.
+
+## Round 5: signup shipped, free tier made real, premium tier added
+
+**This round supersedes three assumptions baked into the mockups and rounds 1-4 above** —
+those sections are left as-is as a record of that approval, not corrected in place.
+
+**1. The "no signup page" premise is gone.** Round 1's point 2 and the original status line
+both assumed the "Start free trial" CTA had nowhere real to go, so it opened a mailto. That
+was true when this plan was approved (2026-08-26) but stopped being true on 2026-09-05, when
+ADR 005 (identity, self-registration, multi-org membership) and ADR 006 (free tier now,
+premium later) shipped a real `/register` → `/onboarding` → `/orgs/new` flow. The live
+`LandingView.jsx` now routes every "Get started free" CTA straight to `/register`; the mailto
+is kept only for the footer's general contact link and the new premium-features enquiry
+(below), neither of which has a self-serve flow.
+
+**2. Trial framing is gone — RootEd is free, not free-for-14-days.** ADR 006 made the free
+tier a deliberate product decision (`BILLING_ENABLED` defaults false; org creation is free
+and unlimited, capped at three orgs/user as an abuse guard, not a monetization one). Every
+"14-day free trial" / "no credit card to start" string on the page is now just "free to use" —
+there is no trial clock, no credit card ever, and nothing that expires.
+
+**3. "Nothing else links out" (Round 1, point 2) is revoked.** The footer now also links to
+the parent company site, `ruralrootcloud.com`. Deliberate: rooted.app is one product of
+Rural Root Cloud, and the company site is the natural place for prospects who want more than
+this one product's landing page.
+
+**4. New "Free vs Premium" section.** Between Modules and Why-RootEd: the free tier restated
+plainly, plus four premium add-ons — dedicated email, WhatsApp alerts, SMS alerts, and a
+dedicated payment gateway account — each with a "contact us" CTA (mailto), since none of them
+has a purchase flow yet. This is new content, not a correction to existing content: nothing
+in rounds 1-4 claimed these features didn't exist, they simply weren't mentioned.
+
+**5. Contact address changed.** `ruralrootcloud@gmail.com` → `info@ruralrootcloud.com`
+everywhere it appears (footer, mailto links). Unrelated to the above — just an address
+update — but landing here since it touches the same lines.
 
 ## How to review
 

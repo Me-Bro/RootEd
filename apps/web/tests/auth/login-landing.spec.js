@@ -18,12 +18,6 @@ import {
   assertNoHorizontalOverflow,
 } from '../support/pageAudit.js';
 
-// Deliberately hardcoded rather than imported from landingContent.js: this
-// pins the product decision (PLAN.md, "Not in this batch" — no signup page
-// exists, so the CTA opens the real contact channel). Importing the constant
-// would make the assertion tautological.
-const TRIAL_HREF = 'mailto:ruralrootcloud@gmail.com?subject=RootEd%20free%20trial';
-
 const DESKTOP = { width: 1280, height: 900 };
 const MOBILE = { width: 390, height: 844 };
 
@@ -59,13 +53,9 @@ test.describe('Login landing page — desktop', () => {
     assertNoErrors(errors, ['auth/refresh']);
   });
 
-  test('"Start free trial" points at the trial contact email', async ({ page }) => {
-    // No signup page exists yet (see docs/landing-page-mockup/PLAN.md, "Not
-    // in this batch") — this CTA is a mailto to the one real contact channel
-    // the plan keeps, not a dead "#" link.
-    await expect(
-      page.locator('.lp-nav').getByRole('link', { name: 'Start free trial' })
-    ).toHaveAttribute('href', TRIAL_HREF);
+  test('"Get started free" navigates to registration', async ({ page }) => {
+    await page.locator('.lp-nav').getByRole('button', { name: 'Get started free' }).click();
+    await expect(page).toHaveURL(/\/register/);
   });
 
   test('the language switcher stays available before signing in', async ({ page }) => {
@@ -235,7 +225,7 @@ test.describe('Login landing page — already authenticated', () => {
     await expect(nav.getByRole('button', { name: 'Dashboard' })).toBeVisible();
     await expect(nav.getByRole('button', { name: 'Log out' })).toBeVisible();
     await expect(nav.getByRole('button', { name: 'Log in' })).not.toBeVisible();
-    await expect(nav.getByRole('link', { name: 'Start free trial' })).not.toBeVisible();
+    await expect(nav.getByRole('button', { name: 'Get started free' })).not.toBeVisible();
   });
 
   test('"Dashboard" navigates to /dashboard', async ({ page }) => {

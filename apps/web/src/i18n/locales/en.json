@@ -1255,7 +1255,8 @@
       "about": "About",
       "contact": "Contact",
       "login": "Log in",
-      "startTrial": "Start free trial",
+      "pricing": "Pricing",
+      "getStarted": "Get started free",
       "dashboard": "Dashboard",
       "logout": "Log out"
     },
@@ -1264,9 +1265,9 @@
       "titleMain": "Run your school, college or coaching center —",
       "titleAccent": "not five spreadsheets.",
       "lead": "RootEd is the system schools, colleges and coaching or tuition centers use to run attendance, fees, staff and inventory in one place. Multi-tenant, role-based, and built with the same data-safety discipline as a bank's back office.",
-      "ctaTrial": "Start 14-day free trial",
+      "ctaStart": "Get started free",
       "ctaLogin": "Log in to your school",
-      "fineprint": "No credit card to start. Already a RootEd school?",
+      "fineprint": "Free to use, no credit card. Already a RootEd school?",
       "fineprintLogin": "Log in →"
     },
     "preview": {
@@ -1324,6 +1325,32 @@
       "workflows": {
         "title": "Approval workflows",
         "body": "Leave, expense and purchase requests move through a real approval chain with auto-escalation — nothing sits forgotten."
+      }
+    },
+    "pricingSection": {
+      "eyebrow": "Pricing",
+      "heading": "Free forever. Premium when you need it.",
+      "lead": "The core system — attendance, fees, staff, inventory — is free, with no trial and no time limit. Add these premium channels whenever your school wants them.",
+      "freeTitle": "Free, always",
+      "freeBody": "Every core module, unlimited staff and students — no credit card, no expiry.",
+      "cta": "Ask about premium add-ons"
+    },
+    "premium": {
+      "email": {
+        "title": "Dedicated email",
+        "body": "A branded address for notices, receipts and report cards, instead of a shared inbox."
+      },
+      "whatsapp": {
+        "title": "WhatsApp alerts",
+        "body": "Attendance, fee and exam notices sent straight to a parent's WhatsApp, not just the app."
+      },
+      "sms": {
+        "title": "SMS alerts",
+        "body": "Text alerts for parents and staff without WhatsApp or the app installed."
+      },
+      "paymentGateway": {
+        "title": "Dedicated payment gateway",
+        "body": "Your own payment gateway account in your school's name, instead of a shared one."
       }
     },
     "securitySection": {
@@ -1387,7 +1414,7 @@
       },
       "golive": {
         "title": "Go live",
-        "body": "Your school's RootEd tenant is provisioned and your 14-day trial starts."
+        "body": "Your school's RootEd tenant is provisioned and you're live — free, from day one."
       },
       "support": {
         "title": "Support",
@@ -1396,20 +1423,21 @@
     },
     "ctaBand": {
       "heading": "Ready to see it running on your school's data?",
-      "sub": "14-day free trial · no credit card required"
+      "sub": "Free to use · no credit card required"
     },
     "footer": {
       "blurb": "Where your school's roots grow digital. Built by Rural Root Cloud Tech Services And Training.",
       "productHeading": "Product",
       "companyHeading": "Company",
       "modules": "Modules",
+      "parentSite": "Rural Root Cloud",
       "copyright": "© 2026 Rural Root Cloud Tech Services And Training"
     },
     "mobile": {
       "titleMain": "One system.",
       "titleAccent": "Every role.",
       "lead": "Attendance, fees, staff and inventory — for schools, colleges and coaching or tuition centers, not five spreadsheets.",
-      "fineprint": "No credit card. Already a school?",
+      "fineprint": "Free to use. Already a school?",
       "whyEyebrow": "Why schools trust it",
       "whyHeading": "Protected on purpose",
       "facts": {
@@ -1431,6 +1459,9 @@
         }
       },
       "modulesHeading": "Five modules, one tenant",
+      "pricingHeading": "Free core. Premium add-ons.",
+      "pricingLead": "Attendance, fees, staff, inventory — free, no trial, no expiry. Add these when you're ready.",
+      "pricingCta": "Ask about premium",
       "aboutLead": "An IT company that designs, builds and maintains complete digital products and microservices — RootEd is one of them.",
       "tags": {
         "reliability": "Reliability",
@@ -1440,7 +1471,7 @@
       },
       "processHeading": "First call to going live",
       "ctaHeading": "Ready to see it on your data?",
-      "ctaSub": "14-day free trial · no credit card"
+      "ctaSub": "Free to use · no credit card"
     }
   },
   "org": {

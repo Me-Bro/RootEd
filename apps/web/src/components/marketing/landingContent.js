@@ -6,11 +6,38 @@
 // site, so `grep landing.modules.academics` finds both the definition and its
 // use.
 
-// The signup page this CTA would hand off to is explicitly out of scope
-// (PLAN.md, "Not in this batch"), so it opens the one real contact channel
-// the plan keeps — the same address the footer uses. Not translated: it's a
-// mailto to an English-speaking inbox.
-export const TRIAL_HREF = 'mailto:ruralrootcloud@gmail.com?subject=RootEd%20free%20trial';
+// Registration (`/register`) is a real, live route (ADR 005) — the "Get
+// started free" CTAs navigate there via `onGetStartedClick`, not through this
+// mailto. This address is only for the footer's general contact link and the
+// premium-features enquiry, since premium add-ons (dedicated email, WhatsApp,
+// SMS, payment gateway) have no self-serve purchase flow yet. Not translated:
+// it's a mailto to an English-speaking inbox.
+export const CONTACT_HREF = 'mailto:info@ruralrootcloud.com?subject=RootEd%20inquiry';
+
+export const PARENT_SITE_HREF = 'https://ruralrootcloud.com/';
+
+export const PREMIUM_FEATURES = [
+  {
+    icon: 'Em',
+    titleKey: 'landing.premium.email.title',
+    bodyKey: 'landing.premium.email.body',
+  },
+  {
+    icon: 'Wa',
+    titleKey: 'landing.premium.whatsapp.title',
+    bodyKey: 'landing.premium.whatsapp.body',
+  },
+  {
+    icon: 'Sm',
+    titleKey: 'landing.premium.sms.title',
+    bodyKey: 'landing.premium.sms.body',
+  },
+  {
+    icon: 'Pg',
+    titleKey: 'landing.premium.paymentGateway.title',
+    bodyKey: 'landing.premium.paymentGateway.body',
+  },
+];
 
 export const MODULES = [
   {
