@@ -283,6 +283,12 @@ function DesktopLanding({
                 {t('landing.footer.parentSite')}
               </a>
             </div>
+            <div>
+              <h3>{t('landing.footer.legalHeading')}</h3>
+              <a href="/legal/privacy">{t('legal.nav.privacy')}</a>
+              <a href="/legal/terms">{t('legal.nav.terms')}</a>
+              <a href="/legal/account-deletion">{t('legal.nav.accountDeletion')}</a>
+            </div>
           </div>
         </div>
         <div className="bottom">
@@ -439,10 +445,15 @@ function MobileLanding({
       <footer className="m-footer">
         <div className="brand">RootEd</div>
         <p className="blurb">{t('landing.footer.blurb')}</p>
-        <a href="mailto:info@ruralrootcloud.com">info@ruralrootcloud.com</a>
+        <a href="mailto:ruralrootcloud@gmail.com">ruralrootcloud@gmail.com</a>
         <a href={PARENT_SITE_HREF} target="_blank" rel="noopener noreferrer">
           {t('landing.footer.parentSite')}
         </a>
+        <div className="m-legal">
+          <a href="/legal/privacy">{t('legal.nav.privacy')}</a>
+          <a href="/legal/terms">{t('legal.nav.terms')}</a>
+          <a href="/legal/account-deletion">{t('legal.nav.accountDeletion')}</a>
+        </div>
       </footer>
 
       <div className="m-sticky-cta">

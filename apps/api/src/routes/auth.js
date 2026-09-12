@@ -15,6 +15,7 @@ import {
   usernameSchema,
   acceptInviteSchema,
   submitJoinRequestSchema,
+  deleteAccountSchema,
 } from '@rooted/shared/schemas';
 import { User } from '../models/User.js';
 import {
@@ -52,6 +53,7 @@ import { Tenant } from '../models/Tenant.js';
 import { TenantMembership } from '../models/TenantMembership.js';
 import { env, getPortalHost } from '../config/env.js';
 import { auditLog } from '../services/audit.service.js';
+import { deleteUserAccount } from '../services/accountDeletion.service.js';
 import {
   generateMfaSecret,
   verifyMfaToken,
@@ -159,6 +161,7 @@ router.post('/login', loginLimiter, async (req, res, next) => {
       .lean();
 
     if (!user) throw new AppError('Invalid credentials', 401);
+    if (user.status === 'deleted') throw new AppError('Invalid credentials', 401);
     if (user.status === 'suspended') throw new AppError('Account suspended', 403);
     if (user.status === 'pending_verification') {
       throw new AppError('Verify your email address before signing in', 403);
@@ -388,6 +391,77 @@ router.post('/logout', authenticate, async (req, res, next) => {
     next(err);
   }
 });
+
+/**
+ * @openapi
+ * /auth/delete-account:
+ *   post:
+ *     summary: Permanently delete the caller's account
+ *     description: >
+ *       Anonymises the account and drops every organization membership.
+ *       Tenant-owned academic and financial records are retained with the
+ *       actor anonymised. Refused while the caller is the last administrator
+ *       of an active organization.
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [currentPassword, confirmation]
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               confirmation:
+ *                 type: string
+ *                 enum: [DELETE]
+ *     responses:
+ *       200:
+ *         description: Account deleted
+ *       401:
+ *         description: Not authenticated, or the password was wrong
+ *       403:
+ *         description: Platform administrator accounts cannot self-delete
+ *       409:
+ *         description: Caller is the last administrator of an active organization
+ */
+router.post(
+  '/delete-account',
+  authenticate,
+  validate(deleteAccountSchema),
+  async (req, res, next) => {
+    try {
+      const user = await User.findById(req.user.sub).select('+passwordHash');
+      if (!user) throw new AppError('User not found', 404);
+      if (!(await verifyPassword(user.passwordHash, req.body.currentPassword))) {
+        throw new AppError('Incorrect password', 401);
+      }
+
+      // Throws 409 if they are the last admin somewhere, 403 for operator
+      // accounts; nothing has been scrubbed when it does.
+      await deleteUserAccount(user);
+
+      // Queued after the scrub so a failed deletion never leaves a record
+      // claiming it happened. AuditLog is immutable and TTLs at 90 days, which
+      // is the retained proof the request was made and honoured.
+      await auditLog({
+        actorId: user._id,
+        action: 'account.deleted',
+        target: { model: 'User', id: user._id },
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+      });
+
+      res.clearCookie('refreshToken', { path: '/' });
+      res.json({ message: 'Account deleted' });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.get('/me', authenticate, async (req, res, next) => {
   try {

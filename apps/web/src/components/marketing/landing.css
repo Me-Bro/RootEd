@@ -863,6 +863,13 @@
   display: inline-block;
   margin: 3px 12px 3px 0;
 }
+/* Legal links are separated from the contact links above so the privacy policy
+   and the deletion page stay findable — a Play reviewer looks for them here. */
+.rooted-landing .m-footer .m-legal {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgb(255 255 255 / 0.12);
+}
 
 /* Fixed (not sticky-inside-a-phone-frame) bottom CTA bar — mirrors how
    MobileBottomBar.jsx sits outside the app's scrollable page content. Safe
