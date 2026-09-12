@@ -31,6 +31,7 @@ export { Invite } from './Invite.js';
 export { LeaveBalance } from './LeaveBalance.js';
 export { LeaveRequest } from './LeaveRequest.js';
 export { LeaveType } from './LeaveType.js';
+export { MigrationLog } from './MigrationLog.js';
 export { Notification } from './Notification.js';
 export { PurchaseRequisition } from './PurchaseRequisition.js';
 export { ReportCardBatch } from './ReportCardBatch.js';
