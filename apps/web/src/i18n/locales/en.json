@@ -1579,7 +1579,8 @@
       "privacy": "Privacy Policy",
       "terms": "Terms of Service",
       "accountDeletion": "Delete your account",
-      "backToSite": "Back to RootEd"
+      "backToSite": "Back to RootEd",
+      "label": "Legal"
     },
     "privacy": {
       "title": "Privacy Policy",
