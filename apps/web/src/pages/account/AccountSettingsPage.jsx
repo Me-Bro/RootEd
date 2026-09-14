@@ -281,6 +281,24 @@ export default function AccountSettingsPage() {
           </Link>
         </p>
       </SettingsCard>
+
+      {/* Play's User Data policy wants the privacy policy reachable from inside
+          the app, not only from the store listing. Settings is where a reviewer
+          looks, and it is next to the deletion flow these documents describe. */}
+      <nav
+        aria-label={t('legal.nav.label')}
+        className="flex flex-wrap justify-center gap-x-4 gap-y-2 pb-4 text-xs text-muted-foreground"
+      >
+        <Link to="/legal/privacy" className="underline hover:text-foreground">
+          {t('legal.nav.privacy')}
+        </Link>
+        <Link to="/legal/terms" className="underline hover:text-foreground">
+          {t('legal.nav.terms')}
+        </Link>
+        <Link to="/legal/account-deletion" className="underline hover:text-foreground">
+          {t('legal.nav.accountDeletion')}
+        </Link>
+      </nav>
     </div>
   );
 }
