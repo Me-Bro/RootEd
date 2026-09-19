@@ -53,6 +53,8 @@
     "sixDigitCode": "6-digit code",
     "loginFailed": "Login failed",
     "needsTotp": "Please enter your TOTP code",
+    "orContinueWith": "or continue with",
+    "verifyCode": "Verify",
     "chooseOrganization": "Choose an organization",
     "chooseOrganizationDescription": "You belong to more than one — pick one to continue",
     "entering": "Entering…",

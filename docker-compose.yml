@@ -77,6 +77,7 @@ services:
       args:
         VITE_API_URL: ''
         VITE_APP_DOMAIN: ${APP_DOMAIN:-rooted.app}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
     restart: unless-stopped
     ports:
       - '5173:80'
