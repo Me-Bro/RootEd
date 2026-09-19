@@ -31,3 +31,11 @@ nginx/certs/
 
 # Redis auth secret
 redis/redis.conf
+
+# requirement-planner scratch state — local-only, not for the repo
+agent-home/plans/*
+!agent-home/plans/.gitkeep
+agent-home/requirements/*
+!agent-home/requirements/.gitkeep
+agent-home/states/*
+!agent-home/states/.gitkeep
