@@ -23,5 +23,5 @@ git push origin main
 - Feature branches should still be cut from a freshly fetched `upstream/main`
   (`git checkout -b feat/x upstream/main`), not from local `main`, in case
   local `main` is stale — see [[git_upstream_convention]].
-- Pushing `origin/main` is a separate, explicit step — don't assume it's
-  wanted just because `main` was updated locally.
+- Pushing `origin/main` runs unconditionally as the last step of this skill
+  — no separate confirmation needed when this skill is invoked.
