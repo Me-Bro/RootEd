@@ -122,9 +122,13 @@ app.get('/csrf-token', (req, res, next) => {
 app.use((req, res, next) => {
   const method = req.method;
   const path = req.path;
-  // Skip CSRF for login (issues cookie) and GET/HEAD/OPTIONS
+  // Skip CSRF for login (issues cookie) and GET/HEAD/OPTIONS. /auth/google is
+  // the same case as /auth/login — an unauthenticated caller with no prior
+  // session can't have a CSRF token yet either.
   if (['GET', 'HEAD', 'OPTIONS'].includes(method)) return next();
-  if (path === '/auth/login' || path === '/auth/refresh') return next();
+  if (path === '/auth/login' || path === '/auth/refresh' || path === '/auth/google') {
+    return next();
+  }
   doubleCsrfProtection(req, res, next);
 });
 

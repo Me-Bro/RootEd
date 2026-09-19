@@ -260,32 +260,36 @@ router.post('/login', loginLimiter, async (req, res, next) => {
  *         description: Invalid/expired Google token, or TOTP required/incorrect
  *       403:
  *         description: Account suspended
- *       503:
- *         description: Google sign-in is not configured on this deployment
+ *       404:
+ *         description: Google sign-in is not configured on this deployment (route not mounted)
  */
-router.post('/google', loginLimiter, validate(googleAuthSchema), async (req, res, next) => {
-  try {
-    if (!env.GOOGLE_CLIENT_ID) throw new AppError('Google sign-in is not configured', 503);
+// Mounted only when configured — same "absent, not merely inert" precedent
+// app.js uses for /billing behind BILLING_ENABLED — rather than a runtime
+// check, since errorHandler.js masks every >=500 status as a generic
+// "Internal server error" and this isn't one.
+if (env.GOOGLE_CLIENT_ID) {
+  router.post('/google', loginLimiter, validate(googleAuthSchema), async (req, res, next) => {
+    try {
+      const payload = await verifyGoogleIdToken(req.body.idToken);
+      const localPart = payload.email.split('@')[0];
+      const { user, created } = await findOrCreateGoogleUser({
+        email: payload.email,
+        googleId: payload.sub,
+        firstName: payload.given_name || localPart,
+        lastName: payload.family_name || localPart,
+      });
 
-    const payload = await verifyGoogleIdToken(req.body.idToken);
-    const localPart = payload.email.split('@')[0];
-    const { user, created } = await findOrCreateGoogleUser({
-      email: payload.email,
-      googleId: payload.sub,
-      firstName: payload.given_name || localPart,
-      lastName: payload.family_name || localPart,
-    });
-
-    await completeLogin(user, {
-      req,
-      res,
-      totpCode: req.body.totpCode,
-      auditAction: created ? 'auth.google_register' : 'auth.google_login',
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+      await completeLogin(user, {
+        req,
+        res,
+        totpCode: req.body.totpCode,
+        auditAction: created ? 'auth.google_register' : 'auth.google_login',
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
+}
 
 /**
  * @openapi
