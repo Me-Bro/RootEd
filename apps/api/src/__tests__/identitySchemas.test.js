@@ -3,6 +3,7 @@ import {
   loginSchema,
   registerSchema,
   updateProfileSchema,
+  googleAuthSchema,
 } from '@rooted/shared/schemas';
 import { RESERVED_USERNAMES, USERNAME_MAX_LENGTH } from '@rooted/shared/constants';
 
@@ -90,6 +91,24 @@ describe('registerSchema', () => {
   test('requires both names', () => {
     expect(ok(registerSchema, { ...valid, firstName: '' })).toBe(false);
     expect(ok(registerSchema, { ...valid, lastName: '   ' })).toBe(false);
+  });
+});
+
+describe('googleAuthSchema', () => {
+  test('accepts an idToken alone', () => {
+    expect(ok(googleAuthSchema, { idToken: 'header.payload.sig' })).toBe(true);
+  });
+
+  test('accepts an idToken with a totpCode', () => {
+    expect(ok(googleAuthSchema, { idToken: 'x', totpCode: '123456' })).toBe(true);
+  });
+
+  test('rejects an empty idToken', () => {
+    expect(ok(googleAuthSchema, { idToken: '' })).toBe(false);
+  });
+
+  test('rejects a missing idToken', () => {
+    expect(ok(googleAuthSchema, { totpCode: '123456' })).toBe(false);
   });
 });
 

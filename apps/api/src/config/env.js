@@ -30,6 +30,10 @@ const schema = z.object({
   // Cloudflare Tunnel one) where the apex domain isn't reachable/desired for login.
   PORTAL_SUBDOMAIN: z.string().optional(),
   CSRF_SECRET: z.string().min(32),
+  // Google OAuth client id used to verify Google Sign-In ID tokens
+  // (audience check). Unset disables POST /auth/google rather than breaking
+  // boot — same philosophy as a blank SMTP_HOST no-op'ing below.
+  GOOGLE_CLIENT_ID: z.string().optional(),
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional(),

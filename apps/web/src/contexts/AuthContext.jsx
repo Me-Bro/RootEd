@@ -81,6 +81,22 @@ export function AuthProvider({ children }) {
     return data;
   }, []);
 
+  const loginWithGoogle = useCallback(async (idToken, totpCode) => {
+    const { data } = await api.post('/auth/google', {
+      idToken,
+      ...(totpCode ? { totpCode } : {}),
+    });
+    setAccessToken(data.accessToken);
+    setToken(data.accessToken);
+    try {
+      const meRes = await api.get('/auth/me');
+      setUser(meRes.data);
+    } catch {
+      setUser(null);
+    }
+    return data;
+  }, []);
+
   // Called from the tenant-picker screen when a general-portal user belongs
   // to more than one tenant — reissues the access token (and refresh cookie)
   // with a tenantId claim (see POST /auth/select-tenant).
@@ -113,6 +129,7 @@ export function AuthProvider({ children }) {
         accessToken,
         loading,
         login,
+        loginWithGoogle,
         loginWithToken,
         selectTenant,
         refreshUser,

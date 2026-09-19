@@ -23,7 +23,21 @@ const userSchema = new mongoose.Schema(
     lastName: { type: String, trim: true },
     phone: { type: String, trim: true },
     avatarKey: { type: String },
-    passwordHash: { type: String, required: true, select: false },
+    // Absent for a Google-only account — passwordHash is only required when
+    // there's no googleId to sign in with instead.
+    passwordHash: {
+      type: String,
+      required: [
+        function () {
+          return !this.googleId;
+        },
+        'passwordHash is required',
+      ],
+      select: false,
+    },
+    // Google's `sub` claim. Set on first Google sign-in, whether that creates
+    // a new account or links an existing password one by verified email.
+    googleId: { type: String, select: false },
     systemRole: {
       type: String,
       enum: ['super_admin', 'support_agent', null],
@@ -53,5 +67,6 @@ userSchema.index({ passwordResetToken: 1 }, { sparse: true });
 userSchema.index({ usernameLower: 1 }, { unique: true, sparse: true });
 userSchema.index({ emailVerificationToken: 1 }, { sparse: true });
 userSchema.index({ pendingEmailToken: 1 }, { sparse: true });
+userSchema.index({ googleId: 1 }, { unique: true, sparse: true });
 
 export const User = mongoose.model('User', userSchema);

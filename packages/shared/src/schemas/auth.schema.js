@@ -36,6 +36,11 @@ export const loginSchema = z.object({
   totpCode: z.string().optional(),
 });
 
+export const googleAuthSchema = z.object({
+  idToken: z.string().min(1),
+  totpCode: z.string().optional(),
+});
+
 export const registerSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   username: usernameSchema,

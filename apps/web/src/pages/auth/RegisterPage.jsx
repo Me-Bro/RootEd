@@ -8,7 +8,9 @@ import {
 } from '@rooted/shared/constants';
 import { registerSchema } from '@rooted/shared/schemas';
 import api from '../../lib/api.js';
+import { useAuth } from '../../contexts/useAuth.js';
 import AuthShell from '../../components/auth/AuthShell.jsx';
+import GoogleSignInButton from '../../components/auth/GoogleSignInButton.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 
@@ -24,10 +26,27 @@ const BLANK = {
 export default function RegisterPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { loginWithGoogle } = useAuth();
   const [form, setForm] = useState(BLANK);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [available, setAvailable] = useState(null);
+
+  async function handleGoogleCredential(idToken) {
+    setError('');
+    setSaving(true);
+    try {
+      // A Google sign-up is instant (Google already proved the address), so
+      // it skips the "check your email" step below entirely and signs the
+      // caller straight in, same destination POST /login would send them to.
+      const data = await loginWithGoogle(idToken);
+      navigate(data.tenants?.length > 1 ? '/select-tenant' : '/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.error || t('auth.registerFailed'));
+    } finally {
+      setSaving(false);
+    }
+  }
 
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
@@ -98,6 +117,7 @@ export default function RegisterPage() {
 
   return (
     <AuthShell title={t('auth.createAccount')} description={t('auth.createAccountDescription')}>
+      <GoogleSignInButton onCredential={handleGoogleCredential} />
       <form
         onSubmit={handleSubmit}
         aria-label={t('auth.createAccount')}

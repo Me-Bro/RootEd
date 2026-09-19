@@ -53,6 +53,8 @@
     "sixDigitCode": "6-अंकों का कोड",
     "loginFailed": "लॉगिन विफल",
     "needsTotp": "कृपया अपना TOTP कोड दर्ज करें",
+    "orContinueWith": "या इसके साथ जारी रखें",
+    "verifyCode": "सत्यापित करें",
     "chooseOrganization": "संगठन चुनें",
     "chooseOrganizationDescription": "आप एक से अधिक से जुड़े हैं — जारी रखने के लिए एक चुनें",
     "entering": "प्रवेश हो रहा है…",
