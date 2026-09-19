@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends cron awscli ca-
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY backup.sh /usr/local/bin/backup.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/backup.sh \
+COPY restore.sh /usr/local/bin/restore.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/backup.sh /usr/local/bin/restore.sh \
   && echo "0 2 * * * root /usr/local/bin/backup.sh >> /var/log/backup.log 2>&1" > /etc/cron.d/db-backup \
   && chmod 0644 /etc/cron.d/db-backup \
   && touch /var/log/backup.log
