@@ -113,45 +113,6 @@ const usernameLookupLimiter = rateLimit({
 });
 
 /**
- * @openapi
- * /auth/login:
- *   post:
- *     summary: Authenticate user and get access token
- *     tags: [Auth]
- *     security: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [email, password]
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *               password:
- *                 type: string
- *                 minLength: 8
- *               totpCode:
- *                 type: string
- *                 description: TOTP code (required for super_admin with MFA enabled)
- *     responses:
- *       200:
- *         description: Login successful
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 accessToken:
- *                   type: string
- *       401:
- *         description: Invalid credentials or TOTP required
- *       429:
- *         description: Too many login attempts
- */
-/**
  * Everything that happens once a caller has been authenticated by whatever
  * method (password, Google) and any account-status checks for that method
  * have already passed: the super_admin MFA gate, last-login bookkeeping,
@@ -197,6 +158,45 @@ export async function completeLogin(user, { req, res, totpCode, auditAction }) {
   res.json({ accessToken, tenants });
 }
 
+/**
+ * @openapi
+ * /auth/login:
+ *   post:
+ *     summary: Authenticate user and get access token
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email, password]
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *               totpCode:
+ *                 type: string
+ *                 description: TOTP code (required for super_admin with MFA enabled)
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
+ *       401:
+ *         description: Invalid credentials or TOTP required
+ *       429:
+ *         description: Too many login attempts
+ */
 router.post('/login', loginLimiter, async (req, res, next) => {
   try {
     // `email` is still accepted so existing clients keep working; the field was

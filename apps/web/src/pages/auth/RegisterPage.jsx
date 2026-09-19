@@ -117,16 +117,7 @@ export default function RegisterPage() {
 
   return (
     <AuthShell title={t('auth.createAccount')} description={t('auth.createAccountDescription')}>
-      <div className="flex flex-col gap-4">
-        <GoogleSignInButton onCredential={handleGoogleCredential} />
-        {import.meta.env.VITE_GOOGLE_CLIENT_ID && (
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <span className="h-px flex-1 bg-border" />
-            {t('auth.orContinueWith')}
-            <span className="h-px flex-1 bg-border" />
-          </div>
-        )}
-      </div>
+      <GoogleSignInButton onCredential={handleGoogleCredential} />
       <form
         onSubmit={handleSubmit}
         aria-label={t('auth.createAccount')}

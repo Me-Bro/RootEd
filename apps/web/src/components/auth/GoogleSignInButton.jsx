@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 let gsiScriptPromise;
 function loadGsiScript() {
@@ -17,12 +18,15 @@ function loadGsiScript() {
 }
 
 /**
- * Renders Google's own Sign-In button once VITE_GOOGLE_CLIENT_ID is set;
- * renders nothing otherwise, same "blank config no-ops" philosophy as
- * EMAIL_PROVIDER/SMTP_HOST on the API side. `onCredential` receives the raw
- * ID token — verification happens server-side, never here.
+ * Renders Google's own Sign-In button plus an "or continue with" divider
+ * once VITE_GOOGLE_CLIENT_ID is set; renders nothing otherwise, same "blank
+ * config no-ops" philosophy as EMAIL_PROVIDER/SMTP_HOST on the API side.
+ * `onCredential` receives the raw ID token — verification happens
+ * server-side, never here. Used identically by LoginForm and RegisterPage,
+ * so the divider lives here rather than being duplicated at each call site.
  */
 export default function GoogleSignInButton({ onCredential }) {
+  const { t } = useTranslation();
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const containerRef = useRef(null);
   const onCredentialRef = useRef(onCredential);
@@ -53,5 +57,14 @@ export default function GoogleSignInButton({ onCredential }) {
 
   if (!clientId) return null;
 
-  return <div ref={containerRef} className="flex justify-center" />;
+  return (
+    <div className="flex flex-col gap-4">
+      <div ref={containerRef} className="flex justify-center" />
+      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" />
+        {t('auth.orContinueWith')}
+        <span className="h-px flex-1 bg-border" />
+      </div>
+    </div>
+  );
 }
