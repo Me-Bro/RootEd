@@ -16,6 +16,7 @@ import {
   acceptInviteSchema,
   submitJoinRequestSchema,
   deleteAccountSchema,
+  googleAuthSchema,
 } from '@rooted/shared/schemas';
 import { User } from '../models/User.js';
 import {
@@ -70,6 +71,7 @@ import {
 import { acceptInvite } from '../services/invite.service.js';
 import { tenantForJoinCode, submitJoinRequest } from '../services/joinRequest.service.js';
 import { broadcastToRole } from '../services/notification.service.js';
+import { verifyGoogleIdToken, findOrCreateGoogleUser } from '../services/googleAuth.service.js';
 
 const router = Router();
 
@@ -149,12 +151,58 @@ const usernameLookupLimiter = rateLimit({
  *       429:
  *         description: Too many login attempts
  */
+/**
+ * Everything that happens once a caller has been authenticated by whatever
+ * method (password, Google) and any account-status checks for that method
+ * have already passed: the super_admin MFA gate, last-login bookkeeping,
+ * tenant computation, token issuance, and the audit log entry. Shared by
+ * POST /login and POST /auth/google so the two methods can never drift on
+ * what "signed in" means from this point on — only `auditAction` differs.
+ */
+export async function completeLogin(user, { req, res, totpCode, auditAction }) {
+  if (user.systemRole === 'super_admin' && user.mfaEnabled) {
+    if (!totpCode) throw new AppError('TOTP code required', 401);
+    const plainSecret = getMfaSecret(user.mfaSecret);
+    if (!verifyMfaToken(plainSecret, totpCode)) throw new AppError('Invalid TOTP code', 401);
+  }
+
+  await User.updateOne(
+    { _id: user._id },
+    { lastLoginAt: new Date(), lastLoginIp: req.ip },
+    { _bypassTenantScope: true }
+  );
+
+  // super_admin never gets tenant module access via membership — only via
+  // explicit, audited impersonation (see requirePermission.js) — so skip
+  // the membership lookup entirely for that role.
+  const tenants = user.systemRole === 'super_admin' ? [] : await getActiveTenantsForUser(user._id);
+
+  const tokenPayload = {
+    sub: user._id.toString(),
+    systemRole: user.systemRole ?? undefined,
+    ...(tenants.length === 1 && { tenantId: tenants[0]._id }),
+  };
+  const accessToken = signAccessToken(tokenPayload);
+  const refreshToken = signRefreshToken(tokenPayload);
+
+  res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS);
+
+  await auditLog({
+    actorId: user._id,
+    action: auditAction,
+    ip: req.ip,
+    userAgent: req.headers['user-agent'],
+  });
+
+  res.json({ accessToken, tenants });
+}
+
 router.post('/login', loginLimiter, async (req, res, next) => {
   try {
     // `email` is still accepted so existing clients keep working; the field was
     // renamed to `identifier` when username login landed.
     const body = { ...req.body, identifier: req.body.identifier ?? req.body.email };
-    const { identifier, password } = loginSchema.parse(body);
+    const { identifier, password, totpCode } = loginSchema.parse(body);
 
     const user = await User.findOne(loginFilterFor(identifier))
       .select('+passwordHash +failedLoginAttempts +lockedUntil +mfaSecret +mfaEnabled')
@@ -175,44 +223,65 @@ router.post('/login', loginLimiter, async (req, res, next) => {
 
     await clearFailedLogins(user._id);
 
-    if (user.systemRole === 'super_admin' && user.mfaEnabled) {
-      const { totpCode } = loginSchema.parse(body);
-      if (!totpCode) throw new AppError('TOTP code required', 401);
-      const plainSecret = getMfaSecret(user.mfaSecret);
-      const valid = verifyMfaToken(plainSecret, totpCode);
-      if (!valid) throw new AppError('Invalid TOTP code', 401);
-    }
+    await completeLogin(user, { req, res, totpCode, auditAction: 'auth.login' });
+  } catch (err) {
+    next(err);
+  }
+});
 
-    await User.updateOne(
-      { _id: user._id },
-      { lastLoginAt: new Date(), lastLoginIp: req.ip },
-      { _bypassTenantScope: true }
-    );
+/**
+ * @openapi
+ * /auth/google:
+ *   post:
+ *     summary: Sign in (or register/link) with a Google ID token
+ *     description: >
+ *       Verifies a Google Identity Services ID token server-side, then
+ *       auto-links it to an existing User matched by verified email, or
+ *       creates one on first sign-in. Reaches the same tenant/MFA/token
+ *       flow POST /login does from that point on.
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [idToken]
+ *             properties:
+ *               idToken:
+ *                 type: string
+ *               totpCode:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Sign-in successful
+ *       401:
+ *         description: Invalid/expired Google token, or TOTP required/incorrect
+ *       403:
+ *         description: Account suspended
+ *       503:
+ *         description: Google sign-in is not configured on this deployment
+ */
+router.post('/google', loginLimiter, validate(googleAuthSchema), async (req, res, next) => {
+  try {
+    if (!env.GOOGLE_CLIENT_ID) throw new AppError('Google sign-in is not configured', 503);
 
-    // super_admin never gets tenant module access via membership — only via
-    // explicit, audited impersonation (see requirePermission.js) — so skip
-    // the membership lookup entirely for that role.
-    const tenants =
-      user.systemRole === 'super_admin' ? [] : await getActiveTenantsForUser(user._id);
-
-    const tokenPayload = {
-      sub: user._id.toString(),
-      systemRole: user.systemRole ?? undefined,
-      ...(tenants.length === 1 && { tenantId: tenants[0]._id }),
-    };
-    const accessToken = signAccessToken(tokenPayload);
-    const refreshToken = signRefreshToken(tokenPayload);
-
-    res.cookie('refreshToken', refreshToken, REFRESH_COOKIE_OPTIONS);
-
-    await auditLog({
-      actorId: user._id,
-      action: 'auth.login',
-      ip: req.ip,
-      userAgent: req.headers['user-agent'],
+    const payload = await verifyGoogleIdToken(req.body.idToken);
+    const localPart = payload.email.split('@')[0];
+    const { user, created } = await findOrCreateGoogleUser({
+      email: payload.email,
+      googleId: payload.sub,
+      firstName: payload.given_name || localPart,
+      lastName: payload.family_name || localPart,
     });
 
-    res.json({ accessToken, tenants });
+    await completeLogin(user, {
+      req,
+      res,
+      totpCode: req.body.totpCode,
+      auditAction: created ? 'auth.google_register' : 'auth.google_login',
+    });
   } catch (err) {
     next(err);
   }
