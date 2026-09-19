@@ -70,6 +70,25 @@ services:
       - rooted
       - shared
 
+  backup:
+    build:
+      context: ./ops/db-backup
+    restart: unless-stopped
+    env_file:
+      - ./apps/api/.env
+    environment:
+      MONGODB_URI: ${MONGODB_URI}
+      S3_ENDPOINT: http://minio:9000
+      RETENTION_DAYS: 7
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - rooted
+      - shared
+
   web:
     build:
       context: .
