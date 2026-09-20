@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link2, Sparkles } from 'lucide-react';
 import './landing.css';
 import {
   HeroDesktopMotif,
@@ -141,13 +142,17 @@ function DesktopLanding({
           <div className="lp-grid">
             {MODULES.map((m) => (
               <div className="lp-card" key={m.titleKey}>
-                <div className="icon">{m.icon}</div>
+                <div className="icon">
+                  <m.icon size={22} />
+                </div>
                 <h3>{t(m.titleKey)}</h3>
                 <p>{t(m.bodyKey)}</p>
               </div>
             ))}
             <div className="lp-card accent">
-              <div className="icon">+</div>
+              <div className="icon">
+                <Link2 size={22} />
+              </div>
               <h3>{t('landing.modulesSection.allConnectedTitle')}</h3>
               <p>{t('landing.modulesSection.allConnectedBody')}</p>
             </div>
@@ -162,13 +167,17 @@ function DesktopLanding({
           </div>
           <div className="lp-grid">
             <div className="lp-card accent">
-              <div className="icon">Fr</div>
+              <div className="icon">
+                <Sparkles size={22} />
+              </div>
               <h3>{t('landing.pricingSection.freeTitle')}</h3>
               <p>{t('landing.pricingSection.freeBody')}</p>
             </div>
             {PREMIUM_FEATURES.map((f) => (
               <div className="lp-card" key={f.titleKey}>
-                <div className="icon">{f.icon}</div>
+                <div className="icon">
+                  <f.icon size={22} />
+                </div>
                 <h3>{t(f.titleKey)}</h3>
                 <p>{t(f.bodyKey)}</p>
               </div>
@@ -379,7 +388,9 @@ function MobileLanding({
           <div className="m-modgrid">
             {MODULES.map((m) => (
               <div className="m" key={m.titleKey}>
-                <div className="icon">{m.icon}</div>
+                <div className="icon">
+                  <m.icon size={24} />
+                </div>
                 <span>{t(m.titleKey)}</span>
               </div>
             ))}
@@ -391,7 +402,9 @@ function MobileLanding({
           <h2>{t('landing.mobile.pricingHeading')}</h2>
           <p className="lead">{t('landing.mobile.pricingLead')}</p>
           <div className="m-fact">
-            <span className="ic">Fr</span>
+            <span className="ic">
+              <Sparkles size={18} />
+            </span>
             <div>
               <h3>{t('landing.pricingSection.freeTitle')}</h3>
               <p>{t('landing.pricingSection.freeBody')}</p>
@@ -399,7 +412,9 @@ function MobileLanding({
           </div>
           {PREMIUM_FEATURES.map((f) => (
             <div className="m-fact" key={f.titleKey}>
-              <span className="ic">{f.icon}</span>
+              <span className="ic">
+                <f.icon size={18} />
+              </span>
               <div>
                 <h3>{t(f.titleKey)}</h3>
                 <p>{t(f.bodyKey)}</p>
