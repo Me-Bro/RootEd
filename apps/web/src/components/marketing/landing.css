@@ -297,7 +297,7 @@
 .rooted-landing .lp-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
+  gap: 14px;
 }
 
 .rooted-landing .lp-card {
@@ -306,6 +306,21 @@
   border-radius: var(--r-lg);
   padding: 24px;
   box-shadow: var(--shadow-sm);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.rooted-landing .lp-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rooted-landing .lp-card {
+    transition: none;
+  }
+  .rooted-landing .lp-card:hover {
+    transform: none;
+  }
 }
 .rooted-landing .lp-card .icon {
   width: 44px;
