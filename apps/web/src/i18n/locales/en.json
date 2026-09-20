@@ -1279,8 +1279,7 @@
       "roleLibrarian": "Librarian",
       "roleTenantAdmin": "Tenant Admin",
       "heading": "A dashboard for every role — not just one",
-      "body": "Each login sees a view scoped to what they're permitted to see, enforced by RBAC, not just hidden nav items. Shown here: the principal's view — attention strip, attendance/fee/grade KPIs, 7D trend, date picker to rewind any past day. Parents and students feel the results too — fees paid on time, report cards that are accurate — without a login of their own to manage.",
-      "ref": "Reference: docs/mobile-ui/20-dashboard-approved.html — real seeded data, not fabricated"
+      "body": "Each login sees a view scoped to what they're permitted to see, enforced by RBAC, not just hidden nav items. Shown here: the principal's view — attention strip, attendance/fee/grade KPIs, 7D trend, date picker to rewind any past day. Parents and students feel the results too — fees paid on time, report cards that are accurate — without a login of their own to manage."
     },
     "modulesSection": {
       "eyebrow": "Product",
@@ -1314,7 +1313,7 @@
     "why": {
       "multiTenant": {
         "title": "Multi-tenant",
-        "body": "One deployment, many schools, colleges and coaching centers — your data is tenant-scoped and enforced at the database-query layer, not just hidden in the UI."
+        "body": "One deployment serves schools, colleges and coaching centers alike — each with its own subdomain, branding and data, so a growing group can onboard new campuses in minutes, not a new server each time."
       },
       "rbac": {
         "title": "Three-tier RBAC",
