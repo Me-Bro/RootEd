@@ -1098,11 +1098,6 @@
   margin-bottom: 16px;
   flex-wrap: wrap;
 }
-.rooted-landing .lp-mockframe .ref {
-  margin-top: 10px;
-  font-size: 11.5px;
-  color: var(--ink-4);
-}
 .rooted-landing .badge.solid {
   background: var(--brand-grad);
   color: #fff;

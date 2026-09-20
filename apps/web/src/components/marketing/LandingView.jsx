@@ -128,7 +128,6 @@ function DesktopLanding({
               </div>
               <b>{t('landing.preview.heading')}</b>
               <p>{t('landing.preview.body')}</p>
-              <div className="ref">{t('landing.preview.ref')}</div>
             </div>
           </div>
         </section>
