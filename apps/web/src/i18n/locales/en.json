@@ -1313,7 +1313,7 @@
     "why": {
       "multiTenant": {
         "title": "Multi-tenant",
-        "body": "One deployment, many schools, colleges and coaching centers — your data is tenant-scoped and enforced at the database-query layer, not just hidden in the UI."
+        "body": "One deployment serves schools, colleges and coaching centers alike — each with its own subdomain, branding and data, so a growing group can onboard new campuses in minutes, not a new server each time."
       },
       "rbac": {
         "title": "Three-tier RBAC",
