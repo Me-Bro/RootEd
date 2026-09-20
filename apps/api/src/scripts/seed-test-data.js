@@ -45,6 +45,7 @@ import { FeePayment } from '../models/FeePayment.js';
 import { FeeDiscount } from '../models/FeeDiscount.js';
 import { FeatureFlag } from '../models/FeatureFlag.js';
 import { AuditLog } from '../models/AuditLog.js';
+import { Feedback } from '../models/Feedback.js';
 import { hashPassword } from '../services/auth.service.js';
 
 const CLEAN = process.argv.includes('--clean');
@@ -1526,6 +1527,45 @@ async function run() {
     auditLogs.push(log);
   }
 
+  // ── Feedback ──────────────────────────────────────────────────────────────
+  // One of each status — exercises the /admin/feedback status filter and the
+  // status-transition PATCH without an e2e run having to submit its own form.
+  const feedbackDefs = [
+    {
+      category: 'contact',
+      name: 'Seed Visitor',
+      email: 'visitor@example.com',
+      message: 'seed-test-feedback: anonymous contact-us inquiry',
+      status: 'new',
+    },
+    {
+      category: 'feedback',
+      name: 'Seed Teacher',
+      email: users.teacher.email,
+      message: 'seed-test-feedback: in-app feedback from a logged-in teacher',
+      status: 'in_progress',
+      tenantId,
+      userId: users.teacher._id,
+    },
+    {
+      category: 'bug',
+      name: 'Seed Reporter',
+      email: 'reporter@example.com',
+      message: 'seed-test-feedback: resolved bug report',
+      status: 'resolved',
+      adminNote: 'Fixed in seed data, nothing to do',
+    },
+  ];
+  const feedback = [];
+  for (const def of feedbackDefs) {
+    let doc = await Feedback.findOne({ message: def.message }).lean();
+    if (!doc) {
+      doc = await Feedback.create(def);
+      doc = doc.toObject();
+    }
+    feedback.push(doc);
+  }
+
   await mongoose.disconnect();
 
   // Output seeded IDs as JSON for fixtures to consume
@@ -1669,6 +1709,7 @@ async function run() {
       enabled: f.enabled,
     })),
     auditLogs: auditLogs.map((l) => ({ _id: l._id.toString(), action: l.action })),
+    feedback: feedback.map((f) => ({ _id: f._id.toString(), status: f.status })),
   };
 
   // Write to disk so Playwright fixtures can read seeded IDs

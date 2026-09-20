@@ -21,6 +21,7 @@ export { Enrollment } from './Enrollment.js';
 export { ExpenseEntry } from './ExpenseEntry.js';
 export { FeatureFlag } from './FeatureFlag.js';
 export { FeeAssignment } from './FeeAssignment.js';
+export { Feedback } from './Feedback.js';
 export { FeeDiscount } from './FeeDiscount.js';
 export { FeePayment } from './FeePayment.js';
 export { FeeStructure } from './FeeStructure.js';

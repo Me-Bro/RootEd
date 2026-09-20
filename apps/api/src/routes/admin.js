@@ -7,6 +7,10 @@ import { Tenant } from '../models/Tenant.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { RequestLog } from '../models/RequestLog.js';
 import { TenantMembership } from '../models/TenantMembership.js';
+import { Feedback } from '../models/Feedback.js';
+import { feedbackStatusUpdateSchema } from '@rooted/shared/schemas';
+import { buildFeedbackFilter } from '../utils/feedbackFilter.js';
+import { isValidFeedbackStatusTransition } from '../services/feedbackStatusTransitions.js';
 import {
   createTenant,
   suspendTenant,
@@ -360,6 +364,48 @@ router.patch('/flags/:key', async (req, res, next) => {
       ip: req.ip,
     });
     res.json(flag);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/feedback', async (req, res, next) => {
+  try {
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Number(req.query.limit) || 20);
+    const filter = buildFeedbackFilter(req.query);
+
+    const [feedback, total] = await Promise.all([
+      Feedback.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      Feedback.countDocuments(filter),
+    ]);
+
+    res.json({ feedback, total, page, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch('/feedback/:id', async (req, res, next) => {
+  try {
+    const { status, adminNote } = feedbackStatusUpdateSchema.parse(req.body);
+
+    const doc = await Feedback.findById(req.params.id);
+    if (!doc) throw new AppError('Feedback not found', 404);
+
+    if (!isValidFeedbackStatusTransition(doc.status, status)) {
+      throw new AppError(`Cannot move feedback from ${doc.status} to ${status}`, 400);
+    }
+
+    doc.status = status;
+    if (adminNote !== undefined) doc.adminNote = adminNote;
+    await doc.save();
+
+    res.json(doc);
   } catch (err) {
     next(err);
   }
