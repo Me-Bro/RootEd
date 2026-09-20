@@ -127,7 +127,7 @@ function DesktopLanding({
                 ))}
               </div>
               <b>{t('landing.preview.heading')}</b>
-              {t('landing.preview.body')}
+              <p>{t('landing.preview.body')}</p>
               <div className="ref">{t('landing.preview.ref')}</div>
             </div>
           </div>

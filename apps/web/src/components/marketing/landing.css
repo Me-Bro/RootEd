@@ -635,6 +635,10 @@
   font-size: 14px;
   margin-bottom: 4px;
 }
+.rooted-landing .lp-mockframe .placeholder p {
+  max-width: 640px;
+  margin: 0 auto;
+}
 
 .rooted-landing .lp-cta-band {
   background: var(--brand-grad);
