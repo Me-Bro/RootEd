@@ -249,7 +249,10 @@ export default function AccountSettingsPage() {
         submitDisabled={deletion.confirmation.trim() !== DELETE_ACCOUNT_CONFIRMATION}
         onSubmit={async () => {
           await api.post('/auth/delete-account', {
-            currentPassword: deletion.password,
+            // Google-only accounts (user.hasPassword === false) have nothing
+            // to confirm with — omit rather than send an empty string, which
+            // would fail the schema's min-length check.
+            ...(user?.hasPassword !== false ? { currentPassword: deletion.password } : {}),
             confirmation: deletion.confirmation.trim(),
           });
           // Every session is gone, including this one.
@@ -259,15 +262,17 @@ export default function AccountSettingsPage() {
       >
         <p className="text-sm text-destructive">{t('account.deleteWarning')}</p>
         <p className="text-sm text-muted-foreground">{t('account.deleteKept')}</p>
-        <Input
-          label={t('account.currentPassword')}
-          type="password"
-          value={deletion.password}
-          onChange={(e) => setDeletion((d) => ({ ...d, password: e.target.value }))}
-          required
-          minLength={PASSWORD_MIN_LENGTH}
-          autoComplete="current-password"
-        />
+        {user?.hasPassword !== false && (
+          <Input
+            label={t('account.currentPassword')}
+            type="password"
+            value={deletion.password}
+            onChange={(e) => setDeletion((d) => ({ ...d, password: e.target.value }))}
+            required
+            minLength={PASSWORD_MIN_LENGTH}
+            autoComplete="current-password"
+          />
+        )}
         <Input
           label={t('account.deleteConfirmLabel', { word: DELETE_ACCOUNT_CONFIRMATION })}
           value={deletion.confirmation}

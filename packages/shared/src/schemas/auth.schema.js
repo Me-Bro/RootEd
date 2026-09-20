@@ -95,6 +95,8 @@ export const changePasswordSchema = z.object({
 export const DELETE_ACCOUNT_CONFIRMATION = 'DELETE';
 
 export const deleteAccountSchema = z.object({
-  currentPassword: passwordSchema,
+  // Optional: Google-only accounts have no password to confirm with — the
+  // route falls back to the confirmation word alone for those.
+  currentPassword: passwordSchema.optional(),
   confirmation: z.literal(DELETE_ACCOUNT_CONFIRMATION),
 });

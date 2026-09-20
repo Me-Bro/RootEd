@@ -16,6 +16,9 @@ export async function hashPassword(password) {
 }
 
 export async function verifyPassword(hash, password) {
+  // Google-only accounts have no passwordHash (User.js) — argon2.verify
+  // throws on a non-string hash instead of returning false.
+  if (!hash) return false;
   return argon2.verify(hash, password);
 }
 

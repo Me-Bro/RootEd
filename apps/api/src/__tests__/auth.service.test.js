@@ -2,7 +2,11 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { Tenant } from '../models/Tenant.js';
 import { TenantMembership } from '../models/TenantMembership.js';
-import { getActiveTenantsForUser, handleFailedLogin } from '../services/auth.service.js';
+import {
+  getActiveTenantsForUser,
+  handleFailedLogin,
+  verifyPassword,
+} from '../services/auth.service.js';
 import { User } from '../models/User.js';
 import { redis } from '../config/redis.js';
 
@@ -80,4 +84,12 @@ test('a wrong password reports exactly what an unknown identifier reports', asyn
   });
 
   await expect(handleFailedLogin(user)).rejects.toThrow('Invalid credentials');
+});
+
+// Google-only accounts have no passwordHash (User.js requires one only when
+// there's no googleId). argon2.verify throws on a non-string hash — this must
+// resolve to false instead, or callers like POST /auth/delete-account crash
+// with a 500 instead of a clean 401/skip for those accounts.
+test('verifyPassword resolves false rather than throwing when there is no hash to check', async () => {
+  await expect(verifyPassword(undefined, 'anything')).resolves.toBe(false);
 });

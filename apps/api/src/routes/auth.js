@@ -509,7 +509,13 @@ router.post(
     try {
       const user = await User.findById(req.user.sub).select('+passwordHash');
       if (!user) throw new AppError('User not found', 404);
-      if (!(await verifyPassword(user.passwordHash, req.body.currentPassword))) {
+      // Google-only accounts have no password to check — the JWT already
+      // proves identity for this request, so the confirmation word is all
+      // that's required from them.
+      if (
+        user.passwordHash &&
+        !(await verifyPassword(user.passwordHash, req.body.currentPassword))
+      ) {
         throw new AppError('Incorrect password', 401);
       }
 
@@ -540,9 +546,13 @@ router.get('/me', authenticate, async (req, res, next) => {
   try {
     const user = await User.findById(
       req.user.sub,
-      'email emailVerified pendingEmail username firstName lastName phone systemRole status mfaEnabled'
+      '+passwordHash email emailVerified pendingEmail username firstName lastName phone systemRole status mfaEnabled'
     ).lean();
     if (!user) return next(new AppError('User not found', 404));
+    // Lets the frontend skip the "current password" field for Google-only
+    // accounts (e.g. on the delete-account form) — never send the hash itself.
+    const hasPassword = Boolean(user.passwordHash);
+    delete user.passwordHash;
 
     const impersonatedPermissions = effectivePermissionsFor(req.user);
     let permissions = impersonatedPermissions ?? [];
@@ -589,6 +599,7 @@ router.get('/me', authenticate, async (req, res, next) => {
 
     res.json({
       ...user,
+      hasPassword,
       permissions,
       orgs,
       pendingOrgs,
