@@ -446,9 +446,28 @@
   background: var(--brand-soft);
   border-radius: var(--r-md);
   padding: 16px 18px;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+.rooted-landing .lp-value-chip:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
 }
 .rooted-landing .lp-value-chip.on-dark-chip {
   background: #1a1d24;
+}
+.rooted-landing .lp-value-chip.on-dark-chip:hover {
+  background: #20242c;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rooted-landing .lp-value-chip {
+    transition: none;
+  }
+  .rooted-landing .lp-value-chip:hover {
+    transform: none;
+  }
 }
 .rooted-landing .lp-value-chip h3 {
   font-size: 14.5px;
