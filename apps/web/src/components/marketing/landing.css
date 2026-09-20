@@ -67,23 +67,6 @@
   box-sizing: border-box;
 }
 
-/* ── Responsive split: same md (768px) breakpoint the rest of the app uses
-   for MobileBottomBar.jsx's md:hidden ─────────────────────────────────── */
-.rooted-landing .lp-desktop-only {
-  display: none;
-}
-.rooted-landing .lp-mobile-only {
-  display: block;
-}
-@media (min-width: 768px) {
-  .rooted-landing .lp-desktop-only {
-    display: block;
-  }
-  .rooted-landing .lp-mobile-only {
-    display: none;
-  }
-}
-
 /* ── Buttons & badges (shared desktop + mobile) ─────────────────────────── */
 
 .rooted-landing .btn {

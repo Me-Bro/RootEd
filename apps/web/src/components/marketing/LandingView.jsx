@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import './landing.css';
 import {
@@ -19,6 +20,18 @@ import {
   PREVIEW_ROLES,
   PREMIUM_FEATURES,
 } from './landingContent.js';
+
+function useIsDesktop(breakpoint = 768) {
+  const query = `(min-width: ${breakpoint}px)`;
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+    const onChange = (e) => setIsDesktop(e.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, [query]);
+  return isDesktop;
+}
 
 function DesktopLanding({
   onLoginClick,
@@ -445,7 +458,7 @@ function MobileLanding({
       <footer className="m-footer">
         <div className="brand">RootEd</div>
         <p className="blurb">{t('landing.footer.blurb')}</p>
-        <a href="mailto:ruralrootcloud@gmail.com">ruralrootcloud@gmail.com</a>
+        <a href="mailto:info@ruralrootcloud.com">info@ruralrootcloud.com</a>
         <a href={PARENT_SITE_HREF} target="_blank" rel="noopener noreferrer">
           {t('landing.footer.parentSite')}
         </a>
@@ -476,10 +489,11 @@ function MobileLanding({
 
 /**
  * The approved landing page UI (docs/landing-page-mockup/{desktop,mobile}.html),
- * still no routing/redirect logic of its own — it renders both the desktop
- * and mobile trees and lets CSS pick one at the `md` breakpoint (see
- * landing.css), matching how the two mockups were signed off as one
- * responsive page.
+ * still no routing/redirect logic of its own — it mounts only the desktop or
+ * mobile tree, switching at the same `md` (768px) breakpoint the rest of the
+ * app uses (see `useIsDesktop` above), matching how the two mockups were
+ * signed off as one responsive page while avoiding paying for both trees'
+ * DOM/assets on every load.
  *
  * Copy comes from the `landing` namespace in src/i18n/locales/{en,hi}.json;
  * the "Hindi / English" option is derived from those two by
@@ -505,6 +519,7 @@ export default function LandingView({
   languageSwitcher,
 }) {
   const { t } = useTranslation();
+  const isDesktop = useIsDesktop();
   const shared = {
     onLoginClick,
     isAuthenticated,
@@ -516,8 +531,7 @@ export default function LandingView({
   };
   return (
     <div className="rooted-landing">
-      <DesktopLanding {...shared} />
-      <MobileLanding {...shared} />
+      {isDesktop ? <DesktopLanding {...shared} /> : <MobileLanding {...shared} />}
     </div>
   );
 }
