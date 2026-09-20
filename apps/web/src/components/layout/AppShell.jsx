@@ -21,6 +21,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageSquare,
   PieChart,
   ScrollText,
   Settings2,
@@ -67,6 +68,7 @@ function getNavGroups(t, orgType) {
         { to: '/audit', label: t('nav.audit'), icon: ScrollText },
         { to: '/request-logs', label: t('nav.requestLogs'), icon: Activity },
         { to: '/flags', label: t('nav.flags'), icon: ToggleLeft },
+        { to: '/feedback', label: t('nav.feedback'), icon: MessageSquare },
       ],
     },
     {

@@ -5,6 +5,7 @@
     "audit": "ऑडिट लॉग",
     "requestLogs": "रिक्वेस्ट लॉग्स",
     "flags": "फ़ीचर फ़्लैग्स",
+    "feedback": "प्रतिक्रिया",
     "academicYears": "शैक्षणिक वर्ष",
     "classesSections": "कक्षाएं और अनुभाग",
     "students": "छात्र",
@@ -1248,6 +1249,30 @@
       "disabled": "अक्षम",
       "enable": "सक्षम करें",
       "disable": "अक्षम करें"
+    },
+    "feedback": {
+      "statusLabel": "स्थिति",
+      "categoryLabel": "श्रेणी",
+      "allStatuses": "सभी स्थितियाँ",
+      "allCategories": "सभी श्रेणियाँ",
+      "status": {
+        "new": "नई",
+        "in_progress": "प्रगति में",
+        "resolved": "हल हो गई"
+      },
+      "category": {
+        "contact": "संपर्क",
+        "feedback": "प्रतिक्रिया",
+        "bug": "बग रिपोर्ट",
+        "other": "अन्य"
+      },
+      "tableFrom": "प्रेषक",
+      "tableCategory": "श्रेणी",
+      "tableMessage": "संदेश",
+      "tableReceivedAt": "प्राप्त हुआ",
+      "loadFailed": "प्रतिक्रिया लोड करने में विफल",
+      "noneFound": "अभी तक कोई प्रतिक्रिया नहीं",
+      "changeStatusLabel": "{{name}} के लिए स्थिति बदलें"
     }
   },
   "landing": {
@@ -1433,7 +1458,17 @@
       "modules": "मॉड्यूल",
       "parentSite": "Rural Root Cloud",
       "copyright": "© 2026 Rural Root Cloud Tech Services And Training",
-      "legalHeading": "कानूनी"
+      "legalHeading": "कानूनी",
+      "contactForm": {
+        "heading": "संपर्क करें",
+        "nameLabel": "नाम",
+        "emailLabel": "ईमेल",
+        "messageLabel": "संदेश",
+        "submit": "भेजें",
+        "sending": "भेजा जा रहा है…",
+        "success": "धन्यवाद — हम जल्द ही आपसे संपर्क करेंगे।",
+        "failed": "भेजने में विफल, कृपया पुनः प्रयास करें।"
+      }
     },
     "mobile": {
       "titleMain": "एक सिस्टम।",

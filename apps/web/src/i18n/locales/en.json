@@ -5,6 +5,7 @@
     "audit": "Audit Log",
     "requestLogs": "Request Logs",
     "flags": "Feature Flags",
+    "feedback": "Feedback",
     "academicYears": "Academic Years",
     "classesSections": "Classes & Sections",
     "students": "Students",
@@ -1248,6 +1249,30 @@
       "disabled": "Disabled",
       "enable": "Enable",
       "disable": "Disable"
+    },
+    "feedback": {
+      "statusLabel": "Status",
+      "categoryLabel": "Category",
+      "allStatuses": "All statuses",
+      "allCategories": "All categories",
+      "status": {
+        "new": "New",
+        "in_progress": "In Progress",
+        "resolved": "Resolved"
+      },
+      "category": {
+        "contact": "Contact",
+        "feedback": "Feedback",
+        "bug": "Bug Report",
+        "other": "Other"
+      },
+      "tableFrom": "From",
+      "tableCategory": "Category",
+      "tableMessage": "Message",
+      "tableReceivedAt": "Received At",
+      "loadFailed": "Failed to load feedback",
+      "noneFound": "No feedback submitted yet",
+      "changeStatusLabel": "Change status for {{name}}"
     }
   },
   "landing": {
@@ -1433,7 +1458,17 @@
       "modules": "Modules",
       "parentSite": "Rural Root Cloud",
       "copyright": "© 2026 Rural Root Cloud Tech Services And Training",
-      "legalHeading": "Legal"
+      "legalHeading": "Legal",
+      "contactForm": {
+        "heading": "Get in touch",
+        "nameLabel": "Name",
+        "emailLabel": "Email",
+        "messageLabel": "Message",
+        "submit": "Send",
+        "sending": "Sending…",
+        "success": "Thanks — we'll get back to you soon.",
+        "failed": "Couldn't send that, please try again."
+      }
     },
     "mobile": {
       "titleMain": "One system.",

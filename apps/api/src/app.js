@@ -29,6 +29,7 @@ import inventoryRouter from './routes/inventory.js';
 import billingRouter from './routes/billing.js';
 import orgsRouter from './routes/orgs.js';
 import meRouter from './routes/me.js';
+import feedbackRouter from './routes/feedback.js';
 
 const app = express();
 
@@ -173,6 +174,9 @@ app.use('/admin', adminRouter);
 // Portal-mounted, before resolveTenant(): creating an organization happens on
 // the bare domain, where there is no tenant to resolve yet.
 app.use('/orgs', orgsRouter);
+// Public, no auth required: works for an anonymous landing-page visitor and
+// a logged-in tenant user alike (see decodeOptionalUser in feedback.js).
+app.use('/feedback', feedbackRouter);
 
 app.use(resolveTenant);
 

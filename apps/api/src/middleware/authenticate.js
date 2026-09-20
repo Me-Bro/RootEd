@@ -28,6 +28,22 @@ export async function authenticate(req, _res, next) {
   }
 }
 
+// Best-effort attach for public routes that accept both anonymous and
+// logged-in callers (e.g. the feedback form) — never throws, skips the
+// blocklist checks `authenticate()` does since it's metadata, not an
+// authorization decision.
+export function decodeOptionalUser(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) return null;
+
+  try {
+    const payload = verifyAccessToken(authHeader.slice(7));
+    return { userId: payload.sub, tenantId: payload.tenantId ?? null };
+  } catch {
+    return null;
+  }
+}
+
 export function requireSystemRole(...roles) {
   return (req, _res, next) => {
     if (!roles.includes(req.user?.systemRole)) {

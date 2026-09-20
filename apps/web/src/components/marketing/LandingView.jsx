@@ -8,6 +8,7 @@ import {
   HeroMobileMotif,
   StatementMobileMotif,
 } from './RootMotif.jsx';
+import ContactForm from './ContactForm.jsx';
 import {
   CONTACT_HREF,
   PARENT_SITE_HREF,
@@ -310,6 +311,10 @@ function DesktopLanding({
               <a href="/legal/terms">{t('legal.nav.terms')}</a>
               <a href="/legal/account-deletion">{t('legal.nav.accountDeletion')}</a>
             </div>
+            <div>
+              <h3>{t('landing.footer.contactForm.heading')}</h3>
+              <ContactForm />
+            </div>
           </div>
         </div>
         <div className="bottom">
@@ -476,6 +481,9 @@ function MobileLanding({
         <a href={PARENT_SITE_HREF} target="_blank" rel="noopener noreferrer">
           {t('landing.footer.parentSite')}
         </a>
+        <div className="m-contact">
+          <ContactForm />
+        </div>
         <div className="m-legal">
           <a href="/legal/privacy">{t('legal.nav.privacy')}</a>
           <a href="/legal/terms">{t('legal.nav.terms')}</a>
