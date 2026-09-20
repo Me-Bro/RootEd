@@ -83,21 +83,54 @@
   border: 1px solid transparent;
   cursor: pointer;
   white-space: nowrap;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+.rooted-landing .btn:hover {
+  transform: translateY(-2px);
+}
+.rooted-landing .btn:active {
+  transform: translateY(0) scale(0.97);
 }
 .rooted-landing .btn.primary {
   background: var(--brand-grad);
   color: #fff;
   box-shadow: var(--shadow-lg);
 }
+.rooted-landing .btn.primary:hover {
+  box-shadow:
+    0 12px 32px rgba(15, 17, 21, 0.12),
+    0 28px 72px rgba(126, 20, 255, 0.16);
+}
 .rooted-landing .btn.secondary {
   background: var(--surface);
   color: var(--ink);
   border-color: var(--line);
 }
+.rooted-landing .btn.secondary:hover {
+  background: var(--surface-2);
+  border-color: var(--ink-4);
+}
 .rooted-landing .btn.ghost {
   background: transparent;
   color: var(--ink);
   border-color: var(--line);
+}
+.rooted-landing .btn.ghost:hover {
+  background: var(--surface-2);
+  border-color: var(--ink-4);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rooted-landing .btn {
+    transition: none;
+  }
+  .rooted-landing .btn:hover,
+  .rooted-landing .btn:active {
+    transform: none;
+  }
 }
 .rooted-landing .btn.sm {
   padding: 8px 14px;
@@ -168,8 +201,31 @@
   color: var(--ink-2);
   font-weight: 500;
 }
+.rooted-landing .lp-nav .links a {
+  position: relative;
+  transition: color 0.2s ease;
+}
+.rooted-landing .lp-nav .links a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 100%;
+  bottom: -4px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--brand-grad);
+  transition: right 0.2s ease;
+}
 .rooted-landing .lp-nav .links a:hover {
   color: var(--ink);
+}
+.rooted-landing .lp-nav .links a:hover::after {
+  right: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rooted-landing .lp-nav .links a::after {
+    transition: none;
+  }
 }
 .rooted-landing .lp-nav .cta {
   display: flex;
@@ -411,11 +467,27 @@
   display: flex;
   gap: 18px;
   align-items: flex-start;
-  padding: 20px 0;
+  padding: 20px 0 20px 0;
   border-bottom: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  transition:
+    padding-left 0.2s ease,
+    background-color 0.2s ease;
+}
+.rooted-landing .lp-security-row:hover {
+  padding-left: 10px;
+  background: var(--surface-2);
 }
 .rooted-landing .lp-security-row:last-child {
   border-bottom: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rooted-landing .lp-security-row {
+    transition: none;
+  }
+  .rooted-landing .lp-security-row:hover {
+    padding-left: 0;
+  }
 }
 .rooted-landing .lp-security-row .num {
   font-family: var(--mono);
@@ -497,11 +569,24 @@
   padding-top: 8px;
 }
 .rooted-landing .lp-process .step .n {
+  display: inline-block;
   font-family: var(--mono);
   font-size: 34px;
   font-weight: 700;
   color: var(--brand-soft);
   -webkit-text-stroke: 1.5px var(--brand);
+  transition: transform 0.2s ease;
+}
+.rooted-landing .lp-process .step:hover .n {
+  transform: translateY(-3px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rooted-landing .lp-process .step .n {
+    transition: none;
+  }
+  .rooted-landing .lp-process .step:hover .n {
+    transform: none;
+  }
 }
 .rooted-landing .lp-process .step h3 {
   font-size: 15.5px;
@@ -781,11 +866,24 @@
   display: flex;
   gap: 14px;
   align-items: flex-start;
-  padding: 15px 0;
+  padding: 15px 0 15px 0;
   border-bottom: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  transition:
+    padding-left 0.2s ease,
+    background-color 0.2s ease;
+}
+.rooted-landing .m-fact:active {
+  padding-left: 8px;
+  background: var(--surface-2);
 }
 .rooted-landing .m-fact:last-child {
   border-bottom: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rooted-landing .m-fact {
+    transition: none;
+  }
 }
 .rooted-landing .m-fact .ic {
   flex: 0 0 34px;
@@ -837,6 +935,15 @@
   justify-content: center;
   font-weight: 700;
   font-size: 17px;
+  transition: transform 0.15s ease;
+}
+.rooted-landing .m-modgrid .m:active .icon {
+  transform: scale(0.9);
+}
+@media (prefers-reduced-motion: reduce) {
+  .rooted-landing .m-modgrid .m .icon {
+    transition: none;
+  }
 }
 .rooted-landing .m-modgrid .m span {
   font-size: 12px;
