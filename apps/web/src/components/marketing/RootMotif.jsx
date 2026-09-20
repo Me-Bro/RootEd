@@ -52,13 +52,19 @@ function RootMotif({ width, height, style, paths, points, r, strokeWidth, gradie
         </defs>
       )}
       <g fill="none" stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round">
-        {paths.map((d) => (
-          <path d={d} key={d} />
+        {paths.map((d, i) => (
+          <path d={d} pathLength="1" style={{ '--motif-delay': `${i * 0.15}s` }} key={d} />
         ))}
       </g>
       <g fill={gradientId ? '#47bfff' : 'currentColor'}>
-        {points.map((p) => (
-          <circle cx={p.cx} cy={p.cy} r={p.r ?? r} key={`${p.cx}-${p.cy}`} />
+        {points.map((p, i) => (
+          <circle
+            cx={p.cx}
+            cy={p.cy}
+            r={p.r ?? r}
+            style={{ '--motif-delay': `${i * 0.15 + 0.3}s` }}
+            key={`${p.cx}-${p.cy}`}
+          />
         ))}
       </g>
     </svg>

@@ -1,3 +1,15 @@
+import {
+  GraduationCap,
+  Users,
+  Wallet,
+  Receipt,
+  Package,
+  Mail,
+  MessageCircle,
+  MessageSquare,
+  CreditCard,
+} from 'lucide-react';
+
 // Landing page content structure. The copy itself lives in the `landing`
 // namespace of src/i18n/locales/{en,hi}.json — these arrays only hold the
 // ordering, the icon/number decoration, and explicit translation keys.
@@ -18,22 +30,22 @@ export const PARENT_SITE_HREF = 'https://ruralrootcloud.com/';
 
 export const PREMIUM_FEATURES = [
   {
-    icon: 'Em',
+    icon: Mail,
     titleKey: 'landing.premium.email.title',
     bodyKey: 'landing.premium.email.body',
   },
   {
-    icon: 'Wa',
+    icon: MessageCircle,
     titleKey: 'landing.premium.whatsapp.title',
     bodyKey: 'landing.premium.whatsapp.body',
   },
   {
-    icon: 'Sm',
+    icon: MessageSquare,
     titleKey: 'landing.premium.sms.title',
     bodyKey: 'landing.premium.sms.body',
   },
   {
-    icon: 'Pg',
+    icon: CreditCard,
     titleKey: 'landing.premium.paymentGateway.title',
     bodyKey: 'landing.premium.paymentGateway.body',
   },
@@ -41,19 +53,27 @@ export const PREMIUM_FEATURES = [
 
 export const MODULES = [
   {
-    icon: 'Ac',
+    icon: GraduationCap,
     titleKey: 'landing.modules.academics.title',
     bodyKey: 'landing.modules.academics.body',
   },
-  { icon: 'St', titleKey: 'landing.modules.staff.title', bodyKey: 'landing.modules.staff.body' },
-  { icon: 'Fe', titleKey: 'landing.modules.fee.title', bodyKey: 'landing.modules.fee.body' },
   {
-    icon: 'Ex',
+    icon: Users,
+    titleKey: 'landing.modules.staff.title',
+    bodyKey: 'landing.modules.staff.body',
+  },
+  {
+    icon: Wallet,
+    titleKey: 'landing.modules.fee.title',
+    bodyKey: 'landing.modules.fee.body',
+  },
+  {
+    icon: Receipt,
     titleKey: 'landing.modules.expense.title',
     bodyKey: 'landing.modules.expense.body',
   },
   {
-    icon: 'In',
+    icon: Package,
     titleKey: 'landing.modules.inventory.title',
     bodyKey: 'landing.modules.inventory.body',
   },

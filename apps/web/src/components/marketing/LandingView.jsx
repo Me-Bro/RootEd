@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link2, Sparkles } from 'lucide-react';
 import './landing.css';
 import {
   HeroDesktopMotif,
@@ -19,6 +21,18 @@ import {
   PREVIEW_ROLES,
   PREMIUM_FEATURES,
 } from './landingContent.js';
+
+function useIsDesktop(breakpoint = 768) {
+  const query = `(min-width: ${breakpoint}px)`;
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+    const onChange = (e) => setIsDesktop(e.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, [query]);
+  return isDesktop;
+}
 
 function DesktopLanding({
   onLoginClick,
@@ -113,7 +127,7 @@ function DesktopLanding({
                 ))}
               </div>
               <b>{t('landing.preview.heading')}</b>
-              {t('landing.preview.body')}
+              <p>{t('landing.preview.body')}</p>
               <div className="ref">{t('landing.preview.ref')}</div>
             </div>
           </div>
@@ -128,13 +142,17 @@ function DesktopLanding({
           <div className="lp-grid">
             {MODULES.map((m) => (
               <div className="lp-card" key={m.titleKey}>
-                <div className="icon">{m.icon}</div>
+                <div className="icon">
+                  <m.icon size={22} />
+                </div>
                 <h3>{t(m.titleKey)}</h3>
                 <p>{t(m.bodyKey)}</p>
               </div>
             ))}
             <div className="lp-card accent">
-              <div className="icon">+</div>
+              <div className="icon">
+                <Link2 size={22} />
+              </div>
               <h3>{t('landing.modulesSection.allConnectedTitle')}</h3>
               <p>{t('landing.modulesSection.allConnectedBody')}</p>
             </div>
@@ -149,13 +167,17 @@ function DesktopLanding({
           </div>
           <div className="lp-grid">
             <div className="lp-card accent">
-              <div className="icon">Fr</div>
+              <div className="icon">
+                <Sparkles size={22} />
+              </div>
               <h3>{t('landing.pricingSection.freeTitle')}</h3>
               <p>{t('landing.pricingSection.freeBody')}</p>
             </div>
             {PREMIUM_FEATURES.map((f) => (
               <div className="lp-card" key={f.titleKey}>
-                <div className="icon">{f.icon}</div>
+                <div className="icon">
+                  <f.icon size={22} />
+                </div>
                 <h3>{t(f.titleKey)}</h3>
                 <p>{t(f.bodyKey)}</p>
               </div>
@@ -366,7 +388,9 @@ function MobileLanding({
           <div className="m-modgrid">
             {MODULES.map((m) => (
               <div className="m" key={m.titleKey}>
-                <div className="icon">{m.icon}</div>
+                <div className="icon">
+                  <m.icon size={24} />
+                </div>
                 <span>{t(m.titleKey)}</span>
               </div>
             ))}
@@ -378,7 +402,9 @@ function MobileLanding({
           <h2>{t('landing.mobile.pricingHeading')}</h2>
           <p className="lead">{t('landing.mobile.pricingLead')}</p>
           <div className="m-fact">
-            <span className="ic">Fr</span>
+            <span className="ic">
+              <Sparkles size={18} />
+            </span>
             <div>
               <h3>{t('landing.pricingSection.freeTitle')}</h3>
               <p>{t('landing.pricingSection.freeBody')}</p>
@@ -386,7 +412,9 @@ function MobileLanding({
           </div>
           {PREMIUM_FEATURES.map((f) => (
             <div className="m-fact" key={f.titleKey}>
-              <span className="ic">{f.icon}</span>
+              <span className="ic">
+                <f.icon size={18} />
+              </span>
               <div>
                 <h3>{t(f.titleKey)}</h3>
                 <p>{t(f.bodyKey)}</p>
@@ -445,7 +473,7 @@ function MobileLanding({
       <footer className="m-footer">
         <div className="brand">RootEd</div>
         <p className="blurb">{t('landing.footer.blurb')}</p>
-        <a href="mailto:ruralrootcloud@gmail.com">ruralrootcloud@gmail.com</a>
+        <a href="mailto:info@ruralrootcloud.com">info@ruralrootcloud.com</a>
         <a href={PARENT_SITE_HREF} target="_blank" rel="noopener noreferrer">
           {t('landing.footer.parentSite')}
         </a>
@@ -476,10 +504,11 @@ function MobileLanding({
 
 /**
  * The approved landing page UI (docs/landing-page-mockup/{desktop,mobile}.html),
- * still no routing/redirect logic of its own — it renders both the desktop
- * and mobile trees and lets CSS pick one at the `md` breakpoint (see
- * landing.css), matching how the two mockups were signed off as one
- * responsive page.
+ * still no routing/redirect logic of its own — it mounts only the desktop or
+ * mobile tree, switching at the same `md` (768px) breakpoint the rest of the
+ * app uses (see `useIsDesktop` above), matching how the two mockups were
+ * signed off as one responsive page while avoiding paying for both trees'
+ * DOM/assets on every load.
  *
  * Copy comes from the `landing` namespace in src/i18n/locales/{en,hi}.json;
  * the "Hindi / English" option is derived from those two by
@@ -505,6 +534,7 @@ export default function LandingView({
   languageSwitcher,
 }) {
   const { t } = useTranslation();
+  const isDesktop = useIsDesktop();
   const shared = {
     onLoginClick,
     isAuthenticated,
@@ -516,8 +546,7 @@ export default function LandingView({
   };
   return (
     <div className="rooted-landing">
-      <DesktopLanding {...shared} />
-      <MobileLanding {...shared} />
+      {isDesktop ? <DesktopLanding {...shared} /> : <MobileLanding {...shared} />}
     </div>
   );
 }
