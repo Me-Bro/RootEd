@@ -9,6 +9,7 @@ import {
   StatementMobileMotif,
 } from './RootMotif.jsx';
 import ContactForm from './ContactForm.jsx';
+import { brand } from '../../lib/brand.js';
 import {
   CONTACT_HREF,
   PARENT_SITE_HREF,
@@ -58,7 +59,7 @@ function DesktopLanding({
           <a href="#modules">{t('landing.nav.product')}</a>
           <a href="#pricing">{t('landing.nav.pricing')}</a>
           <a href="#security">{t('landing.nav.security')}</a>
-          <a href="#about">{t('landing.nav.about')}</a>
+          {brand.showStory && <a href="#about">{t('landing.nav.about')}</a>}
           <a href="#contact">{t('landing.nav.contact')}</a>
         </div>
         <div className="cta">
@@ -220,31 +221,35 @@ function DesktopLanding({
           </div>
         </section>
 
-        <section className="lp-statement motif-wrap">
-          <StatementDesktopMotif
-            width={500}
-            height={500}
-            style={{ left: -100, bottom: -140, top: 'auto' }}
-          />
-          <blockquote>{t('landing.statement.quote')}</blockquote>
-          <cite>{t('landing.statement.cite')}</cite>
-        </section>
+        {brand.showStory && (
+          <>
+            <section className="lp-statement motif-wrap">
+              <StatementDesktopMotif
+                width={500}
+                height={500}
+                style={{ left: -100, bottom: -140, top: 'auto' }}
+              />
+              <blockquote>{t('landing.statement.quote')}</blockquote>
+              <cite>{t('landing.statement.cite')}</cite>
+            </section>
 
-        <section className="lp-section on-surface" id="about">
-          <div className="section-head">
-            <span className="eyebrow">{t('landing.aboutSection.eyebrow')}</span>
-            <h2>{t('landing.aboutSection.heading')}</h2>
-            <p>{t('landing.aboutSection.lead')}</p>
-          </div>
-          <div className="lp-values-row">
-            {ABOUT_VALUES.map((v) => (
-              <div className="lp-value-chip" key={v.titleKey}>
-                <h3>{t(v.titleKey)}</h3>
-                <p>{t(v.bodyKey)}</p>
+            <section className="lp-section on-surface" id="about">
+              <div className="section-head">
+                <span className="eyebrow">{t('landing.aboutSection.eyebrow')}</span>
+                <h2>{t('landing.aboutSection.heading')}</h2>
+                <p>{t('landing.aboutSection.lead')}</p>
               </div>
-            ))}
-          </div>
-        </section>
+              <div className="lp-values-row">
+                {ABOUT_VALUES.map((v) => (
+                  <div className="lp-value-chip" key={v.titleKey}>
+                    <h3>{t(v.titleKey)}</h3>
+                    <p>{t(v.bodyKey)}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
 
         <section className="lp-section on-surface tight">
           <div className="section-head flush">
@@ -299,8 +304,8 @@ function DesktopLanding({
             </div>
             <div>
               <h3>{t('landing.footer.companyHeading')}</h3>
-              <a href="#about">{t('landing.nav.about')}</a>
-              <a href="mailto:info@ruralrootcloud.com">{t('landing.nav.contact')}</a>
+              {brand.showStory && <a href="#about">{t('landing.nav.about')}</a>}
+              <a href={`mailto:${brand.contactEmail}`}>{t('landing.nav.contact')}</a>
               <a href={PARENT_SITE_HREF} target="_blank" rel="noopener noreferrer">
                 {t('landing.footer.parentSite')}
               </a>
@@ -319,7 +324,7 @@ function DesktopLanding({
         </div>
         <div className="bottom">
           <span>{t('landing.footer.copyright')}</span>
-          <span>info@ruralrootcloud.com</span>
+          <span>{brand.contactEmail}</span>
         </div>
       </footer>
     </div>
@@ -430,26 +435,30 @@ function MobileLanding({
           </a>
         </section>
 
-        <section className="m-statement motif-wrap">
-          <StatementMobileMotif
-            width={380}
-            height={380}
-            style={{ left: -120, bottom: -100, top: 'auto' }}
-          />
-          <blockquote>{t('landing.statement.quote')}</blockquote>
-          <cite>{t('landing.statement.cite')}</cite>
-        </section>
+        {brand.showStory && (
+          <>
+            <section className="m-statement motif-wrap">
+              <StatementMobileMotif
+                width={380}
+                height={380}
+                style={{ left: -120, bottom: -100, top: 'auto' }}
+              />
+              <blockquote>{t('landing.statement.quote')}</blockquote>
+              <cite>{t('landing.statement.cite')}</cite>
+            </section>
 
-        <section className="m-section on-tint">
-          <span className="eyebrow">{t('landing.aboutSection.eyebrow')}</span>
-          <h2>{t('landing.aboutSection.heading')}</h2>
-          <p className="lead flush">{t('landing.mobile.aboutLead')}</p>
-          <div className="m-tags">
-            {MOBILE_TAGS.map((key) => (
-              <span key={key}>{t(key)}</span>
-            ))}
-          </div>
-        </section>
+            <section className="m-section on-tint">
+              <span className="eyebrow">{t('landing.aboutSection.eyebrow')}</span>
+              <h2>{t('landing.aboutSection.heading')}</h2>
+              <p className="lead flush">{t('landing.mobile.aboutLead')}</p>
+              <div className="m-tags">
+                {MOBILE_TAGS.map((key) => (
+                  <span key={key}>{t(key)}</span>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
 
         <section className="m-section on-surface">
           <span className="eyebrow">{t('landing.processSection.eyebrow')}</span>
@@ -477,7 +486,7 @@ function MobileLanding({
       <footer className="m-footer">
         <div className="brand">RootEd</div>
         <p className="blurb">{t('landing.footer.blurb')}</p>
-        <a href="mailto:info@ruralrootcloud.com">info@ruralrootcloud.com</a>
+        <a href={`mailto:${brand.contactEmail}`}>{brand.contactEmail}</a>
         <a href={PARENT_SITE_HREF} target="_blank" rel="noopener noreferrer">
           {t('landing.footer.parentSite')}
         </a>
