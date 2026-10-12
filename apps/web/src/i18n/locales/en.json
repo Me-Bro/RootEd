@@ -1288,7 +1288,7 @@
       "logout": "Log out"
     },
     "hero": {
-      "badge": "Built by Rural Root Cloud",
+      "badge": "Built by {{shortName}}",
       "titleMain": "Run your school, college or coaching center —",
       "titleAccent": "not five spreadsheets.",
       "lead": "RootEd is the system schools, colleges and coaching or tuition centers use to run attendance, fees, staff and inventory in one place. Multi-tenant, role-based, and built with the same data-safety discipline as a bank's back office.",
@@ -1400,12 +1400,12 @@
     },
     "statement": {
       "quote": "“World-class technology can grow from anywhere — including rural roots.”",
-      "cite": "Rural Root Cloud — the company behind RootEd"
+      "cite": "{{shortName}} — the company behind RootEd"
     },
     "aboutSection": {
       "eyebrow": "About",
-      "heading": "Built by Rural Root Cloud",
-      "lead": "Rural Root Cloud Tech Services And Training is an IT company that designs, builds and maintains complete digital products and microservices — and shares that knowledge through practical training. RootEd is one of its products, built and run with the same discipline."
+      "heading": "Built by {{shortName}}",
+      "lead": "{{company}} is an IT company that designs, builds and maintains complete digital products and microservices — and shares that knowledge through practical training. RootEd is one of its products, built and run with the same discipline."
     },
     "values": {
       "reliability": {
@@ -1452,12 +1452,12 @@
       "sub": "Free to use · no credit card required"
     },
     "footer": {
-      "blurb": "Where your school's roots grow digital. Built by Rural Root Cloud Tech Services And Training.",
+      "blurb": "Where your school's roots grow digital. Built by {{company}}.",
       "productHeading": "Product",
       "companyHeading": "Company",
       "modules": "Modules",
-      "parentSite": "Rural Root Cloud",
-      "copyright": "© 2026 Rural Root Cloud Tech Services And Training",
+      "parentSite": "{{shortName}}",
+      "copyright": "© 2026 {{company}}",
       "legalHeading": "Legal",
       "contactForm": {
         "heading": "Get in touch",
@@ -1620,11 +1620,11 @@
     },
     "privacy": {
       "title": "Privacy Policy",
-      "intro": "How Rural Root Cloud Tech Services And Training handles personal data in RootEd, the school management platform at rooted.ruralrootcloud.com.",
+      "intro": "How {{company}} handles personal data in RootEd, the school management platform at {{portalHost}}.",
       "sections": {
         "whoWeAre": {
           "title": "Who we are",
-          "body": "RootEd is operated by Rural Root Cloud Tech Services And Training (“we”, “us”), India.\n\nRootEd is a business tool sold to schools, colleges and coaching centres. Two different relationships matter throughout this policy:\n\n- For the account you sign in with, we are the data fiduciary: we decide how your name, email and sign-in details are handled.\n- For the records your school keeps in RootEd — students, attendance, grades, fees, staff — your school is the data fiduciary and we act on its instructions as a data processor. Questions about those records should go to your school first."
+          "body": "RootEd is operated by {{company}} (“we”, “us”), India.\n\nRootEd is a business tool sold to schools, colleges and coaching centres. Two different relationships matter throughout this policy:\n\n- For the account you sign in with, we are the data fiduciary: we decide how your name, email and sign-in details are handled.\n- For the records your school keeps in RootEd — students, attendance, grades, fees, staff — your school is the data fiduciary and we act on its instructions as a data processor. Questions about those records should go to your school first."
         },
         "whatWeCollect": {
           "title": "What we collect",
@@ -1668,13 +1668,13 @@
         },
         "contact": {
           "title": "Contact us",
-          "body": "Rural Root Cloud Tech Services And Training\nEmail: info@ruralrootcloud.com\n\nWe aim to answer privacy requests within 30 days."
+          "body": "{{company}}\nEmail: {{contactEmail}}\n\nWe aim to answer privacy requests within 30 days."
         }
       }
     },
     "terms": {
       "title": "Terms of Service",
-      "intro": "The agreement between you and Rural Root Cloud Tech Services And Training for using RootEd.",
+      "intro": "The agreement between you and {{company}} for using RootEd.",
       "sections": {
         "acceptance": {
           "title": "Accepting these terms",
@@ -1706,7 +1706,7 @@
         },
         "intellectualProperty": {
           "title": "Intellectual property",
-          "body": "The RootEd software, brand and design belong to Rural Root Cloud Tech Services And Training. These terms grant you a limited, non-exclusive, non-transferable right to use the service, and nothing more."
+          "body": "The RootEd software, brand and design belong to {{company}}. These terms grant you a limited, non-exclusive, non-transferable right to use the service, and nothing more."
         },
         "termination": {
           "title": "Ending the agreement",
@@ -1726,7 +1726,7 @@
         },
         "contact": {
           "title": "Contact us",
-          "body": "Rural Root Cloud Tech Services And Training\nEmail: info@ruralrootcloud.com"
+          "body": "{{company}}\nEmail: {{contactEmail}}"
         }
       }
     },
@@ -1752,7 +1752,7 @@
         },
         "byEmail": {
           "title": "If you cannot sign in",
-          "body": "Email info@ruralrootcloud.com from the address on your account with the subject “Delete my RootEd account”.\n\nWe will verify that you own the address before acting, and may ask your organization's administrator to confirm. We will not act on a request we cannot verify."
+          "body": "Email {{contactEmail}} from the address on your account with the subject “Delete my RootEd account”.\n\nWe will verify that you own the address before acting, and may ask your organization's administrator to confirm. We will not act on a request we cannot verify."
         },
         "timeline": {
           "title": "How long it takes",
@@ -1760,7 +1760,7 @@
         },
         "contact": {
           "title": "Questions",
-          "body": "Rural Root Cloud Tech Services And Training\nEmail: info@ruralrootcloud.com"
+          "body": "{{company}}\nEmail: {{contactEmail}}"
         }
       }
     }

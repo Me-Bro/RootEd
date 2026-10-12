@@ -4,6 +4,7 @@ import en from './locales/en.json';
 import hi from './locales/hi.json';
 import { buildHiEnResource } from './mergeHiEn.js';
 import { getStoredLanguage } from './languagePreference.js';
+import { brand } from '../lib/brand.js';
 
 const hiEn = buildHiEnResource(en, hi);
 
@@ -15,7 +16,11 @@ i18n.use(initReactI18next).init({
   },
   lng: getStoredLanguage(),
   fallbackLng: 'en',
-  interpolation: { escapeValue: false },
+  interpolation: {
+    escapeValue: false,
+    // {{company}}, {{shortName}}, {{contactEmail}}, {{portalHost}} in the locale files.
+    defaultVariables: brand,
+  },
 });
 
 document.documentElement.lang = i18n.language === 'hi' ? 'hi' : 'en';

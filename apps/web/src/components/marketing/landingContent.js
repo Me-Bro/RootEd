@@ -9,6 +9,7 @@ import {
   MessageSquare,
   CreditCard,
 } from 'lucide-react';
+import { brand } from '../../lib/brand.js';
 
 // Landing page content structure. The copy itself lives in the `landing`
 // namespace of src/i18n/locales/{en,hi}.json — these arrays only hold the
@@ -24,9 +25,9 @@ import {
 // premium-features enquiry, since premium add-ons (dedicated email, WhatsApp,
 // SMS, payment gateway) have no self-serve purchase flow yet. Not translated:
 // it's a mailto to an English-speaking inbox.
-export const CONTACT_HREF = 'mailto:info@ruralrootcloud.com?subject=RootEd%20inquiry';
+export const CONTACT_HREF = `mailto:${brand.contactEmail}?subject=RootEd%20inquiry`;
 
-export const PARENT_SITE_HREF = 'https://ruralrootcloud.com/';
+export const PARENT_SITE_HREF = brand.parentSiteUrl;
 
 export const PREMIUM_FEATURES = [
   {
