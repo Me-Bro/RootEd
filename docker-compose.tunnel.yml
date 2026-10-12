@@ -43,3 +43,7 @@ services:
       PORTAL_SUBDOMAIN: rooted
       NODE_ENV: production
       S3_PUBLIC_ENDPOINT: https://storage-rooted.ruralrootcloud.com
+      # Second domain for the same stack (portal host only — see env.js). Served by
+      # its own tunnel in the ranabrothers.online Cloudflare account; Google
+      # Sign-In also needs this origin added to the OAuth client.
+      EXTRA_ALLOWED_ORIGINS: https://rooted.ranabrothers.online
