@@ -246,6 +246,48 @@ matching how this directory itself sits under `RootEd_ALL/` — not the
   (`rooted_uat_app` → `rooted` and `rooted_prod_app` → `rooted_uat` both get
   `not authorized`); each app user reads its own DB fine.
 
+## Second domain: ranabrothers.online (portal host only)
+
+PROD also answers on `rooted.ranabrothers.online`, UAT on
+`rooted-uat.ranabrothers.online`. Tenant subdomains on this domain are **not**
+supported — only the portal host. Same containers, no second stack.
+
+- **App side:** `EXTRA_ALLOWED_ORIGINS` (comma-separated full origins, set in
+  each `docker-compose.tunnel*.yml`) is added to the CORS allow-list
+  (`isAllowedOrigin()` in `apps/api/src/config/env.js`). Without it a
+  same-origin POST from the new host gets a 500 (`Not allowed by CORS`). The
+  nginx `server_name` in `nginx/nginx.tunnel.conf` lists both hosts. Unknown
+  hosts fall through to the portal path in `resolveTenant()`.
+- **Why a second tunnel:** `ranabrothers.online` is in a *different Cloudflare
+  account* from `ruralrootcloud.com`. A `*.cfargotunnel.com` CNAME only routes to
+  tunnels in the zone's own account, so the existing `cloudflared-rooted`
+  tunnel can't serve it (symptom: Cloudflare error 1033/530). A second tunnel,
+  `rooted-uat-rana` (UUID `d282ad81-919b-4869-beeb-6c76a37cc26c`), lives in the
+  `ranabrothers.online` account.
+- **On the box:** its cert + credentials live under an isolated home,
+  `~/.cf-rana/.cloudflared/` (`cloudflared tunnel login` refuses to run while
+  `~/.cloudflared/cert.pem` exists, so use `HOME=$HOME/.cf-rana cloudflared ...`
+  for any command against this account). Config:
+  `~/.cf-rana/.cloudflared/rooted-uat-rana-config.yml` — ingress
+  `rooted-uat.ranabrothers.online` -> `localhost:8080`,
+  `rooted.ranabrothers.online` -> `localhost:80`. Run by user unit
+  `~/.config/systemd/user/cloudflared-rooted-uat-rana.service`
+  (`systemctl --user restart cloudflared-rooted-uat-rana`). Validate ingress
+  with `cloudflared --config <file> tunnel ingress validate` before restarting.
+- **DNS:** `HOME=$HOME/.cf-rana cloudflared tunnel route dns --overwrite-dns
+  d282ad81-919b-4869-beeb-6c76a37cc26c <host>` (UUID, not name). `rooted.` had
+  a pre-existing CNAME to another tunnel (`dusu-ranabrothers`); it was
+  overwritten, the old tunnel itself was left alone.
+- **Google Sign-In:** `https://rooted.ranabrothers.online` must be in the OAuth
+  client's Authorized JavaScript origins (Google Cloud Console).
+- **Caveats (by design):** sessions are per domain (host-only refresh cookie);
+  emails/links still use `rooted.ruralrootcloud.com` (`getPortalHost()` is
+  single-valued); impersonation redirects use the build-time `VITE_APP_DOMAIN`
+  (`ruralrootcloud.com`).
+- **Dead line:** `~/.cloudflared/rooted-prod-config.yml` still has an unused
+  `rooted-uat.ranabrothers.online` ingress rule. Harmless; remove it next time
+  `cloudflared-rooted` is restarted anyway.
+
 ## Gotchas discovered this session (read before touching either checkout again)
 
 **This checkout was renamed from `RootEd` to `RootEd_prod` after the live
