@@ -624,7 +624,7 @@ router.post('/forgot-password', async (req, res, next) => {
       // getPortalHost(), not APP_DOMAIN: when PORTAL_SUBDOMAIN is set (as it is
       // on the tunnel deployment) the app is served from that label, and the
       // bare apex doesn't route — the reset link would go nowhere.
-      const resetUrl = `https://${getPortalHost()}/reset-password?token=${token}`;
+      const resetUrl = `https://${getPortalHost(req.get('host'))}/reset-password?token=${token}`;
       await sendPasswordReset(email, resetUrl);
     }
 
@@ -815,7 +815,7 @@ async function deliverOrLog(promise, { email, kind }) {
 router.post('/register', registerLimiter, validate(registerSchema), async (req, res, next) => {
   try {
     const { email, username, password, firstName, lastName } = req.body;
-    const portalHost = getPortalHost();
+    const portalHost = getPortalHost(req.get('host'));
     // Deliberately identical whether or not the address is already registered.
     const accepted = { message: 'Check your email to continue.' };
 
@@ -916,7 +916,7 @@ router.post(
         const token = await issueEmailVerification(user._id);
         await sendEmailVerification(
           email,
-          `https://${getPortalHost()}/verify-email?token=${token}`
+          `https://${getPortalHost(req.get('host'))}/verify-email?token=${token}`
         );
       }
 
@@ -986,7 +986,7 @@ router.post('/change-email', authenticate, validate(changeEmailSchema), async (r
     if (taken) throw new AppError('That email address is not available', 409);
 
     const token = await issueEmailChange(user._id, newEmail);
-    const confirmUrl = `https://${getPortalHost()}/confirm-email?token=${token}`;
+    const confirmUrl = `https://${getPortalHost(req.get('host'))}/confirm-email?token=${token}`;
     await Promise.all([
       sendEmailChangeConfirmation(newEmail, confirmUrl),
       // The old address is told too, so a stolen session cannot move the
