@@ -29,6 +29,18 @@ const schema = z.object({
   // of being looked up as a real tenant subdomain. Needed on deployments (like the
   // Cloudflare Tunnel one) where the apex domain isn't reachable/desired for login.
   PORTAL_SUBDOMAIN: z.string().optional(),
+  // Comma-separated full origins (e.g. "https://rooted-uat.ranabrothers.online") served
+  // in addition to *.APP_DOMAIN — lets one deployment answer on a second domain. CORS
+  // only: emails/links still use getPortalHost(), tenants still resolve under APP_DOMAIN.
+  EXTRA_ALLOWED_ORIGINS: z
+    .string()
+    .optional()
+    .transform((v) =>
+      (v ?? '')
+        .split(',')
+        .map((o) => o.trim())
+        .filter(Boolean)
+    ),
   CSRF_SECRET: z.string().min(32),
   // Google OAuth client id used to verify Google Sign-In ID tokens
   // (audience check). Unset disables POST /auth/google rather than breaking
@@ -65,6 +77,14 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
+
+export function isAllowedOrigin(origin) {
+  return (
+    origin.endsWith(`.${env.APP_DOMAIN}`) ||
+    origin === `https://${env.APP_DOMAIN}` ||
+    env.EXTRA_ALLOWED_ORIGINS.includes(origin)
+  );
+}
 
 // The canonical general-portal hostname: the configured PORTAL_SUBDOMAIN under
 // APP_DOMAIN, or the bare APP_DOMAIN itself when none is set.
