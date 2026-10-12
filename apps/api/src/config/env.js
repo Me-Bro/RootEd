@@ -31,7 +31,7 @@ const schema = z.object({
   PORTAL_SUBDOMAIN: z.string().optional(),
   // Comma-separated full origins (e.g. "https://rooted-uat.ranabrothers.online") served
   // in addition to *.APP_DOMAIN — lets one deployment answer on a second domain. CORS
-  // only: emails/links still use getPortalHost(), tenants still resolve under APP_DOMAIN.
+  // plus emailed links (see getPortalHost); tenants still resolve under APP_DOMAIN.
   EXTRA_ALLOWED_ORIGINS: z
     .string()
     .optional()
@@ -88,6 +88,17 @@ export function isAllowedOrigin(origin) {
 
 // The canonical general-portal hostname: the configured PORTAL_SUBDOMAIN under
 // APP_DOMAIN, or the bare APP_DOMAIN itself when none is set.
-export function getPortalHost() {
-  return env.PORTAL_SUBDOMAIN ? `${env.PORTAL_SUBDOMAIN}.${env.APP_DOMAIN}` : env.APP_DOMAIN;
+//
+// Pass the request's Host to keep an emailed link on the domain the user is on
+// (the portal can answer on a second domain via EXTRA_ALLOWED_ORIGINS). Only the
+// canonical host and the EXTRA_ALLOWED_ORIGINS hosts are honoured — anything else
+// falls back to canonical, since a reflected Host would let a forged request get
+// a password-reset link emailed that points at the attacker's domain.
+export function getPortalHost(reqHost) {
+  const canonical = env.PORTAL_SUBDOMAIN
+    ? `${env.PORTAL_SUBDOMAIN}.${env.APP_DOMAIN}`
+    : env.APP_DOMAIN;
+  const host = (reqHost ?? '').split(':')[0].toLowerCase();
+  const extra = env.EXTRA_ALLOWED_ORIGINS.map((o) => URL.parse(o)?.hostname);
+  return host && extra.includes(host) ? host : canonical;
 }
