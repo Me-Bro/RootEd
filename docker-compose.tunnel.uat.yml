@@ -51,3 +51,6 @@ services:
       # Needs its own tunnel ingress rule + DNS route (Phase 3) before this
       # host is actually reachable — see file header.
       S3_PUBLIC_ENDPOINT: https://storage-rooted-uat.ruralrootcloud.com
+      # Second domain for the same stack (portal host only — see env.js). Needs
+      # its own cloudflared ingress line + DNS CNAME, and the nginx server_name.
+      EXTRA_ALLOWED_ORIGINS: https://rooted-uat.ranabrothers.online

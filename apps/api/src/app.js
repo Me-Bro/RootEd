@@ -9,7 +9,7 @@ import { doubleCsrf } from 'csrf-csrf';
 import mongoose from 'mongoose';
 import swaggerUi from 'swagger-ui-express';
 import { logger } from './utils/logger.js';
-import { env } from './config/env.js';
+import { env, isAllowedOrigin } from './config/env.js';
 import { redis } from './config/redis.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { resolveTenant } from './middleware/resolveTenant.js';
@@ -48,8 +48,7 @@ app.use(
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
       if (env.NODE_ENV === 'development') return cb(null, true);
-      if (origin.endsWith(`.${env.APP_DOMAIN}`) || origin === `https://${env.APP_DOMAIN}`)
-        return cb(null, true);
+      if (isAllowedOrigin(origin)) return cb(null, true);
       cb(new Error('Not allowed by CORS'));
     },
     credentials: true,
