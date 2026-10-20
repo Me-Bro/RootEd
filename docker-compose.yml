@@ -106,6 +106,28 @@ services:
     networks:
       - rooted
 
+  # RR Cloud Career Catalyst — the training-programme portal (apps/portal). Its
+  # own nginx proxies /__api/ to the api with Host pinned to PORTAL_API_HOST, so
+  # no API change is needed to serve it. The TLS nginx below has no portal
+  # vhost; the portal is served through the tunnel overlays.
+  portal:
+    build:
+      context: .
+      dockerfile: apps/portal/Dockerfile
+      args:
+        VITE_APP_DOMAIN: ${APP_DOMAIN:-rooted.app}
+        VITE_MAIN_APP_URL: ${VITE_MAIN_APP_URL:-}
+    restart: unless-stopped
+    environment:
+      PORTAL_API_HOST: ${PORTAL_API_HOST:-${APP_DOMAIN:-rooted.app}}
+    ports:
+      - '5175:80'
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - rooted
+
   nginx:
     image: nginx:alpine
     restart: unless-stopped

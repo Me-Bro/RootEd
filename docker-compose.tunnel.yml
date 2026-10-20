@@ -26,12 +26,27 @@
 # Usage:
 #   docker compose -f docker-compose.yml -f docker-compose.tunnel.yml up -d --build
 
+# RR Cloud Career Catalyst (apps/portal) is served at catalyst.ruralrootcloud.com —
+# one label under the zone, covered by the same Universal SSL cert. It needs its
+# own one-time DNS route and an explicit cloudflared ingress line (a wildcard
+# rule alone is not enough, see agent-home/prod-staging-mongo-migration.md):
+#   cloudflared tunnel route dns --overwrite-dns b14594a9-bc18-417a-88ae-a5f3d23c02b5 catalyst.ruralrootcloud.com
+# The portal presents the portal host above (PORTAL_API_HOST) to the API, so the
+# college comes from the sign-in token and the API needs no portal-specific config.
+
 services:
   nginx:
     volumes:
       - ./nginx/nginx.tunnel.conf:/etc/nginx/nginx.conf:ro
     ports: !override
       - '80:80'
+  portal:
+    build:
+      args:
+        VITE_APP_DOMAIN: ruralrootcloud.com
+        VITE_MAIN_APP_URL: https://rooted.ruralrootcloud.com
+    environment:
+      PORTAL_API_HOST: rooted.ruralrootcloud.com
   web:
     build:
       args:
