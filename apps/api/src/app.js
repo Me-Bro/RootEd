@@ -22,6 +22,7 @@ import authRouter from './routes/auth.js';
 import adminRouter from './routes/admin.js';
 import tenantRouter from './routes/tenant.js';
 import academicRouter from './routes/academic.js';
+import trainingRouter from './routes/training.js';
 import staffRouter from './routes/staff.js';
 import expenseRouter from './routes/expense.js';
 import feeRouter from './routes/fee.js';
@@ -188,6 +189,7 @@ app.use('/staff', requireModuleEnabled('staff'), staffRouter);
 app.use('/expense', requireModuleEnabled('expense'), expenseRouter);
 app.use('/fee', requireModuleEnabled('fee'), feeRouter);
 app.use('/inventory', requireModuleEnabled('inventory'), inventoryRouter);
+app.use('/training', requireModuleEnabled('training'), trainingRouter);
 // Unmounted entirely while the product is free, so the subscribe and webhook
 // endpoints are not merely inert but absent.
 if (env.BILLING_ENABLED) {

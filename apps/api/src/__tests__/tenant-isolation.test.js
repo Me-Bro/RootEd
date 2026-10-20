@@ -2,6 +2,9 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { TenantMembership } from '../models/TenantMembership.js';
 import { Role } from '../models/Role.js';
+import { Assignment } from '../models/Assignment.js';
+import { Submission } from '../models/Submission.js';
+import { Project } from '../models/Project.js';
 
 let mongod;
 
@@ -29,6 +32,22 @@ test('TenantMembership.find with tenantId succeeds and returns empty array', asy
 test('new Role without tenantId throws on save', async () => {
   const role = new Role({ name: 'test', permissions: [] });
   await expect(role.save()).rejects.toThrow(/tenantId/);
+});
+
+test.each([
+  ['Assignment', Assignment],
+  ['Submission', Submission],
+  ['Project', Project],
+])('%s.find without tenantId throws isolation error', async (_name, Model) => {
+  await expect(Model.find({}).exec()).rejects.toThrow('tenantId missing from query');
+});
+
+test.each([
+  ['Assignment', Assignment],
+  ['Submission', Submission],
+  ['Project', Project],
+])('new %s without tenantId throws on save', async (_name, Model) => {
+  await expect(new Model({}).save()).rejects.toThrow(/tenantId/);
 });
 
 test('Role.find with _bypassTenantScope succeeds without tenantId', async () => {

@@ -11,6 +11,7 @@
  * that connection too.
  */
 export { AcademicYear } from './AcademicYear.js';
+export { Assignment } from './Assignment.js';
 export { AttendanceRecord } from './AttendanceRecord.js';
 export { AuditLog } from './AuditLog.js';
 export { Budget } from './Budget.js';
@@ -34,6 +35,7 @@ export { LeaveRequest } from './LeaveRequest.js';
 export { LeaveType } from './LeaveType.js';
 export { MigrationLog } from './MigrationLog.js';
 export { Notification } from './Notification.js';
+export { Project } from './Project.js';
 export { PurchaseRequisition } from './PurchaseRequisition.js';
 export { ReportCardBatch } from './ReportCardBatch.js';
 export { RequestLog } from './RequestLog.js';
@@ -44,6 +46,7 @@ export { Section } from './Section.js';
 export { StaffMember } from './StaffMember.js';
 export { StockMovement } from './StockMovement.js';
 export { Student } from './Student.js';
+export { Submission } from './Submission.js';
 export { Subject } from './Subject.js';
 export { Tenant } from './Tenant.js';
 export { TenantMembership } from './TenantMembership.js';

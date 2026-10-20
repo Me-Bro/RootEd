@@ -24,6 +24,9 @@ import { Section } from '../models/Section.js';
 import { Subject } from '../models/Subject.js';
 import { Student } from '../models/Student.js';
 import { Grade } from '../models/Grade.js';
+import { Assignment } from '../models/Assignment.js';
+import { Submission } from '../models/Submission.js';
+import { Project } from '../models/Project.js';
 import { GradeLock } from '../models/GradeLock.js';
 import { ReportCardBatch } from '../models/ReportCardBatch.js';
 import { Timetable } from '../models/Timetable.js';
@@ -152,6 +155,19 @@ async function run() {
     tenant = tenant.toObject();
   }
   const tenantId = tenant._id;
+
+  // The seeded school is a `school` orgType, which has no training module. An
+  // explicit override (the list replaces the orgType default, so it names every
+  // module) turns it on for the training specs without changing the tenant's
+  // type, terms or any other module the existing specs depend on.
+  await Tenant.updateOne(
+    { _id: tenantId },
+    {
+      $set: {
+        enabledModules: ['academic', 'staff', 'expense', 'fee', 'inventory', 'billing', 'training'],
+      },
+    }
+  );
 
   // ── Roles ─────────────────────────────────────────────────────────────────
   const existingRoles = await Role.find({ tenantId }, null, { _bypassTenantScope: true }).lean();
@@ -574,6 +590,86 @@ async function run() {
       baseline = baseline.toObject();
     }
     baselineGrades.push(baseline);
+  }
+
+  // Training module: three assignments for the primary batch with a known mix
+  // of results — Student1 reviewed (8/10), Student2 reviewed (6/10), Student3
+  // submitted, the rest unrecorded — plus one team project with a review. The
+  // emitted ids and figures let the training specs assert exact numbers.
+  const assignmentDefs = [
+    { title: 'Seed: Git basics', subject: subjects[0], dueDate: '2025-05-15', maxScore: 10 },
+    { title: 'Seed: REST API', subject: subjects[1], dueDate: '2025-06-15', maxScore: 10 },
+    { title: 'Seed: Deploy to cloud', subject: subjects[2], dueDate: '2025-07-15', maxScore: 20 },
+  ];
+  const trainingAssignments = [];
+  for (const def of assignmentDefs) {
+    let assignment = await Assignment.findOne({ tenantId, title: def.title }, null, {
+      _bypassTenantScope: true,
+    }).lean();
+    if (!assignment) {
+      assignment = await Assignment.create({
+        tenantId,
+        sectionId: section._id,
+        subjectId: def.subject._id,
+        termId: term._id,
+        title: def.title,
+        dueDate: new Date(def.dueDate),
+        maxScore: def.maxScore,
+        createdBy: users.teacher._id,
+      });
+      assignment = assignment.toObject();
+    }
+    trainingAssignments.push(assignment);
+  }
+
+  const submissionPlan = [
+    { student: activeStudents[0], status: 'reviewed', score: 8 },
+    { student: activeStudents[1], status: 'reviewed', score: 6 },
+    { student: activeStudents[2], status: 'submitted' },
+  ];
+  const trainingSubmissions = [];
+  for (const plan of submissionPlan) {
+    const assignment = trainingAssignments[0];
+    const reviewed = plan.status === 'reviewed';
+    const when = new Date('2025-05-16');
+    const submission = await Submission.findOneAndUpdate(
+      { tenantId, assignmentId: assignment._id, studentId: plan.student._id },
+      {
+        $set: {
+          status: plan.status,
+          score: reviewed ? plan.score : null,
+          submittedAt: when,
+          reviewedAt: reviewed ? when : null,
+          reviewedBy: reviewed ? users.teacher._id : null,
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true, _bypassTenantScope: true }
+    ).lean();
+    trainingSubmissions.push(submission);
+  }
+
+  let trainingProject = await Project.findOne({ tenantId, name: 'Seed: Team 1 project' }, null, {
+    _bypassTenantScope: true,
+  }).lean();
+  if (!trainingProject) {
+    trainingProject = await Project.create({
+      tenantId,
+      sectionId: section._id,
+      termId: term._id,
+      name: 'Seed: Team 1 project',
+      repoUrl: 'https://github.com/rrcloud/seed-team-1',
+      memberIds: activeStudents.slice(0, 3).map((s) => s._id),
+      milestones: [
+        { title: 'Auth done', dueDate: new Date('2025-08-01'), doneAt: new Date('2025-07-30') },
+        { title: 'Deployed', dueDate: new Date('2025-09-01') },
+      ],
+      demoDate: new Date('2025-09-15'),
+      reviewScore: 82,
+      reviewNotes: 'Seed review',
+      reviewedBy: users.teacher._id,
+      createdBy: users.teacher._id,
+    });
+    trainingProject = trainingProject.toObject();
   }
 
   // Publishes Mathematics/final for the primary section so /me/grades (which
@@ -1656,6 +1752,30 @@ async function run() {
       assessmentType: g.assessmentType,
       score: g.score,
     })),
+    training: {
+      assignments: trainingAssignments.map((a) => ({
+        _id: a._id.toString(),
+        title: a.title,
+        maxScore: a.maxScore,
+        subjectId: a.subjectId.toString(),
+        sectionId: a.sectionId.toString(),
+        termId: a.termId.toString(),
+      })),
+      // Results recorded on assignments[0]: two reviewed (8 and 6 of 10), one submitted.
+      submissions: trainingSubmissions.map((s) => ({
+        _id: s._id.toString(),
+        assignmentId: s.assignmentId.toString(),
+        studentId: s.studentId.toString(),
+        status: s.status,
+        score: s.score,
+      })),
+      project: {
+        _id: trainingProject._id.toString(),
+        name: trainingProject.name,
+        reviewScore: trainingProject.reviewScore,
+        memberIds: trainingProject.memberIds.map(String),
+      },
+    },
     baselineGrades: baselineGrades.map((g) => ({
       _id: g._id.toString(),
       studentId: g.studentId.toString(),
