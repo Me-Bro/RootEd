@@ -12,9 +12,11 @@
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.955 0.012 185);
   --secondary-foreground: oklch(0.3 0.05 190);
-  --destructive: oklch(0.55 0.22 27);
-  --success: oklch(0.52 0.14 150);
-  --warning: oklch(0.62 0.15 75);
+  /* Status colours are used as text on a 10-15% tint of themselves (Badge), so
+     they are dark enough to clear 4.5:1 against that tint. */
+  --destructive: oklch(0.5 0.21 27);
+  --success: oklch(0.4 0.12 150);
+  --warning: oklch(0.45 0.11 70);
   --ring: oklch(0.6 0.09 185);
   --radius: 0.625rem;
 }

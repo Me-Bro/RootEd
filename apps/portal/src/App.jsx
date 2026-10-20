@@ -11,6 +11,22 @@ import NoAccessPage from '@/pages/NoAccessPage.jsx';
 import DashboardPage from '@/pages/DashboardPage.jsx';
 import MyProgressPage from '@/pages/MyProgressPage.jsx';
 import OutcomesPage from '@/pages/OutcomesPage.jsx';
+import AssignmentsPage from '@/pages/AssignmentsPage.jsx';
+import ProjectsPage from '@/pages/ProjectsPage.jsx';
+import PlacementPage from '@/pages/PlacementPage.jsx';
+import ReadinessPage from '@/pages/ReadinessPage.jsx';
+import CompletionPage from '@/pages/CompletionPage.jsx';
+
+// Pages for anyone who can read the college's training data (trainer, TPO, admin).
+// What a page lets them change is decided inside it, by training:write / :complete.
+const STAFF_PAGES = [
+  { path: '/dashboard', Page: DashboardPage },
+  { path: '/assignments', Page: AssignmentsPage },
+  { path: '/projects', Page: ProjectsPage },
+  { path: '/placement', Page: PlacementPage },
+  { path: '/readiness', Page: ReadinessPage },
+  { path: '/completion', Page: CompletionPage },
+];
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
@@ -86,14 +102,17 @@ export default function App() {
                 </RequireAuth>
               }
             >
-              <Route
-                path="/dashboard"
-                element={
-                  <RequireAccess permission="training:read">
-                    <DashboardPage />
-                  </RequireAccess>
-                }
-              />
+              {STAFF_PAGES.map(({ path, Page }) => (
+                <Route
+                  key={path}
+                  path={path}
+                  element={
+                    <RequireAccess permission="training:read">
+                      <Page />
+                    </RequireAccess>
+                  }
+                />
+              ))}
               <Route
                 path="/me/progress"
                 element={

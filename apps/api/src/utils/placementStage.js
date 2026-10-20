@@ -1,9 +1,9 @@
+import { nextStageAllowed } from '@rooted/shared/utils';
 import { AppError } from '../middleware/errorHandler.js';
 
-// The progression, in order. rejected/withdrawn close an application without a
-// joining; every stage from `joined` on is terminal.
-const PROGRESSION = ['applied', 'interviewed', 'offered', 'joined'];
-const CLOSING = ['rejected', 'withdrawn'];
+// The stage-order rule itself lives in @rooted/shared so the portal offers only
+// the moves this file will accept.
+export { nextStageAllowed };
 
 const DATE_FIELD = {
   applied: 'appliedAt',
@@ -13,20 +13,6 @@ const DATE_FIELD = {
   rejected: 'closedAt',
   withdrawn: 'closedAt',
 };
-
-/**
- * A stage may only move forward, skipping steps is fine (an offer can follow a
- * walk-in), and an application that has joined, been rejected or been
- * withdrawn is finished.
- */
-export function nextStageAllowed(current, next) {
-  const from = PROGRESSION.indexOf(current);
-  if (from === -1) return false; // unknown, or already closed
-  if (current === 'joined') return false;
-  if (CLOSING.includes(next)) return true;
-  const to = PROGRESSION.indexOf(next);
-  return to > from;
-}
 
 const latestDate = (application) =>
   Object.values(DATE_FIELD)
