@@ -52,6 +52,7 @@ import { FeeDiscount } from '../models/FeeDiscount.js';
 import { FeatureFlag } from '../models/FeatureFlag.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { Feedback } from '../models/Feedback.js';
+import { CollegeEnquiry } from '../models/CollegeEnquiry.js';
 import { hashPassword } from '../services/auth.service.js';
 
 const CLEAN = process.argv.includes('--clean');
@@ -1829,6 +1830,38 @@ async function run() {
     feedback.push(doc);
   }
 
+  // ── College enquiries (Career Catalyst landing page) ───────────────────────
+  // One new, one already contacted: the /enquiries page and its status filter
+  // have something to show without an e2e run submitting its own form first.
+  const enquiryDefs = [
+    {
+      contactName: 'Seed Enquirer One',
+      collegeName: 'Seed Degree College, Khatima',
+      email: 'enquirer1@example.com',
+      phone: '+919876500001',
+      programme: 'career_ready',
+      message: 'seed-test-enquiry: 60 BCA students in the final year',
+      status: 'new',
+    },
+    {
+      contactName: 'Seed Enquirer Two',
+      collegeName: 'Seed Polytechnic, Rudrapur',
+      email: 'enquirer2@example.com',
+      phone: '+919876500002',
+      programme: 'skill_builder',
+      message: 'seed-test-enquiry: already called back',
+      status: 'contacted',
+    },
+  ];
+  const enquiries = [];
+  for (const def of enquiryDefs) {
+    let doc = await CollegeEnquiry.findOne({ message: def.message }).lean();
+    if (!doc) {
+      doc = (await CollegeEnquiry.create(def)).toObject();
+    }
+    enquiries.push(doc);
+  }
+
   await mongoose.disconnect();
 
   // Output seeded IDs as JSON for fixtures to consume
@@ -2043,6 +2076,11 @@ async function run() {
     })),
     auditLogs: auditLogs.map((l) => ({ _id: l._id.toString(), action: l.action })),
     feedback: feedback.map((f) => ({ _id: f._id.toString(), status: f.status })),
+    enquiries: enquiries.map((e) => ({
+      _id: e._id.toString(),
+      collegeName: e.collegeName,
+      status: e.status,
+    })),
   };
 
   // Write to disk so Playwright fixtures can read seeded IDs

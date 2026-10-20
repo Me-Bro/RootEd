@@ -44,8 +44,16 @@ test('each key has the same {{placeholders}} in both languages', () => {
   expect(mismatched).toEqual([]);
 });
 
+// English-only for now: hi.json carries the English text as a placeholder so the key
+// sets stay equal. Remove a prefix here the day its Hindi is written and reviewed.
+//   landing.*    the public page (English first)
+//   enquiries.*  the platform team's own page; not shown to colleges
+const ENGLISH_ONLY_PREFIXES = ['landing.', 'enquiries.'];
+
 test('Hindi is actually translated (Devanagari, or a deliberate brand/symbol)', () => {
   const untranslated = Object.keys(hiFlat).filter((k) => {
+    if (ENGLISH_ONLY_PREFIXES.some((prefix) => k.startsWith(prefix))) return false;
+    if (k === 'nav.enquiries') return false;
     const value = hiFlat[k];
     if (/[ऀ-ॿ]/.test(value)) return false;
     if (['portal.brand', 'languages.en'].includes(k)) return false; // deliberately Latin

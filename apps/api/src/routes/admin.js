@@ -1,6 +1,13 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import { z } from 'zod';
-import { ORG_TYPES, PLANS, DEFAULT_PLAN, ALL_MODULES } from '@rooted/shared/constants';
+import {
+  ORG_TYPES,
+  PLANS,
+  DEFAULT_PLAN,
+  ALL_MODULES,
+  ENQUIRY_STATUSES,
+} from '@rooted/shared/constants';
 import { authenticate, requireSystemRole } from '../middleware/authenticate.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { Tenant } from '../models/Tenant.js';
@@ -8,7 +15,8 @@ import { AuditLog } from '../models/AuditLog.js';
 import { RequestLog } from '../models/RequestLog.js';
 import { TenantMembership } from '../models/TenantMembership.js';
 import { Feedback } from '../models/Feedback.js';
-import { feedbackStatusUpdateSchema } from '@rooted/shared/schemas';
+import { CollegeEnquiry } from '../models/CollegeEnquiry.js';
+import { feedbackStatusUpdateSchema, enquiryStatusUpdateSchema } from '@rooted/shared/schemas';
 import { buildFeedbackFilter } from '../utils/feedbackFilter.js';
 import { isValidFeedbackStatusTransition } from '../services/feedbackStatusTransitions.js';
 import {
@@ -411,6 +419,47 @@ router.patch('/feedback/:id', async (req, res, next) => {
     if (!isValidFeedbackStatusTransition(doc.status, status)) {
       throw new AppError(`Cannot move feedback from ${doc.status} to ${status}`, 400);
     }
+
+    doc.status = status;
+    if (adminNote !== undefined) doc.adminNote = adminNote;
+    await doc.save();
+
+    res.json(doc);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Colleges that asked for a proposal on the public Career Catalyst page. Holds
+// a person's name, phone and email, so it stays behind the super_admin gate.
+router.get('/enquiries', async (req, res, next) => {
+  try {
+    const page = Math.max(1, Math.floor(Number(req.query.page)) || 1);
+    const limit = Math.min(100, Math.max(1, Math.floor(Number(req.query.limit)) || 20));
+    const filter = ENQUIRY_STATUSES.includes(req.query.status) ? { status: req.query.status } : {};
+
+    const [enquiries, total] = await Promise.all([
+      CollegeEnquiry.find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      CollegeEnquiry.countDocuments(filter),
+    ]);
+
+    res.json({ enquiries, total, page, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch('/enquiries/:id', async (req, res, next) => {
+  try {
+    const { status, adminNote } = enquiryStatusUpdateSchema.parse(req.body);
+    if (!mongoose.isValidObjectId(req.params.id)) throw new AppError('Enquiry not found', 404);
+
+    const doc = await CollegeEnquiry.findById(req.params.id);
+    if (!doc) throw new AppError('Enquiry not found', 404);
 
     doc.status = status;
     if (adminNote !== undefined) doc.adminNote = adminNote;
