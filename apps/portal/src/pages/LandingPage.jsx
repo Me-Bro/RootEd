@@ -9,6 +9,7 @@ import { ProgressTracking } from '@/components/landing/ProgressTracking.jsx';
 import { PlacementProcess } from '@/components/landing/PlacementProcess.jsx';
 import { Faq } from '@/components/landing/Faq.jsx';
 import { Section } from '@/components/landing/Section.jsx';
+import { EnquiryForm } from '@/components/landing/EnquiryForm.jsx';
 import { ContactBlock } from '@/components/landing/ContactBlock.jsx';
 import { LandingFooter } from '@/components/landing/LandingFooter.jsx';
 
@@ -34,7 +35,10 @@ export default function LandingPage() {
         <PlacementProcess />
         <Faq />
         <Section id="request-proposal" tone="muted" title={t('landing.requestProposal')}>
-          <ContactBlock />
+          <div className="grid gap-8 lg:grid-cols-[2fr_1fr]">
+            <EnquiryForm />
+            <ContactBlock />
+          </div>
         </Section>
       </main>
       <LandingFooter />

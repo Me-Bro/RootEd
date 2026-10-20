@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
-import { AUTH_STATES } from './fixtures/auth.js';
+import { AUTH_STATES, TEST_USERS } from './fixtures/auth.js';
+import { authHeader } from './fixtures/seed.js';
 
 test.describe('the public landing page', () => {
   test('anyone can read it without signing in', async ({ page }) => {
@@ -111,5 +112,103 @@ test.describe('the app behind the landing page is still private', () => {
   }) => {
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/login$/);
+  });
+});
+
+test.describe('requesting a proposal', () => {
+  const fill = async (page, college) => {
+    await page.goto('/');
+    const form = page.getByRole('form', { name: 'Request a proposal' });
+    await form.getByLabel('Your name').fill('Meena Joshi');
+    await form.getByLabel('College or institute').fill(college);
+    await form.getByLabel('Email', { exact: true }).fill('tpo@college.test');
+    await form.getByLabel('Phone or WhatsApp number').fill('+91 98765 43210');
+    await form.getByLabel('Programme you are interested in').selectOption('career_ready');
+    return form;
+  };
+
+  test('a valid request is stored for the platform team and thanks the visitor', async ({
+    page,
+    request,
+  }) => {
+    const college = `E2E College ${Date.now()}`;
+    const form = await fill(page, college);
+    await form.getByLabel('Anything we should know? (optional)').fill('60 BCA students');
+    await form.getByRole('button', { name: 'Send request' }).click();
+
+    await expect(page.getByRole('status')).toContainText('we have your request');
+    await expect(page.getByRole('form', { name: 'Request a proposal' })).toHaveCount(0);
+
+    const headers = await authHeader(request, TEST_USERS.super_admin);
+    const res = await request.get('/__api/admin/enquiries?limit=100', { headers });
+    const stored = (await res.json()).enquiries.find((e) => e.collegeName === college);
+    expect(stored).toMatchObject({
+      contactName: 'Meena Joshi',
+      email: 'tpo@college.test',
+      phone: '+919876543210',
+      programme: 'career_ready',
+      status: 'new',
+      message: '60 BCA students',
+    });
+  });
+
+  test('an incomplete form shows what is wrong and sends nothing', async ({ page }) => {
+    let posted = false;
+    await page.route('**/__api/enquiries', (route) => {
+      posted = true;
+      return route.abort();
+    });
+    await page.goto('/');
+    const form = page.getByRole('form', { name: 'Request a proposal' });
+    await form.getByLabel('Email', { exact: true }).fill('not-an-email');
+    await form.getByRole('button', { name: 'Send request' }).click();
+
+    await expect(form.getByText('Enter your name')).toBeVisible();
+    await expect(form.getByText('Enter a valid email address')).toBeVisible();
+    await expect(form.getByText('Enter a valid phone number')).toBeVisible();
+    expect(posted).toBe(false);
+  });
+
+  test('a failed send shows an error and keeps what was typed', async ({ page }) => {
+    await page.route('**/__api/enquiries', (route) =>
+      route.fulfill({ status: 500, json: { error: 'boom' } })
+    );
+    const form = await fill(page, 'Keep My Text College');
+    await form.getByRole('button', { name: 'Send request' }).click();
+
+    await expect(form.getByRole('alert')).toContainText('could not send your request');
+    await expect(form.getByLabel('College or institute')).toHaveValue('Keep My Text College');
+    await expect(form.getByRole('button', { name: 'Send request' })).toBeEnabled();
+  });
+
+  test('a rate-limited send says to try again later', async ({ page }) => {
+    await page.route('**/__api/enquiries', (route) =>
+      route.fulfill({ status: 429, json: { error: 'Too many submissions, try again later' } })
+    );
+    const form = await fill(page, 'Busy College');
+    await form.getByRole('button', { name: 'Send request' }).click();
+    await expect(form.getByRole('alert')).toContainText('Please try again later');
+  });
+
+  test('a bot that fills the hidden field looks accepted but nothing is stored', async ({
+    page,
+    request,
+  }) => {
+    const college = `Bot College ${Date.now()}`;
+    const form = await fill(page, college);
+    await form.locator('input[name="website"]').fill('http://spam.test', { force: true });
+    await form.getByRole('button', { name: 'Send request' }).click();
+    await expect(page.getByRole('status')).toBeVisible();
+
+    const headers = await authHeader(request, TEST_USERS.super_admin);
+    const res = await request.get('/__api/admin/enquiries?limit=100', { headers });
+    expect((await res.json()).enquiries.some((e) => e.collegeName === college)).toBe(false);
+  });
+
+  test('the hidden field is not offered to keyboard or screen-reader users', async ({ page }) => {
+    await page.goto('/');
+    const trap = page.locator('input[name="website"]');
+    await expect(trap).toHaveAttribute('tabindex', '-1');
+    await expect(page.getByLabel('website', { exact: false })).toHaveCount(0);
   });
 });

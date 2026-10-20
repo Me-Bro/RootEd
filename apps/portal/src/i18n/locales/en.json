@@ -484,6 +484,22 @@
     },
     "footer": {
       "by": "A programme of Rural Root Cloud Tech Services & Training."
+    },
+    "form": {
+      "lead": "Tell us about your college and we will send a written proposal.",
+      "contactName": "Your name",
+      "collegeName": "College or institute",
+      "email": "Email",
+      "phone": "Phone or WhatsApp number",
+      "programme": "Programme you are interested in",
+      "message": "Anything we should know? (optional)",
+      "submit": "Send request",
+      "sending": "Sending…",
+      "privacy": "We use these details only to reply to your request.",
+      "thanksTitle": "Thank you, we have your request.",
+      "thanksBody": "We will contact you with a proposal.",
+      "failed": "We could not send your request. Please try again, or email us instead.",
+      "tooMany": "Too many requests from this device. Please try again later."
     }
   }
 }
