@@ -40,10 +40,11 @@ test.describe('signing in', () => {
 });
 
 test.describe('signing out', () => {
-  test.use({ storageState: AUTH_STATES.teacher });
-
+  // A fresh sign-in of its own: signing out revokes the refresh token, which would
+  // break every later spec if it used the shared stored session.
   test('returns to the sign-in page and ends the session', async ({ page }) => {
-    await page.goto('/dashboard');
+    await loginViaUi(page, TEST_USERS.principal);
+    await expect(page).toHaveURL(/\/dashboard$/);
     await page.getByRole('button', { name: 'Sign out' }).click();
     await expect(page).toHaveURL(/\/login$/);
     await page.goto('/dashboard');

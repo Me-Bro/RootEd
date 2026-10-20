@@ -5,9 +5,11 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
 
 export default defineConfig({
   testDir: './tests',
-  fullyParallel: true,
+  // One worker, in file order: a few specs change data (scoring, completion
+  // decisions) that others assert exact figures on. The suite re-seeds first.
+  fullyParallel: false,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   reporter: [['html', { open: 'never' }], ['list']],
 
   use: {
