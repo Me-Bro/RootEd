@@ -11,6 +11,40 @@ const describeViolations = (violations) =>
   );
 
 test.describe('accessibility', () => {
+  test.describe('public landing page', () => {
+    test('has no violations on a desktop screen', async ({ page }) => {
+      await page.goto('/');
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      expect(describeViolations((await scan(page)).violations)).toEqual([]);
+    });
+
+    test('has no violations on a phone screen', async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 800 });
+      await page.goto('/');
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+      expect(describeViolations((await scan(page)).violations)).toEqual([]);
+    });
+
+    test('has no violations with the form errors and an open question showing', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      await page.getByText('Do you guarantee jobs?').click();
+      await page.getByRole('button', { name: 'Send request' }).click();
+      await expect(page.getByText('Enter your name')).toBeVisible();
+      expect(describeViolations((await scan(page)).violations)).toEqual([]);
+    });
+  });
+
+  test.describe('platform enquiries', () => {
+    test.use({ storageState: AUTH_STATES.super_admin });
+    test('has no violations', async ({ page }) => {
+      await page.goto('/enquiries');
+      await expect(page.getByTestId('enquiry-Seed Degree College, Khatima')).toBeVisible();
+      expect(describeViolations((await scan(page)).violations)).toEqual([]);
+    });
+  });
+
   test('sign-in page', async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
