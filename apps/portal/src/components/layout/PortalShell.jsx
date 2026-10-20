@@ -27,7 +27,10 @@ export default function PortalShell() {
 
   const links =
     user?.systemRole === 'super_admin'
-      ? [{ to: '/outcomes', key: 'outcomes' }]
+      ? [
+          { to: '/outcomes', key: 'outcomes' },
+          { to: '/enquiries', key: 'enquiries' },
+        ]
       : STAFF_LINKS.filter((l) => hasPermission(user, l.permission));
 
   return (

@@ -53,7 +53,8 @@
     "readiness": "तैयारी",
     "completion": "पूर्णता",
     "myProgress": "मेरी प्रगति",
-    "outcomes": "परिणाम"
+    "outcomes": "परिणाम",
+    "enquiries": "Enquiries"
   },
   "noAccess": {
     "title": "अभी खोलने के लिए कुछ नहीं है",
@@ -272,5 +273,31 @@
     "completionPct": "पूर्णता",
     "attendance": "उपस्थिति (अब तक)",
     "improvement": "औसत सुधार"
+  },
+  "enquiries": {
+    "title": "Enquiries",
+    "description": "Colleges that asked for a proposal on the public page. These include personal contact details, so keep them within the team.",
+    "filter": "Show",
+    "all": "All",
+    "none": "No enquiries yet",
+    "noneHint": "Enquiries appear here when a college submits the form on the public page.",
+    "received": "Received",
+    "college": "College",
+    "contact": "Contact",
+    "interest": "Interested in",
+    "statusLabel": "Status",
+    "move": "Change status",
+    "moveFor": "Change status for {{college}}",
+    "status": {
+      "new": "New",
+      "contacted": "Contacted",
+      "closed": "Closed"
+    },
+    "programme": {
+      "skill_builder": "Skill Builder",
+      "career_ready": "Career Ready",
+      "campus_partner": "Campus Career Partner",
+      "not_sure": "Not sure yet"
+    }
   }
 }

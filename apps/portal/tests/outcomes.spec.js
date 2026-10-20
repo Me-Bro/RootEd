@@ -26,11 +26,12 @@ test.describe('platform admin sees outcomes across colleges', () => {
     }
   });
 
-  test('has no college navigation: only the outcomes page', async ({ page }) => {
+  test('has no college navigation: only the platform pages', async ({ page }) => {
     await page.goto('/outcomes');
     const nav = page.getByRole('navigation', { name: 'Main navigation' });
-    await expect(nav.getByRole('link')).toHaveCount(1);
+    await expect(nav.getByRole('link')).toHaveCount(2);
     await expect(nav.getByRole('link', { name: 'Outcomes' })).toBeVisible();
+    await expect(nav.getByRole('link', { name: 'Enquiries' })).toBeVisible();
   });
 });
 

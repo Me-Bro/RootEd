@@ -11,6 +11,7 @@ import NoAccessPage from '@/pages/NoAccessPage.jsx';
 import DashboardPage from '@/pages/DashboardPage.jsx';
 import MyProgressPage from '@/pages/MyProgressPage.jsx';
 import OutcomesPage from '@/pages/OutcomesPage.jsx';
+import EnquiriesPage from '@/pages/EnquiriesPage.jsx';
 import AssignmentsPage from '@/pages/AssignmentsPage.jsx';
 import ProjectsPage from '@/pages/ProjectsPage.jsx';
 import PlacementPage from '@/pages/PlacementPage.jsx';
@@ -126,6 +127,14 @@ export default function App() {
                 element={
                   <RequireAccess superAdmin>
                     <OutcomesPage />
+                  </RequireAccess>
+                }
+              />
+              <Route
+                path="/enquiries"
+                element={
+                  <RequireAccess superAdmin>
+                    <EnquiriesPage />
                   </RequireAccess>
                 }
               />
