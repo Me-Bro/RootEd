@@ -1,0 +1,73 @@
+{
+  "portal": {
+    "brand": "RR Cloud Career Catalyst",
+    "tagline": "Training and placement progress for your college",
+    "language": "Language",
+    "skipToContent": "Skip to content"
+  },
+  "languages": {
+    "en": "English",
+    "hi": "हिन्दी",
+    "hi_en": "हिन्दी / English"
+  },
+  "common": {
+    "loading": "Loading…",
+    "retry": "Try again",
+    "error": "Something went wrong. Please try again.",
+    "noData": "Nothing to show yet",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "notAvailable": "—",
+    "provisional": "Indicative"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signingIn": "Signing in…",
+    "identifier": "Email or username",
+    "password": "Password",
+    "authenticatorCode": "Authenticator code",
+    "sixDigitCode": "6-digit code",
+    "needsTotp": "Enter the code from your authenticator app.",
+    "loginFailed": "Sign-in failed. Check your details and try again.",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "New here?",
+    "createAccount": "Create an account",
+    "intro": "Sign in with the account your college or trainer set up for you.",
+    "chooseCollege": "Choose your college",
+    "chooseCollegeDescription": "You belong to more than one college. Pick the one you want to open.",
+    "entering": "Opening…",
+    "couldNotActivate": "Could not open that college. Please try again.",
+    "logout": "Sign out",
+    "switchCollege": "Switch college"
+  },
+  "nav": {
+    "main": "Main navigation",
+    "dashboard": "Dashboard",
+    "assignments": "Assignments",
+    "projects": "Projects",
+    "placement": "Placement",
+    "readiness": "Readiness",
+    "completion": "Completion",
+    "myProgress": "My progress",
+    "outcomes": "Outcomes"
+  },
+  "noAccess": {
+    "title": "Nothing to open yet",
+    "noCollege": "Your account is not part of any college yet. Ask your college administrator to add you.",
+    "module": "{{college}} has not been set up for RR Cloud Career Catalyst yet. Ask your administrator to switch it on.",
+    "role": "Your role in {{college}} does not include training and placement tracking. Ask your administrator if you need access.",
+    "noCollegeName": "This college"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "placeholder": "Your batch overview will appear here."
+  },
+  "me": {
+    "progressTitle": "My progress",
+    "placeholder": "Your progress will appear here."
+  }
+}
