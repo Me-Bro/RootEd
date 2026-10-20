@@ -299,5 +299,27 @@
       "campus_partner": "Campus Career Partner",
       "not_sure": "Not sure yet"
     }
+  },
+  "landing": {
+    "signIn": "Sign in",
+    "requestProposal": "Request a proposal",
+    "nav": {
+      "label": "Page sections",
+      "howItWorks": "How it works",
+      "programmes": "Programmes",
+      "placement": "Placement",
+      "faq": "FAQ"
+    },
+    "hero": {
+      "eyebrow": "Training and placement partner for colleges",
+      "title": "From campus to career",
+      "lead": "RR Cloud Career Catalyst gives your students practical IT training, real software projects and placement support, and shows your college the progress of every batch.",
+      "note": "Placement support is provided within the agreed scope. Employment is not guaranteed."
+    },
+    "contact": {
+      "label": "Contact details",
+      "email": "Email",
+      "phone": "Phone / WhatsApp"
+    }
   }
 }

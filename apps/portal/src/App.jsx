@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/useAuth.js';
 import { hasPermission, homeRoute } from '@/lib/access.js';
 import { Spinner } from '@/components/ui/Feedback.jsx';
 import PortalShell from '@/components/layout/PortalShell.jsx';
+import LandingPage from '@/pages/LandingPage.jsx';
 import LoginPage from '@/pages/LoginPage.jsx';
 import SelectCollegePage from '@/pages/SelectCollegePage.jsx';
 import NoAccessPage from '@/pages/NoAccessPage.jsx';
@@ -59,9 +60,14 @@ function RequireAccess({ permission, superAdmin = false, children }) {
   return hasPermission(user, permission) ? children : <Navigate to={home.path} replace />;
 }
 
-function HomeRedirect() {
+/**
+ * `/` is the public landing page. It shows straight away (most visitors are not
+ * signed in); someone who turns out to be signed in is sent where they belong.
+ */
+function RootRoute() {
   const { user } = useAuth();
-  return <Navigate to={homeRoute(user).path} replace />;
+  if (user) return <Navigate to={homeRoute(user).path} replace />;
+  return <LandingPage />;
 }
 
 export default function App() {
@@ -87,14 +93,7 @@ export default function App() {
                 </RequireAuth>
               }
             />
-            <Route
-              path="/"
-              element={
-                <RequireAuth>
-                  <HomeRedirect />
-                </RequireAuth>
-              }
-            />
+            <Route path="/" element={<RootRoute />} />
 
             <Route
               element={
