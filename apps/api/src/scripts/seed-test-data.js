@@ -533,6 +533,49 @@ async function run() {
     grades.push(quizGrade);
   }
 
+  // Training module: a `baseline` diagnostic per student in Mathematics, kept in
+  // its own array (and its own key in the emitted JSON) so the `grades` list the
+  // existing specs count against does not change. Every baseline sits below the
+  // student's final score so the pre/post delta is positive and checkable.
+  const baselineGrades = [];
+  for (const student of students) {
+    const finalGrade = grades.find(
+      (g) =>
+        String(g.studentId) === String(student._id) &&
+        String(g.subjectId) === String(mathSubject._id) &&
+        g.assessmentType === 'final'
+    );
+    const baselineScore = Math.max(0, finalGrade.score - 15);
+    let baseline = await Grade.findOne(
+      {
+        tenantId,
+        studentId: student._id,
+        subjectId: mathSubject._id,
+        termId: term._id,
+        assessmentType: 'baseline',
+      },
+      null,
+      { _bypassTenantScope: true }
+    ).lean();
+    if (!baseline) {
+      baseline = await Grade.create({
+        tenantId,
+        studentId: student._id,
+        sectionId: student.sectionId,
+        subjectId: mathSubject._id,
+        termId: term._id,
+        academicYearId: year._id,
+        assessmentType: 'baseline',
+        score: baselineScore,
+        letterGrade: scoreToLetter(baselineScore),
+        weightage: 0,
+        gradedBy: users.teacher._id,
+      });
+      baseline = baseline.toObject();
+    }
+    baselineGrades.push(baseline);
+  }
+
   // Publishes Mathematics/final for the primary section so /me/grades (which
   // only shows published grades — see GradeLock) has at least one visible
   // row for the seeded 'student' login.
@@ -1611,6 +1654,12 @@ async function run() {
       subjectId: g.subjectId.toString(),
       sectionId: g.sectionId.toString(),
       assessmentType: g.assessmentType,
+      score: g.score,
+    })),
+    baselineGrades: baselineGrades.map((g) => ({
+      _id: g._id.toString(),
+      studentId: g.studentId.toString(),
+      subjectId: g.subjectId.toString(),
       score: g.score,
     })),
     staffMembers: staffMembers.map((s) => ({

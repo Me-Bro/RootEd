@@ -244,7 +244,9 @@
       "quiz": "Quiz",
       "midterm": "Midterm",
       "final": "Final",
-      "other": "Other"
+      "other": "Other",
+      "baseline": "Baseline",
+      "mock_interview": "Mock interview"
     },
     "years": {
       "title": "Academic Years",

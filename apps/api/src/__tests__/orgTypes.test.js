@@ -6,6 +6,9 @@ test.each([
   ['tuition_center', 'inventory', false],
   ['tuition_center', 'fee', true],
   ['college', 'inventory', true],
+  ['college', 'training', true],
+  ['school', 'training', false],
+  ['tuition_center', 'training', false],
 ])('isModuleEnabled(%s, %s) -> %s', (orgType, moduleName, expected) => {
   expect(isModuleEnabled(orgType, moduleName)).toBe(expected);
 });

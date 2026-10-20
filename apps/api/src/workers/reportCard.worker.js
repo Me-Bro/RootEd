@@ -1,5 +1,6 @@
 import { Worker } from 'bullmq';
 import PDFDocument from 'pdfkit';
+import { REPORT_CARD_EXCLUDED_ASSESSMENT_TYPES } from '@rooted/shared/constants';
 import { redis } from '../config/redis.js';
 import { logger } from '../utils/logger.js';
 import { Student } from '../models/Student.js';
@@ -28,7 +29,14 @@ async function loadReportCardData(tenantId, termId, sectionId) {
   const studentIds = students.map((s) => s._id);
 
   const [grades, attendanceRecords] = await Promise.all([
-    Grade.find({ tenantId, termId, studentId: { $in: studentIds } })
+    // Baseline and mock-interview scores are training diagnostics, not term
+    // results — they must not appear on, or skew, a report card.
+    Grade.find({
+      tenantId,
+      termId,
+      studentId: { $in: studentIds },
+      assessmentType: { $nin: REPORT_CARD_EXCLUDED_ASSESSMENT_TYPES },
+    })
       .populate('subjectId', 'name code')
       .lean(),
     AttendanceRecord.find({
