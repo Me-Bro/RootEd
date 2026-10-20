@@ -15,6 +15,7 @@ import {
   consentSchema,
   completionSchema,
   batchQuerySchema,
+  batchTermQuerySchema,
 } from '@rooted/shared/schemas';
 import { authenticate } from '../middleware/authenticate.js';
 import { requirePermission } from '../middleware/requirePermission.js';
@@ -35,6 +36,9 @@ import {
   getBatchEnrollments,
 } from '../services/training.service.js';
 import { buildSubmissionUpdate } from '../utils/trainingSubmission.js';
+import { getBatchMetrics } from '../services/trainingMetrics.service.js';
+import { buildReportContent, renderReportPdf } from '../services/trainingReport.service.js';
+import { Section } from '../models/Section.js';
 import { buildStageMove } from '../utils/placementStage.js';
 import { applyCompletion } from '../utils/enrollmentCompletion.js';
 
@@ -567,5 +571,56 @@ router.put(
     }
   }
 );
+
+// ── Metrics, readiness and the completion report ─────────────────────────────
+
+router.get('/metrics', requirePermission('training:read'), async (req, res, next) => {
+  try {
+    const query = batchTermQuerySchema.parse(req.query);
+    const { term, metrics } = await getBatchMetrics(req.tenant._id, query);
+    res.json({ ...query, term, metrics });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/readiness', requirePermission('training:read'), async (req, res, next) => {
+  try {
+    const query = batchTermQuerySchema.parse(req.query);
+    const { term, rows } = await getBatchMetrics(req.tenant._id, query);
+    res.json({ ...query, term, rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/report.pdf', requirePermission('training:read'), async (req, res, next) => {
+  try {
+    const tenantId = req.tenant._id;
+    const query = batchTermQuerySchema.parse(req.query);
+    const [{ term, metrics }, section] = await Promise.all([
+      getBatchMetrics(tenantId, query),
+      Section.findOne({ _id: query.sectionId, tenantId }).populate('classId', 'name').lean(),
+    ]);
+
+    const batchName = [section.classId?.name, section.name].filter(Boolean).join(' — ');
+    const content = buildReportContent({
+      tenantName: req.tenant.name,
+      batchName,
+      term,
+      metrics,
+      generatedAt: new Date(),
+    });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="completion-report-${query.sectionId}.pdf"`
+    );
+    renderReportPdf(res, content);
+  } catch (err) {
+    next(err);
+  }
+});
 
 export default router;

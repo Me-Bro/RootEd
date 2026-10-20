@@ -148,3 +148,9 @@ export const completionSchema = z
   .strict();
 
 export const batchQuerySchema = z.object({ sectionId: objectId });
+
+// ── Metrics, readiness, report ──────────────────────────────────────────────
+
+export const batchTermQuerySchema = z.object({ sectionId: objectId, termId: objectId });
+
+export const progressQuerySchema = z.object({ termId: objectId.optional() });

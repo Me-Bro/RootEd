@@ -695,6 +695,32 @@ async function run() {
     );
   }
 
+  // Training module — mock-interview scores for Students 1-3 (75, 65, 80), left
+  // unpublished: no GradeLock exists for them, so /me/progress must not show
+  // them to the student.
+  const mockScores = [75, 65, 80];
+  for (const [i, score] of mockScores.entries()) {
+    const student = activeStudents[i];
+    const filter = {
+      tenantId,
+      studentId: student._id,
+      subjectId: mathSubject._id,
+      termId: term._id,
+      assessmentType: 'mock_interview',
+    };
+    if (!(await Grade.findOne(filter, null, { _bypassTenantScope: true }).lean())) {
+      await Grade.create({
+        ...filter,
+        sectionId: student.sectionId,
+        academicYearId: year._id,
+        score,
+        letterGrade: scoreToLetter(score),
+        weightage: 0,
+        gradedBy: users.teacher._id,
+      });
+    }
+  }
+
   // Training module — employers and a spread of placement stages.
   const employerNames = ['Seed: Acme Software', 'Seed: Beta Systems', 'Seed: Gamma Labs'];
   const employers = [];
@@ -1882,6 +1908,31 @@ async function run() {
         stage: p.stage,
       })),
       consentStudentId: activeStudents[0]._id.toString(),
+      // What GET /training/metrics must return for the primary batch + Term 1,
+      // worked out by hand from the data above (see trainingMetrics.test.js for
+      // the method). Specs assert against these, not against recomputed values.
+      //   attendance: S1 5P+2A, S2 3P+1L+3A, S3-S9 5P each; S10 (dropped) ignored
+      //     pooled (5+4+35) / (5+4+35+2+3) = 44/49 = 89.8%; below 80%: S1, S2
+      //   completion: 2 completed of 10 enrolled = 20%; 1 dropped; 9 eligible
+      //   project: Students 1-3 reviewed → 3 of 9 = 33.3%
+      //   mock interview: Students 1-3 → 3 of 9 = 33.3%
+      //   improvement: baseline = final − 15 in Mathematics for all 9 → 15
+      expected: {
+        sectionId: section._id.toString(),
+        termId: term._id.toString(),
+        enrolled: 10,
+        active: 9,
+        attendancePct: 89.8,
+        attendanceBelowTarget: 2,
+        completed: 2,
+        dropped: 1,
+        completionPct: 20,
+        projectPct: 33.3,
+        mockPct: 33.3,
+        avgDelta: 15,
+        studentsMeasured: 9,
+        placement: { applied: 5, interviewed: 3, offered: 2, joined: 1, rejected: 1 },
+      },
       project: {
         _id: trainingProject._id.toString(),
         name: trainingProject.name,

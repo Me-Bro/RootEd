@@ -18,6 +18,7 @@ import {
   restoreTenant,
 } from '../services/tenant.service.js';
 import { signAccessToken } from '../services/auth.service.js';
+import { getOutcomes } from '../services/trainingOutcomes.service.js';
 import { auditLog } from '../services/audit.service.js';
 import { getFlags, toggleFlag } from '../services/featureFlag.service.js';
 import { calculateFinalPrice, DISCOUNT_RATES } from '../services/billing.service.js';
@@ -80,6 +81,16 @@ router.get('/tenants', async (req, res, next) => {
     ]);
 
     res.json({ tenants, total, page, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Cross-college training outcomes: counts and percentages only (no student
+// data leaves its college) — see services/trainingOutcomes.service.js.
+router.get('/training/outcomes', async (_req, res, next) => {
+  try {
+    res.json(await getOutcomes());
   } catch (err) {
     next(err);
   }

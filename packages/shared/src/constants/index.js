@@ -212,3 +212,16 @@ export const PLACEMENT_STAGES = [
 // Statuses an admin may set on a student's enrolment in a batch — a subset of
 // Enrollment.status, which is where the decision is stored.
 export const COMPLETION_STATUSES = ['active', 'completed', 'dropped'];
+
+// PROVISIONAL — rough placeholder weights for the per-student readiness figure
+// (percent contribution of each component; they need not sum to 100, the score
+// is renormalised over the components a student actually has). The business
+// plan names the inputs but gives no formula, and the owner has said this will
+// be revised. Nothing — completion, targets, the PDF — depends on it.
+export const READINESS_WEIGHTS = {
+  attendance: 20,
+  assignments: 20,
+  finalGrade: 25,
+  project: 20,
+  mockInterview: 15,
+};

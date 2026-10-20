@@ -27,6 +27,13 @@ const { Assignment } = await import('../models/Assignment.js');
 const { Submission } = await import('../models/Submission.js');
 const { Project } = await import('../models/Project.js');
 const { PlacementApplication } = await import('../models/PlacementApplication.js');
+const { AttendanceRecord } = await import('../models/AttendanceRecord.js');
+const { Grade } = await import('../models/Grade.js');
+const { GradeLock } = await import('../models/GradeLock.js');
+const { Employer } = await import('../models/Employer.js');
+const { invalidatePermissions } = await import('../middleware/requirePermission.js');
+const { default: meRouter } = await import('../routes/me.js');
+const { default: adminRouter } = await import('../routes/admin.js');
 const { Enrollment } = await import('../models/Enrollment.js');
 const { default: academicRouter } = await import('../routes/academic.js');
 const { signAccessToken, hashPassword } = await import('../services/auth.service.js');
@@ -151,6 +158,8 @@ beforeAll(async () => {
   });
   app.use('/training', requireModuleEnabled('training'), trainingRouter);
   app.use('/academic', requireModuleEnabled('academic'), academicRouter);
+  app.use('/me', meRouter);
+  app.use('/admin', adminRouter);
   app.use(errorHandler);
 });
 
@@ -741,5 +750,391 @@ describe('the generic enrollment route is not a completion bypass (AC11)', () =>
     );
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('completed');
+  });
+});
+
+// ── Phase 4: metrics, readiness, report, /me/progress, cross-college outcomes ─
+//
+// A fresh college (C) so every figure is exactly what is set up here, whatever
+// earlier tests left behind in college A. Hand-worked figures:
+//   s1 completed, s2 active, s3 dropped          → completion 1 of 3 = 33.3%
+//   attendance s1 4P+1A (80%), s2 5P (100%)      → pooled 9/10 = 90% (s3 ignored)
+//   baseline/final s1 40→70, s2 50→60            → avg improvement 20
+//   mock interview s1 75                          → 1 of 2 eligible = 50%
+//   one 20-mark assignment, s1 reviewed 15        → s1 75%, s2 0%
+//   project (s1, s2) reviewed 90                  → 2 of 2 = 100%
+//   placements s1 joined, s2 applied              → applied 2, interviewed 1, offered 1, joined 1
+//   readiness s1 = (80·20 + 75·20 + 70·25 + 90·20 + 75·15) / 100 = 77.75 → 77.8
+describe('metrics, readiness, report and student progress', () => {
+  let C;
+  let cx;
+  const ctoken = {};
+  const callC = (method, path, who, body) => {
+    const req = request(app)[method](path).set('x-tenant', 'C');
+    if (who) req.set('Authorization', `Bearer ${ctoken[who]}`);
+    return body === undefined ? req : req.send(body);
+  };
+  const qs = () => `sectionId=${cx.section._id}&termId=${cx.term._id}`;
+
+  beforeAll(async () => {
+    const made = await makeTenant('college-c');
+    C = made.tenant;
+    tenants.C = C;
+    for (const key of ['tenant_admin', 'principal', 'teacher', 'student']) {
+      ctoken[key] = (await makeMember(C, made.roles[key], `c${key}`)).token;
+    }
+    const linked = await makeMember(C, made.roles.student, 'clinked');
+    ctoken.linked = linked.token;
+
+    cx = await academicFixtures(C, 'C');
+    const [s1, s2, s3] = await Promise.all([
+      asStudent(C, cx.section, 'C-001', 'Asha'),
+      asStudent(C, cx.section, 'C-002', 'Bhavna'),
+      asStudent(C, cx.section, 'C-003', 'Chetan'),
+    ]);
+    cx.s1 = s1;
+    cx.s2 = s2;
+    cx.s3 = s3;
+    await Student.updateOne({ tenantId: C._id, _id: s1._id }, { userId: linked.user._id });
+    await invalidatePermissions(C._id.toString(), linked.user._id.toString());
+
+    const on = (day) => new Date(`2026-09-${String(day).padStart(2, '0')}T00:00:00Z`);
+    const base = {
+      tenantId: C._id,
+      entityType: 'student',
+      sectionId: cx.section._id,
+      markedBy: linked.user._id,
+    };
+    const mark = (student, day, status) =>
+      AttendanceRecord.create({ ...base, entityId: student._id, date: on(day), status });
+    for (let day = 2; day <= 5; day += 1) await mark(s1, day, 'present');
+    await mark(s1, 6, 'absent');
+    for (let day = 2; day <= 6; day += 1) await mark(s2, day, 'present');
+    for (let day = 2; day <= 6; day += 1) await mark(s3, day, 'absent');
+    // Outside the programme run: must not be counted in the batch figure.
+    await AttendanceRecord.create({
+      ...base,
+      entityId: s1._id,
+      date: new Date('2027-02-01'),
+      status: 'absent',
+    });
+
+    const g = (student, assessmentType, score) =>
+      Grade.create({
+        tenantId: C._id,
+        studentId: student._id,
+        sectionId: cx.section._id,
+        subjectId: cx.subject._id,
+        termId: cx.term._id,
+        academicYearId: cx.year._id,
+        assessmentType,
+        score,
+      });
+    await g(s1, 'baseline', 40);
+    await g(s1, 'final', 70);
+    await g(s2, 'baseline', 50);
+    await g(s2, 'final', 60);
+    await g(s1, 'mock_interview', 75);
+
+    const assignment = await Assignment.create({
+      tenantId: C._id,
+      sectionId: cx.section._id,
+      subjectId: cx.subject._id,
+      termId: cx.term._id,
+      title: 'Capstone API',
+      dueDate: new Date('2026-10-15'),
+      maxScore: 20,
+    });
+    await Submission.create({
+      tenantId: C._id,
+      assignmentId: assignment._id,
+      studentId: s1._id,
+      status: 'reviewed',
+      score: 15,
+      feedback: 'Strong work',
+    });
+    await Submission.create({
+      tenantId: C._id,
+      assignmentId: assignment._id,
+      studentId: s2._id,
+      status: 'submitted',
+    });
+
+    await Project.create({
+      tenantId: C._id,
+      sectionId: cx.section._id,
+      termId: cx.term._id,
+      name: 'Team Alpha',
+      repoUrl: 'https://github.com/rrcloud/alpha',
+      memberIds: [s1._id, s2._id],
+      reviewScore: 90,
+    });
+
+    const employer = await Employer.create({ tenantId: C._id, name: 'Acme C' });
+    await PlacementApplication.create({
+      tenantId: C._id,
+      studentId: s1._id,
+      employerId: employer._id,
+      role: 'Developer',
+      stage: 'joined',
+      appliedAt: new Date('2026-10-01'),
+      interviewedAt: new Date('2026-10-05'),
+      offeredAt: new Date('2026-10-10'),
+      joinedAt: new Date('2026-10-20'),
+    });
+    await PlacementApplication.create({
+      tenantId: C._id,
+      studentId: s2._id,
+      employerId: employer._id,
+      role: 'Developer',
+      stage: 'applied',
+      appliedAt: new Date('2026-10-02'),
+    });
+
+    await Enrollment.create({
+      tenantId: C._id,
+      studentId: s1._id,
+      sectionId: cx.section._id,
+      status: 'completed',
+      endDate: new Date('2026-12-01'),
+    });
+    await Enrollment.create({
+      tenantId: C._id,
+      studentId: s3._id,
+      sectionId: cx.section._id,
+      status: 'dropped',
+      endDate: new Date('2026-10-01'),
+    });
+
+    // Publish only the *final* grades, as a trainer would for the results.
+    await GradeLock.create({
+      tenantId: C._id,
+      sectionId: cx.section._id,
+      subjectId: cx.subject._id,
+      termId: cx.term._id,
+      assessmentType: 'final',
+      publishedBy: linked.user._id,
+    });
+  });
+
+  describe('GET /training/metrics', () => {
+    test('returns every pilot figure, hand-checked', async () => {
+      const res = await callC('get', `/training/metrics?${qs()}`, 'principal');
+      expect(res.status).toBe(200);
+      const m = res.body.metrics;
+      expect(m.enrolled).toBe(3);
+      expect(m.active).toBe(2);
+      expect(m.attendance).toMatchObject({ pct: 90, met: true, studentsBelowTarget: 0 });
+      expect(m.completion).toMatchObject({
+        completed: 1,
+        enrolled: 3,
+        dropped: 1,
+        pct: 33.3,
+        met: false,
+      });
+      expect(m.project).toMatchObject({ completed: 2, eligible: 2, pct: 100, met: true });
+      expect(m.mockInterview).toMatchObject({ completed: 1, eligible: 2, pct: 50, met: false });
+      expect(m.improvement).toEqual({ avgDelta: 20, studentsMeasured: 2 });
+      expect(m.placement).toEqual({
+        applied: 2,
+        interviewed: 1,
+        offered: 1,
+        joined: 1,
+        rejected: 0,
+      });
+      expect(res.body.term.name).toBe('Career Ready run 1');
+    });
+
+    test('a student account and a missing term are refused', async () => {
+      expect((await callC('get', `/training/metrics?${qs()}`, 'student')).status).toBe(403);
+      expect(
+        (await callC('get', `/training/metrics?sectionId=${cx.section._id}`, 'principal')).status
+      ).toBe(400);
+      expect(
+        (
+          await callC(
+            'get',
+            `/training/metrics?sectionId=${cx.section._id}&termId=${new mongoose.Types.ObjectId()}`,
+            'principal'
+          )
+        ).status
+      ).toBe(404);
+    });
+
+    test('another college cannot read this batch', async () => {
+      const res = await request(app)
+        .get(`/training/metrics?${qs()}`)
+        .set('x-tenant', 'A')
+        .set('Authorization', `Bearer ${tokens.teacher}`);
+      expect(res.status).toBe(404);
+    });
+
+    test('a batch with nobody in it returns nulls, not NaN', async () => {
+      const res = await callC(
+        'get',
+        `/training/metrics?sectionId=${cx.otherSection._id}&termId=${cx.term._id}`,
+        'principal'
+      );
+      expect(res.status).toBe(200);
+      expect(res.body.metrics.enrolled).toBe(0);
+      expect(res.body.metrics.completion.pct).toBeNull();
+      expect(JSON.stringify(res.body)).not.toMatch(/NaN/);
+    });
+  });
+
+  describe('GET /training/readiness', () => {
+    test('lists each student with their components, flagged provisional', async () => {
+      const res = await callC('get', `/training/readiness?${qs()}`, 'teacher');
+      expect(res.status).toBe(200);
+      const asha = res.body.rows.find((r) => r.student.firstName === 'Asha');
+      expect(asha).toMatchObject({
+        status: 'completed',
+        attendancePct: 80,
+        assignmentsPct: 75,
+        finalAvg: 70,
+        delta: 30,
+        projectScore: 90,
+        mockScore: 75,
+        placementStage: 'joined',
+      });
+      expect(asha.readiness.score).toBeCloseTo(77.8, 1);
+      expect(asha.readiness.provisional).toBe(true);
+      const bhavna = res.body.rows.find((r) => r.student.firstName === 'Bhavna');
+      expect(bhavna.mockScore).toBeNull();
+      expect(res.body.rows.find((r) => r.student.firstName === 'Chetan').status).toBe('dropped');
+    });
+  });
+
+  describe('GET /training/report.pdf', () => {
+    const binary = (res, cb) => {
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => cb(null, Buffer.concat(chunks)));
+    };
+
+    test('streams a PDF for the batch', async () => {
+      const res = await callC('get', `/training/report.pdf?${qs()}`, 'principal')
+        .buffer(true)
+        .parse(binary);
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toMatch(/application\/pdf/);
+      expect(res.headers['content-disposition']).toMatch(/attachment/);
+      expect(res.body.subarray(0, 4).toString()).toBe('%PDF');
+    });
+
+    test('a student cannot download it', async () => {
+      expect((await callC('get', `/training/report.pdf?${qs()}`, 'student')).status).toBe(403);
+    });
+  });
+
+  describe('GET /me/progress', () => {
+    test('shows the student their own progress, published and reviewed only', async () => {
+      const res = await callC('get', '/me/progress', 'linked');
+      expect(res.status).toBe(200);
+      const body = res.body;
+      expect(body.status).toBe('completed');
+      expect(body.attendance).toMatchObject({ pct: 80, present: 4, absent: 1 });
+      // Only the published `final`; the baseline and mock interview are not out yet.
+      expect(body.grades).toHaveLength(1);
+      expect(body.grades[0]).toMatchObject({ assessmentType: 'final', score: 70 });
+      expect(body.summary.delta).toBeNull();
+      expect(body.summary.mockScore).toBeNull();
+      expect(body.assignments[0]).toMatchObject({
+        title: 'Capstone API',
+        status: 'reviewed',
+        score: 15,
+      });
+      expect(body.project).toMatchObject({ name: 'Team Alpha', reviewScore: 90, teamSize: 2 });
+      expect(body.placements[0]).toMatchObject({ employer: 'Acme C', stage: 'joined' });
+      expect(body.summary.readiness.provisional).toBe(true);
+    });
+
+    test('never contains another student, whatever the caller asks for', async () => {
+      const res = await callC('get', `/me/progress?studentId=${cx.s2._id}`, 'linked');
+      expect(res.status).toBe(200);
+      const text = JSON.stringify(res.body);
+      expect(text).not.toContain('Bhavna');
+      expect(text).not.toContain('C-002');
+      expect(res.body.attendance.present).toBe(4); // still Asha's
+    });
+
+    test('a score is hidden until the trainer has reviewed it', async () => {
+      await Submission.updateOne(
+        { tenantId: C._id, studentId: cx.s1._id },
+        { status: 'submitted', score: null, feedback: 'draft note' }
+      );
+      const res = await callC('get', '/me/progress', 'linked');
+      expect(res.body.assignments[0]).toMatchObject({
+        status: 'submitted',
+        score: null,
+        feedback: null,
+      });
+      expect(res.body.summary.assignmentsPct).toBe(0);
+      await Submission.updateOne(
+        { tenantId: C._id, studentId: cx.s1._id },
+        { status: 'reviewed', score: 15, feedback: 'Strong work' }
+      );
+    });
+
+    test('an account with no linked student record gets 404', async () => {
+      expect((await callC('get', '/me/progress', 'student')).status).toBe(404);
+    });
+
+    test('a tenant-wide token without the self permission is refused', async () => {
+      expect((await callC('get', '/me/progress', 'teacher')).status).toBe(403);
+    });
+  });
+
+  describe('GET /admin/training/outcomes', () => {
+    const superAdmin = () =>
+      signAccessToken({ sub: String(users.tenant_admin._id), systemRole: 'super_admin' });
+    const outcomes = (token) =>
+      request(app).get('/admin/training/outcomes').set('Authorization', `Bearer ${token}`);
+
+    test('is for the super admin only', async () => {
+      expect((await outcomes(tokens.tenant_admin)).status).toBe(403);
+      expect((await request(app).get('/admin/training/outcomes')).status).toBe(401);
+    });
+
+    test('reports per-college figures and nothing that identifies a person (V7)', async () => {
+      const res = await outcomes(superAdmin());
+      expect(res.status).toBe(200);
+      const college = res.body.colleges.find((c) => c.name === 'college-c');
+      expect(college).toMatchObject({
+        enrolled: 3,
+        completed: 1,
+        dropped: 1,
+        completionPct: 33.3,
+        avgDelta: 20,
+        studentsMeasured: 2,
+        placement: { applied: 2, interviewed: 1, offered: 1, joined: 1, rejected: 0 },
+      });
+      // All-time, every student: present 4+5, absent 2 (s1, one outside the run) + 5 (s3).
+      expect(college.attendancePct).toBe(56.3);
+
+      const text = JSON.stringify(res.body);
+      for (const forbidden of [
+        'firstName',
+        'lastName',
+        'admissionNo',
+        'Asha',
+        'Bhavna',
+        'Chetan',
+        'Acme C',
+        'phone',
+        'email',
+      ]) {
+        expect(text).not.toContain(forbidden);
+      }
+    });
+
+    test('colleges without the training module are left out', async () => {
+      const res = await outcomes(superAdmin());
+      const names = res.body.colleges.map((c) => c.name);
+      expect(names).toEqual(expect.arrayContaining(['college-a', 'college-b', 'college-c']));
+      expect(names).not.toContain('School');
+      expect(names).not.toContain('Plain 2');
+      expect(res.body.totals.colleges).toBe(res.body.colleges.length);
+    });
   });
 });
