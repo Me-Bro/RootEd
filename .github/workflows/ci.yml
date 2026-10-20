@@ -100,9 +100,23 @@ jobs:
 
       # The expense-with-attachment spec uploads a file. The API calls
       # ensureBucket() on boot, so no bucket step is needed here.
+      # minio/minio is gone from Docker Hub; build the pinned release (a cold
+      # build compiles Go for ~7 min, the layer cache makes it seconds).
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Minio
+        uses: docker/build-push-action@v5
+        with:
+          context: ops/minio
+          load: true
+          tags: rooted-minio:ci
+          cache-from: type=gha,scope=minio
+          cache-to: type=gha,scope=minio,mode=max
+
       - name: Start Minio
         run: |
-          docker run -d --name minio -p 9000:9000             -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin             minio/minio server /data
+          docker run -d --name minio -p 9000:9000             -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin             rooted-minio:ci server /data
           for i in $(seq 1 30); do
             curl -sf http://localhost:9000/minio/health/live && break
             sleep 2

@@ -51,7 +51,8 @@ services:
       - rooted
 
   minio:
-    image: minio/minio
+    build: ./ops/minio
+    image: rooted-minio:2025-09-07
     command: server /data --console-address ":9001"
     ports:
       - '9000:9000'
