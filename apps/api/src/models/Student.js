@@ -32,6 +32,14 @@ const studentSchema = new mongoose.Schema(
     ],
     status: { type: String, enum: ['active', 'graduated', 'withdrawn'], default: 'active' },
     photoKey: { type: String },
+    // Whether the student agreed to share their resume and scores with
+    // employers. Written only by PUT /training/students/:id/consent — never by
+    // the generic student update, which does not whitelist it.
+    placementConsent: {
+      granted: { type: Boolean },
+      at: { type: Date },
+      recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    },
     documents: [documentSchema],
   },
   { timestamps: true }

@@ -27,6 +27,9 @@ import { Grade } from '../models/Grade.js';
 import { Assignment } from '../models/Assignment.js';
 import { Submission } from '../models/Submission.js';
 import { Project } from '../models/Project.js';
+import { Employer } from '../models/Employer.js';
+import { PlacementApplication } from '../models/PlacementApplication.js';
+import { Enrollment } from '../models/Enrollment.js';
 import { GradeLock } from '../models/GradeLock.js';
 import { ReportCardBatch } from '../models/ReportCardBatch.js';
 import { Timetable } from '../models/Timetable.js';
@@ -671,6 +674,101 @@ async function run() {
     });
     trainingProject = trainingProject.toObject();
   }
+
+  // Training module — completion decisions on the primary batch (10 active
+  // students): Student1 and Student2 completed, Student10 dropped, the other
+  // seven have no Enrollment row (so are `active`). Completion is therefore
+  // 2 of 10 = 20%, with the dropped student counted against it.
+  const enrollmentPlan = [
+    { student: activeStudents[0], status: 'completed' },
+    { student: activeStudents[1], status: 'completed' },
+    { student: activeStudents[9], status: 'dropped' },
+  ];
+  for (const plan of enrollmentPlan) {
+    await Enrollment.findOneAndUpdate(
+      { tenantId, studentId: plan.student._id, sectionId: section._id },
+      {
+        $set: { status: plan.status, endDate: new Date('2025-09-30') },
+        $setOnInsert: { startDate: new Date('2025-04-01'), enrolledBy: users.tenant_admin._id },
+      },
+      { upsert: true, _bypassTenantScope: true }
+    );
+  }
+
+  // Training module — employers and a spread of placement stages.
+  const employerNames = ['Seed: Acme Software', 'Seed: Beta Systems', 'Seed: Gamma Labs'];
+  const employers = [];
+  for (const name of employerNames) {
+    employers.push(
+      await Employer.findOneAndUpdate(
+        { tenantId, name },
+        { $setOnInsert: { tenantId, name, active: true } },
+        { upsert: true, new: true, _bypassTenantScope: true }
+      ).lean()
+    );
+  }
+
+  const d = (s) => new Date(s);
+  const placementPlan = [
+    {
+      student: activeStudents[0],
+      employer: employers[0],
+      stage: 'joined',
+      appliedAt: d('2025-08-01'),
+      interviewedAt: d('2025-08-10'),
+      offeredAt: d('2025-08-20'),
+      joinedAt: d('2025-09-05'),
+    },
+    {
+      student: activeStudents[1],
+      employer: employers[1],
+      stage: 'offered',
+      appliedAt: d('2025-08-02'),
+      interviewedAt: d('2025-08-12'),
+      offeredAt: d('2025-08-25'),
+    },
+    {
+      student: activeStudents[2],
+      employer: employers[0],
+      stage: 'interviewed',
+      appliedAt: d('2025-08-03'),
+      interviewedAt: d('2025-08-14'),
+    },
+    {
+      student: activeStudents[3],
+      employer: employers[2],
+      stage: 'applied',
+      appliedAt: d('2025-08-04'),
+    },
+    {
+      student: activeStudents[4],
+      employer: employers[2],
+      stage: 'rejected',
+      appliedAt: d('2025-08-05'),
+      closedAt: d('2025-08-18'),
+    },
+  ];
+  const placementApplications = [];
+  for (const { student, employer, ...fields } of placementPlan) {
+    placementApplications.push(
+      await PlacementApplication.findOneAndUpdate(
+        { tenantId, studentId: student._id, employerId: employer._id, role: 'Junior Developer' },
+        { $set: fields, $setOnInsert: { createdBy: users.teacher._id } },
+        { upsert: true, new: true, _bypassTenantScope: true }
+      ).lean()
+    );
+  }
+
+  // Student1 has agreed to share their details with employers.
+  await Student.findOneAndUpdate(
+    { tenantId, _id: activeStudents[0]._id },
+    {
+      $set: {
+        placementConsent: { granted: true, at: d('2025-08-01'), recordedBy: users.teacher._id },
+      },
+    },
+    { _bypassTenantScope: true }
+  );
 
   // Publishes Mathematics/final for the primary section so /me/grades (which
   // only shows published grades — see GradeLock) has at least one visible
@@ -1769,6 +1867,21 @@ async function run() {
         status: s.status,
         score: s.score,
       })),
+      // Primary batch: 10 enrolled, Student1+2 completed, Student10 dropped.
+      enrollments: enrollmentPlan.map((p) => ({
+        studentId: p.student._id.toString(),
+        sectionId: section._id.toString(),
+        status: p.status,
+      })),
+      employers: employers.map((e) => ({ _id: e._id.toString(), name: e.name })),
+      // Stages: joined, offered, interviewed, applied, rejected (Student1–5).
+      placements: placementApplications.map((p) => ({
+        _id: p._id.toString(),
+        studentId: p.studentId.toString(),
+        employerId: p.employerId.toString(),
+        stage: p.stage,
+      })),
+      consentStudentId: activeStudents[0]._id.toString(),
       project: {
         _id: trainingProject._id.toString(),
         name: trainingProject.name,

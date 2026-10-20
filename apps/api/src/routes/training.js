@@ -7,6 +7,14 @@ import {
   upsertSubmissionSchema,
   createProjectSchema,
   updateProjectSchema,
+  createEmployerSchema,
+  updateEmployerSchema,
+  createPlacementSchema,
+  movePlacementSchema,
+  placementQuerySchema,
+  consentSchema,
+  completionSchema,
+  batchQuerySchema,
 } from '@rooted/shared/schemas';
 import { authenticate } from '../middleware/authenticate.js';
 import { requirePermission } from '../middleware/requirePermission.js';
@@ -15,9 +23,20 @@ import { AppError } from '../middleware/errorHandler.js';
 import { Assignment } from '../models/Assignment.js';
 import { Submission } from '../models/Submission.js';
 import { Project } from '../models/Project.js';
+import { Employer } from '../models/Employer.js';
+import { PlacementApplication } from '../models/PlacementApplication.js';
+import { Student } from '../models/Student.js';
+import { Enrollment } from '../models/Enrollment.js';
 import { auditLog } from '../services/audit.service.js';
-import { assertRefs, assertOnRoster, getBatchRoster } from '../services/training.service.js';
+import {
+  assertRefs,
+  assertOnRoster,
+  getBatchRoster,
+  getBatchEnrollments,
+} from '../services/training.service.js';
 import { buildSubmissionUpdate } from '../utils/trainingSubmission.js';
+import { buildStageMove } from '../utils/placementStage.js';
+import { applyCompletion } from '../utils/enrollmentCompletion.js';
 
 /**
  * Training module: batch assignments, per-student results and team projects.
@@ -307,6 +326,242 @@ router.patch(
         }
       );
       res.json(project);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ── Employers ─────────────────────────────────────────────────────────────────
+
+const conflictAs409 = (err, message) => (err?.code === 11000 ? new AppError(message, 409) : err);
+
+router.get('/employers', requirePermission('training:read'), async (req, res, next) => {
+  try {
+    res.json(await Employer.find({ tenantId: req.tenant._id }).sort({ name: 1 }).limit(500).lean());
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post(
+  '/employers',
+  requirePermission('training:write'),
+  validate(createEmployerSchema),
+  async (req, res, next) => {
+    try {
+      const employer = await Employer.create({ ...req.body, tenantId: req.tenant._id });
+      await audit(req, 'training.employer.create', { model: 'Employer', id: employer._id });
+      res.status(201).json(employer);
+    } catch (err) {
+      next(conflictAs409(err, 'An employer with this name already exists'));
+    }
+  }
+);
+
+router.patch(
+  '/employers/:id',
+  requirePermission('training:write'),
+  validate(updateEmployerSchema),
+  async (req, res, next) => {
+    try {
+      const employer = await Employer.findOneAndUpdate(
+        { _id: req.params.id, tenantId: req.tenant._id },
+        { $set: req.body },
+        { new: true, runValidators: true }
+      );
+      if (!employer) throw new AppError('Not found', 404);
+      await audit(req, 'training.employer.update', { model: 'Employer', id: employer._id });
+      res.json(employer);
+    } catch (err) {
+      next(conflictAs409(err, 'An employer with this name already exists'));
+    }
+  }
+);
+
+// ── Placements ────────────────────────────────────────────────────────────────
+
+router.get('/placements', requirePermission('training:read'), async (req, res, next) => {
+  try {
+    const tenantId = req.tenant._id;
+    const { sectionId, stage } = placementQuerySchema.parse(req.query);
+    const filter = { tenantId };
+    if (stage) filter.stage = stage;
+    if (sectionId) {
+      const batch = await getBatchEnrollments(tenantId, sectionId);
+      filter.studentId = { $in: batch.map((b) => b.student._id) };
+    }
+
+    const applications = await PlacementApplication.find(filter)
+      .sort({ updatedAt: -1 })
+      .limit(1000)
+      .lean();
+
+    const [students, employers] = await Promise.all([
+      Student.find(
+        { tenantId, _id: { $in: applications.map((a) => a.studentId) } },
+        'firstName lastName admissionNo'
+      ).lean(),
+      Employer.find(
+        { tenantId, _id: { $in: applications.map((a) => a.employerId) } },
+        'name'
+      ).lean(),
+    ]);
+    const studentById = new Map(students.map((s) => [String(s._id), s]));
+    const employerById = new Map(employers.map((e) => [String(e._id), e]));
+
+    res.json(
+      applications.map((a) => ({
+        ...a,
+        student: studentById.get(String(a.studentId)) ?? null,
+        employer: employerById.get(String(a.employerId)) ?? null,
+      }))
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post(
+  '/placements',
+  requirePermission('training:write'),
+  validate(createPlacementSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { studentId, employerId } = req.body;
+      const [student, employer] = await Promise.all([
+        Student.exists({ _id: studentId, tenantId }),
+        Employer.exists({ _id: employerId, tenantId }),
+      ]);
+      if (!student) throw new AppError('Student not found', 404);
+      if (!employer) throw new AppError('Employer not found', 404);
+
+      const application = await PlacementApplication.create({
+        ...req.body,
+        tenantId,
+        createdBy: req.user.sub,
+      });
+      await audit(req, 'training.placement.create', {
+        model: 'PlacementApplication',
+        id: application._id,
+      });
+      res.status(201).json(application);
+    } catch (err) {
+      next(conflictAs409(err, 'This student already has an application for that role'));
+    }
+  }
+);
+
+router.patch(
+  '/placements/:id',
+  requirePermission('training:write'),
+  validate(movePlacementSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const before = await PlacementApplication.findOne({ _id: req.params.id, tenantId }).lean();
+      if (!before) throw new AppError('Not found', 404);
+
+      const update = buildStageMove(before, req.body.stage, req.body.at);
+      if (req.body.notes !== undefined) update.notes = req.body.notes;
+
+      const application = await PlacementApplication.findOneAndUpdate(
+        { _id: before._id, tenantId },
+        { $set: update },
+        { new: true, runValidators: true }
+      );
+      await audit(
+        req,
+        'training.placement.move',
+        { model: 'PlacementApplication', id: application._id },
+        { before: { stage: before.stage }, after: { stage: application.stage } }
+      );
+      res.json(application);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.put(
+  '/students/:id/consent',
+  requirePermission('training:write'),
+  validate(consentSchema),
+  async (req, res, next) => {
+    try {
+      const student = await Student.findOneAndUpdate(
+        { _id: req.params.id, tenantId: req.tenant._id },
+        {
+          $set: {
+            placementConsent: {
+              granted: req.body.granted,
+              at: new Date(),
+              recordedBy: req.user.sub,
+            },
+          },
+        },
+        { new: true, projection: 'placementConsent' }
+      );
+      if (!student) throw new AppError('Not found', 404);
+
+      await audit(
+        req,
+        'training.consent.set',
+        { model: 'Student', id: student._id },
+        { after: { granted: req.body.granted } }
+      );
+      res.json({ _id: student._id, placementConsent: student.placementConsent });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ── Batch roster and completion ───────────────────────────────────────────────
+
+router.get('/enrollments', requirePermission('training:read'), async (req, res, next) => {
+  try {
+    const { sectionId } = batchQuerySchema.parse(req.query);
+    await assertRefs(req.tenant._id, { sectionId });
+    res.json(await getBatchEnrollments(req.tenant._id, sectionId));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// The admin's completion decision. It lives on Enrollment (the existing record
+// of a student's membership of a batch) rather than a second table, and is
+// keyed by student + batch because a college student may not have an Enrollment
+// row yet — this creates it.
+router.put(
+  '/completion',
+  requirePermission('training:complete'),
+  validate(completionSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { studentId, sectionId, status, notes } = req.body;
+      await assertRefs(tenantId, { sectionId });
+
+      const batch = await getBatchEnrollments(tenantId, sectionId);
+      const entry = batch.find((b) => String(b.student._id) === studentId);
+      if (!entry) throw new AppError('Student is not on this batch', 404);
+
+      const update = applyCompletion(entry.enrollment, status, notes);
+      const enrollment = await Enrollment.findOneAndUpdate(
+        { tenantId, studentId, sectionId },
+        { $set: update, $setOnInsert: { enrolledBy: req.user.sub } },
+        { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+      );
+
+      await audit(
+        req,
+        'training.completion.set',
+        { model: 'Enrollment', id: enrollment._id },
+        { before: entry.enrollment ?? undefined, after: enrollment.toObject() }
+      );
+      res.json(enrollment);
     } catch (err) {
       next(err);
     }

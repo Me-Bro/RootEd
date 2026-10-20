@@ -26,6 +26,9 @@ const { Subject } = await import('../models/Subject.js');
 const { Assignment } = await import('../models/Assignment.js');
 const { Submission } = await import('../models/Submission.js');
 const { Project } = await import('../models/Project.js');
+const { PlacementApplication } = await import('../models/PlacementApplication.js');
+const { Enrollment } = await import('../models/Enrollment.js');
+const { default: academicRouter } = await import('../routes/academic.js');
 const { signAccessToken, hashPassword } = await import('../services/auth.service.js');
 const { requireModuleEnabled } = await import('../middleware/requireModuleEnabled.js');
 const { errorHandler } = await import('../middleware/errorHandler.js');
@@ -147,6 +150,7 @@ beforeAll(async () => {
     next();
   });
   app.use('/training', requireModuleEnabled('training'), trainingRouter);
+  app.use('/academic', requireModuleEnabled('academic'), academicRouter);
   app.use(errorHandler);
 });
 
@@ -404,5 +408,338 @@ describe('projects', () => {
       milestones: [{ title: 'Auth done', dueDate: '2026-11-10', doneAt: '2026-11-09' }],
     });
     expect(res.body.milestones[0].doneAt).toBeTruthy();
+  });
+});
+
+// ── Phase 3: placement, consent and admin-decided completion ──────────────────
+
+const callAcademic = (method, path, who, body, tenant = 'A') => {
+  const req = request(app)[method](`/academic${path}`).set('x-tenant', tenant);
+  if (who) req.set('Authorization', `Bearer ${tokens[who]}`);
+  return body === undefined ? req : req.send(body);
+};
+
+describe('employers', () => {
+  test('a trainer adds one, a TPO can list it, a duplicate name is a 409', async () => {
+    const res = await call('post', '/employers', 'teacher', { name: 'Acme Software' });
+    expect(res.status).toBe(201);
+    expect((await call('get', '/employers', 'principal')).body.map((e) => e.name)).toContain(
+      'Acme Software'
+    );
+    expect((await call('post', '/employers', 'teacher', { name: 'Acme Software' })).status).toBe(
+      409
+    );
+    expect((await call('post', '/employers', 'principal', { name: 'Nope' })).status).toBe(403);
+  });
+
+  test('another college neither sees nor edits it', async () => {
+    const created = (await call('post', '/employers', 'teacher', { name: 'Private Co' })).body;
+    const list = await call('get', '/employers', 'bTeacher', undefined, 'B');
+    expect(list.body.map((e) => e._id)).not.toContain(created._id);
+    const patch = await call('patch', `/employers/${created._id}`, 'bTeacher', { name: 'x' }, 'B');
+    expect(patch.status).toBe(404);
+  });
+});
+
+describe('placements', () => {
+  let employer;
+  beforeAll(async () => {
+    employer = (await call('post', '/employers', 'teacher', { name: 'Placement Co' })).body;
+  });
+  const body = (role = 'Junior Developer') => ({
+    studentId: String(fx.s1._id),
+    employerId: employer._id,
+    role,
+  });
+
+  test('creates an application at the applied stage with its date', async () => {
+    const res = await call('post', '/placements', 'teacher', body('Intern'));
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ stage: 'applied', role: 'Intern' });
+    expect(res.body.appliedAt).toBeTruthy();
+  });
+
+  test('the same student, employer and role cannot be applied twice', async () => {
+    await call('post', '/placements', 'teacher', body('Tester'));
+    expect((await call('post', '/placements', 'teacher', body('Tester'))).status).toBe(409);
+  });
+
+  test('moves forward with a date, refuses to go backwards (EH5)', async () => {
+    const app1 = (await call('post', '/placements', 'teacher', body('Analyst'))).body;
+    const moved = await call('patch', `/placements/${app1._id}`, 'teacher', {
+      stage: 'interviewed',
+    });
+    expect(moved.status).toBe(200);
+    expect(moved.body.stage).toBe('interviewed');
+    expect(moved.body.interviewedAt).toBeTruthy();
+
+    const back = await call('patch', `/placements/${app1._id}`, 'teacher', { stage: 'applied' });
+    expect(back.status).toBe(400);
+    expect(back.body.error).toMatch(/cannot move/i);
+  });
+
+  test('each stage keeps its own date so outcomes are reportable separately', async () => {
+    const a = (await call('post', '/placements', 'teacher', body('Support'))).body;
+    await call('patch', `/placements/${a._id}`, 'teacher', { stage: 'offered' });
+    const stored = await PlacementApplication.findOne({
+      _id: a._id,
+      tenantId: tenants.A._id,
+    }).lean();
+    expect(stored.offeredAt).toBeTruthy();
+    expect(stored.interviewedAt).toBeUndefined();
+  });
+
+  test('refuses a student or employer from another college', async () => {
+    const other = (await call('post', '/employers', 'bTeacher', { name: 'B Employer' }, 'B')).body;
+    const foreignEmployer = await call('post', '/placements', 'teacher', {
+      ...body('X'),
+      employerId: other._id,
+    });
+    expect(foreignEmployer.status).toBe(404);
+    const foreignStudent = await call('post', '/placements', 'teacher', {
+      ...body('Y'),
+      studentId: String(new mongoose.Types.ObjectId()),
+    });
+    expect(foreignStudent.status).toBe(404);
+  });
+
+  test('lists a batch with student and employer names, readable by the TPO', async () => {
+    const res = await call('get', `/placements?sectionId=${fx.section._id}`, 'principal');
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBeGreaterThan(0);
+    expect(res.body[0]).toMatchObject({
+      student: { firstName: 'Asha' },
+      employer: { name: 'Placement Co' },
+    });
+    const outside = await call('get', `/placements?sectionId=${fx.otherSection._id}`, 'principal');
+    expect(outside.body).toEqual([]);
+  });
+
+  test('a student account cannot list placements', async () => {
+    expect((await call('get', '/placements', 'student')).status).toBe(403);
+  });
+});
+
+describe('placement consent', () => {
+  test('a trainer records it with who and when, and the roster shows it', async () => {
+    const res = await call('put', `/students/${fx.s2._id}/consent`, 'teacher', { granted: true });
+    expect(res.status).toBe(200);
+    const stored = await Student.findOne({ _id: fx.s2._id, tenantId: tenants.A._id }).lean();
+    expect(stored.placementConsent.granted).toBe(true);
+    expect(String(stored.placementConsent.recordedBy)).toBe(String(users.teacher._id));
+    expect(stored.placementConsent.at).toBeTruthy();
+
+    const roster = await call('get', `/enrollments?sectionId=${fx.section._id}`, 'principal');
+    const row = roster.body.find((r) => r.student.firstName === 'Bhavna');
+    expect(row.student.placementConsent.granted).toBe(true);
+  });
+
+  test('another college cannot change it', async () => {
+    const res = await call(
+      'put',
+      `/students/${fx.s1._id}/consent`,
+      'bTeacher',
+      { granted: true },
+      'B'
+    );
+    expect(res.status).toBe(404);
+  });
+
+  test('the generic student update cannot set it', async () => {
+    const res = await callAcademic('patch', `/students/${fx.s1._id}`, 'tenant_admin', {
+      firstName: 'Asha',
+      placementConsent: { granted: true, recordedBy: String(users.teacher._id) },
+    });
+    expect(res.status).toBe(200);
+    const stored = await Student.findOne({ _id: fx.s1._id, tenantId: tenants.A._id }).lean();
+    expect(stored.placementConsent?.granted).toBeUndefined();
+  });
+
+  test('the TPO cannot record consent', async () => {
+    const res = await call('put', `/students/${fx.s1._id}/consent`, 'principal', {
+      granted: true,
+    });
+    expect(res.status).toBe(403);
+  });
+});
+
+describe('admin-decided completion', () => {
+  const decision = (status, extra = {}) => ({
+    studentId: String(fx.s1._id),
+    sectionId: String(fx.section._id),
+    status,
+    ...extra,
+  });
+  const enrollmentOf = (student) =>
+    Enrollment.findOne({
+      tenantId: tenants.A._id,
+      studentId: student._id,
+      sectionId: fx.section._id,
+    }).lean();
+
+  test('only the tenant_admin can decide', async () => {
+    expect((await call('put', '/completion', 'teacher', decision('completed'))).status).toBe(403);
+    expect((await call('put', '/completion', 'principal', decision('completed'))).status).toBe(403);
+    expect((await call('put', '/completion', 'student', decision('completed'))).status).toBe(403);
+    expect(await enrollmentOf(fx.s1)).toBeNull();
+  });
+
+  test('the admin completes a student, creating the enrollment row if needed, audited', async () => {
+    auditLog.mockClear();
+    const res = await call(
+      'put',
+      '/completion',
+      'tenant_admin',
+      decision('completed', { notes: 'Met all targets' })
+    );
+    expect(res.status).toBe(200);
+    const row = await enrollmentOf(fx.s1);
+    expect(row).toMatchObject({ status: 'completed', notes: 'Met all targets' });
+    expect(row.endDate).toBeTruthy();
+    expect(auditLog).toHaveBeenCalledWith(
+      expect.objectContaining({ action: 'training.completion.set' })
+    );
+  });
+
+  test('reverting to active clears the end date (EH8) and is audited', async () => {
+    auditLog.mockClear();
+    const res = await call('put', '/completion', 'tenant_admin', decision('active'));
+    expect(res.status).toBe(200);
+    expect((await enrollmentOf(fx.s1)).endDate).toBeNull();
+    expect(auditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'training.completion.set',
+        before: expect.objectContaining({ status: 'completed' }),
+      })
+    );
+  });
+
+  test('the roster lists every student with a status, defaulting to active', async () => {
+    await call('put', '/completion', 'tenant_admin', decision('completed'));
+    const res = await call('get', `/enrollments?sectionId=${fx.section._id}`, 'principal');
+    expect(res.status).toBe(200);
+    const byName = Object.fromEntries(res.body.map((r) => [r.student.firstName, r.status]));
+    expect(byName).toEqual({ Asha: 'completed', Bhavna: 'active' });
+  });
+
+  test('a dropped student stays visible here but leaves the assignment roster', async () => {
+    const drop = (status) => ({
+      studentId: String(fx.s2._id),
+      sectionId: String(fx.section._id),
+      status,
+    });
+    await call('put', '/completion', 'tenant_admin', drop('dropped'));
+    const roster = await call('get', `/enrollments?sectionId=${fx.section._id}`, 'tenant_admin');
+    expect(roster.body.find((r) => r.student.firstName === 'Bhavna').status).toBe('dropped');
+
+    const assignmentId = (await call('post', '/assignments', 'teacher', assignmentBody())).body._id;
+    const batch = await call('get', `/assignments/${assignmentId}/submissions`, 'teacher');
+    expect(batch.body.map((r) => r.student.firstName)).toEqual(['Asha']);
+
+    await call('put', '/completion', 'tenant_admin', drop('active'));
+  });
+
+  test('refuses a student who is not on the batch, or a section from another college', async () => {
+    const off = await call('put', '/completion', 'tenant_admin', {
+      ...decision('completed'),
+      studentId: String(fx.outsider._id),
+    });
+    expect(off.status).toBe(404);
+    const foreign = await call('put', '/completion', 'tenant_admin', {
+      ...decision('completed'),
+      sectionId: String(fxB.section._id),
+    });
+    expect(foreign.status).toBe(404);
+  });
+
+  test('rejects an unknown status', async () => {
+    const res = await call('put', '/completion', 'tenant_admin', decision('graduated'));
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('the generic enrollment route is not a completion bypass (AC11)', () => {
+  let enrollment;
+  beforeAll(async () => {
+    const role = await Role.create({
+      tenantId: tenants.A._id,
+      name: 'registrar',
+      permissions: ['students:read', 'students:write'],
+    });
+    const registrar = await makeMember(tenants.A, role, 'registrar');
+    tokens.registrar = registrar.token;
+    enrollment = (
+      await callAcademic('post', '/enrollments', 'tenant_admin', {
+        studentId: String(fx.outsider._id),
+        sectionId: String(fx.otherSection._id),
+      })
+    ).body;
+  });
+  const statusOf = async () =>
+    (await Enrollment.findOne({ _id: enrollment._id, tenantId: tenants.A._id }).lean()).status;
+
+  test('a students:write holder without training:complete cannot mark completed', async () => {
+    const res = await callAcademic('patch', `/enrollments/${enrollment._id}`, 'registrar', {
+      status: 'completed',
+    });
+    expect(res.status).toBe(403);
+    expect(await statusOf()).toBe('active');
+  });
+
+  test('nor can they reverse a completion someone else recorded', async () => {
+    await callAcademic('patch', `/enrollments/${enrollment._id}`, 'tenant_admin', {
+      status: 'completed',
+    });
+    const res = await callAcademic('patch', `/enrollments/${enrollment._id}`, 'registrar', {
+      status: 'active',
+    });
+    expect(res.status).toBe(403);
+    expect(await statusOf()).toBe('completed');
+  });
+
+  test('the same holder can still edit notes', async () => {
+    const res = await callAcademic('patch', `/enrollments/${enrollment._id}`, 'registrar', {
+      notes: 'transferred batch',
+    });
+    expect(res.status).toBe(200);
+  });
+
+  test('a college without the training module keeps the old behaviour', async () => {
+    const plain = await Tenant.create({
+      name: 'Plain 2',
+      subdomain: 'plain-two',
+      orgType: 'school',
+    });
+    tenants.P = plain;
+    const role = await Role.create({
+      tenantId: plain._id,
+      name: 'registrar',
+      permissions: ['students:read', 'students:write'],
+    });
+    tokens.plainReg = (await makeMember(plain, role, 'plainreg')).token;
+    const cls = await Class.create({ tenantId: plain._id, name: 'C' });
+    const sec = await Section.create({ tenantId: plain._id, classId: cls._id, name: 'A' });
+    const stu = await Student.create({
+      tenantId: plain._id,
+      admissionNo: 'P-1',
+      firstName: 'Plain',
+      lastName: 'Student',
+      sectionId: sec._id,
+    });
+    const enr = await Enrollment.create({
+      tenantId: plain._id,
+      studentId: stu._id,
+      sectionId: sec._id,
+    });
+
+    const res = await callAcademic(
+      'patch',
+      `/enrollments/${enr._id}`,
+      'plainReg',
+      { status: 'completed' },
+      'P'
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('completed');
   });
 });

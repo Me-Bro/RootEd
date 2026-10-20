@@ -102,6 +102,19 @@ export function requirePermission(permission) {
   };
 }
 
+/**
+ * The same decision requirePermission() makes, for a handler that has to apply
+ * a permission conditionally (the middleware takes one fixed string, which
+ * cannot express "only when the body sets status: completed").
+ */
+export async function userHasPermission(req, permission) {
+  if (req.user?.systemRole === 'super_admin') {
+    return req.user.impersonatedTenantId === req.tenant._id.toString();
+  }
+  const permissions = await resolvePermissions(req.user.sub, req.tenant._id.toString());
+  return permissions.includes(permission);
+}
+
 export function effectivePermissionsFor(user) {
   return user?.systemRole === 'super_admin' && user.impersonatedTenantId
     ? DEFAULT_ROLE_TEMPLATES.tenant_admin

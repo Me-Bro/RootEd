@@ -196,3 +196,19 @@ export const PERMISSIONS = [
 
 /** True for permissions that only ever expose the caller's own records. */
 export const isSelfScoped = (permission) => permission.startsWith('self:');
+
+// Placement pipeline. The first four are the progression, in order; the last
+// two close an application without a joining. Order matters: stage moves are
+// forward-only (see apps/api/src/utils/placementStage.js).
+export const PLACEMENT_STAGES = [
+  'applied',
+  'interviewed',
+  'offered',
+  'joined',
+  'rejected',
+  'withdrawn',
+];
+
+// Statuses an admin may set on a student's enrolment in a batch — a subset of
+// Enrollment.status, which is where the decision is stored.
+export const COMPLETION_STATUSES = ['active', 'completed', 'dropped'];

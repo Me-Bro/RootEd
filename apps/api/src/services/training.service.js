@@ -22,27 +22,39 @@ export async function assertRefs(tenantId, { sectionId, subjectId, termId }) {
 }
 
 /**
- * Everyone on a batch's roster: active students whose home section is the
- * batch, plus anyone holding a live Enrollment for it. Both, because
- * Student.sectionId is what college students are created with, while an
- * Enrollment row is what records batch membership and completion.
+ * Every student in a batch with their enrolment status.
+ *
+ * A batch is the active students whose home section is it, plus anyone holding
+ * an Enrollment row for it — both, because Student.sectionId is what college
+ * students are created with, while an Enrollment row is what records batch
+ * membership and the admin's completion decision. A student with no row is
+ * simply `active`.
  */
-export async function getBatchRoster(tenantId, sectionId) {
-  const enrollments = await Enrollment.find(
-    { tenantId, sectionId, status: { $in: ['active', 'completed'] } },
-    'studentId'
-  ).lean();
+export async function getBatchEnrollments(tenantId, sectionId) {
+  const enrollments = await Enrollment.find({ tenantId, sectionId }).lean();
+  const byStudent = new Map(enrollments.map((e) => [String(e.studentId), e]));
 
-  return Student.find(
+  const students = await Student.find(
     {
       tenantId,
       status: 'active',
       $or: [{ sectionId }, { _id: { $in: enrollments.map((e) => e.studentId) } }],
     },
-    'firstName lastName admissionNo sectionId'
+    'firstName lastName admissionNo sectionId placementConsent'
   )
     .sort({ admissionNo: 1 })
     .lean();
+
+  return students.map((student) => {
+    const enrollment = byStudent.get(String(student._id)) ?? null;
+    return { student, enrollment, status: enrollment?.status ?? 'active' };
+  });
+}
+
+/** Students who are still on the batch: everyone except those who dropped out. */
+export async function getBatchRoster(tenantId, sectionId) {
+  const batch = await getBatchEnrollments(tenantId, sectionId);
+  return batch.filter((b) => b.status !== 'dropped').map((b) => b.student);
 }
 
 export async function assertOnRoster(tenantId, sectionId, studentIds) {
