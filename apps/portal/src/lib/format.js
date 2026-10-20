@@ -14,8 +14,5 @@ export function fmtDate(value, locale) {
   });
 }
 
-/** `2026-11-05` for an <input type="date">. */
-export const toDateInput = (value) => (value ? new Date(value).toISOString().slice(0, 10) : '');
-
 export const fullName = (student) =>
   student ? `${student.firstName ?? ''} ${student.lastName ?? ''}`.trim() : DASH;
