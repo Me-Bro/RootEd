@@ -320,6 +320,170 @@
       "label": "Contact details",
       "email": "Email",
       "phone": "Phone / WhatsApp"
+    },
+    "disclaimer": "Placement support is provided within the agreed scope. Employment is not guaranteed.",
+    "forColleges": {
+      "title": "Built for colleges",
+      "lead": "An outside training partner, so your college does not need a large permanent team of specialists.",
+      "items": {
+        "trainers": {
+          "title": "Practical, industry-oriented training",
+          "body": "Taught by people with engineering experience, not exam coaching: Git, full-stack development, databases, testing and deployment."
+        },
+        "projects": {
+          "title": "Real software projects",
+          "body": "Students work in teams on a working application, with code reviews and a final demonstration for your college."
+        },
+        "reports": {
+          "title": "Reports you can rely on",
+          "body": "Attendance, assessments and projects are tracked for every batch, and outcomes are reported to your Training and Placement Officer."
+        }
+      }
+    },
+    "howItWorks": {
+      "title": "How a programme runs",
+      "lead": "The Career Ready programme over twelve weeks. Weeks and topics are adapted to each college.",
+      "steps": {
+        "baseline": {
+          "title": "Weeks 1–2: Baseline and fundamentals",
+          "body": "A programming assessment, then problem-solving, Git and GitHub, HTML, CSS and JavaScript."
+        },
+        "fullstack": {
+          "title": "Weeks 3–5: Full-stack development",
+          "body": "React or Vue, Node.js and Express, REST APIs, SQL or MongoDB, authentication and validation."
+        },
+        "practices": {
+          "title": "Weeks 6–8: Engineering practices",
+          "body": "Testing, debugging, code reviews, secure coding basics, Docker and deployment."
+        },
+        "project": {
+          "title": "Weeks 9–10: Team project",
+          "body": "Students build, test and deploy a working application with requirements, issues, version control and documentation."
+        },
+        "ai": {
+          "title": "Week 11: AI-assisted development",
+          "body": "Using coding assistants well: understanding generated code, testing AI output, privacy and responsible use."
+        },
+        "career": {
+          "title": "Week 12: Career readiness",
+          "body": "Coding tests, resume reviews, mock technical interviews, project presentations and individual feedback."
+        }
+      },
+      "note": "Where programming fundamentals are weak, we begin with a foundation module first."
+    },
+    "programmes": {
+      "title": "Programmes",
+      "lead": "Start with one batch, agree what will be measured, and grow from the results.",
+      "core": "Core programme",
+      "note": "Scope, student numbers and dates are agreed in writing with each college. Request a proposal for the programme that fits.",
+      "items": {
+        "skill_builder": {
+          "name": "Skill Builder",
+          "meta": "2–4 weeks · up to 50 students",
+          "body": "An introductory engagement: 20–30 hours of workshops on Git, programming fundamentals and web development or AI coding tools, with a mini project, a basic assessment and an attendance report."
+        },
+        "career_ready": {
+          "name": "Career Ready",
+          "meta": "8–12 weeks · up to 40 students",
+          "body": "Structured full-stack or Python training, a team project with code reviews and demonstrations, aptitude and resume preparation, mock interviews and a final student readiness report."
+        },
+        "campus_partner": {
+          "name": "Campus Career Partner",
+          "meta": "Annual agreement with your college",
+          "body": "Several training batches through the year, final-year project mentoring, a placement-readiness calendar, assessments and mock interviews, and regular progress reviews with your Training and Placement Officer."
+        }
+      }
+    },
+    "outcomes": {
+      "title": "Measured, not promised",
+      "lead": "Before training starts we agree with your college what will be measured and how. These are the targets we usually propose for a pilot.",
+      "note": "Targets are adjusted to student readiness and the agreed scope. They are suggested measures, not promises of job placement.",
+      "items": {
+        "attendance": {
+          "label": "Attendance",
+          "value": "At least {{target}}%"
+        },
+        "completion": {
+          "label": "Programme completion",
+          "value": "At least {{target}}% of enrolled students"
+        },
+        "project": {
+          "label": "Students completing a project",
+          "value": "At least {{target}}% of enrolled students"
+        },
+        "mockInterview": {
+          "label": "Students completing a mock interview",
+          "value": "At least {{target}}% of eligible participants"
+        }
+      },
+      "also": {
+        "improvement": {
+          "label": "Improvement in assessment scores",
+          "value": "Pre- and post-assessment results compared"
+        },
+        "placement": {
+          "label": "Placement reporting",
+          "value": "Applications, interviews, offers and joining tracked separately"
+        }
+      }
+    },
+    "progress": {
+      "title": "See progress as it happens",
+      "lead": "Trainers record attendance, assignments, projects and mock interviews. Your Training and Placement Officer and administrators follow each batch in the Career Catalyst portal, and students see their own progress.",
+      "items": {
+        "attendance": "Attendance and assignment results for every student",
+        "projects": "Project milestones and the trainer's review",
+        "improvement": "Improvement from the baseline to the final assessment",
+        "placement": "Placement applications, interviews, offers and joining",
+        "completion": "A completion decision for each student, made by your administrator",
+        "report": "A batch report you can download as a PDF"
+      }
+    },
+    "placement": {
+      "title": "Placement support",
+      "lead": "Preparing students and connecting them with relevant employers, step by step.",
+      "steps": {
+        "assess": "Assess students and group them by skill level",
+        "prepare": "Prepare resumes, GitHub profiles and project portfolios",
+        "test": "Run technical and aptitude assessments",
+        "match": "Identify employers whose entry-level roles match the students",
+        "coordinate": "Coordinate applications, interviews and recruitment drives",
+        "track": "Track interviews, feedback, offers and joining",
+        "report": "Report verified outcomes to the college"
+      },
+      "network": "We are building a focused network of relevant employers rather than promising access to a large one."
+    },
+    "faq": {
+      "title": "Questions colleges ask",
+      "items": {
+        "who": {
+          "q": "Who is this for?",
+          "a": "Colleges and institutes with BCA, MCA, B.Tech, B.Sc. Computer Science, polytechnic and similar programmes."
+        },
+        "length": {
+          "q": "How long is a programme?",
+          "a": "Skill Builder runs for 2–4 weeks and Career Ready for 8–12 weeks. Campus Career Partner is an annual agreement."
+        },
+        "need": {
+          "q": "What do you need from the college?",
+          "a": "Classroom or lab access, internet and a named coordinator."
+        },
+        "cost": {
+          "q": "How much does it cost?",
+          "a": "Fees depend on the programme, the batch size and the scope. Request a proposal and we will send a written quote."
+        },
+        "pilot": {
+          "q": "Can we start small?",
+          "a": "Yes. Most colleges begin with a Skill Builder or a single Career Ready batch, agree the measures up front and review the results before going further."
+        },
+        "jobs": {
+          "q": "Do you guarantee jobs?",
+          "a": "No. We help with preparation, employer outreach and tracking within the agreed scope. Employment is not guaranteed."
+        }
+      }
+    },
+    "footer": {
+      "by": "A programme of Rural Root Cloud Tech Services & Training."
     }
   }
 }

@@ -1,7 +1,16 @@
 import { useTranslation } from 'react-i18next';
 import { LandingHeader } from '@/components/landing/LandingHeader.jsx';
 import { Hero } from '@/components/landing/Hero.jsx';
+import { ForColleges } from '@/components/landing/ForColleges.jsx';
+import { HowItWorks } from '@/components/landing/HowItWorks.jsx';
+import { Programmes } from '@/components/landing/Programmes.jsx';
+import { Outcomes } from '@/components/landing/Outcomes.jsx';
+import { ProgressTracking } from '@/components/landing/ProgressTracking.jsx';
+import { PlacementProcess } from '@/components/landing/PlacementProcess.jsx';
+import { Faq } from '@/components/landing/Faq.jsx';
+import { Section } from '@/components/landing/Section.jsx';
 import { ContactBlock } from '@/components/landing/ContactBlock.jsx';
+import { LandingFooter } from '@/components/landing/LandingFooter.jsx';
 
 /** The public front door of RR Cloud Career Catalyst. Anyone can read it; nothing here needs a session. */
 export default function LandingPage() {
@@ -17,19 +26,18 @@ export default function LandingPage() {
       <LandingHeader />
       <main id="main" className="flex-1">
         <Hero />
-        <section
-          id="request-proposal"
-          aria-labelledby="request-proposal-title"
-          className="mx-auto max-w-6xl scroll-mt-4 px-4 py-14"
-        >
-          <h2 id="request-proposal-title" className="text-2xl font-semibold tracking-tight">
-            {t('landing.requestProposal')}
-          </h2>
-          <div className="mt-4">
-            <ContactBlock />
-          </div>
-        </section>
+        <ForColleges />
+        <HowItWorks />
+        <Programmes />
+        <Outcomes />
+        <ProgressTracking />
+        <PlacementProcess />
+        <Faq />
+        <Section id="request-proposal" tone="muted" title={t('landing.requestProposal')}>
+          <ContactBlock />
+        </Section>
       </main>
+      <LandingFooter />
     </div>
   );
 }
