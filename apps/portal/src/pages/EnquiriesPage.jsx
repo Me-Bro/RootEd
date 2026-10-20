@@ -121,6 +121,14 @@ export default function EnquiriesPage() {
       ) : (
         <Card>
           <CardContent className="pt-4">
+            {query.data.total > query.data.enquiries.length && (
+              <p className="mb-3 text-xs text-muted-foreground">
+                {t('enquiries.showingNewest', {
+                  shown: query.data.enquiries.length,
+                  total: query.data.total,
+                })}
+              </p>
+            )}
             <Table>
               <TableHeader>
                 <TableRow>

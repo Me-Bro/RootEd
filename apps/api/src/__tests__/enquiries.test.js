@@ -11,11 +11,24 @@ const { default: enquiriesRouter } = await import('../routes/enquiries.js');
 let mongod;
 let app;
 
+// app.js runs the DOMPurify-based sanitizeBody before every route, which turns a typed
+// `&`, `<` or `>` into an entity. It cannot be imported here (jsdom does not load under
+// Jest, see orgTypeModuleGating.test.js), so this stand-in does just that escaping.
+const escapeText = (v) =>
+  typeof v === 'string'
+    ? v.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+    : v;
+function escapeLikeSanitizer(req, _res, next) {
+  req.body = Object.fromEntries(Object.entries(req.body).map(([k, v]) => [k, escapeText(v)]));
+  next();
+}
+
 beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   await mongoose.connect(mongod.getUri());
   app = express();
   app.use(express.json());
+  app.use(escapeLikeSanitizer);
   app.use('/enquiries', enquiriesRouter);
   app.use(errorHandler);
 });
@@ -66,11 +79,38 @@ describe('POST /enquiries', () => {
     expect(await CollegeEnquiry.countDocuments()).toBe(0);
   });
 
-  test('a filled honeypot looks accepted but stores nothing', async () => {
+  test('a filled honeypot looks just like a real success but stores nothing', async () => {
     const res = await request(app)
       .post('/enquiries')
       .send(body({ website: 'http://spam.test' }));
     expect(res.status).toBe(201);
+    expect(mongoose.isValidObjectId(res.body.id)).toBe(true);
     expect(await CollegeEnquiry.countDocuments()).toBe(0);
+  });
+
+  test('a very long honeypot value is not a tell: still a quiet success', async () => {
+    const res = await request(app)
+      .post('/enquiries')
+      .send(body({ website: 'x'.repeat(5000) }));
+    expect(res.status).toBe(201);
+    expect(await CollegeEnquiry.countDocuments()).toBe(0);
+  });
+
+  test('keeps an ampersand as typed instead of storing it HTML-escaped', async () => {
+    const res = await request(app)
+      .post('/enquiries')
+      .send(body({ collegeName: 'Arts & Science College', message: 'We have <60 students' }));
+    expect(res.status).toBe(201);
+    const doc = await CollegeEnquiry.findById(res.body.id).lean();
+    expect(doc.collegeName).toBe('Arts & Science College');
+    expect(doc.message).toBe('We have <60 students');
+  });
+
+  test('does not decode twice: a typed entity stays a typed entity', async () => {
+    const res = await request(app)
+      .post('/enquiries')
+      .send(body({ message: 'write &lt;b&gt; for bold' }));
+    const doc = await CollegeEnquiry.findById(res.body.id).lean();
+    expect(doc.message).toBe('write &lt;b&gt; for bold');
   });
 });

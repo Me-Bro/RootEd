@@ -100,6 +100,13 @@ describe('GET /admin/enquiries', () => {
     expect(res.body.pages).toBe(3);
   });
 
+  test('survives a negative or fractional page and limit', async () => {
+    const res = await list('?limit=-5&page=2.7');
+    expect(res.status).toBe(200);
+    expect(res.body.pages).toBeGreaterThan(0);
+    expect((await list('?limit=0&page=-1')).status).toBe(200);
+  });
+
   test('is for the platform super admin only', async () => {
     expect((await request(app).get('/admin/enquiries')).status).toBe(401);
     expect((await list('', token())).status).toBe(403);

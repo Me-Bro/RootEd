@@ -434,8 +434,8 @@ router.patch('/feedback/:id', async (req, res, next) => {
 // a person's name, phone and email, so it stays behind the super_admin gate.
 router.get('/enquiries', async (req, res, next) => {
   try {
-    const page = Math.max(1, Number(req.query.page) || 1);
-    const limit = Math.min(100, Number(req.query.limit) || 20);
+    const page = Math.max(1, Math.floor(Number(req.query.page)) || 1);
+    const limit = Math.min(100, Math.max(1, Math.floor(Number(req.query.limit)) || 20));
     const filter = ENQUIRY_STATUSES.includes(req.query.status) ? { status: req.query.status } : {};
 
     const [enquiries, total] = await Promise.all([

@@ -18,7 +18,7 @@ export const enquirySubmitSchema = z
     programme: z.enum(ENQUIRY_PROGRAMMES).default('not_sure'),
     message: z.string().trim().max(2000).optional(),
     // Honeypot: hidden from people, filled in by form-stuffing bots.
-    website: z.string().max(200).optional(),
+    website: z.string().optional(),
   })
   .strict();
 

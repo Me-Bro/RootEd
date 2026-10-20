@@ -53,7 +53,7 @@ test.describe('the public landing page', () => {
       await expect(page.getByRole('heading', { level: 3, name })).toBeVisible();
     }
     const text = await page.locator('body').innerText();
-    expect(text).not.toMatch(/₹|\bINR\b|\bRs\.?\s?\d/);
+    expect(text).not.toMatch(/₹|\$|\bINR\b|\bRs\.?\s?\d|rupee|lakh/i);
   });
 
   test('states the pilot targets from the same numbers the portal measures against', async ({
@@ -70,6 +70,8 @@ test.describe('the public landing page', () => {
   test('never promises a job', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('#placement')).toContainText('Employment is not guaranteed');
+    const text = await page.locator('body').innerText();
+    expect(text).not.toMatch(/guaranteed (job|placement)|100% placement|assured (job|placement)/i);
     await expect(page.getByRole('region', { name: 'Questions colleges ask' })).toContainText(
       'Employment is not guaranteed'
     );
@@ -209,6 +211,7 @@ test.describe('requesting a proposal', () => {
     await page.goto('/');
     const trap = page.locator('input[name="website"]');
     await expect(trap).toHaveAttribute('tabindex', '-1');
-    await expect(page.getByLabel('website', { exact: false })).toHaveCount(0);
+    await expect(trap.locator('xpath=ancestor::div[@aria-hidden="true"]')).toHaveCount(1);
+    await expect(page.getByRole('textbox', { name: /website/i })).toHaveCount(0);
   });
 });

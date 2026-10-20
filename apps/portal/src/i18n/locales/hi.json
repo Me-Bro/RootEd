@@ -298,7 +298,8 @@
       "career_ready": "Career Ready",
       "campus_partner": "Campus Career Partner",
       "not_sure": "Not sure yet"
-    }
+    },
+    "showingNewest": "Showing the newest {{shown}} of {{total}} enquiries."
   },
   "landing": {
     "signIn": "Sign in",
@@ -396,7 +397,7 @@
     },
     "outcomes": {
       "title": "Measured, not promised",
-      "lead": "Before training starts we agree with your college what will be measured and how. These are the targets we usually propose for a pilot.",
+      "lead": "Before training starts we agree with your college what will be measured and how. These are the targets we propose for a pilot.",
       "note": "Targets are adjusted to student readiness and the agreed scope. They are suggested measures, not promises of job placement.",
       "items": {
         "attendance": {
@@ -474,7 +475,7 @@
         },
         "pilot": {
           "q": "Can we start small?",
-          "a": "Yes. Most colleges begin with a Skill Builder or a single Career Ready batch, agree the measures up front and review the results before going further."
+          "a": "Yes. You can begin with a Skill Builder or a single Career Ready batch, agree the measures up front and review the results before going further."
         },
         "jobs": {
           "q": "Do you guarantee jobs?",
