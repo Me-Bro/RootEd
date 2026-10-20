@@ -19,12 +19,14 @@ import {
   reportCardGenerateSchema,
   reportCardHistoryQuerySchema,
 } from '@rooted/shared/schemas';
-import { scoreToLetter, isBatchOrgType } from '@rooted/shared/utils';
+import { scoreToLetter, isBatchOrgType, isModuleEnabled } from '@rooted/shared/utils';
+import { REPORT_CARD_EXCLUDED_ASSESSMENT_TYPES } from '@rooted/shared/constants';
 import { authenticate } from '../middleware/authenticate.js';
 import {
   requirePermission,
   resolvePermissions,
   effectivePermissionsFor,
+  userHasPermission,
 } from '../middleware/requirePermission.js';
 import { validate } from '../middleware/validate.js';
 import { redis } from '../config/redis.js';
@@ -380,9 +382,19 @@ router.get('/students/:id', requirePermission('students:read'), async (req, res,
 
 router.patch('/students/:id', requirePermission('students:write'), async (req, res, next) => {
   try {
+    // Placement consent has its own route and permission (PUT
+    // /training/students/:id/consent) so it carries who recorded it and when.
+    // Dotted paths ("placementConsent.granted") reach the same field, so strip
+    // every key that starts with it, not just the exact name.
+    const body = Object.fromEntries(
+      Object.entries(req.body).filter(
+        ([key]) => key !== 'placementConsent' && !key.startsWith('placementConsent.')
+      )
+    );
+
     const student = await Student.findOneAndUpdate(
       { _id: req.params.id, tenantId: req.tenant._id },
-      { $set: req.body },
+      { $set: body },
       { new: true }
     );
     if (!student) return res.status(404).json({ error: 'Not found' });
@@ -580,10 +592,26 @@ router.post(
 // shape tuition/coaching/study-center orgTypes need, where "section" means
 // batch, not annual homeroom.
 
+// With the training module on, `completed` is an admin's decision that the
+// college is billed against. students:write is far broader, so setting or undoing
+// it — through any enrolment route — also needs training:complete.
+async function mayChangeCompletion(req, currentStatus, nextStatus) {
+  if (!isModuleEnabled(req.tenant, 'training')) return true;
+  const touchesCompletion =
+    nextStatus === 'completed' || (currentStatus === 'completed' && nextStatus !== 'completed');
+  return !touchesCompletion || userHasPermission(req, 'training:complete');
+}
+
 router.post('/enrollments', requirePermission('students:write'), async (req, res, next) => {
   try {
     const { studentId, sectionId, startDate, notes } = req.body;
     const tenantId = req.tenant._id;
+
+    // This upsert resets the row to `active`, which would undo a completion.
+    const existing = await Enrollment.findOne({ tenantId, studentId, sectionId }, 'status').lean();
+    if (!(await mayChangeCompletion(req, existing?.status, 'active'))) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
 
     const enrollment = await Enrollment.findOneAndUpdate(
       { tenantId, studentId, sectionId },
@@ -622,6 +650,17 @@ router.get('/enrollments', requirePermission('students:read'), async (req, res, 
 router.patch('/enrollments/:id', requirePermission('students:write'), async (req, res, next) => {
   try {
     const { status, endDate, notes } = req.body;
+
+    if (status) {
+      const current = await Enrollment.findOne(
+        { _id: req.params.id, tenantId: req.tenant._id },
+        'status'
+      ).lean();
+      if (!(await mayChangeCompletion(req, current?.status, status))) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+    }
+
     const update = {};
     if (status) update.status = status;
     if (endDate !== undefined) update.endDate = endDate ? new Date(endDate) : null;
@@ -1206,7 +1245,9 @@ router.get('/grades/report', requirePermission('grades:read'), async (req, res, 
         sectionId,
         subjectId,
         termId,
-        ...(assessmentType ? { assessmentType } : {}),
+        // Baseline and mock-interview scores are training diagnostics, not term
+        // results: left in, they would be averaged into every student's score.
+        assessmentType: assessmentType ?? { $nin: REPORT_CARD_EXCLUDED_ASSESSMENT_TYPES },
       }).lean(),
     ]);
 
@@ -1223,7 +1264,10 @@ router.get('/grades/summary', requirePermission('grades:read'), async (req, res,
   try {
     const { termId } = gradesSummaryQuerySchema.parse(req.query);
     const tenantId = req.tenant._id;
-    const gradeFilter = { tenantId };
+    const gradeFilter = {
+      tenantId,
+      assessmentType: { $nin: REPORT_CARD_EXCLUDED_ASSESSMENT_TYPES },
+    };
     if (termId) gradeFilter.termId = termId;
 
     const [students, grades] = await Promise.all([

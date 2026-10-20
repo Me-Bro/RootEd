@@ -11,6 +11,7 @@
  * that connection too.
  */
 export { AcademicYear } from './AcademicYear.js';
+export { Assignment } from './Assignment.js';
 export { AttendanceRecord } from './AttendanceRecord.js';
 export { AuditLog } from './AuditLog.js';
 export { Budget } from './Budget.js';
@@ -18,6 +19,7 @@ export { Class } from './Class.js';
 export { CostCenter } from './CostCenter.js';
 export { Counter } from './Counter.js';
 export { Enrollment } from './Enrollment.js';
+export { Employer } from './Employer.js';
 export { ExpenseEntry } from './ExpenseEntry.js';
 export { FeatureFlag } from './FeatureFlag.js';
 export { FeeAssignment } from './FeeAssignment.js';
@@ -34,6 +36,8 @@ export { LeaveRequest } from './LeaveRequest.js';
 export { LeaveType } from './LeaveType.js';
 export { MigrationLog } from './MigrationLog.js';
 export { Notification } from './Notification.js';
+export { PlacementApplication } from './PlacementApplication.js';
+export { Project } from './Project.js';
 export { PurchaseRequisition } from './PurchaseRequisition.js';
 export { ReportCardBatch } from './ReportCardBatch.js';
 export { RequestLog } from './RequestLog.js';
@@ -44,6 +48,7 @@ export { Section } from './Section.js';
 export { StaffMember } from './StaffMember.js';
 export { StockMovement } from './StockMovement.js';
 export { Student } from './Student.js';
+export { Submission } from './Submission.js';
 export { Subject } from './Subject.js';
 export { Tenant } from './Tenant.js';
 export { TenantMembership } from './TenantMembership.js';

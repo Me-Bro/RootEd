@@ -24,6 +24,12 @@ import { Section } from '../models/Section.js';
 import { Subject } from '../models/Subject.js';
 import { Student } from '../models/Student.js';
 import { Grade } from '../models/Grade.js';
+import { Assignment } from '../models/Assignment.js';
+import { Submission } from '../models/Submission.js';
+import { Project } from '../models/Project.js';
+import { Employer } from '../models/Employer.js';
+import { PlacementApplication } from '../models/PlacementApplication.js';
+import { Enrollment } from '../models/Enrollment.js';
 import { GradeLock } from '../models/GradeLock.js';
 import { ReportCardBatch } from '../models/ReportCardBatch.js';
 import { Timetable } from '../models/Timetable.js';
@@ -152,6 +158,19 @@ async function run() {
     tenant = tenant.toObject();
   }
   const tenantId = tenant._id;
+
+  // The seeded school is a `school` orgType, which has no training module. An
+  // explicit override (the list replaces the orgType default, so it names every
+  // module) turns it on for the training specs without changing the tenant's
+  // type, terms or any other module the existing specs depend on.
+  await Tenant.updateOne(
+    { _id: tenantId },
+    {
+      $set: {
+        enabledModules: ['academic', 'staff', 'expense', 'fee', 'inventory', 'billing', 'training'],
+      },
+    }
+  );
 
   // ── Roles ─────────────────────────────────────────────────────────────────
   const existingRoles = await Role.find({ tenantId }, null, { _bypassTenantScope: true }).lean();
@@ -532,6 +551,250 @@ async function run() {
     }
     grades.push(quizGrade);
   }
+
+  // Training module: a `baseline` diagnostic per student in Mathematics, kept in
+  // its own array (and its own key in the emitted JSON) so the `grades` list the
+  // existing specs count against does not change. Every baseline sits below the
+  // student's final score so the pre/post delta is positive and checkable.
+  const baselineGrades = [];
+  for (const student of students) {
+    const finalGrade = grades.find(
+      (g) =>
+        String(g.studentId) === String(student._id) &&
+        String(g.subjectId) === String(mathSubject._id) &&
+        g.assessmentType === 'final'
+    );
+    const baselineScore = Math.max(0, finalGrade.score - 15);
+    let baseline = await Grade.findOne(
+      {
+        tenantId,
+        studentId: student._id,
+        subjectId: mathSubject._id,
+        termId: term._id,
+        assessmentType: 'baseline',
+      },
+      null,
+      { _bypassTenantScope: true }
+    ).lean();
+    if (!baseline) {
+      baseline = await Grade.create({
+        tenantId,
+        studentId: student._id,
+        sectionId: student.sectionId,
+        subjectId: mathSubject._id,
+        termId: term._id,
+        academicYearId: year._id,
+        assessmentType: 'baseline',
+        score: baselineScore,
+        letterGrade: scoreToLetter(baselineScore),
+        weightage: 0,
+        gradedBy: users.teacher._id,
+      });
+      baseline = baseline.toObject();
+    }
+    baselineGrades.push(baseline);
+  }
+
+  // Training module: three assignments for the primary batch with a known mix
+  // of results — Student1 reviewed (8/10), Student2 reviewed (6/10), Student3
+  // submitted, the rest unrecorded — plus one team project with a review. The
+  // emitted ids and figures let the training specs assert exact numbers.
+  const assignmentDefs = [
+    { title: 'Seed: Git basics', subject: subjects[0], dueDate: '2025-05-15', maxScore: 10 },
+    { title: 'Seed: REST API', subject: subjects[1], dueDate: '2025-06-15', maxScore: 10 },
+    { title: 'Seed: Deploy to cloud', subject: subjects[2], dueDate: '2025-07-15', maxScore: 20 },
+  ];
+  const trainingAssignments = [];
+  for (const def of assignmentDefs) {
+    let assignment = await Assignment.findOne({ tenantId, title: def.title }, null, {
+      _bypassTenantScope: true,
+    }).lean();
+    if (!assignment) {
+      assignment = await Assignment.create({
+        tenantId,
+        sectionId: section._id,
+        subjectId: def.subject._id,
+        termId: term._id,
+        title: def.title,
+        dueDate: new Date(def.dueDate),
+        maxScore: def.maxScore,
+        createdBy: users.teacher._id,
+      });
+      assignment = assignment.toObject();
+    }
+    trainingAssignments.push(assignment);
+  }
+
+  const submissionPlan = [
+    { student: activeStudents[0], status: 'reviewed', score: 8 },
+    { student: activeStudents[1], status: 'reviewed', score: 6 },
+    { student: activeStudents[2], status: 'submitted' },
+  ];
+  const trainingSubmissions = [];
+  for (const plan of submissionPlan) {
+    const assignment = trainingAssignments[0];
+    const reviewed = plan.status === 'reviewed';
+    const when = new Date('2025-05-16');
+    const submission = await Submission.findOneAndUpdate(
+      { tenantId, assignmentId: assignment._id, studentId: plan.student._id },
+      {
+        $set: {
+          status: plan.status,
+          score: reviewed ? plan.score : null,
+          submittedAt: when,
+          reviewedAt: reviewed ? when : null,
+          reviewedBy: reviewed ? users.teacher._id : null,
+        },
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true, _bypassTenantScope: true }
+    ).lean();
+    trainingSubmissions.push(submission);
+  }
+
+  let trainingProject = await Project.findOne({ tenantId, name: 'Seed: Team 1 project' }, null, {
+    _bypassTenantScope: true,
+  }).lean();
+  if (!trainingProject) {
+    trainingProject = await Project.create({
+      tenantId,
+      sectionId: section._id,
+      termId: term._id,
+      name: 'Seed: Team 1 project',
+      repoUrl: 'https://github.com/rrcloud/seed-team-1',
+      memberIds: activeStudents.slice(0, 3).map((s) => s._id),
+      milestones: [
+        { title: 'Auth done', dueDate: new Date('2025-08-01'), doneAt: new Date('2025-07-30') },
+        { title: 'Deployed', dueDate: new Date('2025-09-01') },
+      ],
+      demoDate: new Date('2025-09-15'),
+      reviewScore: 82,
+      reviewNotes: 'Seed review',
+      reviewedBy: users.teacher._id,
+      createdBy: users.teacher._id,
+    });
+    trainingProject = trainingProject.toObject();
+  }
+
+  // Training module — completion decisions on the primary batch (10 active
+  // students): Student1 and Student2 completed, Student10 dropped, the other
+  // seven have no Enrollment row (so are `active`). Completion is therefore
+  // 2 of 10 = 20%, with the dropped student counted against it.
+  const enrollmentPlan = [
+    { student: activeStudents[0], status: 'completed' },
+    { student: activeStudents[1], status: 'completed' },
+    { student: activeStudents[9], status: 'dropped' },
+  ];
+  for (const plan of enrollmentPlan) {
+    await Enrollment.findOneAndUpdate(
+      { tenantId, studentId: plan.student._id, sectionId: section._id },
+      {
+        $set: { status: plan.status, endDate: new Date('2025-09-30') },
+        $setOnInsert: { startDate: new Date('2025-04-01'), enrolledBy: users.tenant_admin._id },
+      },
+      { upsert: true, _bypassTenantScope: true }
+    );
+  }
+
+  // Training module — mock-interview scores for Students 1-3 (75, 65, 80), left
+  // unpublished: no GradeLock exists for them, so /me/progress must not show
+  // them to the student.
+  const mockScores = [75, 65, 80];
+  for (const [i, score] of mockScores.entries()) {
+    const student = activeStudents[i];
+    const filter = {
+      tenantId,
+      studentId: student._id,
+      subjectId: mathSubject._id,
+      termId: term._id,
+      assessmentType: 'mock_interview',
+    };
+    if (!(await Grade.findOne(filter, null, { _bypassTenantScope: true }).lean())) {
+      await Grade.create({
+        ...filter,
+        sectionId: student.sectionId,
+        academicYearId: year._id,
+        score,
+        letterGrade: scoreToLetter(score),
+        weightage: 0,
+        gradedBy: users.teacher._id,
+      });
+    }
+  }
+
+  // Training module — employers and a spread of placement stages.
+  const employerNames = ['Seed: Acme Software', 'Seed: Beta Systems', 'Seed: Gamma Labs'];
+  const employers = [];
+  for (const name of employerNames) {
+    employers.push(
+      await Employer.findOneAndUpdate(
+        { tenantId, name },
+        { $setOnInsert: { tenantId, name, active: true } },
+        { upsert: true, new: true, _bypassTenantScope: true }
+      ).lean()
+    );
+  }
+
+  const d = (s) => new Date(s);
+  const placementPlan = [
+    {
+      student: activeStudents[0],
+      employer: employers[0],
+      stage: 'joined',
+      appliedAt: d('2025-08-01'),
+      interviewedAt: d('2025-08-10'),
+      offeredAt: d('2025-08-20'),
+      joinedAt: d('2025-09-05'),
+    },
+    {
+      student: activeStudents[1],
+      employer: employers[1],
+      stage: 'offered',
+      appliedAt: d('2025-08-02'),
+      interviewedAt: d('2025-08-12'),
+      offeredAt: d('2025-08-25'),
+    },
+    {
+      student: activeStudents[2],
+      employer: employers[0],
+      stage: 'interviewed',
+      appliedAt: d('2025-08-03'),
+      interviewedAt: d('2025-08-14'),
+    },
+    {
+      student: activeStudents[3],
+      employer: employers[2],
+      stage: 'applied',
+      appliedAt: d('2025-08-04'),
+    },
+    {
+      student: activeStudents[4],
+      employer: employers[2],
+      stage: 'rejected',
+      appliedAt: d('2025-08-05'),
+      closedAt: d('2025-08-18'),
+    },
+  ];
+  const placementApplications = [];
+  for (const { student, employer, ...fields } of placementPlan) {
+    placementApplications.push(
+      await PlacementApplication.findOneAndUpdate(
+        { tenantId, studentId: student._id, employerId: employer._id, role: 'Junior Developer' },
+        { $set: fields, $setOnInsert: { createdBy: users.teacher._id } },
+        { upsert: true, new: true, _bypassTenantScope: true }
+      ).lean()
+    );
+  }
+
+  // Student1 has agreed to share their details with employers.
+  await Student.findOneAndUpdate(
+    { tenantId, _id: activeStudents[0]._id },
+    {
+      $set: {
+        placementConsent: { granted: true, at: d('2025-08-01'), recordedBy: users.teacher._id },
+      },
+    },
+    { _bypassTenantScope: true }
+  );
 
   // Publishes Mathematics/final for the primary section so /me/grades (which
   // only shows published grades — see GradeLock) has at least one visible
@@ -1611,6 +1874,76 @@ async function run() {
       subjectId: g.subjectId.toString(),
       sectionId: g.sectionId.toString(),
       assessmentType: g.assessmentType,
+      score: g.score,
+    })),
+    training: {
+      assignments: trainingAssignments.map((a) => ({
+        _id: a._id.toString(),
+        title: a.title,
+        maxScore: a.maxScore,
+        subjectId: a.subjectId.toString(),
+        sectionId: a.sectionId.toString(),
+        termId: a.termId.toString(),
+      })),
+      // Results recorded on assignments[0]: two reviewed (8 and 6 of 10), one submitted.
+      submissions: trainingSubmissions.map((s) => ({
+        _id: s._id.toString(),
+        assignmentId: s.assignmentId.toString(),
+        studentId: s.studentId.toString(),
+        status: s.status,
+        score: s.score,
+      })),
+      // Primary batch: 10 enrolled, Student1+2 completed, Student10 dropped.
+      enrollments: enrollmentPlan.map((p) => ({
+        studentId: p.student._id.toString(),
+        sectionId: section._id.toString(),
+        status: p.status,
+      })),
+      employers: employers.map((e) => ({ _id: e._id.toString(), name: e.name })),
+      // Stages: joined, offered, interviewed, applied, rejected (Student1–5).
+      placements: placementApplications.map((p) => ({
+        _id: p._id.toString(),
+        studentId: p.studentId.toString(),
+        employerId: p.employerId.toString(),
+        stage: p.stage,
+      })),
+      consentStudentId: activeStudents[0]._id.toString(),
+      // What GET /training/metrics must return for the primary batch + Term 1,
+      // worked out by hand from the data above (see trainingMetrics.test.js for
+      // the method). Specs assert against these, not against recomputed values.
+      //   attendance: S1 5P+2A, S2 3P+1L+3A, S3-S9 5P each; S10 (dropped) ignored
+      //     pooled (5+4+35) / (5+4+35+2+3) = 44/49 = 89.8%; below 80%: S1, S2
+      //   completion: 2 completed of 10 enrolled = 20%; 1 dropped; 9 eligible
+      //   project: Students 1-3 reviewed → 3 of 9 = 33.3%
+      //   mock interview: Students 1-3 → 3 of 9 = 33.3%
+      //   improvement: baseline = final − 15 in Mathematics for all 9 → 15
+      expected: {
+        sectionId: section._id.toString(),
+        termId: term._id.toString(),
+        enrolled: 10,
+        active: 9,
+        attendancePct: 89.8,
+        attendanceBelowTarget: 2,
+        completed: 2,
+        dropped: 1,
+        completionPct: 20,
+        projectPct: 33.3,
+        mockPct: 33.3,
+        avgDelta: 15,
+        studentsMeasured: 9,
+        placement: { applied: 5, interviewed: 3, offered: 2, joined: 1, rejected: 1 },
+      },
+      project: {
+        _id: trainingProject._id.toString(),
+        name: trainingProject.name,
+        reviewScore: trainingProject.reviewScore,
+        memberIds: trainingProject.memberIds.map(String),
+      },
+    },
+    baselineGrades: baselineGrades.map((g) => ({
+      _id: g._id.toString(),
+      studentId: g.studentId.toString(),
+      subjectId: g.subjectId.toString(),
       score: g.score,
     })),
     staffMembers: staffMembers.map((s) => ({

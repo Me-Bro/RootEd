@@ -1,0 +1,52 @@
+import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+import { AUTH_STATES } from './fixtures/auth.js';
+
+const scan = async (page) =>
+  new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+
+const describeViolations = (violations) =>
+  violations.map(
+    (v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`
+  );
+
+test.describe('accessibility', () => {
+  test('sign-in page', async ({ page }) => {
+    await page.goto('/login');
+    await expect(page.getByRole('button', { name: 'Sign in' })).toBeVisible();
+    expect(describeViolations((await scan(page)).violations)).toEqual([]);
+  });
+
+  test.describe('trainer dashboard', () => {
+    test.use({ storageState: AUTH_STATES.teacher });
+    test('has no violations', async ({ page }) => {
+      await page.goto('/dashboard');
+      await expect(page.getByTestId('metric-attendance-value')).toBeVisible();
+      expect(describeViolations((await scan(page)).violations)).toEqual([]);
+    });
+  });
+
+  test.describe('trainer pages', () => {
+    test.use({ storageState: AUTH_STATES.tenant_admin });
+    for (const [path, ready] of [
+      ['/assignments', 'Seed: Git basics'],
+      ['/completion', 'Student1 Test'],
+      ['/readiness', 'Student1 Test'],
+    ]) {
+      test(`${path} has no violations`, async ({ page }) => {
+        await page.goto(path);
+        await expect(page.getByText(ready).first()).toBeVisible();
+        expect(describeViolations((await scan(page)).violations)).toEqual([]);
+      });
+    }
+  });
+
+  test.describe('student progress', () => {
+    test.use({ storageState: AUTH_STATES.student });
+    test('has no violations', async ({ page }) => {
+      await page.goto('/me/progress');
+      await expect(page.getByTestId('stat-attendance-value')).toBeVisible();
+      expect(describeViolations((await scan(page)).violations)).toEqual([]);
+    });
+  });
+});

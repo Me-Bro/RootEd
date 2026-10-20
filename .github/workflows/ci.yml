@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: [api, web]
+        app: [api, web, portal]
 
     services:
       mongodb:
@@ -136,6 +136,17 @@ jobs:
         if: always()
         run: pnpm --filter web exec playwright test --project=axe
 
+      # The portal (RR Cloud Career Catalyst) is a separate app on the same API;
+      # its Playwright config starts its own vite server on :5174, which proxies
+      # to the API started above.
+      - name: Run portal e2e
+        if: always()
+        run: pnpm --filter portal test:e2e
+
+      - name: Run portal axe accessibility check
+        if: always()
+        run: pnpm --filter portal test:axe
+
       - name: API log
         if: failure()
         run: tail -100 /tmp/api.log
@@ -148,6 +159,8 @@ jobs:
           path: |
             apps/web/playwright-report
             apps/web/test-results
+            apps/portal/playwright-report
+            apps/portal/test-results
           retention-days: 7
 
   build:
@@ -185,6 +198,18 @@ jobs:
           context: ./apps/web
           push: true
           tags: ghcr.io/${{ github.repository }}/web:${{ github.sha }},ghcr.io/${{ github.repository }}/web:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Repo root as context: the portal image builds the pnpm workspace (it needs
+      # the lockfile and packages/shared), unlike the single-folder images above.
+      - name: Build and push Portal
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/portal/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository }}/portal:${{ github.sha }},ghcr.io/${{ github.repository }}/portal:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

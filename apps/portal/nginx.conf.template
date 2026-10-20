@@ -1,0 +1,36 @@
+server {
+  listen 80;
+  root /usr/share/nginx/html;
+  index index.html;
+
+  # Same-origin API proxy, so the refresh and CSRF cookies stay first-party.
+  #
+  # Host is pinned to ${PORTAL_API_HOST}: the existing portal host of this
+  # deployment (e.g. rooted.ruralrootcloud.com). The API treats that host as
+  # "no tenant in the hostname" and takes the college from the access token's
+  # claim, so the portal needs no tenant subdomain of its own and the API needs
+  # no change.
+  #
+  # X-Forwarded-Host is blanked: Express trusts it, so a browser could otherwise
+  # name any college by sending its own copy of the header.
+  location /__api/ {
+    proxy_pass http://api:3001/;
+    proxy_http_version 1.1;
+    proxy_set_header Host ${PORTAL_API_HOST};
+    proxy_set_header X-Forwarded-Host "";
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  # SPA fallback
+  location / {
+    try_files $uri $uri/ /index.html;
+  }
+
+  # Cache static assets
+  location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+  }
+}

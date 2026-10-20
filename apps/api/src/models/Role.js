@@ -18,7 +18,11 @@ export const DEFAULT_ROLE_TEMPLATES = {
   // Reads and approvals, but no writes and — deliberately — no tenant:admin.
   // The ':approve' permissions need no special case: they do not end in
   // ':write', so the filter already keeps them.
-  principal: TENANT_WIDE.filter((p) => !p.endsWith(':write') && p !== 'tenant:admin'),
+  // 'training:complete' is an admin decision (it feeds the completion figure the
+  // college is billed against) and, like 'tenant:admin', does not end in ':write'.
+  principal: TENANT_WIDE.filter(
+    (p) => !p.endsWith(':write') && p !== 'tenant:admin' && p !== 'training:complete'
+  ),
   teacher: [
     'attendance:read',
     'attendance:write',
@@ -28,6 +32,8 @@ export const DEFAULT_ROLE_TEMPLATES = {
     'students:read',
     'leave:read',
     'leave:write',
+    'training:read',
+    'training:write',
   ],
   accountant: [
     'fees:read',

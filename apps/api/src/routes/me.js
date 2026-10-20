@@ -14,6 +14,8 @@ import { FeePayment } from '../models/FeePayment.js';
 import { Student } from '../models/Student.js';
 import { Subject } from '../models/Subject.js';
 import { filterVisibleTimetableEntries } from '../utils/timetableVisibility.js';
+import { progressQuerySchema } from '@rooted/shared/schemas';
+import { getStudentProgress } from '../services/trainingProgress.service.js';
 
 /**
  * Everything a person may see about *themselves*.
@@ -164,6 +166,29 @@ router.get(
       const publishedKeys = new Set(publishes.map((p) => `${p.academicYearId}:${p.sectionId}`));
       // isAdmin false, always: an unpublished timetable is a draft.
       res.json(filterVisibleTimetableEntries(entries, publishedKeys, false));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// Training programme progress. Identity comes from resolveContext (never from
+// the request); grades appear once published and assignment scores once
+// reviewed — see services/trainingProgress.service.js.
+router.get(
+  '/progress',
+  requireModuleEnabled('training'),
+  requirePermission('self:training:read'),
+  async (req, res, next) => {
+    try {
+      const { termId } = progressQuerySchema.parse(req.query);
+      res.json(
+        await getStudentProgress(req.tenant._id, {
+          studentId: studentIdOf(req),
+          sectionId: req.subjects?.sectionId ?? null,
+          termId,
+        })
+      );
     } catch (err) {
       next(err);
     }

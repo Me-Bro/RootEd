@@ -41,6 +41,52 @@ test('no role template grants a permission outside its own module surface', () =
   expect(DEFAULT_ROLE_TEMPLATES.librarian).toEqual(['inventory:read', 'inventory:write']);
 });
 
+describe('training permissions', () => {
+  test('the shared list carries the four training permissions', () => {
+    for (const p of [
+      'training:read',
+      'training:write',
+      'training:complete',
+      'self:training:read',
+    ]) {
+      expect(SHARED_PERMISSIONS).toContain(p);
+    }
+  });
+
+  test('tenant_admin can read, write and complete', () => {
+    expect(DEFAULT_ROLE_TEMPLATES.tenant_admin).toEqual(
+      expect.arrayContaining(['training:read', 'training:write', 'training:complete'])
+    );
+  });
+
+  test('principal (the college TPO) reads but can never complete', () => {
+    // 'training:complete' does not end in ':write', so the principal template's
+    // filter would hand it over unless it is excluded by name.
+    expect(DEFAULT_ROLE_TEMPLATES.principal).toContain('training:read');
+    expect(DEFAULT_ROLE_TEMPLATES.principal).not.toContain('training:write');
+    expect(DEFAULT_ROLE_TEMPLATES.principal).not.toContain('training:complete');
+  });
+
+  test('teacher (the trainer) reads and writes but cannot complete', () => {
+    expect(DEFAULT_ROLE_TEMPLATES.teacher).toEqual(
+      expect.arrayContaining(['training:read', 'training:write'])
+    );
+    expect(DEFAULT_ROLE_TEMPLATES.teacher).not.toContain('training:complete');
+  });
+
+  test('tenant_admin is the only template granting training:complete', () => {
+    const granting = Object.entries(DEFAULT_ROLE_TEMPLATES)
+      .filter(([, perms]) => perms.includes('training:complete'))
+      .map(([key]) => key);
+    expect(granting).toEqual(['tenant_admin']);
+  });
+
+  test('student gets only the self-scoped training read', () => {
+    expect(DEFAULT_ROLE_TEMPLATES.student).toContain('self:training:read');
+    expect(DEFAULT_ROLE_TEMPLATES.student).not.toContain('training:read');
+  });
+});
+
 test('tenant_admin is the only template granting tenant:admin', () => {
   const granting = Object.entries(DEFAULT_ROLE_TEMPLATES)
     .filter(([, perms]) => perms.includes('tenant:admin'))

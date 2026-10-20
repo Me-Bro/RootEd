@@ -7,7 +7,27 @@ export const DEFAULT_PLAN = 'free';
 // Single source of truth for the module enum — every module any orgType can
 // grant in ORG_TYPE_CONFIG below, plus what a tenant's enabledModules override
 // (Tenant.enabledModules) is validated against.
-export const ALL_MODULES = ['academic', 'staff', 'expense', 'fee', 'inventory', 'billing'];
+export const ALL_MODULES = [
+  'academic',
+  'staff',
+  'expense',
+  'fee',
+  'inventory',
+  'billing',
+  'training',
+];
+
+// Name of the college training and placement programme the `training` module
+// serves. One constant so the portal header and the PDF report agree.
+export const PROGRAMME_NAME = 'RR Cloud Career Catalyst';
+
+// Pilot success targets from the business plan (section 7), in percent.
+export const TRAINING_TARGETS = {
+  attendance: 80,
+  completion: 85,
+  project: 80,
+  mockInterview: 80,
+};
 
 export const ORG_TYPE_CONFIG = {
   school: {
@@ -15,7 +35,7 @@ export const ORG_TYPE_CONFIG = {
     terms: { classLevel: 'Grade', section: 'Section', student: 'Student' },
   },
   college: {
-    enabledModules: ['academic', 'staff', 'expense', 'fee', 'inventory', 'billing'],
+    enabledModules: ['academic', 'staff', 'expense', 'fee', 'inventory', 'billing', 'training'],
     terms: { classLevel: 'Semester', section: 'Section', student: 'Student' },
   },
   tuition_center: {
@@ -120,7 +140,12 @@ export const RESERVED_USERNAMES = [
   'www',
 ];
 
-export const ASSESSMENT_TYPES = ['quiz', 'midterm', 'final', 'other'];
+// 'baseline' and 'mock_interview' belong to the training module: the pre-course
+// diagnostic (compared against 'final' for the pre/post improvement) and the
+// mock interview score. They are not term results, so report cards skip them.
+export const ASSESSMENT_TYPES = ['quiz', 'midterm', 'final', 'other', 'baseline', 'mock_interview'];
+
+export const REPORT_CARD_EXCLUDED_ASSESSMENT_TYPES = ['baseline', 'mock_interview'];
 
 // The single source of truth for module permissions. apps/api/src/models/Role.js
 // re-exports this and uses it as the Role schema's enum — do not redeclare the
@@ -152,6 +177,11 @@ export const PERMISSIONS = [
   'roles:write',
   'audit:read',
   'tenant:admin',
+  'training:read',
+  'training:write',
+  // Decides a student's final completion of a batch. Held by tenant_admin only,
+  // and deliberately not derivable from ':write' — see DEFAULT_ROLE_TEMPLATES.
+  'training:complete',
   // Self-scoped reads. Prefixed 'self:' rather than suffixed ':self' on
   // purpose: 'grades:read:self' sorts next to 'grades:read' and invites a
   // startsWith() that silently over-grants, whereas 'self:grades:read' cannot
@@ -161,7 +191,37 @@ export const PERMISSIONS = [
   'self:grades:read',
   'self:fees:read',
   'self:timetable:read',
+  'self:training:read',
 ];
 
 /** True for permissions that only ever expose the caller's own records. */
 export const isSelfScoped = (permission) => permission.startsWith('self:');
+
+// Placement pipeline. The first four are the progression, in order; the last
+// two close an application without a joining. Order matters: stage moves are
+// forward-only (see apps/api/src/utils/placementStage.js).
+export const PLACEMENT_STAGES = [
+  'applied',
+  'interviewed',
+  'offered',
+  'joined',
+  'rejected',
+  'withdrawn',
+];
+
+// Statuses an admin may set on a student's enrolment in a batch — a subset of
+// Enrollment.status, which is where the decision is stored.
+export const COMPLETION_STATUSES = ['active', 'completed', 'dropped'];
+
+// PROVISIONAL — rough placeholder weights for the per-student readiness figure
+// (percent contribution of each component; they need not sum to 100, the score
+// is renormalised over the components a student actually has). The business
+// plan names the inputs but gives no formula, and the owner has said this will
+// be revised. Nothing — completion, targets, the PDF — depends on it.
+export const READINESS_WEIGHTS = {
+  attendance: 20,
+  assignments: 20,
+  finalGrade: 25,
+  project: 20,
+  mockInterview: 15,
+};

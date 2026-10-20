@@ -34,6 +34,18 @@ services:
       - ./nginx/nginx.tunnel.conf:/etc/nginx/nginx.conf:ro
     ports: !override
       - '8080:80'
+  # Staging copy of the RR Cloud Career Catalyst portal, at
+  # catalyst-uat.ruralrootcloud.com (needs its own DNS route + explicit
+  # cloudflared ingress line, like every other staging hostname).
+  portal:
+    build:
+      args:
+        VITE_APP_DOMAIN: ruralrootcloud.com
+        VITE_MAIN_APP_URL: https://rooted-uat.ruralrootcloud.com
+    environment:
+      PORTAL_API_HOST: rooted-uat.ruralrootcloud.com
+    ports: !override
+      - '5176:80'
   web:
     build:
       args:
