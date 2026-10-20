@@ -54,6 +54,25 @@ If the API is not on `:3001` set `API_PROXY_TARGET=http://127.0.0.1:<port>`.
 On Windows, seeding from the host needs `directConnection=true` on
 `MONGODB_URI` (the replica set advertises `mongo:27017`).
 
+## Public landing page and enquiries
+
+`/` is public (`src/pages/LandingPage.jsx`, sections in `src/components/landing/`);
+a signed-in visitor is redirected to `homeRoute()`. Facts to keep true:
+
+- **No prices, no job guarantee, no invented figures.** The pilot targets are read
+  from `TRAINING_TARGETS` in `packages/shared`, the same constant the dashboard uses.
+- **Contact details** live in `src/lib/contact.js`. `CONTACT_PHONE` is empty until the
+  team supplies a number; the page then shows the email alone.
+- **English only for now.** `landing.*` and `enquiries.*` hold English text in
+  `hi.json` as placeholders (the key-parity spec needs them) and are skipped by the
+  "Hindi is translated" check via `ENGLISH_ONLY_PREFIXES` in `tests/i18n.spec.js`.
+  Translate, then remove the prefix there.
+- **The form** posts to the public `POST /enquiries` (rate limited to 5 an hour per IP in
+  production, hidden `website` honeypot). Rows are `CollegeEnquiry` documents with no
+  tenant; `super_admin` reads and moves them at `/enquiries`. Nothing emails the team yet.
+- **No screenshots** of the portal on the page: the seed data is invented and looks it.
+  Add real, approved ones deliberately if wanted.
+
 ## Deploy (tunnel mode)
 
 ```bash
