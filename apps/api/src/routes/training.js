@@ -470,11 +470,19 @@ router.patch(
       const update = buildStageMove(before, req.body.stage, req.body.at);
       if (req.body.notes !== undefined) update.notes = req.body.notes;
 
+      // Only if it is still at the stage the move was worked out from: two people
+      // moving the same application at once must not silently overwrite each other.
       const application = await PlacementApplication.findOneAndUpdate(
-        { _id: before._id, tenantId },
+        { _id: before._id, tenantId, stage: before.stage },
         { $set: update },
         { new: true, runValidators: true }
       );
+      if (!application) {
+        throw new AppError(
+          'This application was just changed by someone else. Reload and try again.',
+          409
+        );
+      }
       await audit(
         req,
         'training.placement.move',

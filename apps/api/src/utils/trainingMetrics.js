@@ -50,14 +50,15 @@ const group = (items, keyOf) => {
 
 /**
  * Pre/post improvement: for each student, the mean of (final − baseline) over
- * the subjects that have both. A student with no baseline is not measured.
+ * the subject-and-term pairs that have both. A baseline is only ever compared
+ * with the final of the same term; a student with no baseline is not measured.
  */
 export function computeImprovement(grades) {
   const deltaByStudent = new Map();
   for (const [studentId, rows] of group(grades, (g) => g.studentId)) {
-    const bySubject = group(rows, (g) => g.subjectId);
+    const bySubjectAndTerm = group(rows, (g) => `${g.subjectId}|${g.termId ?? ''}`);
     const deltas = [];
-    for (const subjectRows of bySubject.values()) {
+    for (const subjectRows of bySubjectAndTerm.values()) {
       const baseline = subjectRows.find((g) => g.assessmentType === 'baseline');
       const final = subjectRows.find((g) => g.assessmentType === 'final');
       if (baseline && final) deltas.push(final.score - baseline.score);

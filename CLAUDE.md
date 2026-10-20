@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Dev servers (run separately)
 pnpm dev:api          # Express API on :3001 (node --watch)
 pnpm dev:web          # Vite frontend on :5173
+pnpm dev:portal       # RR Cloud Career Catalyst portal (apps/portal) on :5174
 
 # "prod mode" — full stack via Docker, self-managed TLS (built images, nginx
 # terminates TLS itself using certs in nginx/certs/). Use when Claude is asked
@@ -110,7 +111,8 @@ seeded users share password `TestPass123!`.
 **Monorepo** (pnpm workspaces):
 - `apps/api` — Express.js backend (ES Modules, Node 22)
 - `apps/web` — React 19 SPA (Vite, no TypeScript)
-- `packages/shared` — Zod validation schemas shared by both apps
+- `apps/portal` — **RR Cloud Career Catalyst**: a second, separate React SPA for the `training` module (college training/placement tracking). Same API and database as `apps/web`, own build/nginx/hostname. It never uses a tenant subdomain: its server presents the deployment's existing portal host (`PORTAL_API_HOST`) to the API, so the college comes from the sign-in token. See `agent-home/portal-dev-and-deploy.md` before touching it.
+- `packages/shared` — Zod validation schemas shared by the apps
 
 **Multi-tenant model:** Shared MongoDB database, tenant-scoped via `tenantId` field. `apps/api/src/models/plugins/tenantScope.js` is a Mongoose plugin (applied to every model except `Tenant` and `User`) that throws on any find/update/save missing `tenantId` in its filter — this is the tenant-isolation guarantee, not an app-level convention. Callers that must cross tenants (e.g. super-admin routes) pass `{ _bypassTenantScope: true }` in query options. Compound indexes follow `{tenantId:1, ...}` pattern.
 
@@ -133,6 +135,8 @@ Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts 
 **Audit logging:** Mutations enqueue to the BullMQ audit worker, which writes immutable before/after diffs to the `AuditLog` collection asynchronously (not written inline with the request).
 
 **Approval workflows:** `LeaveRequest`, `ExpenseEntry`, and `PurchaseRequisition` each embed their own `approvalChain` array + `currentApproverIndex` rather than using a shared workflow engine (see `docs/adr/004-workflow-engine.txt`) — advancing the chain is a service function called from each module's approve/reject route handler, and BullMQ delayed jobs drive auto-escalation. Sequential approvers only (no parallel steps in v1); the pattern is intentionally duplicated per module, not shared.
+
+**Training module** (`training`, on by default for `college` orgs; routes in `apps/api/src/routes/training.js`, UI in `apps/portal`): batch = `Section`, programme run = `Term`, module = `Subject`, a student's membership and **completion** = `Enrollment` (`status: completed|dropped|active`). Completion is an admin's decision, not computed: only `training:complete` (held by `tenant_admin` alone) may set it, through `PUT /training/completion` or `PATCH /academic/enrollments/:id`. `training:complete` does not end in `:write`, so the `principal` template must exclude it by name (`models/Role.js`). Metrics are pure functions in `utils/trainingMetrics.js` (`null`, never 0, when nothing was measured; dropped students count against completion). `READINESS_WEIGHTS` in `packages/shared` is a **provisional** placeholder. Students reach their own data only through `GET /me/progress` (published grades and reviewed work only); `GET /admin/training/outcomes` returns per-college counts and no personal data.
 
 **Frontend API client:** `apps/web/src/lib/api.js` defaults `baseURL` to `${window.location.origin}/__api` when `VITE_API_URL` is unset, so requests stay same-origin (subdomain-based tenant resolution needs the real Host header, and the refresh cookie must stay first-party). Both the Vite dev proxy (`vite.config.js`, active only in `--mode test`) and the built web image's own nginx (`apps/web/nginx.conf`) rewrite `/__api/*` → the API, forwarding `Host`. Don't call the API by absolute URL/different hostname from the page — it breaks CORS and cookie handling by design.
 
@@ -172,6 +176,7 @@ Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts 
 - `local-dev-login-and-manual-verification.md` — **read this before answering any "show me the UI" / "give me login credentials" request**: the real seeded tenant subdomain (`testschool-rooted`, not `testschool`), which account to log in with, and why logging in as `super_admin` directly on a tenant subdomain silently renders almost no sidebar/data (needs an explicit impersonate step)
 - `branch-commit-pr-from-upstream.md` — cut a branch from `upstream/main`, commit with hooks, PR against upstream (fork workflow: `origin` = your fork, `upstream` = source repo)
 - `sync-main-with-upstream.md` — fast-forward local `main`/`origin/main` from `upstream/main`
+- `portal-dev-and-deploy.md` — **read this before running, testing or deploying `apps/portal`**: why it needs no API change (Host pinning, `X-Forwarded-Host` blanked), the e2e setup (re-seeds the DB itself, one worker), the `catalyst.ruralrootcloud.com` DNS/cloudflared steps the repo cannot do, and which files are copied from `apps/web`
 - `prod-staging-mongo-migration.md` — **read this before touching the shared Mongo instance, the prod/staging split, or the Cloudflare Tunnel config**: how `rooted-uat.ruralrootcloud.com` shares one Mongo instance with prod, the `COMPOSE_PROJECT_NAME` pin a renamed checkout directory depends on, and why a bind-mounted container (nginx, redis) can't just be `docker restart`ed after such a rename
 
 ## Environment Setup

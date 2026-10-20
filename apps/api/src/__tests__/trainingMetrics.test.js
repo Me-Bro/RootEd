@@ -288,6 +288,26 @@ describe('helpers used by the cross-college view', () => {
     expect(computeImprovement([]).avgDelta).toBeNull();
   });
 
+  test('computeImprovement pairs a baseline with the final of the same term, never another', () => {
+    // Term 1: 40 → 50 (+10). Term 2: 60 → 90 (+30). Mixing terms would give +50 or -10.
+    const gt = (studentId, termId, assessmentType, score) => ({
+      studentId,
+      subjectId: 's1',
+      termId,
+      assessmentType,
+      score,
+    });
+    const rows = [
+      gt(A, 't1', 'baseline', 40),
+      gt(A, 't2', 'baseline', 60),
+      gt(A, 't2', 'final', 90),
+      gt(A, 't1', 'final', 50),
+    ];
+    const out = computeImprovement(rows);
+    expect(out.avgDelta).toBe(20); // mean of +10 and +30
+    expect(out.studentsMeasured).toBe(1);
+  });
+
   test('countPlacementStages', () => {
     expect(countPlacementStages(placements)).toEqual({
       applied: 5,

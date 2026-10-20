@@ -270,7 +270,7 @@
     "noneHint": "Colleges appear here once the training module is enabled for them.",
     "college": "College",
     "completionPct": "Completion",
-    "attendance": "Attendance",
+    "attendance": "Attendance (all time)",
     "improvement": "Avg improvement"
   }
 }

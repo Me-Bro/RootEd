@@ -32,19 +32,16 @@ export async function getOutcomes() {
   const colleges = [];
   for (const tenant of tenants) {
     const tenantId = tenant._id;
-    const [enrolled, enrollmentRows, attendanceRows, grades, placements] = await Promise.all([
-      Student.countDocuments({ tenantId, status: 'active' }),
-      Enrollment.aggregate([
-        { $match: { tenantId } },
-        { $group: { _id: '$status', n: { $sum: 1 } } },
-      ]),
+    const [activeStudents, enrollments, attendanceRows, grades, placements] = await Promise.all([
+      Student.find({ tenantId, status: 'active' }, '_id').lean(),
+      Enrollment.find({ tenantId }, 'studentId status').lean(),
       AttendanceRecord.aggregate([
         { $match: { tenantId, entityType: 'student' } },
         { $group: { _id: '$status', n: { $sum: 1 } } },
       ]),
       Grade.find(
         { tenantId, assessmentType: { $in: ['baseline', 'final'] } },
-        'studentId subjectId assessmentType score',
+        'studentId subjectId termId assessmentType score',
         BYPASS
       ).lean(),
       PlacementApplication.find(
@@ -54,15 +51,29 @@ export async function getOutcomes() {
       ).lean(),
     ]);
 
-    const byStatus = countsByKey(enrollmentRows);
+    // Per student, not per enrolment row: someone who completed two batches is one
+    // completion, and a student who has since graduated is no longer in `enrolled`,
+    // so counting their old rows would push the rate past 100%.
+    const enrolled = activeStudents.length;
+    const activeIds = new Set(activeStudents.map((st) => String(st._id)));
+    const statusesByStudent = new Map();
+    for (const { studentId, status } of enrollments) {
+      const id = String(studentId);
+      if (!activeIds.has(id)) continue;
+      statusesByStudent.set(id, (statusesByStudent.get(id) ?? new Set()).add(status));
+    }
+    const completed = [...statusesByStudent.values()].filter((st) => st.has('completed')).length;
+    const dropped = [...statusesByStudent.values()].filter(
+      (st) => st.has('dropped') && !st.has('completed')
+    ).length;
     const improvement = computeImprovement(grades);
     colleges.push({
       tenantId: String(tenantId),
       name: tenant.name,
       enrolled,
-      completed: byStatus.completed ?? 0,
-      dropped: byStatus.dropped ?? 0,
-      completionPct: pct(byStatus.completed ?? 0, enrolled),
+      completed,
+      dropped,
+      completionPct: pct(completed, enrolled),
       attendancePct: attendancePercent(countsByKey(attendanceRows)),
       avgDelta: improvement.avgDelta,
       studentsMeasured: improvement.studentsMeasured,

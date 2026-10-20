@@ -564,6 +564,15 @@ describe('placement consent', () => {
     expect(stored.placementConsent?.granted).toBeUndefined();
   });
 
+  test('nor through a dotted path into it', async () => {
+    const res = await callAcademic('patch', `/students/${fx.s1._id}`, 'tenant_admin', {
+      'placementConsent.granted': true,
+    });
+    expect(res.status).toBe(200);
+    const stored = await Student.findOne({ _id: fx.s1._id, tenantId: tenants.A._id }).lean();
+    expect(stored.placementConsent?.granted).toBeUndefined();
+  });
+
   test('the TPO cannot record consent', async () => {
     const res = await call('put', `/students/${fx.s1._id}/consent`, 'principal', {
       granted: true,
@@ -704,6 +713,28 @@ describe('the generic enrollment route is not a completion bypass (AC11)', () =>
     });
     expect(res.status).toBe(403);
     expect(await statusOf()).toBe('completed');
+  });
+
+  test('re-enrolling a completed student through POST is the same decision', async () => {
+    expect(await statusOf()).toBe('completed');
+    const res = await callAcademic('post', '/enrollments', 'registrar', {
+      studentId: String(fx.outsider._id),
+      sectionId: String(fx.otherSection._id),
+    });
+    expect(res.status).toBe(403);
+    expect(await statusOf()).toBe('completed');
+    // The administrator may, and re-enrolling someone who simply dropped is not blocked.
+    expect(
+      (
+        await callAcademic('post', '/enrollments', 'tenant_admin', {
+          studentId: String(fx.outsider._id),
+          sectionId: String(fx.otherSection._id),
+        })
+      ).status
+    ).toBe(201);
+    await callAcademic('patch', `/enrollments/${enrollment._id}`, 'tenant_admin', {
+      status: 'completed',
+    });
   });
 
   test('the same holder can still edit notes', async () => {
@@ -1085,11 +1116,78 @@ describe('metrics, readiness, report and student progress', () => {
     });
   });
 
+  describe('grade statistics ignore training diagnostics', () => {
+    // s1 holds baseline 40, final 70 and mock interview 75 in the one subject/term.
+    const query = () =>
+      `sectionId=${cx.section._id}&subjectId=${cx.subject._id}&termId=${cx.term._id}`;
+    const scoreOf = (body, admissionNo) =>
+      body.students.find((s) => s.admissionNo === admissionNo).score;
+
+    test('the grade report averages term results, not the baseline or mock interview', async () => {
+      const res = await callC('get', `/academic/grades/report?${query()}`, 'tenant_admin');
+      expect(res.status).toBe(200);
+      expect(scoreOf(res.body, 'C-001')).toBe(70);
+      expect(scoreOf(res.body, 'C-002')).toBe(60);
+    });
+
+    test('the school-wide summary does the same', async () => {
+      const res = await callC(
+        'get',
+        `/academic/grades/summary?termId=${cx.term._id}`,
+        'tenant_admin'
+      );
+      expect(res.status).toBe(200);
+      expect(scoreOf(res.body, 'C-001')).toBe(70);
+    });
+
+    test('a baseline is still reported when it is asked for by name', async () => {
+      const res = await callC(
+        'get',
+        `/academic/grades/report?${query()}&assessmentType=baseline`,
+        'tenant_admin'
+      );
+      expect(scoreOf(res.body, 'C-001')).toBe(40);
+    });
+  });
+
   describe('GET /admin/training/outcomes', () => {
+    beforeAll(async () => {
+      // A student who has since graduated, still holding a completed enrolment, and
+      // a student who completed two batches: neither may inflate the completion rate.
+      const graduated = await Student.create({
+        tenantId: C._id,
+        admissionNo: 'C-004',
+        firstName: 'Deepa',
+        lastName: 'Rana',
+        sectionId: cx.section._id,
+        status: 'graduated',
+      });
+      await Enrollment.create({
+        tenantId: C._id,
+        studentId: graduated._id,
+        sectionId: cx.section._id,
+        status: 'completed',
+      });
+      await Enrollment.create({
+        tenantId: C._id,
+        studentId: cx.s1._id,
+        sectionId: cx.otherSection._id,
+        status: 'completed',
+      });
+    });
+
     const superAdmin = () =>
       signAccessToken({ sub: String(users.tenant_admin._id), systemRole: 'super_admin' });
     const outcomes = (token) =>
       request(app).get('/admin/training/outcomes').set('Authorization', `Bearer ${token}`);
+
+    test('counts each student once and never reports more than 100% completion', async () => {
+      const res = await outcomes(superAdmin());
+      const college = res.body.colleges.find((c) => c.name === 'college-c');
+      expect(college.completed).toBe(1); // s1 (twice) — not the graduated student
+      expect(college.completionPct).toBeLessThanOrEqual(100);
+      expect(college.completed).toBeLessThanOrEqual(college.enrolled);
+    });
 
     test('is for the super admin only', async () => {
       expect((await outcomes(tokens.tenant_admin)).status).toBe(403);
