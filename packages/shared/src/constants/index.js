@@ -21,6 +21,11 @@ export const ALL_MODULES = [
 // serves. One constant so the portal header and the PDF report agree.
 export const PROGRAMME_NAME = 'RR Cloud Career Catalyst';
 
+// What a college can ask about on the public Career Catalyst landing page, and
+// where an enquiry stands once the platform team has it.
+export const ENQUIRY_PROGRAMMES = ['skill_builder', 'career_ready', 'campus_partner', 'not_sure'];
+export const ENQUIRY_STATUSES = ['new', 'contacted', 'closed'];
+
 // Pilot success targets from the business plan (section 7), in percent.
 export const TRAINING_TARGETS = {
   attendance: 80,

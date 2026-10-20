@@ -16,6 +16,7 @@ export { AttendanceRecord } from './AttendanceRecord.js';
 export { AuditLog } from './AuditLog.js';
 export { Budget } from './Budget.js';
 export { Class } from './Class.js';
+export { CollegeEnquiry } from './CollegeEnquiry.js';
 export { CostCenter } from './CostCenter.js';
 export { Counter } from './Counter.js';
 export { Enrollment } from './Enrollment.js';

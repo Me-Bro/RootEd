@@ -31,6 +31,7 @@ import billingRouter from './routes/billing.js';
 import orgsRouter from './routes/orgs.js';
 import meRouter from './routes/me.js';
 import feedbackRouter from './routes/feedback.js';
+import enquiriesRouter from './routes/enquiries.js';
 
 const app = express();
 
@@ -177,6 +178,8 @@ app.use('/orgs', orgsRouter);
 // Public, no auth required: works for an anonymous landing-page visitor and
 // a logged-in tenant user alike (see decodeOptionalUser in feedback.js).
 app.use('/feedback', feedbackRouter);
+// Public too: a college asking for a proposal from the Career Catalyst landing page.
+app.use('/enquiries', enquiriesRouter);
 
 app.use(resolveTenant);
 
