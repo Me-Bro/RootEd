@@ -23,7 +23,8 @@ services:
       - rooted
 
   minio:
-    image: minio/minio
+    image: ${MINIO_IMAGE:-rooted-minio:2025-09-07}
+    pull_policy: never
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:

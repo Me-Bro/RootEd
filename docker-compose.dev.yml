@@ -139,7 +139,8 @@ services:
       - rooted
 
   minio:
-    image: minio/minio
+    build: ./ops/minio
+    image: rooted-minio:2025-09-07
     command: server /data --console-address ":9001"
     # !override: same reason as redis above — base publishes
     # '127.0.0.1:9000:9000'/'127.0.0.1:9001:9001'.

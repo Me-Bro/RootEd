@@ -17,6 +17,12 @@ services:
       - rooted
       - shared
 
+  # Base pins a host-tagged image with pull_policy: never; a dev machine has
+  # none, so build it from ops/minio on first use.
+  minio:
+    build: ./ops/minio
+    pull_policy: missing
+
   # Disable web and nginx — Playwright drives the Vite dev server locally
   web:
     profiles:
