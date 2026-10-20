@@ -70,6 +70,12 @@ a signed-in visitor is redirected to `homeRoute()`. Facts to keep true:
 - **The form** posts to the public `POST /enquiries` (rate limited to 5 an hour per IP in
   production, hidden `website` honeypot). Rows are `CollegeEnquiry` documents with no
   tenant; `super_admin` reads and moves them at `/enquiries`. Nothing emails the team yet.
+- **Visitor address behind the tunnel.** The `catalyst` vhost in `nginx/nginx.tunnel.conf`
+  sends Cloudflare's `CF-Connecting-IP` as `X-Real-IP`; the portal's own nginx forwards it
+  to the API as the only `X-Forwarded-For` entry. Without that, Express (`trust proxy 1`)
+  sees every visitor as the proxy in front and the form's 5-an-hour limit is one shared
+  bucket. Not verifiable from a dev machine: after deploy, check `RequestLog.ip` shows
+  real addresses for portal requests.
 - **No screenshots** of the portal on the page: the seed data is invented and looks it.
   Add real, approved ones deliberately if wanted.
 
