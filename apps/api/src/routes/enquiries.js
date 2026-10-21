@@ -2,19 +2,12 @@ import { Router } from 'express';
 import mongoose from 'mongoose';
 import { rateLimit } from 'express-rate-limit';
 import { enquirySubmitSchema } from '@rooted/shared/schemas';
+import { unescapeText } from '@rooted/shared/utils';
 import { CollegeEnquiry } from '../models/CollegeEnquiry.js';
 import { validate } from '../middleware/validate.js';
 import { env } from '../config/env.js';
 
 const router = Router();
-
-// The global sanitizeBody turns a typed `&` into `&amp;` (and `<`, `>` likewise).
-// These are plain-text fields shown through React, so put the characters back
-// rather than store "Arts &amp; Science College".
-const unescapeText = (value) =>
-  typeof value === 'string'
-    ? value.replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&amp;', '&')
-    : value;
 
 const enquiryLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,

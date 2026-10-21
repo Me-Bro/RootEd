@@ -197,7 +197,15 @@ export const PERMISSIONS = [
   'self:fees:read',
   'self:timetable:read',
   'self:training:read',
+  // Ticks items off, answers and attaches links on the caller's own roadmap.
+  // Separate from the read so a read-only student role cannot change anything.
+  'self:training:write',
 ];
+
+// Learning roadmap (training module): what an item asks the student to do, and
+// how a roadmap places its items in time. 'none' means order only.
+export const ROADMAP_ITEM_TYPES = ['theory', 'practical', 'assignment'];
+export const ROADMAP_SCHEDULE_MODES = ['dated', 'daily', 'weekly', 'none'];
 
 /** True for permissions that only ever expose the caller's own records. */
 export const isSelfScoped = (permission) => permission.startsWith('self:');

@@ -48,6 +48,7 @@ describe('training permissions', () => {
       'training:write',
       'training:complete',
       'self:training:read',
+      'self:training:write',
     ]) {
       expect(SHARED_PERMISSIONS).toContain(p);
     }
@@ -81,9 +82,12 @@ describe('training permissions', () => {
     expect(granting).toEqual(['tenant_admin']);
   });
 
-  test('student gets only the self-scoped training read', () => {
-    expect(DEFAULT_ROLE_TEMPLATES.student).toContain('self:training:read');
+  test('student gets only the self-scoped training permissions', () => {
+    expect(DEFAULT_ROLE_TEMPLATES.student).toEqual(
+      expect.arrayContaining(['self:training:read', 'self:training:write'])
+    );
     expect(DEFAULT_ROLE_TEMPLATES.student).not.toContain('training:read');
+    expect(DEFAULT_ROLE_TEMPLATES.student).not.toContain('training:write');
   });
 });
 

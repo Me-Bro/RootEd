@@ -9,3 +9,4 @@ export * from './salary.schema.js';
 export * from './feedback.schema.js';
 export * from './training.schema.js';
 export * from './enquiry.schema.js';
+export * from './roadmap.schema.js';
