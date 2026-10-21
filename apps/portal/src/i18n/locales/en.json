@@ -55,7 +55,8 @@
     "myProgress": "My progress",
     "outcomes": "Outcomes",
     "enquiries": "Enquiries",
-    "roadmap": "Roadmap"
+    "roadmap": "Roadmap",
+    "myRoadmap": "My roadmap"
   },
   "noAccess": {
     "title": "Nothing to open yet",
@@ -560,5 +561,18 @@
     "editFor": "Edit {{title}}",
     "removeFor": "Remove {{title}}",
     "confirmRemove": "Remove this item and every student's progress on it?"
+  },
+  "myRoadmap": {
+    "title": "My roadmap",
+    "description": "Work through your batch's learning path. Tick items off, write your answers and add your assignment links.",
+    "none": "No roadmap for your batch yet",
+    "noneHint": "Your mentor has not published one. Check back soon.",
+    "markComplete": "Mark complete",
+    "done": "Completed",
+    "completeFor": "Complete {{title}}",
+    "answerLabel": "Your answer",
+    "linkLabel": "Assignment link",
+    "unlockWhen": "Complete {{titles}} to unlock this.",
+    "openResource": "Open the resource"
   }
 }

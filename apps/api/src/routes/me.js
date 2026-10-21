@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import { z } from 'zod';
 import { authenticate } from '../middleware/authenticate.js';
 import { requirePermission, resolveContext } from '../middleware/requirePermission.js';
@@ -14,7 +15,13 @@ import { FeePayment } from '../models/FeePayment.js';
 import { Student } from '../models/Student.js';
 import { Subject } from '../models/Subject.js';
 import { filterVisibleTimetableEntries } from '../utils/timetableVisibility.js';
-import { progressQuerySchema } from '@rooted/shared/schemas';
+import {
+  progressQuerySchema,
+  myRoadmapQuerySchema,
+  roadmapProgressUpdateSchema,
+} from '@rooted/shared/schemas';
+import { validate } from '../middleware/validate.js';
+import { getMyRoadmaps, saveMyProgress } from '../services/roadmap.service.js';
 import { getStudentProgress } from '../services/trainingProgress.service.js';
 
 /**
@@ -187,6 +194,49 @@ router.get(
           studentId: studentIdOf(req),
           sectionId: req.subjects?.sectionId ?? null,
           termId,
+        })
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// Learning roadmap. Identity and batch come from resolveContext, never from the
+// request; a closed item's content is withheld (see services/roadmap.service.js).
+router.get(
+  '/roadmap',
+  requireModuleEnabled('training'),
+  requirePermission('self:training:read'),
+  async (req, res, next) => {
+    try {
+      const { termId } = myRoadmapQuerySchema.parse(req.query);
+      const roadmaps = await getMyRoadmaps(req.tenant._id, {
+        studentId: studentIdOf(req),
+        sectionId: req.subjects?.sectionId ?? null,
+        termId,
+      });
+      res.json({ roadmaps });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.put(
+  '/roadmap/items/:itemId',
+  requireModuleEnabled('training'),
+  requirePermission('self:training:write'),
+  validate(roadmapProgressUpdateSchema),
+  async (req, res, next) => {
+    try {
+      if (!mongoose.isValidObjectId(req.params.itemId)) throw new AppError('Not found', 404);
+      res.json(
+        await saveMyProgress(req.tenant._id, {
+          studentId: studentIdOf(req),
+          sectionId: req.subjects?.sectionId ?? null,
+          itemId: req.params.itemId,
+          changes: req.body,
         })
       );
     } catch (err) {

@@ -18,6 +18,7 @@ const STAFF_LINKS = [
   { to: '/readiness', key: 'readiness', permission: 'training:read' },
   { to: '/completion', key: 'completion', permission: 'training:read' },
   { to: '/me/progress', key: 'myProgress', permission: 'self:training:read' },
+  { to: '/me/roadmap', key: 'myRoadmap', permission: 'self:training:read' },
 ];
 
 export default function PortalShell() {

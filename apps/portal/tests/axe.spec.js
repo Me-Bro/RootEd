@@ -87,6 +87,15 @@ test.describe('accessibility', () => {
     });
   });
 
+  test.describe('student roadmap', () => {
+    test.use({ storageState: AUTH_STATES.student });
+    test('has no violations', async ({ page }) => {
+      await page.goto('/me/roadmap');
+      await expect(page.getByTestId('my-item-Seed: HTML basics')).toBeVisible();
+      expect(describeViolations((await scan(page)).violations)).toEqual([]);
+    });
+  });
+
   test.describe('student progress', () => {
     test.use({ storageState: AUTH_STATES.student });
     test('has no violations', async ({ page }) => {

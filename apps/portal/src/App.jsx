@@ -11,6 +11,7 @@ import SelectCollegePage from '@/pages/SelectCollegePage.jsx';
 import NoAccessPage from '@/pages/NoAccessPage.jsx';
 import DashboardPage from '@/pages/DashboardPage.jsx';
 import MyProgressPage from '@/pages/MyProgressPage.jsx';
+import MyRoadmapPage from '@/pages/MyRoadmapPage.jsx';
 import OutcomesPage from '@/pages/OutcomesPage.jsx';
 import EnquiriesPage from '@/pages/EnquiriesPage.jsx';
 import AssignmentsPage from '@/pages/AssignmentsPage.jsx';
@@ -120,6 +121,14 @@ export default function App() {
                 element={
                   <RequireAccess permission="self:training:read">
                     <MyProgressPage />
+                  </RequireAccess>
+                }
+              />
+              <Route
+                path="/me/roadmap"
+                element={
+                  <RequireAccess permission="self:training:read">
+                    <MyRoadmapPage />
                   </RequireAccess>
                 }
               />
