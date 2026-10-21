@@ -64,6 +64,7 @@ test.describe('accessibility', () => {
     test.use({ storageState: AUTH_STATES.tenant_admin });
     for (const [path, ready] of [
       ['/assignments', 'Seed: Git basics'],
+      ['/roadmap', 'Seed: HTML basics'],
       ['/completion', 'Student1 Test'],
       ['/readiness', 'Student1 Test'],
     ]) {
@@ -73,6 +74,17 @@ test.describe('accessibility', () => {
         expect(describeViolations((await scan(page)).violations)).toEqual([]);
       });
     }
+  });
+
+  test.describe('roadmap builder', () => {
+    test.use({ storageState: AUTH_STATES.tenant_admin });
+    test('has no violations with the item form open', async ({ page }) => {
+      await page.goto('/roadmap');
+      await page.getByRole('button', { name: 'Add item' }).click();
+      await page.getByLabel('Lock this item').check();
+      await expect(page.getByTestId('item-form')).toContainText('Seed: HTML basics');
+      expect(describeViolations((await scan(page)).violations)).toEqual([]);
+    });
   });
 
   test.describe('student progress', () => {

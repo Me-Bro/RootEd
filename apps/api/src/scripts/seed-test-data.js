@@ -26,6 +26,9 @@ import { Student } from '../models/Student.js';
 import { Grade } from '../models/Grade.js';
 import { Assignment } from '../models/Assignment.js';
 import { Submission } from '../models/Submission.js';
+import { Roadmap } from '../models/Roadmap.js';
+import { RoadmapItem } from '../models/RoadmapItem.js';
+import { RoadmapProgress } from '../models/RoadmapProgress.js';
 import { Project } from '../models/Project.js';
 import { Employer } from '../models/Employer.js';
 import { PlacementApplication } from '../models/PlacementApplication.js';
@@ -692,6 +695,101 @@ async function run() {
         $set: { status: plan.status, endDate: new Date('2025-09-30') },
         $setOnInsert: { startDate: new Date('2025-04-01'), enrolledBy: users.tenant_admin._id },
       },
+      { upsert: true, _bypassTenantScope: true }
+    );
+  }
+
+  // Learning roadmap on the primary batch. "Seed: Full-stack roadmap" (weekly,
+  // published) has four items: 1 theory (open), 2 practical (opens after 1),
+  // 3 assignment (opens after 2), 4 theory held by the mentor (no prerequisites).
+  // "Seed: Draft roadmap" is unpublished, so students must never see it.
+  // Progress: Student2 finished items 1+2 (2/4 = 50%), Student3 item 1 (25%),
+  // Student1 (the 'student' login) nothing, and dropped Student10 item 1 (must
+  // stay off the leaderboard).
+  const roadmapDefs = [
+    { title: 'Seed: Full-stack roadmap', scheduleMode: 'weekly', published: true },
+    { title: 'Seed: Draft roadmap', scheduleMode: 'none', published: false },
+  ];
+  const roadmaps = [];
+  for (const def of roadmapDefs) {
+    roadmaps.push(
+      await Roadmap.findOneAndUpdate(
+        { tenantId, title: def.title },
+        {
+          $set: { ...def, sectionId: section._id, termId: term._id },
+          $setOnInsert: { createdBy: users.teacher._id },
+        },
+        { upsert: true, new: true, _bypassTenantScope: true }
+      ).lean()
+    );
+  }
+  const [mainRoadmap, draftRoadmap] = roadmaps;
+  const roadmapItemDefs = [
+    {
+      roadmap: mainRoadmap,
+      title: 'Seed: HTML basics',
+      type: 'theory',
+      weekNumber: 1,
+      prompt: 'What is semantic HTML?',
+    },
+    {
+      roadmap: mainRoadmap,
+      title: 'Seed: Build a landing page',
+      type: 'practical',
+      weekNumber: 1,
+      body: 'Secret practical instructions',
+      after: 0,
+    },
+    {
+      roadmap: mainRoadmap,
+      title: 'Seed: Deploy your page',
+      type: 'assignment',
+      weekNumber: 2,
+      body: 'Secret assignment brief',
+      resourceUrl: 'https://example.com/deploy-guide',
+      after: 1,
+    },
+    {
+      roadmap: mainRoadmap,
+      title: 'Seed: Mentor-held review',
+      type: 'theory',
+      weekNumber: 3,
+      body: 'Secret held content',
+      locked: true,
+    },
+    { roadmap: draftRoadmap, title: 'Seed: Draft item', type: 'theory' },
+  ];
+  const roadmapItems = [];
+  for (const [i, def] of roadmapItemDefs.entries()) {
+    const { roadmap, after, ...fields } = def;
+    const unlockAfter = after === undefined ? [] : [roadmapItems[after]._id];
+    roadmapItems.push(
+      await RoadmapItem.findOneAndUpdate(
+        { tenantId, roadmapId: roadmap._id, title: def.title },
+        {
+          $set: {
+            ...fields,
+            sectionId: section._id,
+            order: i + 1,
+            locked: after !== undefined || Boolean(def.locked),
+            unlockAfter,
+          },
+        },
+        { upsert: true, new: true, _bypassTenantScope: true }
+      ).lean()
+    );
+  }
+  const roadmapProgressPlan = [
+    { student: activeStudents[1], item: 0 },
+    { student: activeStudents[1], item: 1 },
+    { student: activeStudents[2], item: 0 },
+    { student: activeStudents[9], item: 0 },
+  ];
+  for (const plan of roadmapProgressPlan) {
+    const item = roadmapItems[plan.item];
+    await RoadmapProgress.findOneAndUpdate(
+      { tenantId, itemId: item._id, studentId: plan.student._id },
+      { $set: { roadmapId: item.roadmapId, completedAt: new Date('2025-06-10') } },
       { upsert: true, _bypassTenantScope: true }
     );
   }
@@ -1932,6 +2030,17 @@ async function run() {
         sectionId: section._id.toString(),
         status: p.status,
       })),
+      // Roadmap (see the seed block): ids of the published and draft roadmaps and
+      // their items in order. Leaderboard: Student2 50%, Student3 25%, rest 0%.
+      roadmap: {
+        publishedId: mainRoadmap._id.toString(),
+        draftId: draftRoadmap._id.toString(),
+        items: roadmapItems.map((i) => ({
+          _id: i._id.toString(),
+          roadmapId: i.roadmapId.toString(),
+          title: i.title,
+        })),
+      },
       employers: employers.map((e) => ({ _id: e._id.toString(), name: e.name })),
       // Stages: joined, offered, interviewed, applied, rejected (Student1–5).
       placements: placementApplications.map((p) => ({

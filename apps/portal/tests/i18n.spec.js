@@ -85,6 +85,8 @@ test('the dynamic groups cover every value the API can send', () => {
     'training.completion.decision.': ['completed', 'dropped', 'active'],
     'training.dashboard.': ['met', 'notMet', 'noData'],
     'me.assessmentTypes.': ['baseline', 'final', 'mock_interview', 'quiz', 'midterm', 'other'],
+    'roadmap.types.': ['theory', 'practical', 'assignment'],
+    'roadmap.modes.': ['dated', 'daily', 'weekly', 'none'],
     'languages.': ['en', 'hi', 'hi_en'],
   };
   const gaps = Object.entries(need).flatMap(([prefix, values]) =>

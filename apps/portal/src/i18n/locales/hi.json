@@ -54,7 +54,8 @@
     "completion": "पूर्णता",
     "myProgress": "मेरी प्रगति",
     "outcomes": "परिणाम",
-    "enquiries": "Enquiries"
+    "enquiries": "Enquiries",
+    "roadmap": "रोडमैप"
   },
   "noAccess": {
     "title": "अभी खोलने के लिए कुछ नहीं है",
@@ -502,5 +503,62 @@
       "failed": "We could not send your request. Please try again, or email us instead.",
       "tooMany": "Too many requests from this device. Please try again later."
     }
+  },
+  "roadmap": {
+    "title": "सीखने का रोडमैप",
+    "description": "तय करें कि हर बैच क्या सीखे, किस क्रम में और कब। रोडमैप प्रकाशित होने पर ही विद्यार्थियों को दिखता है।",
+    "none": "इस बैच के लिए अभी कोई रोडमैप नहीं है",
+    "noneHint": "विद्यार्थियों को चलने के लिए एक मार्ग देने हेतु एक बनाएँ।",
+    "newRoadmap": "नया रोडमैप",
+    "titleLabel": "शीर्षक",
+    "descriptionLabel": "विवरण (वैकल्पिक)",
+    "mode": "समय-सारिणी",
+    "modes": {
+      "dated": "तारीख के अनुसार",
+      "daily": "दिन के अनुसार",
+      "weekly": "सप्ताह के अनुसार",
+      "none": "बिना समय-सारिणी"
+    },
+    "create": "रोडमैप बनाएँ",
+    "pick": "रोडमैप",
+    "published": "प्रकाशित",
+    "draft": "मसौदा",
+    "publish": "प्रकाशित करें",
+    "unpublish": "प्रकाशन हटाएँ",
+    "delete": "रोडमैप हटाएँ",
+    "confirmDelete": "इस रोडमैप, इसके आइटम और इन पर हर विद्यार्थी की प्रगति को हटाएँ?",
+    "modeFixed": "रोडमैप में आइटम जुड़ने के बाद समय-सारिणी नहीं बदली जा सकती।",
+    "items": "आइटम",
+    "noItems": "अभी कोई आइटम नहीं है",
+    "addItem": "आइटम जोड़ें",
+    "editItem": "आइटम बदलें",
+    "saveItem": "आइटम सहेजें",
+    "type": "प्रकार",
+    "types": {
+      "theory": "सिद्धांत",
+      "practical": "प्रैक्टिकल",
+      "assignment": "असाइनमेंट"
+    },
+    "body": "जानकारी",
+    "resourceUrl": "संसाधन का लिंक",
+    "prompt": "विद्यार्थी के लिए प्रश्न (वैकल्पिक)",
+    "dueDate": "तारीख",
+    "dayNumber": "दिन संख्या",
+    "weekNumber": "सप्ताह संख्या",
+    "day": "दिन {{n}}",
+    "week": "सप्ताह {{n}}",
+    "locked": "इस आइटम को बंद रखें",
+    "unlockAfter": "विद्यार्थी के ये पूरे करने के बाद खुलेगा",
+    "manualHold": "कुछ न चुनने पर आइटम तब तक बंद रहता है जब तक आप उसे खोल न दें।",
+    "lockedBadge": "बंद",
+    "waitsFor": "इनके बाद खुलेगा: {{titles}}",
+    "heldByMentor": "मेंटर के खोलने तक बंद है",
+    "moveUp": "{{title}} को ऊपर ले जाएँ",
+    "moveDown": "{{title}} को नीचे ले जाएँ",
+    "edit": "बदलें",
+    "remove": "हटाएँ",
+    "editFor": "{{title}} बदलें",
+    "removeFor": "{{title}} हटाएँ",
+    "confirmRemove": "इस आइटम और इस पर हर विद्यार्थी की प्रगति को हटाएँ?"
   }
 }

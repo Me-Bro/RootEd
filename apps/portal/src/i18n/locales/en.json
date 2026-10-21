@@ -54,7 +54,8 @@
     "completion": "Completion",
     "myProgress": "My progress",
     "outcomes": "Outcomes",
-    "enquiries": "Enquiries"
+    "enquiries": "Enquiries",
+    "roadmap": "Roadmap"
   },
   "noAccess": {
     "title": "Nothing to open yet",
@@ -502,5 +503,62 @@
       "failed": "We could not send your request. Please try again, or email us instead.",
       "tooMany": "Too many requests from this device. Please try again later."
     }
+  },
+  "roadmap": {
+    "title": "Learning roadmap",
+    "description": "Plan what each batch learns, in what order and when. Students see a roadmap once it is published.",
+    "none": "No roadmaps for this batch yet",
+    "noneHint": "Create one to give students a path to follow.",
+    "newRoadmap": "New roadmap",
+    "titleLabel": "Title",
+    "descriptionLabel": "Description (optional)",
+    "mode": "Timeline",
+    "modes": {
+      "dated": "By date",
+      "daily": "Day by day",
+      "weekly": "Week by week",
+      "none": "No timeline"
+    },
+    "create": "Create roadmap",
+    "pick": "Roadmap",
+    "published": "Published",
+    "draft": "Draft",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "delete": "Delete roadmap",
+    "confirmDelete": "Delete this roadmap, its items and every student's progress on it?",
+    "modeFixed": "The timeline cannot change once the roadmap has items.",
+    "items": "Items",
+    "noItems": "No items yet",
+    "addItem": "Add item",
+    "editItem": "Edit item",
+    "saveItem": "Save item",
+    "type": "Type",
+    "types": {
+      "theory": "Theory",
+      "practical": "Practical",
+      "assignment": "Assignment"
+    },
+    "body": "Details",
+    "resourceUrl": "Resource link",
+    "prompt": "Question for the student (optional)",
+    "dueDate": "Date",
+    "dayNumber": "Day number",
+    "weekNumber": "Week number",
+    "day": "Day {{n}}",
+    "week": "Week {{n}}",
+    "locked": "Lock this item",
+    "unlockAfter": "Opens after the student completes",
+    "manualHold": "With nothing selected the item stays closed until you unlock it.",
+    "lockedBadge": "Locked",
+    "waitsFor": "Opens after: {{titles}}",
+    "heldByMentor": "Closed until the mentor unlocks it",
+    "moveUp": "Move {{title}} up",
+    "moveDown": "Move {{title}} down",
+    "edit": "Edit",
+    "remove": "Remove",
+    "editFor": "Edit {{title}}",
+    "removeFor": "Remove {{title}}",
+    "confirmRemove": "Remove this item and every student's progress on it?"
   }
 }
