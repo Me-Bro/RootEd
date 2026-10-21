@@ -6,6 +6,7 @@ import api from '@/lib/api.js';
 import { useAuth } from '@/contexts/useAuth.js';
 import { hasPermission } from '@/lib/access.js';
 import { TYPE_VARIANT, scheduleLabel } from '@/lib/roadmap.js';
+import { ProgressSummary } from '@/components/roadmap/ProgressSummary.jsx';
 import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Button } from '@/components/ui/Button.jsx';
 import { Input, Textarea } from '@/components/ui/Input.jsx';
@@ -145,10 +146,11 @@ export default function MyRoadmapPage() {
     );
   }
 
-  const { roadmaps } = query.data;
+  const { roadmaps, summary } = query.data;
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={t('myRoadmap.title')} description={t('myRoadmap.description')} />
+      {roadmaps.length > 0 && <ProgressSummary summary={summary} />}
       {roadmaps.length === 0 && (
         <EmptyState title={t('myRoadmap.none')} description={t('myRoadmap.noneHint')} />
       )}

@@ -9,6 +9,7 @@ import { SCHEDULE_MODES, TYPE_VARIANT, scheduleLabel } from '@/lib/roadmap.js';
 import { useBatch } from '@/hooks/useBatch.js';
 import { BatchGate, BatchPicker } from '@/components/BatchPicker.jsx';
 import { RoadmapItemForm } from '@/components/roadmap/RoadmapItemForm.jsx';
+import { RoadmapProgressTable } from '@/components/roadmap/RoadmapProgressTable.jsx';
 import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Button } from '@/components/ui/Button.jsx';
 import { Input, Select, Textarea } from '@/components/ui/Input.jsx';
@@ -164,6 +165,7 @@ function RoadmapEditor({ roadmapId, canWrite, onDeleted }) {
   const queryClient = useQueryClient();
   // `null` = closed, `{}` = adding, an item = editing it.
   const [editing, setEditing] = useState(null);
+  const [view, setView] = useState('items');
 
   const query = useQuery({
     queryKey: ['roadmap', roadmapId],
@@ -245,43 +247,63 @@ function RoadmapEditor({ roadmapId, canWrite, onDeleted }) {
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {mutationError && <ErrorNote error={mutationError} />}
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium">{t('roadmap.items')}</h3>
-          {canWrite && !editing && (
-            <Button size="sm" onClick={() => setEditing({})}>
-              {t('roadmap.addItem')}
+        <div className="flex gap-2">
+          {['items', 'progress'].map((v) => (
+            <Button
+              key={v}
+              size="sm"
+              variant={view === v ? 'default' : 'outline'}
+              aria-pressed={view === v}
+              onClick={() => setView(v)}
+            >
+              {t(v === 'items' ? 'roadmap.viewItems' : 'roadmap.viewProgress')}
             </Button>
-          )}
+          ))}
         </div>
-        {items.length === 0 && (
-          <p className="text-sm text-muted-foreground">{t('roadmap.noItems')}</p>
-        )}
-        {items.length > 0 && (
-          <ol className="flex flex-col gap-2">
-            {items.map((item, index) => (
-              <ItemRow
-                key={item._id}
-                item={item}
-                index={index}
-                items={items}
+        {view === 'progress' && <RoadmapProgressTable roadmapId={roadmapId} />}
+        {view === 'items' && (
+          <>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-medium">{t('roadmap.items')}</h3>
+              {canWrite && !editing && (
+                <Button size="sm" onClick={() => setEditing({})}>
+                  {t('roadmap.addItem')}
+                </Button>
+              )}
+            </div>
+            {items.length === 0 && (
+              <p className="text-sm text-muted-foreground">{t('roadmap.noItems')}</p>
+            )}
+            {items.length > 0 && (
+              <ol className="flex flex-col gap-2">
+                {items.map((item, index) => (
+                  <ItemRow
+                    key={item._id}
+                    item={item}
+                    index={index}
+                    items={items}
+                    roadmap={roadmap}
+                    canWrite={canWrite}
+                    onMove={move}
+                    onEdit={setEditing}
+                    onRemove={(i) =>
+                      window.confirm(t('roadmap.confirmRemove')) && removeItem.mutate(i)
+                    }
+                  />
+                ))}
+              </ol>
+            )}
+            {editing && (
+              <RoadmapItemForm
+                key={editing._id ?? 'new'}
                 roadmap={roadmap}
-                canWrite={canWrite}
-                onMove={move}
-                onEdit={setEditing}
-                onRemove={(i) => window.confirm(t('roadmap.confirmRemove')) && removeItem.mutate(i)}
+                item={editing._id ? editing : null}
+                others={items.filter((i) => i._id !== editing._id)}
+                onDone={done}
+                onCancel={() => setEditing(null)}
               />
-            ))}
-          </ol>
-        )}
-        {editing && (
-          <RoadmapItemForm
-            key={editing._id ?? 'new'}
-            roadmap={roadmap}
-            item={editing._id ? editing : null}
-            others={items.filter((i) => i._id !== editing._id)}
-            onDone={done}
-            onCancel={() => setEditing(null)}
-          />
+            )}
+          </>
         )}
       </CardContent>
     </Card>

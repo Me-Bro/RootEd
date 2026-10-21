@@ -96,6 +96,25 @@ test.describe('accessibility', () => {
     });
   });
 
+  test.describe('student leaderboard', () => {
+    test.use({ storageState: AUTH_STATES.student });
+    test('has no violations', async ({ page }) => {
+      await page.goto('/me/leaderboard');
+      await expect(page.getByTestId('board-Student2 Test')).toBeVisible();
+      expect(describeViolations((await scan(page)).violations)).toEqual([]);
+    });
+  });
+
+  test.describe('mentor progress review', () => {
+    test.use({ storageState: AUTH_STATES.teacher });
+    test('has no violations', async ({ page }) => {
+      await page.goto('/roadmap');
+      await page.getByRole('button', { name: 'Student progress' }).click();
+      await expect(page.getByTestId('progress-Student2 Test')).toBeVisible();
+      expect(describeViolations((await scan(page)).violations)).toEqual([]);
+    });
+  });
+
   test.describe('student progress', () => {
     test.use({ storageState: AUTH_STATES.student });
     test('has no violations', async ({ page }) => {

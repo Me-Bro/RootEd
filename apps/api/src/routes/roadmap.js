@@ -18,6 +18,7 @@ import { RoadmapItem } from '../models/RoadmapItem.js';
 import { RoadmapProgress } from '../models/RoadmapProgress.js';
 import { auditLog } from '../services/audit.service.js';
 import { assertRefs } from '../services/training.service.js';
+import { getRoadmapProgress } from '../services/roadmap.service.js';
 import { hasCycle } from '../utils/roadmapLock.js';
 
 /**
@@ -129,6 +130,16 @@ router.get('/:id', requirePermission('training:read'), async (req, res, next) =>
       .sort({ order: 1 })
       .lean();
     res.json({ ...roadmap, items });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Every student's progress, answers and links on this roadmap, for review.
+router.get('/:id/progress', requirePermission('training:read'), async (req, res, next) => {
+  try {
+    const roadmap = await findRoadmap(req.tenant._id, req.params.id);
+    res.json(await getRoadmapProgress(req.tenant._id, roadmap));
   } catch (err) {
     next(err);
   }

@@ -21,7 +21,12 @@ import {
   roadmapProgressUpdateSchema,
 } from '@rooted/shared/schemas';
 import { validate } from '../middleware/validate.js';
-import { getMyRoadmaps, saveMyProgress } from '../services/roadmap.service.js';
+import {
+  getMyRoadmaps,
+  saveMyProgress,
+  summariseMyRoadmaps,
+  getLeaderboard,
+} from '../services/roadmap.service.js';
 import { getStudentProgress } from '../services/trainingProgress.service.js';
 
 /**
@@ -216,7 +221,26 @@ router.get(
         sectionId: req.subjects?.sectionId ?? null,
         termId,
       });
-      res.json({ roadmaps });
+      res.json({ roadmaps, summary: summariseMyRoadmaps(roadmaps) });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// Read-only: batch-mates' names and how many items they have completed, nothing
+// they wrote. The batch comes from the session, never from a parameter.
+router.get(
+  '/roadmap/leaderboard',
+  requireModuleEnabled('training'),
+  requirePermission('self:training:read'),
+  async (req, res, next) => {
+    try {
+      const leaderboard = await getLeaderboard(req.tenant._id, {
+        studentId: studentIdOf(req),
+        sectionId: req.subjects?.sectionId ?? null,
+      });
+      res.json({ leaderboard });
     } catch (err) {
       next(err);
     }

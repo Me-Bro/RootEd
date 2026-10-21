@@ -20,6 +20,7 @@ const { AcademicYear } = await import('../models/AcademicYear.js');
 const { Term } = await import('../models/Term.js');
 const { Class } = await import('../models/Class.js');
 const { Section } = await import('../models/Section.js');
+const { Student } = await import('../models/Student.js');
 const { RoadmapItem } = await import('../models/RoadmapItem.js');
 const { RoadmapProgress } = await import('../models/RoadmapProgress.js');
 const { signAccessToken, hashPassword } = await import('../services/auth.service.js');
@@ -392,5 +393,69 @@ describe('items', () => {
         })
       ).status
     ).toBe(400);
+  });
+});
+
+describe('progress review', () => {
+  const student = (no, first, tenant = tenants.A, section = fx.section) =>
+    Student.create({
+      tenantId: tenant._id,
+      admissionNo: no,
+      firstName: first,
+      lastName: 'Rana',
+      sectionId: section._id,
+      status: 'active',
+    });
+
+  test("shows each student's progress with the answers and links they wrote", async () => {
+    const r = await makeRoadmap({ scheduleMode: 'none' });
+    const one = (await addItem(r._id, { weekNumber: undefined, title: 'One' })).body;
+    const two = (await addItem(r._id, { weekNumber: undefined, title: 'Two', type: 'assignment' }))
+      .body;
+    const asha = await student('P-001', 'Asha');
+    await student('P-002', 'Bhavna');
+    await RoadmapProgress.create([
+      {
+        tenantId: tenants.A._id,
+        roadmapId: r._id,
+        itemId: one._id,
+        studentId: asha._id,
+        completedAt: new Date(),
+        answer: 'My answer',
+      },
+      {
+        tenantId: tenants.A._id,
+        roadmapId: r._id,
+        itemId: two._id,
+        studentId: asha._id,
+        completedAt: null,
+        linkUrl: 'https://github.com/asha/site',
+      },
+    ]);
+
+    const res = await call('get', `/${r._id}/progress`, 'principal');
+    expect(res.status).toBe(200);
+    expect(res.body.items.map((i) => i.title)).toEqual(['One', 'Two']);
+    const rows = Object.fromEntries(res.body.students.map((s) => [s.student.firstName, s]));
+    expect(rows.Asha).toMatchObject({ completed: 1, total: 2, pct: 50 });
+    expect(rows.Asha.work.map((w) => w.answer ?? w.linkUrl).sort()).toEqual([
+      'My answer',
+      'https://github.com/asha/site',
+    ]);
+    expect(rows.Bhavna).toMatchObject({ completed: 0, total: 2, pct: 0, work: [] });
+  });
+
+  test('a roadmap with no items has no percentage, not 0%', async () => {
+    const r = await makeRoadmap({ title: 'Empty' });
+    await student('P-003', 'Chetan');
+    const res = await call('get', `/${r._id}/progress`, 'teacher');
+    expect(res.body.students.length).toBeGreaterThan(0);
+    for (const row of res.body.students) expect(row).toMatchObject({ total: 0, pct: null });
+  });
+
+  test('a student cannot read it, and another college gets 404', async () => {
+    const r = await makeRoadmap();
+    expect((await call('get', `/${r._id}/progress`, 'student')).status).toBe(403);
+    expect((await call('get', `/${r._id}/progress`, 'bTeacher', undefined, 'B')).status).toBe(404);
   });
 });

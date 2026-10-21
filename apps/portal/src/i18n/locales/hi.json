@@ -56,7 +56,8 @@
     "outcomes": "परिणाम",
     "enquiries": "Enquiries",
     "roadmap": "रोडमैप",
-    "myRoadmap": "मेरा रोडमैप"
+    "myRoadmap": "मेरा रोडमैप",
+    "leaderboard": "लीडरबोर्ड"
   },
   "noAccess": {
     "title": "अभी खोलने के लिए कुछ नहीं है",
@@ -560,7 +561,21 @@
     "remove": "हटाएँ",
     "editFor": "{{title}} बदलें",
     "removeFor": "{{title}} हटाएँ",
-    "confirmRemove": "इस आइटम और इस पर हर विद्यार्थी की प्रगति को हटाएँ?"
+    "confirmRemove": "इस आइटम और इस पर हर विद्यार्थी की प्रगति को हटाएँ?",
+    "viewItems": "आइटम",
+    "viewProgress": "विद्यार्थियों की प्रगति",
+    "progress": {
+      "student": "विद्यार्थी",
+      "done": "पूरे",
+      "percent": "प्रगति",
+      "none": "इस बैच में अभी कोई विद्यार्थी नहीं है",
+      "work": "उत्तर और लिंक",
+      "workFor": "{{name}} के उत्तर और लिंक",
+      "noWork": "अभी कुछ लिखा नहीं गया है",
+      "answer": "उत्तर",
+      "link": "लिंक",
+      "completedMark": "पूरा हुआ"
+    }
   },
   "myRoadmap": {
     "title": "मेरा रोडमैप",
@@ -573,6 +588,23 @@
     "answerLabel": "आपका उत्तर",
     "linkLabel": "असाइनमेंट का लिंक",
     "unlockWhen": "इसे खोलने के लिए {{titles}} पूरा करें।",
-    "openResource": "संसाधन खोलें"
+    "openResource": "संसाधन खोलें",
+    "progressTitle": "आपकी प्रगति",
+    "progressOf": "{{total}} में से {{completed}} आइटम पूरे",
+    "typeCount": "{{type}}: {{total}} में से {{completed}}",
+    "noItems": "अभी पूरा करने के लिए कुछ नहीं है।",
+    "viewLeaderboard": "लीडरबोर्ड देखें"
+  },
+  "leaderboard": {
+    "title": "बैच लीडरबोर्ड",
+    "description": "आपका बैच रोडमैप पर कैसा चल रहा है। आप केवल नाम और प्रगति देख सकते हैं, किसी के उत्तर कभी नहीं।",
+    "none": "अभी कोई लीडरबोर्ड नहीं है",
+    "noneHint": "आपके मेंटर के आइटम वाला रोडमैप प्रकाशित करने पर यह दिखेगा।",
+    "rank": "रैंक",
+    "student": "विद्यार्थी",
+    "completed": "पूरे किए",
+    "progress": "प्रगति",
+    "you": "आप",
+    "caption": "आपके बैच की रोडमैप प्रगति, सबसे अधिक पहले"
   }
 }

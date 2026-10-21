@@ -24,6 +24,7 @@ const { Section } = await import('../models/Section.js');
 const { Roadmap } = await import('../models/Roadmap.js');
 const { RoadmapItem } = await import('../models/RoadmapItem.js');
 const { RoadmapProgress } = await import('../models/RoadmapProgress.js');
+const { Enrollment } = await import('../models/Enrollment.js');
 const { signAccessToken, hashPassword } = await import('../services/auth.service.js');
 const { errorHandler } = await import('../middleware/errorHandler.js');
 const { default: meRouter } = await import('../routes/me.js');
@@ -169,6 +170,25 @@ beforeAll(async () => {
   tokens.outsider = outsider.token;
   const noBatch = await linkedStudent(a.tenant, a.roles.student, null, 'A-004', 'Deepa');
   tokens.noBatch = noBatch.token;
+  // Classmates with no login, and one who dropped out of the batch.
+  const classmate = (no, first) =>
+    Student.create({
+      tenantId: a.tenant._id,
+      admissionNo: no,
+      firstName: first,
+      lastName: 'Rana',
+      sectionId: fx.section._id,
+      status: 'active',
+    });
+  fx.farah = await classmate('A-005', 'Farah');
+  fx.gita = await classmate('A-006', 'Gita');
+  fx.hari = await classmate('A-007', 'Hari');
+  await Enrollment.create({
+    tenantId: a.tenant._id,
+    studentId: fx.hari._id,
+    sectionId: fx.section._id,
+    status: 'dropped',
+  });
   // A login with the student role but no student record.
   tokens.unlinked = (await makeMember(a.tenant, a.roles.student, 'unlinked')).token;
   tokens.teacher = (await makeMember(a.tenant, a.roles.teacher, 'teacher')).token;
@@ -430,5 +450,116 @@ describe('PUT /me/roadmap/items/:itemId', () => {
     ]);
     expect(results.map((r) => r.status)).toEqual([200, 200, 200]);
     expect(await RoadmapProgress.countDocuments({ tenantId: tenants.A._id })).toBe(1);
+  });
+});
+
+// Completes the named items for a student straight in the database.
+const finish = (student, names, extra = {}) =>
+  RoadmapProgress.insertMany(
+    names.map((name) => ({
+      tenantId: tenants.A._id,
+      roadmapId: fx.main.roadmap._id,
+      itemId: item(name),
+      studentId: student._id,
+      completedAt: new Date(),
+      ...extra,
+    }))
+  );
+
+describe('progress summary on GET /me/roadmap', () => {
+  test('counts completed over every item, by type, with locked items in the total', async () => {
+    await put('HTML basics', 's1', { completed: true });
+    const { summary } = (await call('get', '/roadmap', 's1')).body;
+    expect(summary).toMatchObject({ completed: 1, total: 4, pct: 25 });
+    expect(summary.byType).toEqual({
+      theory: { completed: 1, total: 2 },
+      practical: { completed: 0, total: 1 },
+      assignment: { completed: 0, total: 1 },
+    });
+  });
+
+  test('a student with no roadmap has no percentage, not 0%', async () => {
+    const { summary } = (await call('get', '/roadmap', 'noBatch')).body;
+    expect(summary).toMatchObject({ completed: 0, total: 0, pct: null });
+  });
+});
+
+describe('GET /me/roadmap/leaderboard', () => {
+  test('ranks the batch by completed items, ties sharing a rank, and marks the caller', async () => {
+    await finish(fx.farah, ['HTML basics', 'Deploy it']);
+    await finish(fx.gita, ['HTML basics']);
+    await put('HTML basics', 's1', { completed: true });
+
+    const res = await call('get', '/roadmap/leaderboard', 's1');
+    expect(res.status).toBe(200);
+    expect(res.body.leaderboard).toEqual([
+      { rank: 1, displayName: 'Farah Rana', completed: 2, total: 4, pct: 50, isMe: false },
+      { rank: 2, displayName: 'Asha Rana', completed: 1, total: 4, pct: 25, isMe: true },
+      { rank: 2, displayName: 'Gita Rana', completed: 1, total: 4, pct: 25, isMe: false },
+      { rank: 4, displayName: 'Bhavna Rana', completed: 0, total: 4, pct: 0, isMe: false },
+    ]);
+  });
+
+  test('exposes only the whitelisted keys: no answers, links, dates or ids', async () => {
+    await finish(fx.farah, ['Deploy it'], {
+      answer: 'private answer',
+      linkUrl: 'https://x.test/a',
+    });
+    const { leaderboard } = (await call('get', '/roadmap/leaderboard', 's1')).body;
+    for (const row of leaderboard) {
+      expect(Object.keys(row).sort()).toEqual([
+        'completed',
+        'displayName',
+        'isMe',
+        'pct',
+        'rank',
+        'total',
+      ]);
+    }
+    expect(JSON.stringify(leaderboard)).not.toMatch(/private answer|x\.test|completedAt/);
+  });
+
+  test('leaves out a student who dropped out of the batch', async () => {
+    await finish(fx.hari, ['HTML basics', 'Deploy it']);
+    const { leaderboard } = (await call('get', '/roadmap/leaderboard', 's1')).body;
+    expect(leaderboard.map((r) => r.displayName)).not.toContain('Hari Rana');
+    expect(leaderboard).toHaveLength(4);
+  });
+
+  test('shows only the caller own batch, never another', async () => {
+    const { leaderboard } = (await call('get', '/roadmap/leaderboard', 'outsider')).body;
+    // The other batch has a roadmap but only Chetan on it.
+    expect(leaderboard.map((r) => r.displayName)).toEqual(['Chetan Rana']);
+  });
+
+  test('is empty with no batch, and when the batch has no published items', async () => {
+    expect((await call('get', '/roadmap/leaderboard', 'noBatch')).body.leaderboard).toEqual([]);
+    await RoadmapItem.deleteMany({ tenantId: tenants.A._id, roadmapId: fx.other.roadmap._id });
+    expect((await call('get', '/roadmap/leaderboard', 'outsider')).body.leaderboard).toEqual([]);
+    await RoadmapItem.create({
+      tenantId: tenants.A._id,
+      roadmapId: fx.other.roadmap._id,
+      sectionId: fx.otherSection._id,
+      type: 'theory',
+      title: 'Other item',
+      order: 1,
+    });
+  });
+
+  test('a login with no student record is 404; staff are 403; another college sees its own', async () => {
+    expect((await call('get', '/roadmap/leaderboard', 'unlinked')).status).toBe(404);
+    expect((await call('get', '/roadmap/leaderboard', 'teacher')).status).toBe(403);
+    const b = await call('get', '/roadmap/leaderboard', 'bStudent', undefined, 'B');
+    expect(b.body.leaderboard.map((r) => r.displayName)).toEqual(['Esha Rana']);
+  });
+
+  test('a read-only role can see the leaderboard', async () => {
+    expect((await call('get', '/roadmap/leaderboard', 'readOnly')).status).toBe(200);
+  });
+
+  test('a batch parameter in the query changes nothing', async () => {
+    const res = await call('get', `/roadmap/leaderboard?sectionId=${fx.otherSection._id}`, 's1');
+    expect(res.body.leaderboard.map((r) => r.displayName)).toContain('Asha Rana');
+    expect(res.body.leaderboard.map((r) => r.displayName)).not.toContain('Chetan Rana');
   });
 });

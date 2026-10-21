@@ -56,6 +56,10 @@ test.describe('a student works through their roadmap', () => {
     await tick.click();
     await expect(tick).toHaveAttribute('aria-pressed', 'true');
 
+    // One of the four items is done: the summary follows the tick.
+    await expect(page.getByTestId('summary-pct')).toHaveText('25%');
+    await expect(page.getByTestId('summary-count')).toHaveText('1 of 4 items complete');
+
     const next = page.getByTestId('my-item-Seed: Build a landing page');
     await expect(next.getByText(BODY_LOCKED)).toBeVisible();
     await expect(next.getByTestId('locked-reason')).toHaveCount(0);

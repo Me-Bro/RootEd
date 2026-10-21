@@ -56,7 +56,8 @@
     "outcomes": "Outcomes",
     "enquiries": "Enquiries",
     "roadmap": "Roadmap",
-    "myRoadmap": "My roadmap"
+    "myRoadmap": "My roadmap",
+    "leaderboard": "Leaderboard"
   },
   "noAccess": {
     "title": "Nothing to open yet",
@@ -560,7 +561,21 @@
     "remove": "Remove",
     "editFor": "Edit {{title}}",
     "removeFor": "Remove {{title}}",
-    "confirmRemove": "Remove this item and every student's progress on it?"
+    "confirmRemove": "Remove this item and every student's progress on it?",
+    "viewItems": "Items",
+    "viewProgress": "Student progress",
+    "progress": {
+      "student": "Student",
+      "done": "Done",
+      "percent": "Progress",
+      "none": "No students on this batch yet",
+      "work": "Answers and links",
+      "workFor": "Answers and links for {{name}}",
+      "noWork": "Nothing written yet",
+      "answer": "Answer",
+      "link": "Link",
+      "completedMark": "Completed"
+    }
   },
   "myRoadmap": {
     "title": "My roadmap",
@@ -573,6 +588,23 @@
     "answerLabel": "Your answer",
     "linkLabel": "Assignment link",
     "unlockWhen": "Complete {{titles}} to unlock this.",
-    "openResource": "Open the resource"
+    "openResource": "Open the resource",
+    "progressTitle": "Your progress",
+    "progressOf": "{{completed}} of {{total}} items complete",
+    "typeCount": "{{type}}: {{completed}} of {{total}}",
+    "noItems": "There is nothing to complete yet.",
+    "viewLeaderboard": "See the leaderboard"
+  },
+  "leaderboard": {
+    "title": "Batch leaderboard",
+    "description": "How your batch is getting on with the roadmap. You can see names and progress only, never anyone's answers.",
+    "none": "No leaderboard yet",
+    "noneHint": "It appears once your mentor publishes a roadmap with items.",
+    "rank": "Rank",
+    "student": "Student",
+    "completed": "Completed",
+    "progress": "Progress",
+    "you": "You",
+    "caption": "Roadmap progress of your batch, highest first"
   }
 }
