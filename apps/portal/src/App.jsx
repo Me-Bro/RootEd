@@ -11,6 +11,8 @@ import SelectCollegePage from '@/pages/SelectCollegePage.jsx';
 import NoAccessPage from '@/pages/NoAccessPage.jsx';
 import DashboardPage from '@/pages/DashboardPage.jsx';
 import MyProgressPage from '@/pages/MyProgressPage.jsx';
+import MyRoadmapPage from '@/pages/MyRoadmapPage.jsx';
+import LeaderboardPage from '@/pages/LeaderboardPage.jsx';
 import OutcomesPage from '@/pages/OutcomesPage.jsx';
 import EnquiriesPage from '@/pages/EnquiriesPage.jsx';
 import AssignmentsPage from '@/pages/AssignmentsPage.jsx';
@@ -18,12 +20,14 @@ import ProjectsPage from '@/pages/ProjectsPage.jsx';
 import PlacementPage from '@/pages/PlacementPage.jsx';
 import ReadinessPage from '@/pages/ReadinessPage.jsx';
 import CompletionPage from '@/pages/CompletionPage.jsx';
+import RoadmapPage from '@/pages/RoadmapPage.jsx';
 
 // Pages for anyone who can read the college's training data (trainer, TPO, admin).
 // What a page lets them change is decided inside it, by training:write / :complete.
 const STAFF_PAGES = [
   { path: '/dashboard', Page: DashboardPage },
   { path: '/assignments', Page: AssignmentsPage },
+  { path: '/roadmap', Page: RoadmapPage },
   { path: '/projects', Page: ProjectsPage },
   { path: '/placement', Page: PlacementPage },
   { path: '/readiness', Page: ReadinessPage },
@@ -118,6 +122,22 @@ export default function App() {
                 element={
                   <RequireAccess permission="self:training:read">
                     <MyProgressPage />
+                  </RequireAccess>
+                }
+              />
+              <Route
+                path="/me/roadmap"
+                element={
+                  <RequireAccess permission="self:training:read">
+                    <MyRoadmapPage />
+                  </RequireAccess>
+                }
+              />
+              <Route
+                path="/me/leaderboard"
+                element={
+                  <RequireAccess permission="self:training:read">
+                    <LeaderboardPage />
                   </RequireAccess>
                 }
               />

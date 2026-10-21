@@ -54,6 +54,27 @@ If the API is not on `:3001` set `API_PROXY_TARGET=http://127.0.0.1:<port>`.
 On Windows, seeding from the host needs `directConnection=true` on
 `MONGODB_URI` (the replica set advertises `mongo:27017`).
 
+## Learning roadmap
+
+Mentors build it at `/roadmap` (`training:read` to look, `training:write` to change);
+students use `/me/roadmap` and `/me/leaderboard` (`self:training:read`, and
+`self:training:write` to tick, answer or link). Facts to keep true:
+
+- **Self-reported, never scored.** It does not feed `trainingMetrics` or readiness.
+- **The server withholds a closed item's body, prompt and link** (`services/roadmap.service.js`);
+  never move that decision into the UI. A closed item accepts only an un-tick.
+- **The leaderboard is a whitelist** (rank, name, counts, `isMe`): classmates' answers,
+  links and dates must never join it. Dropped students are left out.
+- **E2E state.** The seed adds one published roadmap and one draft on the primary batch with
+  known progress (Student2 50%, Student3 25%, dropped Student10 excluded). Specs that change
+  Student1's roadmap restore it in `afterAll`; `leaderboard.spec.js` runs before
+  `my-roadmap.spec.js` on purpose.
+- **Running beside a dev stack.** The dev compose stack owns `:3001`/`:5174`. To run the
+  suite without stopping it, start the API on another port (`PORT=3101`, `REDIS_URL` on a
+  spare db such as `/5` so the dev API's workers do not pick up its jobs, `directConnection=true`
+  Mongo URI) and point a throwaway Playwright config at a spare port with
+  `API_PROXY_TARGET=http://localhost:3101`.
+
 ## Public landing page and enquiries
 
 `/` is public (`src/pages/LandingPage.jsx`, sections in `src/components/landing/`);

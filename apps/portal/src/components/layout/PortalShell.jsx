@@ -12,11 +12,14 @@ import { LanguageSwitcher } from './LanguageSwitcher.jsx';
 const STAFF_LINKS = [
   { to: '/dashboard', key: 'dashboard', permission: 'training:read' },
   { to: '/assignments', key: 'assignments', permission: 'training:read' },
+  { to: '/roadmap', key: 'roadmap', permission: 'training:read' },
   { to: '/projects', key: 'projects', permission: 'training:read' },
   { to: '/placement', key: 'placement', permission: 'training:read' },
   { to: '/readiness', key: 'readiness', permission: 'training:read' },
   { to: '/completion', key: 'completion', permission: 'training:read' },
   { to: '/me/progress', key: 'myProgress', permission: 'self:training:read' },
+  { to: '/me/roadmap', key: 'myRoadmap', permission: 'self:training:read' },
+  { to: '/me/leaderboard', key: 'leaderboard', permission: 'self:training:read' },
 ];
 
 export default function PortalShell() {
