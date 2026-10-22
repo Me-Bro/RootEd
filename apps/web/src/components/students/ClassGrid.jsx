@@ -21,6 +21,8 @@ export default function ClassGrid({
   onExpand,
   activeSectionId,
   onSelectSection,
+  canCreateSection,
+  onAddSection,
 }) {
   const { t } = useTranslation();
   if (!classes.length) return null;
@@ -73,6 +75,19 @@ export default function ClassGrid({
                   activeId={activeSectionId}
                   onSelect={onSelectSection}
                 />
+                {canCreateSection ? (
+                  <button
+                    type="button"
+                    onClick={() => onAddSection(c._id)}
+                    className="mt-2 rounded-lg border border-dashed border-border px-3 py-1.5 text-sm text-muted-foreground hover:border-primary hover:text-primary"
+                  >
+                    {t('academic.classesSections.newSection')}
+                  </button>
+                ) : (
+                  <p className="mt-2 px-1 text-xs text-muted-foreground">
+                    {t('academic.students.askAdminCreateSection')}
+                  </p>
+                )}
                 {activeSectionId && (
                   <div className="mt-3">
                     <RosterInfiniteList sectionId={activeSectionId} />
