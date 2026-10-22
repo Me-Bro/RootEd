@@ -310,6 +310,26 @@ router.patch('/subjects/:id', requirePermission('tenant:admin'), async (req, res
 
 // ── Students ──────────────────────────────────────────────────────────────────
 
+// Batch rosters (coaching/tuition/study-center) read Enrollment rows, not
+// Student.sectionId, so every student placed in a section needs a matching
+// active row. $setOnInsert keeps a completed/dropped row untouched.
+async function ensureEnrollment(tenantId, student) {
+  if (!student.sectionId) return;
+  await Enrollment.updateOne(
+    { tenantId, studentId: student._id, sectionId: student.sectionId },
+    {
+      $setOnInsert: {
+        tenantId,
+        studentId: student._id,
+        sectionId: student.sectionId,
+        status: 'active',
+        startDate: new Date(),
+      },
+    },
+    { upsert: true }
+  );
+}
+
 router.post('/students', requirePermission('students:write'), async (req, res, next) => {
   try {
     const { admissionNo, firstName, lastName, sectionId, dateOfBirth, gender, parentContacts } =
@@ -329,6 +349,7 @@ router.post('/students', requirePermission('students:write'), async (req, res, n
       gender,
       parentContacts,
     });
+    await ensureEnrollment(tenantId, student);
     res.status(201).json(student);
   } catch (err) {
     next(err);
@@ -398,6 +419,7 @@ router.patch('/students/:id', requirePermission('students:write'), async (req, r
       { new: true }
     );
     if (!student) return res.status(404).json({ error: 'Not found' });
+    if (body.sectionId) await ensureEnrollment(req.tenant._id, student);
     res.json(student);
   } catch (err) {
     next(err);
@@ -556,6 +578,7 @@ router.post(
             dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
             gender: gender || undefined,
           });
+          await ensureEnrollment(tenantId, student);
           created++;
 
           // The email column is optional, and a row without one still imports:
