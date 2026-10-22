@@ -18,12 +18,17 @@ import { useClassSections } from '../../hooks/useClassSections.js';
 import SearchField from '../../components/attendance/SearchField.jsx';
 import ClassGrid from '../../components/students/ClassGrid.jsx';
 import RosterInfiniteList from '../../components/students/RosterInfiniteList.jsx';
+import CreateSectionDialog from '../../components/students/CreateSectionDialog.jsx';
+import { useAuth } from '../../contexts/useAuth.js';
 
 const LAST_SECTION_KEY = 'students:lastSectionId';
 
-function AddStudentModal({ open, onOpenChange, sections }) {
+const NEW_SECTION = '__new__';
+
+function AddStudentModal({ open, onOpenChange, sections, classes, canCreateSection }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [showCreateSection, setShowCreateSection] = useState(false);
   const [form, setForm] = useState({
     admissionNo: '',
     firstName: '',
@@ -93,13 +98,24 @@ function AddStudentModal({ open, onOpenChange, sections }) {
           />
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium">{t('academic.students.section')}</label>
-            <select value={form.sectionId} onChange={update('sectionId')} className={selectCls}>
+            <select
+              value={form.sectionId}
+              onChange={(e) =>
+                e.target.value === NEW_SECTION ? setShowCreateSection(true) : update('sectionId')(e)
+              }
+              className={selectCls}
+            >
               <option value="">{t('academic.students.selectSection')}</option>
               {sections.map((s) => (
                 <option key={s._id} value={s._id}>
                   {s.label}
                 </option>
               ))}
+              {canCreateSection ? (
+                <option value={NEW_SECTION}>{t('academic.students.newSectionOption')}</option>
+              ) : (
+                <option disabled>{t('academic.students.askAdminCreateSection')}</option>
+              )}
             </select>
           </div>
           <Input
@@ -127,6 +143,15 @@ function AddStudentModal({ open, onOpenChange, sections }) {
             {mutation.isPending ? t('common.saving') : t('academic.students.addStudent')}
           </Button>
         </DialogFooter>
+        {/* Sibling of the <form>, not a child: React events bubble through portals. */}
+        {showCreateSection && (
+          <CreateSectionDialog
+            open
+            onOpenChange={setShowCreateSection}
+            classes={classes}
+            onCreated={(s) => setForm((f) => ({ ...f, sectionId: s._id }))}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -172,7 +197,10 @@ export default function StudentsPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  const canCreateSection = (user?.permissions ?? []).includes('tenant:admin');
   const [showAdd, setShowAdd] = useState(false);
+  const [addSectionFor, setAddSectionFor] = useState(null); // classId | null
   const [importResult, setImportResult] = useState(null);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -332,11 +360,28 @@ export default function StudentsPage() {
             onExpand={handleExpandClass}
             activeSectionId={drillSectionId}
             onSelectSection={setDrillSectionId}
+            canCreateSection={canCreateSection}
+            onAddSection={setAddSectionFor}
           />
         </div>
       )}
 
-      <AddStudentModal open={showAdd} onOpenChange={setShowAdd} sections={sections} />
+      <AddStudentModal
+        open={showAdd}
+        onOpenChange={setShowAdd}
+        sections={sections}
+        classes={classes}
+        canCreateSection={canCreateSection}
+      />
+      {addSectionFor && (
+        <CreateSectionDialog
+          open
+          onOpenChange={(v) => !v && setAddSectionFor(null)}
+          classes={classes}
+          classId={addSectionFor}
+          onCreated={(s) => setDrillSectionId(s._id)}
+        />
+      )}
       <ImportResultModal
         open={Boolean(importResult)}
         onOpenChange={(v) => !v && setImportResult(null)}
