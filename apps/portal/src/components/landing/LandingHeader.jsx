@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Wordmark } from './Wordmark.jsx';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher.jsx';
 
 const LINKS = [
   ['how-it-works', 'howItWorks'],
@@ -37,6 +38,7 @@ export function LandingHeader() {
           </ul>
         </nav>
         <div className="ml-auto flex items-center gap-2">
+          <LanguageSwitcher />
           <Link to="/login" className={`${linkClass} border border-border hover:bg-muted`}>
             {t('landing.signIn')}
           </Link>
