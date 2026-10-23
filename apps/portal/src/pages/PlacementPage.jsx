@@ -5,9 +5,11 @@ import { allowedNextStages } from '@rooted/shared/utils';
 import api from '@/lib/api.js';
 import { useAuth } from '@/contexts/useAuth.js';
 import { hasPermission } from '@/lib/access.js';
-import { fmtDate, fullName } from '@/lib/format.js';
+import { fmtDate, fullName, matchesQuery } from '@/lib/format.js';
+import { downloadCsv } from '@/lib/csv.js';
 import { useBatch } from '@/hooks/useBatch.js';
 import { BatchGate, BatchPicker } from '@/components/BatchPicker.jsx';
+import { TableTools } from '@/components/TableTools.jsx';
 import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Button } from '@/components/ui/Button.jsx';
 import { Input, Select } from '@/components/ui/Input.jsx';
@@ -261,11 +263,12 @@ function ConsentSection({ roster, canWrite, onChanged }) {
 }
 
 export default function PlacementPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const canWrite = hasPermission(user, 'training:write');
   const batch = useBatch();
   const queryClient = useQueryClient();
+  const [search, setSearch] = useState('');
 
   const employersQuery = useQuery({
     queryKey: ['training-employers'],
@@ -287,6 +290,33 @@ export default function PlacementPage() {
         .then((r) => r.data),
     enabled: batch.ready,
   });
+
+  const allApplications = placementsQuery.data ?? [];
+  const applications = allApplications.filter((a) =>
+    matchesQuery(search, fullName(a.student), a.student?.admissionNo, a.employer?.name, a.role)
+  );
+
+  function exportCsv() {
+    downloadCsv(
+      'placements.csv',
+      [
+        t('training.common.student'),
+        t('training.readiness.admissionNo'),
+        t('training.placement.employer'),
+        t('training.placement.role'),
+        t('training.placement.stageLabel'),
+        t('training.placement.applied'),
+      ],
+      applications.map((a) => [
+        fullName(a.student),
+        a.student?.admissionNo,
+        a.employer?.name,
+        a.role,
+        t(`training.stage.${a.stage}`),
+        fmtDate(a.appliedAt, i18n.language),
+      ])
+    );
+  }
 
   const roster = (rosterQuery.data ?? []).filter((r) => r.status !== 'dropped');
   const employers = (employersQuery.data ?? []).filter((e) => e.active !== false);
@@ -320,7 +350,19 @@ export default function PlacementPage() {
             description={t('training.placement.noneHint')}
           />
         )}
-        {placementsQuery.data?.length > 0 && (
+        {allApplications.length > 0 && (
+          <TableTools
+            query={search}
+            onQuery={setSearch}
+            shown={applications.length}
+            total={allApplications.length}
+            onExport={exportCsv}
+          />
+        )}
+        {allApplications.length > 0 && applications.length === 0 && (
+          <EmptyState title={t('common.noMatches')} />
+        )}
+        {applications.length > 0 && (
           <Card>
             <CardContent className="pt-4">
               <Table>
@@ -337,7 +379,7 @@ export default function PlacementPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {placementsQuery.data.map((application) => (
+                  {applications.map((application) => (
                     <ApplicationRow
                       key={application._id}
                       application={application}

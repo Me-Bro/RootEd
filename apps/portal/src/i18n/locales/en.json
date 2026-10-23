@@ -5,6 +5,12 @@
     "language": "Language",
     "skipToContent": "Skip to content"
   },
+  "notifications": {
+    "label": "Notifications ({{count}} unread)",
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "none": "No new notifications"
+  },
   "languages": {
     "en": "English",
     "hi": "हिन्दी",
@@ -22,7 +28,16 @@
     "yes": "Yes",
     "no": "No",
     "notAvailable": "—",
-    "provisional": "Indicative"
+    "provisional": "Indicative",
+    "search": "Search by name or admission no.",
+    "exportCsv": "Export CSV",
+    "showing": "Showing {{shown}} of {{total}}",
+    "noMatches": "No one matches your search",
+    "crash": {
+      "title": "This page hit a problem",
+      "description": "Reload to try again. If it keeps happening, tell your trainer.",
+      "reload": "Reload"
+    }
   },
   "auth": {
     "signIn": "Sign in",
@@ -188,6 +203,7 @@
       "noneHint": "Applications appear here once students are matched with employers."
     },
     "readiness": {
+      "admissionNo": "Admission no.",
       "title": "Readiness",
       "description": "Where each student stands across attendance, work, assessments and placement.",
       "indicativeNote": "The readiness score is indicative. It combines the figures shown using placeholder weights that will be revised, and it is not used for completion.",

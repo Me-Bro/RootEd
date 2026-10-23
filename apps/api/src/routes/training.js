@@ -29,6 +29,8 @@ import { PlacementApplication } from '../models/PlacementApplication.js';
 import { Student } from '../models/Student.js';
 import { Enrollment } from '../models/Enrollment.js';
 import { auditLog } from '../services/audit.service.js';
+import { notifyStudents } from '../services/notification.service.js';
+import { logger } from '../utils/logger.js';
 import {
   assertRefs,
   assertOnRoster,
@@ -57,6 +59,13 @@ for (const param of ['id', 'studentId']) {
     mongoose.isValidObjectId(value) ? next() : next(new AppError('Not found', 404))
   );
 }
+
+// A notice is a courtesy: the trainer's save has already succeeded, so a failure
+// here is logged and never turned into an error response.
+const notify = (tenantId, studentIds, message) =>
+  notifyStudents(tenantId, studentIds, message).catch((err) =>
+    logger.error({ err }, 'training notification failed')
+  );
 
 const audit = (req, action, target, extra = {}) =>
   auditLog({
@@ -117,6 +126,16 @@ router.post(
         model: 'Assignment',
         id: assignment._id,
       });
+      const roster = await getBatchRoster(tenantId, assignment.sectionId);
+      await notify(
+        tenantId,
+        roster.map((s) => s._id),
+        {
+          title: 'New assignment',
+          body: `${assignment.title} is due on ${assignment.dueDate.toISOString().slice(0, 10)}.`,
+          link: '/me/progress',
+        }
+      );
       res.status(201).json(assignment);
     } catch (err) {
       next(err);
@@ -253,6 +272,13 @@ router.put(
           after: submission.toObject(),
         }
       );
+      if (submission.status === 'reviewed' && existing?.status !== 'reviewed') {
+        await notify(tenantId, [studentId], {
+          title: 'Assignment reviewed',
+          body: `${assignment.title} has been reviewed.`,
+          link: '/me/progress',
+        });
+      }
       res.json(submission);
     } catch (err) {
       next(err);

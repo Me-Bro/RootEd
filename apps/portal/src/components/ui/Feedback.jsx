@@ -51,6 +51,28 @@ export function ErrorNote({ error, onRetry }) {
   );
 }
 
+/** Shown by an error boundary when a render throws. Reloading is the only safe way out. */
+export function CrashFallback() {
+  const { t } = useTranslation();
+  return (
+    <div
+      role="alert"
+      data-testid="crash-fallback"
+      className="flex flex-col items-center gap-3 py-16 text-center"
+    >
+      <p className="text-base font-medium">{t('common.crash.title')}</p>
+      <p className="text-sm text-muted-foreground">{t('common.crash.description')}</p>
+      <button
+        type="button"
+        onClick={() => window.location.reload()}
+        className="text-sm font-medium underline"
+      >
+        {t('common.crash.reload')}
+      </button>
+    </div>
+  );
+}
+
 /** A horizontal bar for a 0-100 value. `value` null renders an empty track. */
 export function Meter({ value, label, className }) {
   const clamped = value === null || value === undefined ? 0 : Math.max(0, Math.min(100, value));

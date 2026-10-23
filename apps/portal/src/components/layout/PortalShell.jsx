@@ -1,11 +1,15 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Suspense } from 'react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import * as Sentry from '@sentry/react';
 import { useTranslation } from 'react-i18next';
 import { LogOut, Repeat } from 'lucide-react';
 import { useAuth } from '@/contexts/useAuth.js';
 import { currentCollege, hasPermission } from '@/lib/access.js';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button.jsx';
+import { CrashFallback, Spinner } from '@/components/ui/Feedback.jsx';
 import { LanguageSwitcher } from './LanguageSwitcher.jsx';
+import { NotificationBell } from './NotificationBell.jsx';
 
 // Every entry says which permission shows it. The route guards in App.jsx check
 // the same permission, so a link is never offered that the page would refuse.
@@ -26,6 +30,7 @@ export default function PortalShell() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const college = currentCollege(user);
 
   const links =
@@ -52,6 +57,8 @@ export default function PortalShell() {
             {college && <p className="truncate text-xs text-muted-foreground">{college.name}</p>}
           </div>
           <LanguageSwitcher />
+          {/* a super admin has no college, and so no notifications */}
+          {user?.systemRole !== 'super_admin' && <NotificationBell />}
           {(user?.orgs ?? []).length > 1 && (
             <Button variant="ghost" size="sm" onClick={() => navigate('/select-college')}>
               <Repeat className="size-3.5" aria-hidden="true" />
@@ -87,7 +94,12 @@ export default function PortalShell() {
       </header>
 
       <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
-        <Outlet />
+        {/* keyed by route: a crash on one page clears when the user navigates away */}
+        <Sentry.ErrorBoundary key={pathname} fallback={<CrashFallback />}>
+          <Suspense fallback={<Spinner />}>
+            <Outlet />
+          </Suspense>
+        </Sentry.ErrorBoundary>
       </main>
     </div>
   );

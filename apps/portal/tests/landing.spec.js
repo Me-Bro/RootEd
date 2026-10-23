@@ -11,6 +11,14 @@ test.describe('the public landing page', () => {
     ).toBeVisible();
   });
 
+  test('can be read in Hindi, and the choice is remembered', async ({ page }) => {
+    await page.goto('/');
+    await page.getByLabel('Language').selectOption('hi');
+    await expect(page.getByRole('heading', { level: 1, name: 'कैंपस से करियर तक' })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole('heading', { level: 1, name: 'कैंपस से करियर तक' })).toBeVisible();
+  });
+
   test('has one heading per section, in the order a reader needs them', async ({ page }) => {
     await page.goto('/');
     const headings = await page.getByRole('heading', { level: 2 }).allInnerTexts();

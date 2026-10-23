@@ -5,6 +5,12 @@
     "language": "भाषा",
     "skipToContent": "मुख्य सामग्री पर जाएँ"
   },
+  "notifications": {
+    "label": "सूचनाएँ ({{count}} अपठित)",
+    "title": "सूचनाएँ",
+    "markAllRead": "सभी पढ़ा हुआ करें",
+    "none": "कोई नई सूचना नहीं"
+  },
   "languages": {
     "en": "English",
     "hi": "हिन्दी",
@@ -22,7 +28,16 @@
     "yes": "हाँ",
     "no": "नहीं",
     "notAvailable": "—",
-    "provisional": "अनुमानित"
+    "provisional": "अनुमानित",
+    "search": "नाम या एडमिशन नंबर से खोजें",
+    "exportCsv": "CSV एक्सपोर्ट करें",
+    "showing": "{{total}} में से {{shown}} दिखाए जा रहे हैं",
+    "noMatches": "आपकी खोज से कोई मेल नहीं खाता",
+    "crash": {
+      "title": "इस पेज में कोई समस्या आ गई",
+      "description": "फिर से कोशिश करने के लिए रीलोड करें। बार-बार हो तो अपने ट्रेनर को बताएँ।",
+      "reload": "रीलोड करें"
+    }
   },
   "auth": {
     "signIn": "साइन इन करें",
@@ -188,6 +203,7 @@
       "noneHint": "छात्रों के नियोक्ताओं से जुड़ने पर आवेदन यहाँ दिखेंगे।"
     },
     "readiness": {
+      "admissionNo": "एडमिशन नंबर",
       "title": "तैयारी",
       "description": "उपस्थिति, कार्य, मूल्यांकन और प्लेसमेंट में हर छात्र कहाँ है।",
       "indicativeNote": "तैयारी का स्कोर अनुमानित है। यह दिखाए गए आँकड़ों को अस्थायी भार देकर जोड़ता है, जिन्हें बाद में बदला जाएगा, और इसका उपयोग पूर्णता तय करने में नहीं होता।",
@@ -305,205 +321,205 @@
     "showingNewest": "Showing the newest {{shown}} of {{total}} enquiries."
   },
   "landing": {
-    "signIn": "Sign in",
-    "requestProposal": "Request a proposal",
+    "signIn": "साइन इन करें",
+    "requestProposal": "प्रस्ताव का अनुरोध करें",
     "nav": {
-      "label": "Page sections",
-      "howItWorks": "How it works",
-      "programmes": "Programmes",
-      "placement": "Placement",
-      "faq": "FAQ"
+      "label": "पेज के भाग",
+      "howItWorks": "कैसे काम करता है",
+      "programmes": "प्रोग्राम",
+      "placement": "प्लेसमेंट",
+      "faq": "अक्सर पूछे जाने वाले प्रश्न"
     },
     "hero": {
-      "eyebrow": "Training and placement partner for colleges",
-      "title": "From campus to career",
-      "lead": "RR Cloud Career Catalyst gives your students practical IT training, real software projects and placement support, and shows your college the progress of every batch.",
-      "note": "Placement support is provided within the agreed scope. Employment is not guaranteed."
+      "eyebrow": "कॉलेजों के लिए ट्रेनिंग और प्लेसमेंट पार्टनर",
+      "title": "कैंपस से करियर तक",
+      "lead": "RR Cloud Career Catalyst आपके विद्यार्थियों को व्यावहारिक आईटी ट्रेनिंग, असली सॉफ़्टवेयर प्रोजेक्ट और प्लेसमेंट सहायता देता है, और आपके कॉलेज को हर बैच की प्रगति दिखाता है।",
+      "note": "प्लेसमेंट सहायता तय दायरे के भीतर दी जाती है। नौकरी की गारंटी नहीं दी जाती।"
     },
     "contact": {
-      "label": "Contact details",
-      "email": "Email",
-      "phone": "Phone / WhatsApp"
+      "label": "संपर्क विवरण",
+      "email": "ईमेल",
+      "phone": "फ़ोन / व्हाट्सऐप"
     },
-    "disclaimer": "Placement support is provided within the agreed scope. Employment is not guaranteed.",
+    "disclaimer": "प्लेसमेंट सहायता तय दायरे के भीतर दी जाती है। नौकरी की गारंटी नहीं दी जाती।",
     "forColleges": {
-      "title": "Built for colleges",
-      "lead": "An outside training partner, so your college does not need a large permanent team of specialists.",
+      "title": "कॉलेजों के लिए बनाया गया",
+      "lead": "एक बाहरी ट्रेनिंग पार्टनर, ताकि आपके कॉलेज को विशेषज्ञों की बड़ी स्थायी टीम न रखनी पड़े।",
       "items": {
         "trainers": {
-          "title": "Practical, industry-oriented training",
-          "body": "Taught by people with engineering experience, not exam coaching: Git, full-stack development, databases, testing and deployment."
+          "title": "व्यावहारिक, उद्योग-उन्मुख ट्रेनिंग",
+          "body": "इंजीनियरिंग का अनुभव रखने वाले लोग पढ़ाते हैं, परीक्षा की कोचिंग नहीं: Git, फ़ुल-स्टैक डेवलपमेंट, डेटाबेस, टेस्टिंग और डिप्लॉयमेंट।"
         },
         "projects": {
-          "title": "Real software projects",
-          "body": "Students work in teams on a working application, with code reviews and a final demonstration for your college."
+          "title": "असली सॉफ़्टवेयर प्रोजेक्ट",
+          "body": "विद्यार्थी टीमों में एक चालू एप्लिकेशन पर काम करते हैं, कोड रिव्यू के साथ और आपके कॉलेज के सामने अंतिम प्रदर्शन के साथ।"
         },
         "reports": {
-          "title": "Reports you can rely on",
-          "body": "Attendance, assessments and projects are tracked for every batch, and outcomes are reported to your Training and Placement Officer."
+          "title": "भरोसेमंद रिपोर्ट",
+          "body": "हर बैच की उपस्थिति, मूल्यांकन और प्रोजेक्ट का रिकॉर्ड रखा जाता है, और नतीजे आपके ट्रेनिंग एवं प्लेसमेंट अधिकारी को बताए जाते हैं।"
         }
       }
     },
     "howItWorks": {
-      "title": "How a programme runs",
-      "lead": "The Career Ready programme over twelve weeks. Weeks and topics are adapted to each college.",
+      "title": "प्रोग्राम कैसे चलता है",
+      "lead": "बारह सप्ताह का Career Ready प्रोग्राम। सप्ताह और विषय हर कॉलेज के अनुसार ढाले जाते हैं।",
       "steps": {
         "baseline": {
-          "title": "Weeks 1–2: Baseline and fundamentals",
-          "body": "A programming assessment, then problem-solving, Git and GitHub, HTML, CSS and JavaScript."
+          "title": "सप्ताह 1–2: आधार-मूल्यांकन और बुनियादी बातें",
+          "body": "प्रोग्रामिंग का एक मूल्यांकन, फिर समस्या-समाधान, Git और GitHub, HTML, CSS और JavaScript।"
         },
         "fullstack": {
-          "title": "Weeks 3–5: Full-stack development",
-          "body": "React or Vue, Node.js and Express, REST APIs, SQL or MongoDB, authentication and validation."
+          "title": "सप्ताह 3–5: फ़ुल-स्टैक डेवलपमेंट",
+          "body": "React या Vue, Node.js और Express, REST API, SQL या MongoDB, ऑथेंटिकेशन और वैलिडेशन।"
         },
         "practices": {
-          "title": "Weeks 6–8: Engineering practices",
-          "body": "Testing, debugging, code reviews, secure coding basics, Docker and deployment."
+          "title": "सप्ताह 6–8: इंजीनियरिंग की अच्छी आदतें",
+          "body": "टेस्टिंग, डिबगिंग, कोड रिव्यू, सुरक्षित कोडिंग की बुनियादी बातें, Docker और डिप्लॉयमेंट।"
         },
         "project": {
-          "title": "Weeks 9–10: Team project",
-          "body": "Students build, test and deploy a working application with requirements, issues, version control and documentation."
+          "title": "सप्ताह 9–10: टीम प्रोजेक्ट",
+          "body": "विद्यार्थी आवश्यकताओं, इश्यू, वर्ज़न कंट्रोल और दस्तावेज़ों के साथ एक चालू एप्लिकेशन बनाते, टेस्ट करते और डिप्लॉय करते हैं।"
         },
         "ai": {
-          "title": "Week 11: AI-assisted development",
-          "body": "Using coding assistants well: understanding generated code, testing AI output, privacy and responsible use."
+          "title": "सप्ताह 11: एआई-सहायता से डेवलपमेंट",
+          "body": "कोडिंग असिस्टेंट का सही उपयोग: बनाए गए कोड को समझना, एआई के नतीजों को टेस्ट करना, निजता और ज़िम्मेदार उपयोग।"
         },
         "career": {
-          "title": "Week 12: Career readiness",
-          "body": "Coding tests, resume reviews, mock technical interviews, project presentations and individual feedback."
+          "title": "सप्ताह 12: करियर की तैयारी",
+          "body": "कोडिंग टेस्ट, रिज़्यूमे की समीक्षा, मॉक टेक्निकल इंटरव्यू, प्रोजेक्ट प्रस्तुतियाँ और हर विद्यार्थी को अलग से फ़ीडबैक।"
         }
       },
-      "note": "Where programming fundamentals are weak, we begin with a foundation module first."
+      "note": "जहाँ प्रोग्रामिंग की बुनियाद कमज़ोर हो, वहाँ हम पहले एक आधार मॉड्यूल से शुरू करते हैं।"
     },
     "programmes": {
-      "title": "Programmes",
-      "lead": "Start with one batch, agree what will be measured, and grow from the results.",
-      "core": "Core programme",
-      "note": "Scope, student numbers and dates are agreed in writing with each college. Request a proposal for the programme that fits.",
+      "title": "प्रोग्राम",
+      "lead": "एक बैच से शुरू करें, तय करें कि क्या मापा जाएगा, और नतीजों के आधार पर आगे बढ़ें।",
+      "core": "मुख्य प्रोग्राम",
+      "note": "दायरा, विद्यार्थियों की संख्या और तारीख़ें हर कॉलेज के साथ लिखित में तय होती हैं। अपने लिए उपयुक्त प्रोग्राम का प्रस्ताव माँगें।",
       "items": {
         "skill_builder": {
           "name": "Skill Builder",
-          "meta": "2–4 weeks · up to 50 students",
-          "body": "An introductory engagement: 20–30 hours of workshops on Git, programming fundamentals and web development or AI coding tools, with a mini project, a basic assessment and an attendance report."
+          "meta": "2–4 सप्ताह · अधिकतम 50 विद्यार्थी",
+          "body": "एक परिचयात्मक कार्यक्रम: Git, प्रोग्रामिंग की बुनियाद और वेब डेवलपमेंट या एआई कोडिंग टूल पर 20–30 घंटे की कार्यशालाएँ, साथ में एक छोटा प्रोजेक्ट, एक बुनियादी मूल्यांकन और उपस्थिति रिपोर्ट।"
         },
         "career_ready": {
           "name": "Career Ready",
-          "meta": "8–12 weeks · up to 40 students",
-          "body": "Structured full-stack or Python training, a team project with code reviews and demonstrations, aptitude and resume preparation, mock interviews and a final student readiness report."
+          "meta": "8–12 सप्ताह · अधिकतम 40 विद्यार्थी",
+          "body": "व्यवस्थित फ़ुल-स्टैक या Python ट्रेनिंग, कोड रिव्यू और प्रदर्शनों के साथ टीम प्रोजेक्ट, एप्टीट्यूड और रिज़्यूमे की तैयारी, मॉक इंटरव्यू और विद्यार्थियों की तैयारी की अंतिम रिपोर्ट।"
         },
         "campus_partner": {
           "name": "Campus Career Partner",
-          "meta": "Annual agreement with your college",
-          "body": "Several training batches through the year, final-year project mentoring, a placement-readiness calendar, assessments and mock interviews, and regular progress reviews with your Training and Placement Officer."
+          "meta": "आपके कॉलेज के साथ वार्षिक अनुबंध",
+          "body": "साल भर में कई ट्रेनिंग बैच, अंतिम वर्ष के प्रोजेक्ट का मार्गदर्शन, प्लेसमेंट-तैयारी का कैलेंडर, मूल्यांकन और मॉक इंटरव्यू, और आपके ट्रेनिंग एवं प्लेसमेंट अधिकारी के साथ नियमित प्रगति-समीक्षा।"
         }
       }
     },
     "outcomes": {
-      "title": "Measured, not promised",
-      "lead": "Before training starts we agree with your college what will be measured and how. These are the targets we propose for a pilot.",
-      "note": "Targets are adjusted to student readiness and the agreed scope. They are suggested measures, not promises of job placement.",
+      "title": "मापा जाता है, वादा नहीं",
+      "lead": "ट्रेनिंग शुरू होने से पहले हम आपके कॉलेज के साथ तय करते हैं कि क्या और कैसे मापा जाएगा। ये वे लक्ष्य हैं जो हम पायलट के लिए सुझाते हैं।",
+      "note": "लक्ष्य विद्यार्थियों की तैयारी और तय दायरे के अनुसार बदले जाते हैं। ये सुझाए गए पैमाने हैं, नौकरी लगने का वादा नहीं।",
       "items": {
         "attendance": {
-          "label": "Attendance",
-          "value": "At least {{target}}%"
+          "label": "उपस्थिति",
+          "value": "कम से कम {{target}}%"
         },
         "completion": {
-          "label": "Programme completion",
-          "value": "At least {{target}}% of enrolled students"
+          "label": "प्रोग्राम पूरा करना",
+          "value": "नामांकित विद्यार्थियों में से कम से कम {{target}}%"
         },
         "project": {
-          "label": "Students completing a project",
-          "value": "At least {{target}}% of enrolled students"
+          "label": "प्रोजेक्ट पूरा करने वाले विद्यार्थी",
+          "value": "नामांकित विद्यार्थियों में से कम से कम {{target}}%"
         },
         "mockInterview": {
-          "label": "Students completing a mock interview",
-          "value": "At least {{target}}% of eligible participants"
+          "label": "मॉक इंटरव्यू पूरा करने वाले विद्यार्थी",
+          "value": "पात्र प्रतिभागियों में से कम से कम {{target}}%"
         }
       },
       "also": {
         "improvement": {
-          "label": "Improvement in assessment scores",
-          "value": "Pre- and post-assessment results compared"
+          "label": "मूल्यांकन के अंकों में सुधार",
+          "value": "पहले और बाद के मूल्यांकन के नतीजों की तुलना"
         },
         "placement": {
-          "label": "Placement reporting",
-          "value": "Applications, interviews, offers and joining tracked separately"
+          "label": "प्लेसमेंट की रिपोर्टिंग",
+          "value": "आवेदन, इंटरव्यू, ऑफ़र और नौकरी जॉइन करना, सब अलग-अलग दर्ज"
         }
       }
     },
     "progress": {
-      "title": "See progress as it happens",
-      "lead": "Trainers record attendance, assignments, projects and mock interviews. Your Training and Placement Officer and administrators follow each batch in the Career Catalyst portal, and students see their own progress.",
+      "title": "प्रगति तुरंत देखें",
+      "lead": "ट्रेनर उपस्थिति, असाइनमेंट, प्रोजेक्ट और मॉक इंटरव्यू दर्ज करते हैं। आपके ट्रेनिंग एवं प्लेसमेंट अधिकारी और प्रशासक Career Catalyst पोर्टल में हर बैच को देखते हैं, और विद्यार्थी अपनी प्रगति देखते हैं।",
       "items": {
-        "attendance": "Attendance and assignment results for every student",
-        "projects": "Project milestones and the trainer's review",
-        "improvement": "Improvement from the baseline to the final assessment",
-        "placement": "Placement applications, interviews, offers and joining",
-        "completion": "A completion decision for each student, made by your administrator",
-        "report": "A batch report you can download as a PDF"
+        "attendance": "हर विद्यार्थी की उपस्थिति और असाइनमेंट के नतीजे",
+        "projects": "प्रोजेक्ट के चरण और ट्रेनर की समीक्षा",
+        "improvement": "आधार-मूल्यांकन से अंतिम मूल्यांकन तक का सुधार",
+        "placement": "प्लेसमेंट आवेदन, इंटरव्यू, ऑफ़र और नौकरी जॉइन करना",
+        "completion": "हर विद्यार्थी के लिए पूर्णता का निर्णय, जो आपके प्रशासक लेते हैं",
+        "report": "बैच की रिपोर्ट जिसे आप PDF के रूप में डाउनलोड कर सकते हैं"
       }
     },
     "placement": {
-      "title": "Placement support",
-      "lead": "Preparing students and connecting them with relevant employers, step by step.",
+      "title": "प्लेसमेंट सहायता",
+      "lead": "विद्यार्थियों को तैयार करना और उन्हें उपयुक्त नियोक्ताओं से जोड़ना, चरण दर चरण।",
       "steps": {
-        "assess": "Assess students and group them by skill level",
-        "prepare": "Prepare resumes, GitHub profiles and project portfolios",
-        "test": "Run technical and aptitude assessments",
-        "match": "Identify employers whose entry-level roles match the students",
-        "coordinate": "Coordinate applications, interviews and recruitment drives",
-        "track": "Track interviews, feedback, offers and joining",
-        "report": "Report verified outcomes to the college"
+        "assess": "विद्यार्थियों का आकलन करना और उन्हें कौशल-स्तर के अनुसार समूहों में बाँटना",
+        "prepare": "रिज़्यूमे, GitHub प्रोफ़ाइल और प्रोजेक्ट पोर्टफ़ोलियो तैयार करना",
+        "test": "तकनीकी और एप्टीट्यूड मूल्यांकन कराना",
+        "match": "ऐसे नियोक्ता खोजना जिनकी शुरुआती भूमिकाएँ विद्यार्थियों से मेल खाती हों",
+        "coordinate": "आवेदन, इंटरव्यू और भर्ती अभियानों का समन्वय करना",
+        "track": "इंटरव्यू, फ़ीडबैक, ऑफ़र और नौकरी जॉइन करने का हिसाब रखना",
+        "report": "कॉलेज को जाँचे हुए नतीजे बताना"
       },
-      "network": "We are building a focused network of relevant employers rather than promising access to a large one."
+      "network": "हम बड़े नेटवर्क तक पहुँच का वादा करने के बजाय उपयुक्त नियोक्ताओं का एक केंद्रित नेटवर्क बना रहे हैं।"
     },
     "faq": {
-      "title": "Questions colleges ask",
+      "title": "कॉलेज जो सवाल पूछते हैं",
       "items": {
         "who": {
-          "q": "Who is this for?",
-          "a": "Colleges and institutes with BCA, MCA, B.Tech, B.Sc. Computer Science, polytechnic and similar programmes."
+          "q": "यह किसके लिए है?",
+          "a": "BCA, MCA, B.Tech, B.Sc. कंप्यूटर साइंस, पॉलिटेक्निक और ऐसे ही कार्यक्रम चलाने वाले कॉलेज और संस्थान।"
         },
         "length": {
-          "q": "How long is a programme?",
-          "a": "Skill Builder runs for 2–4 weeks and Career Ready for 8–12 weeks. Campus Career Partner is an annual agreement."
+          "q": "एक प्रोग्राम कितना लंबा होता है?",
+          "a": "Skill Builder 2–4 सप्ताह का और Career Ready 8–12 सप्ताह का होता है। Campus Career Partner एक वार्षिक अनुबंध है।"
         },
         "need": {
-          "q": "What do you need from the college?",
-          "a": "Classroom or lab access, internet and a named coordinator."
+          "q": "आपको कॉलेज से क्या चाहिए?",
+          "a": "कक्षा या लैब में प्रवेश, इंटरनेट और एक नामित समन्वयक।"
         },
         "cost": {
-          "q": "How much does it cost?",
-          "a": "Fees depend on the programme, the batch size and the scope. Request a proposal and we will send a written quote."
+          "q": "इसकी लागत कितनी है?",
+          "a": "शुल्क प्रोग्राम, बैच के आकार और दायरे पर निर्भर करता है। प्रस्ताव का अनुरोध करें, हम लिखित कोटेशन भेजेंगे।"
         },
         "pilot": {
-          "q": "Can we start small?",
-          "a": "Yes. You can begin with a Skill Builder or a single Career Ready batch, agree the measures up front and review the results before going further."
+          "q": "क्या हम छोटे स्तर से शुरू कर सकते हैं?",
+          "a": "जी हाँ। आप एक Skill Builder या एक Career Ready बैच से शुरू कर सकते हैं, पहले से पैमाने तय कर सकते हैं और आगे बढ़ने से पहले नतीजे देख सकते हैं।"
         },
         "jobs": {
-          "q": "Do you guarantee jobs?",
-          "a": "No. We help with preparation, employer outreach and tracking within the agreed scope. Employment is not guaranteed."
+          "q": "क्या आप नौकरी की गारंटी देते हैं?",
+          "a": "नहीं। हम तय दायरे के भीतर तैयारी, नियोक्ताओं से संपर्क और हिसाब रखने में मदद करते हैं। नौकरी की गारंटी नहीं दी जाती।"
         }
       }
     },
     "footer": {
-      "by": "A programme of Rural Root Cloud Tech Services & Training."
+      "by": "Rural Root Cloud Tech Services & Training का एक कार्यक्रम।"
     },
     "form": {
-      "lead": "Tell us about your college and we will send a written proposal.",
-      "contactName": "Your name",
-      "collegeName": "College or institute",
-      "email": "Email",
-      "phone": "Phone or WhatsApp number",
-      "programme": "Programme you are interested in",
-      "message": "Anything we should know? (optional)",
-      "submit": "Send request",
-      "sending": "Sending…",
-      "privacy": "We use these details only to reply to your request.",
-      "thanksTitle": "Thank you, we have your request.",
-      "thanksBody": "We will contact you with a proposal.",
-      "failed": "We could not send your request. Please try again, or email us instead.",
-      "tooMany": "Too many requests from this device. Please try again later."
+      "lead": "हमें अपने कॉलेज के बारे में बताएँ, हम आपको लिखित प्रस्ताव भेजेंगे।",
+      "contactName": "आपका नाम",
+      "collegeName": "कॉलेज या संस्थान",
+      "email": "ईमेल",
+      "phone": "फ़ोन या व्हाट्सऐप नंबर",
+      "programme": "जिस प्रोग्राम में आपकी रुचि है",
+      "message": "कुछ और जो हमें पता होना चाहिए? (वैकल्पिक)",
+      "submit": "अनुरोध भेजें",
+      "sending": "भेजा जा रहा है…",
+      "privacy": "हम इन जानकारियों का उपयोग केवल आपके अनुरोध का उत्तर देने के लिए करते हैं।",
+      "thanksTitle": "धन्यवाद, हमें आपका अनुरोध मिल गया है।",
+      "thanksBody": "हम प्रस्ताव के साथ आपसे संपर्क करेंगे।",
+      "failed": "हम आपका अनुरोध नहीं भेज सके। कृपया फिर से कोशिश करें, या हमें ईमेल करें।",
+      "tooMany": "इस डिवाइस से बहुत ज़्यादा अनुरोध आए हैं। कृपया बाद में फिर से कोशिश करें।"
     }
   },
   "roadmap": {
