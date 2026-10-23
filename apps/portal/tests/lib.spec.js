@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 import { hasPermission, currentCollege, homeRoute } from '../src/lib/access.js';
 import { fmtPct, fmtNum, fullName, matchesQuery, DASH } from '../src/lib/format.js';
 import { nextUp, scheduleLabel } from '../src/lib/roadmap.js';
+import { studentLoginState, memberLoginState, memberName } from '../src/lib/people.js';
 
 const college = { _id: 'c1', name: 'Test School' };
 const member = (extra = {}) => ({
@@ -118,5 +119,34 @@ test.describe('roadmap nextUp', () => {
   test('is nothing when everything open is done, or there are no roadmaps', () => {
     expect(nextUp([{ items: [item('a', true, true), item('b', false, false)] }])).toBeNull();
     expect(nextUp([])).toBeNull();
+  });
+});
+
+test.describe('people helpers', () => {
+  test('a student login is none, pending, active or suspended', () => {
+    expect(studentLoginState(undefined)).toBe('none');
+    expect(studentLoginState(null)).toBe('none');
+    expect(studentLoginState({ status: 'pending_claim' })).toBe('pending');
+    expect(studentLoginState({ status: 'active' })).toBe('active');
+    // a suspended membership wins over the account's own state
+    expect(studentLoginState({ status: 'suspended' })).toBe('suspended');
+  });
+
+  test('a member is pending until they set a password, and suspended beats both', () => {
+    expect(memberLoginState({ status: 'active', userId: { status: 'pending_claim' } })).toBe(
+      'pending'
+    );
+    expect(memberLoginState({ status: 'active', userId: { status: 'active' } })).toBe('active');
+    expect(memberLoginState({ status: 'suspended', userId: { status: 'pending_claim' } })).toBe(
+      'suspended'
+    );
+  });
+
+  test('a member is named by name, else by email', () => {
+    expect(
+      memberName({ userId: { firstName: 'Meera', lastName: 'Nair', email: 'm@x.test' } })
+    ).toBe('Meera Nair');
+    expect(memberName({ userId: { email: 'm@x.test' } })).toBe('m@x.test');
+    expect(memberName({})).toBe('');
   });
 });

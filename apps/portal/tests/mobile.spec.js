@@ -34,6 +34,21 @@ test.describe('student pages on a phone', () => {
   });
 });
 
+test.describe('administrator people pages on a phone', () => {
+  test.use({ storageState: AUTH_STATES.tenant_admin });
+
+  for (const [path, heading] of [
+    ['/people/students', 'Students'],
+    ['/people/team', 'Team'],
+  ]) {
+    test(`${path} fits the screen`, async ({ page }) => {
+      await page.goto(path);
+      await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible();
+      expect(await noSidewaysScroll(page)).toBe(true);
+    });
+  }
+});
+
 test.describe('public pages on a phone', () => {
   test('the landing page fits the screen', async ({ page }) => {
     await page.goto('/');

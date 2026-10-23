@@ -640,6 +640,20 @@ router.post(
       });
 
       const tenantId = req.tenant._id;
+
+      // A batch picked in the form lands every row without its own section in it.
+      // Section names repeat across classes, so a name column can be ambiguous;
+      // an id cannot.
+      let defaultSectionId;
+      if (req.body?.sectionId) {
+        if (!/^[a-f\d]{24}$/i.test(req.body.sectionId)) {
+          return res.status(400).json({ error: 'Invalid batch' });
+        }
+        const picked = await Section.findOne({ _id: req.body.sectionId, tenantId }, '_id').lean();
+        if (!picked) return res.status(404).json({ error: 'Batch not found' });
+        defaultSectionId = picked._id;
+      }
+
       let created = 0;
       let skipped = 0;
       let accountsProvisioned = 0;
@@ -672,7 +686,7 @@ router.post(
             continue;
           }
 
-          let resolvedSectionId;
+          let resolvedSectionId = defaultSectionId;
           if (sectionName) {
             const section = await Section.findOne({ tenantId, name: sectionName });
             if (section) resolvedSectionId = section._id;

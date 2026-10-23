@@ -31,7 +31,8 @@ const schema = z.object({
   PORTAL_SUBDOMAIN: z.string().optional(),
   // Public origin of the RR Cloud Career Catalyst portal (apps/portal), e.g.
   // "https://catalyst.ruralrootcloud.com". Only used so a password-reset link
-  // requested from that portal opens there; unset, every link goes to the main app.
+  // requested from that portal, and a claim link for a college on the training
+  // programme, open there; unset, every link goes to the main app.
   CATALYST_PUBLIC_URL: z
     .string()
     .url()

@@ -64,7 +64,7 @@ test.describe('trainer tracks placement', () => {
       .selectOption({ label: 'Seed: Beta Systems' });
     await page.getByLabel('Role').fill('QA Intern');
     await page.getByRole('button', { name: 'Add application' }).click();
-    await expect(page.getByRole('alert')).toContainText(/already has an application/i);
+    await expect(page.getByRole('alert').first()).toContainText(/already has an application/i);
   });
 
   test('records consent to share details', async ({ page }) => {

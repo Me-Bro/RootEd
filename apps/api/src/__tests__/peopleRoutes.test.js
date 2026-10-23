@@ -374,3 +374,49 @@ describe('suspending and reactivating', () => {
     expect(res.status).toBe(403);
   });
 });
+
+describe('student import into a chosen batch', () => {
+  let batch;
+  beforeAll(async () => {
+    const { Class } = await import('../models/Class.js');
+    const { Section } = await import('../models/Section.js');
+    const klass = await Class.create({ tenantId: tenants.A._id, name: 'Career Ready' });
+    batch = await Section.create({ tenantId: tenants.A._id, classId: klass._id, name: 'Batch Z' });
+  });
+
+  const upload = (csv, fields = {}, who = 'tenant_admin') => {
+    const req = request(app)
+      .post('/academic/students/import')
+      .set('x-tenant', 'A')
+      .set('Authorization', `Bearer ${tokens[who]}`);
+    for (const [k, v] of Object.entries(fields)) req.field(k, v);
+    return req.attach('file', Buffer.from(csv), 'students.csv');
+  };
+
+  test('rows land in the picked batch and get logins', async () => {
+    const res = await upload(
+      'admissionNo,firstName,lastName,email\nI-001,Ira,Das,ira@college.test\nI-002,Om,Das,\n',
+      { sectionId: String(batch._id) }
+    );
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ created: 2, accountsProvisioned: 1 });
+    const students = await Student.find({ tenantId: tenants.A._id, admissionNo: /^I-/ }).lean();
+    expect(students.map((s) => String(s.sectionId))).toEqual([
+      String(batch._id),
+      String(batch._id),
+    ]);
+  });
+
+  test('a malformed or foreign batch id is refused', async () => {
+    expect((await upload('admissionNo,firstName,lastName\n', { sectionId: 'nope' })).status).toBe(
+      400
+    );
+    expect(
+      (
+        await upload('admissionNo,firstName,lastName\n', {
+          sectionId: String(new mongoose.Types.ObjectId()),
+        })
+      ).status
+    ).toBe(404);
+  });
+});

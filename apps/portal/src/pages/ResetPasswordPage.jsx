@@ -11,6 +11,8 @@ export default function ResetPasswordPage() {
   const { t } = useTranslation();
   const [params] = useSearchParams();
   const token = params.get('token');
+  // A roster or team login arrives here from its welcome email.
+  const welcome = params.get('welcome') === '1';
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [done, setDone] = useState(false);
@@ -58,7 +60,10 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <AuthCard title={t('auth.resetTitle')} description={t('auth.resetIntro')}>
+    <AuthCard
+      title={welcome ? t('auth.welcomeTitle') : t('auth.resetTitle')}
+      description={welcome ? t('auth.welcomeIntro') : t('auth.resetIntro')}
+    >
       {done ? (
         <p role="status" data-testid="reset-done" className="text-sm">
           {t('auth.resetDone')}

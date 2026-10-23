@@ -66,3 +66,6 @@ services:
       # Second domain for the same stack (portal host only — see env.js). Needs
       # its own cloudflared ingress line + DNS CNAME, and the nginx server_name.
       EXTRA_ALLOWED_ORIGINS: https://rooted-uat.ranabrothers.online
+      # Where claim and password-reset links open for colleges on the Catalyst
+      # portal (see getResetBaseUrl / claimUrlFor in the api).
+      CATALYST_PUBLIC_URL: https://catalyst-uat.ruralrootcloud.com

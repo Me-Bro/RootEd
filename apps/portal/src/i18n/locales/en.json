@@ -79,7 +79,9 @@
     "passwordsDiffer": "The two passwords do not match.",
     "resetFailed": "We could not reset your password. The link may have expired.",
     "resetDone": "Your password has been set. You can now sign in.",
-    "resetLinkMissing": "This reset link is incomplete. Ask for a new one."
+    "resetLinkMissing": "This reset link is incomplete. Ask for a new one.",
+    "welcomeTitle": "Welcome",
+    "welcomeIntro": "Choose a password to activate your account."
   },
   "nav": {
     "main": "Main navigation",
@@ -94,7 +96,9 @@
     "enquiries": "Enquiries",
     "roadmap": "Roadmap",
     "myRoadmap": "My roadmap",
-    "leaderboard": "Leaderboard"
+    "leaderboard": "Leaderboard",
+    "students": "Students",
+    "team": "Team"
   },
   "noAccess": {
     "title": "Nothing to open yet",
@@ -655,5 +659,96 @@
     "progress": "Progress",
     "you": "You",
     "caption": "Roadmap progress of your batch, highest first"
+  },
+  "people": {
+    "linkSent": "Link sent",
+    "state": {
+      "none": "No login",
+      "pending": "Waiting for password",
+      "active": "Active",
+      "suspended": "Suspended"
+    },
+    "students": {
+      "title": "Students",
+      "description": "Everyone on the programme, and whether they can sign in.",
+      "batch": "Batch",
+      "allBatches": "All batches",
+      "student": "Student",
+      "login": "Login",
+      "actions": "Actions",
+      "empty": "No students yet",
+      "emptyHint": "Add a student or import a CSV to get started.",
+      "giveLogin": "Give login",
+      "giveLoginFor": "Give login to {{name}}",
+      "emailFor": "Email for {{name}}",
+      "send": "Send link",
+      "resend": "Resend link",
+      "resendFor": "Resend link to {{name}}",
+      "suspend": "Suspend",
+      "suspendFor": "Suspend {{name}}",
+      "confirmSuspend": "Confirm suspend",
+      "confirmSuspendFor": "Confirm suspending {{name}}",
+      "reactivate": "Reactivate",
+      "reactivateFor": "Reactivate {{name}}",
+      "page": "Page {{page}} of {{pages}}",
+      "previous": "Previous",
+      "next": "Next",
+      "add": {
+        "open": "Add student",
+        "title": "Add a student",
+        "admissionNo": "Admission no.",
+        "firstName": "First name",
+        "lastName": "Last name",
+        "batch": "Batch",
+        "noBatch": "No batch yet",
+        "email": "Email (optional, gives a login)",
+        "submit": "Add student"
+      },
+      "import": {
+        "open": "Import CSV",
+        "title": "Import students",
+        "intro": "One row per student, with the columns admissionNo, firstName, lastName and, optionally, email. Every student goes into the batch you pick, and a row with an email also gets a login.",
+        "batch": "Batch for these students",
+        "needBatch": "Pick a batch",
+        "file": "CSV file",
+        "sample": "Download a sample",
+        "run": "Import",
+        "result": "{{created}} added, {{skipped}} already on the roll, {{accounts}} logins sent.",
+        "problems": "{{count}} rows had a problem"
+      }
+    },
+    "team": {
+      "title": "Team",
+      "description": "Mentors, placement officers and administrators of {{college}}.",
+      "person": "Person",
+      "role": "Role",
+      "status": "Login",
+      "you": "You",
+      "empty": "No team members yet",
+      "roleFor": "Role for {{name}}",
+      "saveRoleFor": "Save role for {{name}}",
+      "remove": "Remove",
+      "removeFor": "Remove {{name}}",
+      "confirmRemove": "Confirm remove",
+      "confirmRemoveFor": "Confirm removing {{name}}",
+      "add": {
+        "open": "Add person",
+        "title": "Add a team member",
+        "hint": "They get an email with a link to choose their password.",
+        "firstName": "First name",
+        "lastName": "Last name",
+        "email": "Email",
+        "role": "Role",
+        "submit": "Add person"
+      }
+    },
+    "requests": {
+      "title": "Waiting to join",
+      "roleFor": "Role for {{name}}",
+      "approve": "Approve",
+      "approveFor": "Approve {{name}}",
+      "reject": "Reject",
+      "rejectFor": "Reject {{name}}"
+    }
   }
 }
