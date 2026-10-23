@@ -19,6 +19,26 @@ export const updateMemberRolesSchema = z.object({
   roleIds: z.array(objectId).min(1, 'A member needs at least one role'),
 });
 
+// A login for one roster student.
+export const studentAccountSchema = z
+  .object({ email: z.string().trim().toLowerCase().email() })
+  .strict();
+
+// A staff member added straight away, with a login they claim by email.
+export const addMemberSchema = z
+  .object({
+    email: z.string().trim().toLowerCase().email(),
+    firstName: z.string().trim().min(1).max(80),
+    lastName: z.string().trim().min(1).max(80),
+    roleIds: z.array(objectId).min(1, 'Pick at least one role'),
+  })
+  .strict();
+
+// 'active' | 'suspended' only: the other membership states belong to the join flows.
+export const updateMemberStatusSchema = z
+  .object({ status: z.enum(['active', 'suspended']) })
+  .strict();
+
 export const submitJoinRequestSchema = z.object({
   joinCode: z.string().trim().min(4),
   note: z.string().trim().max(500).optional(),

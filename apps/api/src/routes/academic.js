@@ -18,6 +18,7 @@ import {
   timetablePublishSchema,
   reportCardGenerateSchema,
   reportCardHistoryQuerySchema,
+  studentAccountSchema,
 } from '@rooted/shared/schemas';
 import { scoreToLetter, isBatchOrgType, isModuleEnabled } from '@rooted/shared/utils';
 import { REPORT_CARD_EXCLUDED_ASSESSMENT_TYPES } from '@rooted/shared/constants';
@@ -39,7 +40,9 @@ import { Subject } from '../models/Subject.js';
 import { Student } from '../models/Student.js';
 import { Enrollment } from '../models/Enrollment.js';
 import { Role } from '../models/Role.js';
-import { provisionStudentAccount } from '../services/identity.service.js';
+import { User } from '../models/User.js';
+import { TenantMembership } from '../models/TenantMembership.js';
+import { provisionStudentAccount, sendClaimEmail } from '../services/identity.service.js';
 import { StaffMember } from '../models/StaffMember.js';
 import { Timetable } from '../models/Timetable.js';
 import { TimetablePublish } from '../models/TimetablePublish.js';
@@ -356,6 +359,30 @@ router.post('/students', requirePermission('students:write'), async (req, res, n
   }
 });
 
+// userId -> { email, status } where status is pending_claim | active | suspended
+// (a suspended membership wins over the account's own state).
+async function accountsFor(tenantId, students) {
+  const userIds = students.map((s) => s.userId).filter(Boolean);
+  if (!userIds.length) return new Map();
+  const [users, memberships] = await Promise.all([
+    User.find({ _id: { $in: userIds } }, 'email status').lean(),
+    TenantMembership.find({ tenantId, userId: { $in: userIds } }, 'userId status').lean(),
+  ]);
+  const suspended = new Set(
+    memberships.filter((m) => m.status === 'suspended').map((m) => String(m.userId))
+  );
+  return new Map(
+    users.map((u) => [
+      String(u._id),
+      {
+        email: u.email,
+        status: suspended.has(String(u._id)) ? 'suspended' : u.status,
+        membershipId: memberships.find((m) => String(m.userId) === String(u._id))?._id ?? null,
+      },
+    ])
+  );
+}
+
 router.get('/students', requirePermission('students:read'), async (req, res, next) => {
   try {
     const page = Math.max(1, Number(req.query.page) || 1);
@@ -384,6 +411,14 @@ router.get('/students', requirePermission('students:read'), async (req, res, nex
         .lean(),
       Student.countDocuments(filter),
     ]);
+
+    // Logins are only shown to those who may give them: an address is not
+    // something every reader of the roster needs.
+    if (await userHasPermission(req, 'students:write')) {
+      const accounts = await accountsFor(tenantId, students);
+      for (const student of students)
+        student.account = accounts.get(String(student.userId)) ?? null;
+    }
 
     res.json({ students, total, page, pages: Math.ceil(total / limit) });
   } catch (err) {
@@ -425,6 +460,80 @@ router.patch('/students/:id', requirePermission('students:write'), async (req, r
     next(err);
   }
 });
+
+// One student's login. The existing import only reaches students it creates, so
+// this is how a student added without an address (or imported before logins
+// existed) gets one.
+router.post(
+  '/students/:id/account',
+  requirePermission('students:write'),
+  validate(studentAccountSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const student = await Student.findOne({ _id: req.params.id, tenantId });
+      if (!student) return res.status(404).json({ error: 'Not found' });
+      if (student.userId) {
+        return res.status(409).json({ error: 'This student already has a login' });
+      }
+
+      const studentRole = await Role.findOne({ tenantId, templateKey: 'student' }, '_id').lean();
+      if (!studentRole) {
+        return res.status(409).json({ error: 'No student role in this organization' });
+      }
+
+      const { user, reason } = await provisionStudentAccount({
+        tenant: req.tenant,
+        student,
+        email: req.body.email,
+        studentRoleId: studentRole._id,
+      });
+      if (!user) return res.status(409).json({ error: `Could not give a login: ${reason}` });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'student.account_created',
+        target: { model: 'Student', id: student._id },
+        after: { email: req.body.email },
+        ip: req.ip,
+      });
+
+      res.status(201).json({ userId: user._id, email: req.body.email });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/students/:id/account/resend',
+  requirePermission('students:write'),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const student = await Student.findOne({ _id: req.params.id, tenantId }, 'userId').lean();
+      if (!student) return res.status(404).json({ error: 'Not found' });
+      if (!student.userId) return res.status(409).json({ error: 'This student has no login yet' });
+
+      const user = await User.findById(student.userId, 'email status').lean();
+      const sent = user && (await sendClaimEmail({ tenant: req.tenant, user, email: user.email }));
+      if (!sent) return res.status(409).json({ error: 'This student has already set a password' });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'student.claim_resent',
+        target: { model: 'Student', id: student._id },
+        ip: req.ip,
+      });
+
+      res.json({ message: 'Link sent' });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.post(
   '/students/:id/photo',

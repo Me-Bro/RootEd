@@ -13,6 +13,7 @@ import {
 } from './auth.service.js';
 import { queueEmail } from './email.service.js';
 import { env, getPortalHost } from '../config/env.js';
+import { isModuleEnabled } from '@rooted/shared/utils';
 
 export const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
 export const EMAIL_CHANGE_TTL_MS = 60 * 60 * 1000;
@@ -137,6 +138,78 @@ export async function deriveUsernameFromEmail(email, { forUserId } = {}) {
 }
 
 /**
+ * Where a claim link should land. A college running the training programme is
+ * served from the Catalyst portal, whose reset page also activates a claimed
+ * account; everyone else gets the tenant's own host.
+ */
+export function claimUrlFor(tenant, token) {
+  if (env.CATALYST_PUBLIC_URL && isModuleEnabled(tenant, 'training')) {
+    return `${env.CATALYST_PUBLIC_URL}/reset-password?token=${token}&welcome=1`;
+  }
+  const host = tenant.subdomain ? `${tenant.subdomain}.${env.APP_DOMAIN}` : getPortalHost();
+  return `https://${host}/accept-invite?token=${token}`;
+}
+
+// A membership already exists for suspended people. Neither an import nor an
+// admin adding someone may be a way around a suspension, exactly as invites and
+// join codes are not. Returns the reason, or null when fine.
+async function blockedBySuspension(tenant, email) {
+  const existingUser = await User.findOne({ email }, '_id').lean();
+  if (!existingUser) return null;
+  const membership = await TenantMembership.findOne(
+    { tenantId: tenant._id, userId: existingUser._id },
+    'status'
+  ).lean();
+  return membership?.status === 'suspended' ? 'account suspended for this organization' : null;
+}
+
+async function findOrCreateClaimableUser({ email, firstName, lastName }) {
+  const existing = await User.findOne({ email }, '_id status').lean();
+  if (existing) return existing;
+  const username = await deriveUsernameFromEmail(email);
+  return User.create({
+    email,
+    username,
+    usernameLower: username,
+    firstName,
+    lastName,
+    passwordHash: await hashPassword(crypto.randomUUID()),
+    status: 'pending_claim',
+    emailVerified: false,
+  });
+}
+
+// Never overwrites: an existing membership keeps its roles and status.
+async function ensureMembership(tenant, user, roleIds) {
+  await TenantMembership.findOneAndUpdate(
+    { tenantId: tenant._id, userId: user._id },
+    {
+      $setOnInsert: {
+        tenantId: tenant._id,
+        userId: user._id,
+        roleIds,
+        status: 'active',
+        joinMethod: 'import',
+      },
+    },
+    { upsert: true, setDefaultsOnInsert: true }
+  );
+}
+
+/**
+ * Mails a fresh claim link. Only somebody who has never set a password needs
+ * one: an existing account already has working credentials. Returns whether a
+ * mail was queued.
+ */
+export async function sendClaimEmail({ tenant, user, email, enqueue = queueEmail }) {
+  if (user.status !== 'pending_claim') return false;
+  const token = generateToken();
+  await storeResetToken(user._id, token, CLAIM_TOKEN_TTL_MS);
+  await enqueue('accountClaim', [email, tenant.name, claimUrlFor(tenant, token)]);
+  return true;
+}
+
+/**
  * Gives a roster student a login they can claim.
  *
  * The account is created holding a random password nobody is ever told; the
@@ -158,34 +231,14 @@ export async function provisionStudentAccount({
   studentRoleId,
   enqueue = queueEmail,
 }) {
-  const existingUser = await User.findOne({ email }, '_id status').lean();
+  const gate = await blockedBySuspension(tenant, email);
+  if (gate) return { user: null, reason: gate };
 
-  // A membership already exists for suspended people. An import must not be a
-  // way around a suspension, exactly as invites and join codes are not.
-  if (existingUser) {
-    const membership = await TenantMembership.findOne(
-      { tenantId: tenant._id, userId: existingUser._id },
-      'status'
-    ).lean();
-    if (membership?.status === 'suspended') {
-      return { user: null, reason: 'account suspended for this organization' };
-    }
-  }
-
-  let user = existingUser;
-  if (!user) {
-    const username = await deriveUsernameFromEmail(email);
-    user = await User.create({
-      email,
-      username,
-      usernameLower: username,
-      firstName: student.firstName,
-      lastName: student.lastName,
-      passwordHash: await hashPassword(crypto.randomUUID()),
-      status: 'pending_claim',
-      emailVerified: false,
-    });
-  }
+  const user = await findOrCreateClaimableUser({
+    email,
+    firstName: student.firstName,
+    lastName: student.lastName,
+  });
 
   // The partial unique index on (tenantId, userId) stops one account being
   // linked to two students in the same school.
@@ -201,32 +254,36 @@ export async function provisionStudentAccount({
     throw err;
   }
 
-  await TenantMembership.findOneAndUpdate(
+  await ensureMembership(tenant, user, [studentRoleId]);
+  await sendClaimEmail({ tenant, user, email, enqueue });
+
+  return { user, reason: null };
+}
+
+/**
+ * Adds a staff member (mentor, TPO, another admin) with a login they can claim,
+ * the same way a roster student gets one. The caller checks the roles belong to
+ * this tenant.
+ */
+export async function provisionStaffAccount({
+  tenant,
+  email,
+  firstName,
+  lastName,
+  roleIds,
+  enqueue = queueEmail,
+}) {
+  const gate = await blockedBySuspension(tenant, email);
+  if (gate) return { user: null, reason: gate };
+
+  const user = await findOrCreateClaimableUser({ email, firstName, lastName });
+  const existing = await TenantMembership.findOne(
     { tenantId: tenant._id, userId: user._id },
-    {
-      $setOnInsert: {
-        tenantId: tenant._id,
-        userId: user._id,
-        roleIds: [studentRoleId],
-        status: 'active',
-        joinMethod: 'import',
-      },
-    },
-    { upsert: true, setDefaultsOnInsert: true }
-  );
+    'status'
+  ).lean();
+  if (existing) return { user: null, reason: 'that person is already a member' };
 
-  // Only somebody who has never set a password needs a claim link. An existing
-  // account already has working credentials.
-  if (user.status === 'pending_claim') {
-    const token = generateToken();
-    await storeResetToken(user._id, token, CLAIM_TOKEN_TTL_MS);
-    const host = tenant.subdomain ? `${tenant.subdomain}.${env.APP_DOMAIN}` : getPortalHost();
-    await enqueue('accountClaim', [
-      email,
-      tenant.name,
-      `https://${host}/accept-invite?token=${token}`,
-    ]);
-  }
-
+  await ensureMembership(tenant, user, roleIds);
+  await sendClaimEmail({ tenant, user, email, enqueue });
   return { user, reason: null };
 }
