@@ -1,3 +1,4 @@
+import { lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
@@ -9,18 +10,18 @@ import LandingPage from '@/pages/LandingPage.jsx';
 import LoginPage from '@/pages/LoginPage.jsx';
 import SelectCollegePage from '@/pages/SelectCollegePage.jsx';
 import NoAccessPage from '@/pages/NoAccessPage.jsx';
-import DashboardPage from '@/pages/DashboardPage.jsx';
-import MyProgressPage from '@/pages/MyProgressPage.jsx';
-import MyRoadmapPage from '@/pages/MyRoadmapPage.jsx';
-import LeaderboardPage from '@/pages/LeaderboardPage.jsx';
-import OutcomesPage from '@/pages/OutcomesPage.jsx';
-import EnquiriesPage from '@/pages/EnquiriesPage.jsx';
-import AssignmentsPage from '@/pages/AssignmentsPage.jsx';
-import ProjectsPage from '@/pages/ProjectsPage.jsx';
-import PlacementPage from '@/pages/PlacementPage.jsx';
-import ReadinessPage from '@/pages/ReadinessPage.jsx';
-import CompletionPage from '@/pages/CompletionPage.jsx';
-import RoadmapPage from '@/pages/RoadmapPage.jsx';
+const DashboardPage = lazy(() => import('@/pages/DashboardPage.jsx'));
+const MyProgressPage = lazy(() => import('@/pages/MyProgressPage.jsx'));
+const MyRoadmapPage = lazy(() => import('@/pages/MyRoadmapPage.jsx'));
+const LeaderboardPage = lazy(() => import('@/pages/LeaderboardPage.jsx'));
+const OutcomesPage = lazy(() => import('@/pages/OutcomesPage.jsx'));
+const EnquiriesPage = lazy(() => import('@/pages/EnquiriesPage.jsx'));
+const AssignmentsPage = lazy(() => import('@/pages/AssignmentsPage.jsx'));
+const ProjectsPage = lazy(() => import('@/pages/ProjectsPage.jsx'));
+const PlacementPage = lazy(() => import('@/pages/PlacementPage.jsx'));
+const ReadinessPage = lazy(() => import('@/pages/ReadinessPage.jsx'));
+const CompletionPage = lazy(() => import('@/pages/CompletionPage.jsx'));
+const RoadmapPage = lazy(() => import('@/pages/RoadmapPage.jsx'));
 
 // Pages for anyone who can read the college's training data (trainer, TPO, admin).
 // What a page lets them change is decided inside it, by training:write / :complete.

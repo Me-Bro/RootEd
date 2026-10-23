@@ -19,8 +19,10 @@ COPY packages/shared ./packages/shared
 # VITE_API_URL stays empty: the portal calls its own /__api path (see nginx.conf.template).
 ARG VITE_APP_DOMAIN=rooted.app
 ARG VITE_MAIN_APP_URL=
+ARG VITE_SENTRY_DSN=
 ENV VITE_APP_DOMAIN=$VITE_APP_DOMAIN
 ENV VITE_MAIN_APP_URL=$VITE_MAIN_APP_URL
+ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN
 
 RUN pnpm --filter portal build
 

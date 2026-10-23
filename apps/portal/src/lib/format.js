@@ -16,3 +16,7 @@ export function fmtDate(value, locale) {
 
 export const fullName = (student) =>
   student ? `${student.firstName ?? ''} ${student.lastName ?? ''}`.trim() : DASH;
+
+/** Case-insensitive "does this row mention the search text" over any number of fields. */
+export const matchesQuery = (query, ...fields) =>
+  fields.join(' ').toLowerCase().includes(query.trim().toLowerCase());

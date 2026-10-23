@@ -4,9 +4,11 @@ import { useTranslation } from 'react-i18next';
 import api from '@/lib/api.js';
 import { useAuth } from '@/contexts/useAuth.js';
 import { hasPermission } from '@/lib/access.js';
-import { fmtDate, fullName } from '@/lib/format.js';
+import { fmtDate, fullName, matchesQuery } from '@/lib/format.js';
+import { downloadCsv } from '@/lib/csv.js';
 import { useBatch } from '@/hooks/useBatch.js';
 import { BatchGate, BatchPicker } from '@/components/BatchPicker.jsx';
+import { TableTools } from '@/components/TableTools.jsx';
 import { MetricCard } from '@/components/MetricCard.jsx';
 import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Button } from '@/components/ui/Button.jsx';
@@ -136,11 +138,12 @@ function DecisionRow({ row, batch, canDecide, onChanged }) {
 }
 
 export default function CompletionPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const canDecide = hasPermission(user, 'training:complete');
   const batch = useBatch();
   const queryClient = useQueryClient();
+  const [search, setSearch] = useState('');
 
   const rosterQuery = useQuery({
     queryKey: ['training-roster', batch.sectionId],
@@ -165,6 +168,30 @@ export default function CompletionPage() {
     queryClient.invalidateQueries({ queryKey: ['training-readiness'] });
   };
   const completion = metricsQuery.data?.metrics.completion;
+  const allRows = rosterQuery.data ?? [];
+  const rows = allRows.filter((r) =>
+    matchesQuery(search, fullName(r.student), r.student.admissionNo)
+  );
+
+  function exportCsv() {
+    downloadCsv(
+      'completion.csv',
+      [
+        t('training.common.student'),
+        t('training.readiness.admissionNo'),
+        t('training.common.status'),
+        t('training.completion.ended'),
+        t('training.completion.notes'),
+      ],
+      rows.map((r) => [
+        fullName(r.student),
+        r.student.admissionNo,
+        t(`training.status.${r.status}`),
+        r.enrollment?.endDate ? fmtDate(r.enrollment.endDate, i18n.language) : null,
+        r.enrollment?.notes ?? null,
+      ])
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -200,7 +227,17 @@ export default function CompletionPage() {
             description={t('training.completion.noneHint')}
           />
         )}
-        {rosterQuery.data?.length > 0 && (
+        {allRows.length > 0 && (
+          <TableTools
+            query={search}
+            onQuery={setSearch}
+            shown={rows.length}
+            total={allRows.length}
+            onExport={exportCsv}
+          />
+        )}
+        {allRows.length > 0 && rows.length === 0 && <EmptyState title={t('common.noMatches')} />}
+        {rows.length > 0 && (
           <Card>
             <CardContent className="pt-4">
               <Table>
@@ -214,7 +251,7 @@ export default function CompletionPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rosterQuery.data.map((row) => (
+                  {rows.map((row) => (
                     <DecisionRow
                       key={row.student._id}
                       row={row}
