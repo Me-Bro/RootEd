@@ -32,8 +32,17 @@ export default defineConfig({
     {
       name: 'e2e',
       testMatch: /(?<!axe)(?<!auth\.setup)\.spec\.js$/,
+      testIgnore: /mobile\.spec\.js$/,
       dependencies: ['setup'],
       use: { ...devices['Desktop Chrome'] },
+    },
+
+    // A phone-sized viewport for the pages students use.
+    {
+      name: 'mobile',
+      testMatch: /mobile\.spec\.js$/,
+      dependencies: ['setup'],
+      use: { ...devices['Pixel 7'] },
     },
   ],
 

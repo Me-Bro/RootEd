@@ -48,6 +48,7 @@ then:
 pnpm --filter api seed:test:clean
 pnpm --filter portal test:e2e          # starts its own vite on :5174 with PORTAL_API_HOST=localhost
 pnpm --filter portal test:axe
+pnpm --filter portal exec playwright test --project=mobile   # phone viewport (Pixel 7)
 ```
 
 If the API is not on `:3001` set `API_PROXY_TARGET=http://127.0.0.1:<port>`.
