@@ -5,6 +5,9 @@
     "language": "Language",
     "skipToContent": "Skip to content"
   },
+  "toast": {
+    "saved": "Saved"
+  },
   "notifications": {
     "label": "Notifications ({{count}} unread)",
     "title": "Notifications",

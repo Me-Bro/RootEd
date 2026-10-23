@@ -14,7 +14,7 @@ import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Button } from '@/components/ui/Button.jsx';
 import { Badge } from '@/components/ui/Badge.jsx';
 import { Card, CardContent } from '@/components/ui/Card.jsx';
-import { EmptyState, ErrorNote, Spinner } from '@/components/ui/Feedback.jsx';
+import { EmptyState, ErrorNote, ListSkeleton } from '@/components/ui/Feedback.jsx';
 import {
   Table,
   TableBody,
@@ -219,7 +219,7 @@ export default function CompletionPage() {
             />
           </div>
         )}
-        {rosterQuery.isLoading && <Spinner />}
+        {rosterQuery.isLoading && <ListSkeleton />}
         {rosterQuery.error && <ErrorNote error={rosterQuery.error} onRetry={rosterQuery.refetch} />}
         {rosterQuery.data?.length === 0 && (
           <EmptyState

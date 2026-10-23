@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/Button.jsx';
 import { Input, Select } from '@/components/ui/Input.jsx';
 import { Badge } from '@/components/ui/Badge.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card.jsx';
-import { EmptyState, ErrorNote, Spinner } from '@/components/ui/Feedback.jsx';
+import { EmptyState, ErrorNote, ListSkeleton } from '@/components/ui/Feedback.jsx';
 import {
   Table,
   TableBody,
@@ -211,7 +211,7 @@ function ScoringGrid({ assignment, canWrite }) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {query.isLoading && <Spinner />}
+        {query.isLoading && <ListSkeleton />}
         {query.error && <ErrorNote error={query.error} onRetry={query.refetch} />}
         {query.data?.length === 0 && <EmptyState title={t('training.assignments.noStudents')} />}
         {query.data?.length > 0 && (
@@ -288,7 +288,7 @@ export default function AssignmentsPage() {
           />
         )}
 
-        {listQuery.isLoading && <Spinner />}
+        {listQuery.isLoading && <ListSkeleton rows={3} />}
         {listQuery.error && <ErrorNote error={listQuery.error} onRetry={listQuery.refetch} />}
         {listQuery.data?.length === 0 && (
           <EmptyState

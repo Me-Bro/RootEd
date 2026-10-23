@@ -5,6 +5,9 @@
     "language": "भाषा",
     "skipToContent": "मुख्य सामग्री पर जाएँ"
   },
+  "toast": {
+    "saved": "सहेज लिया गया"
+  },
   "notifications": {
     "label": "सूचनाएँ ({{count}} अपठित)",
     "title": "सूचनाएँ",

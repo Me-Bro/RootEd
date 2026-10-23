@@ -10,7 +10,7 @@ import { TableTools } from '@/components/TableTools.jsx';
 import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Badge } from '@/components/ui/Badge.jsx';
 import { Card, CardContent } from '@/components/ui/Card.jsx';
-import { EmptyState, ErrorNote, Spinner } from '@/components/ui/Feedback.jsx';
+import { EmptyState, ErrorNote, ListSkeleton } from '@/components/ui/Feedback.jsx';
 import {
   Table,
   TableBody,
@@ -85,7 +85,7 @@ export default function ReadinessPage() {
         <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
           {t('training.readiness.indicativeNote')}
         </p>
-        {query.isLoading && <Spinner />}
+        {query.isLoading && <ListSkeleton />}
         {query.error && <ErrorNote error={query.error} onRetry={query.refetch} />}
         {query.data?.rows.length === 0 && <EmptyState title={t('training.readiness.none')} />}
         {allRows.length > 0 && (

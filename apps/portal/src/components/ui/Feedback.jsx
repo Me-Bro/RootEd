@@ -33,6 +33,34 @@ export function Spinner({ label }) {
   );
 }
 
+const bar = 'animate-pulse rounded bg-muted';
+
+/** Placeholder for a table or list while it loads: keeps the page height steady. */
+export function ListSkeleton({ rows = 5 }) {
+  const { t } = useTranslation();
+  return (
+    <div role="status" className="flex flex-col gap-3 py-2" data-testid="skeleton">
+      <span className="sr-only">{t('common.loading')}</span>
+      {Array.from({ length: rows }, (_, i) => (
+        <div key={i} className={cn(bar, 'h-9 w-full')} aria-hidden="true" />
+      ))}
+    </div>
+  );
+}
+
+/** Placeholder for a row of metric cards. */
+export function CardsSkeleton({ cards = 4 }) {
+  const { t } = useTranslation();
+  return (
+    <div role="status" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="skeleton">
+      <span className="sr-only">{t('common.loading')}</span>
+      {Array.from({ length: cards }, (_, i) => (
+        <div key={i} className={cn(bar, 'h-32')} aria-hidden="true" />
+      ))}
+    </div>
+  );
+}
+
 export function ErrorNote({ error, onRetry }) {
   const { t } = useTranslation();
   const message = error?.response?.data?.error || t('common.error');

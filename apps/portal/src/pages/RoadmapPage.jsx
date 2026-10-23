@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/Button.jsx';
 import { Input, Select, Textarea } from '@/components/ui/Input.jsx';
 import { Badge } from '@/components/ui/Badge.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card.jsx';
-import { EmptyState, ErrorNote, Spinner } from '@/components/ui/Feedback.jsx';
+import { EmptyState, ErrorNote, ListSkeleton, Spinner } from '@/components/ui/Feedback.jsx';
 
 function NewRoadmapForm({ batch, onCreated }) {
   const { t } = useTranslation();
@@ -345,7 +345,7 @@ export default function RoadmapPage() {
           />
         )}
 
-        {listQuery.isLoading && <Spinner />}
+        {listQuery.isLoading && <ListSkeleton rows={3} />}
         {listQuery.error && <ErrorNote error={listQuery.error} onRetry={listQuery.refetch} />}
         {listQuery.data && roadmaps.length === 0 && (
           <EmptyState title={t('roadmap.none')} description={t('roadmap.noneHint')} />

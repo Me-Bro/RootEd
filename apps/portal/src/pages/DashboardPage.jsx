@@ -9,7 +9,7 @@ import { MetricCard } from '@/components/MetricCard.jsx';
 import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Button } from '@/components/ui/Button.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card.jsx';
-import { ErrorNote, Spinner } from '@/components/ui/Feedback.jsx';
+import { CardsSkeleton, ErrorNote } from '@/components/ui/Feedback.jsx';
 import { fmtNum } from '@/lib/format.js';
 
 export default function DashboardPage() {
@@ -61,7 +61,7 @@ export default function DashboardPage() {
       <BatchGate batch={batch}>
         <BatchPicker batch={batch} />
         {downloadError && <ErrorNote error={downloadError} />}
-        {metricsQuery.isLoading && <Spinner />}
+        {metricsQuery.isLoading && <CardsSkeleton />}
         {metricsQuery.error && (
           <ErrorNote error={metricsQuery.error} onRetry={metricsQuery.refetch} />
         )}
