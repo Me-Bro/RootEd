@@ -29,7 +29,13 @@ function initials(firstName, lastName) {
 }
 
 function PctBadge({ pct }) {
-  if (pct == null) return <span className="text-xs text-muted-foreground">no history</span>;
+  const { t } = useTranslation();
+  if (pct == null)
+    return (
+      <span className="text-xs text-muted-foreground">
+        {t('academic.attendanceReport.noHistory')}
+      </span>
+    );
   return (
     <span
       className={
@@ -202,7 +208,7 @@ export default function AttendancePage() {
                   <p className="truncate text-sm font-medium">
                     {r.firstName} {r.lastName}
                   </p>
-                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
                     <span className="font-mono">{r.admissionNo}</span>
                     <span>·</span>
                     <PctBadge pct={r.pct} />
@@ -216,7 +222,7 @@ export default function AttendancePage() {
                     )}
                   </p>
                 </div>
-                <div className="w-40">
+                <div className="w-32 shrink-0 sm:w-40">
                   <StatusPills
                     status={r.current?.status}
                     onSet={(status) => setStatus(r.studentId, status)}
