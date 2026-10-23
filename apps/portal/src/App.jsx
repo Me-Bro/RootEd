@@ -27,6 +27,8 @@ const PlacementPage = lazy(() => import('@/pages/PlacementPage.jsx'));
 const ReadinessPage = lazy(() => import('@/pages/ReadinessPage.jsx'));
 const CompletionPage = lazy(() => import('@/pages/CompletionPage.jsx'));
 const RoadmapPage = lazy(() => import('@/pages/RoadmapPage.jsx'));
+const PeopleStudentsPage = lazy(() => import('@/pages/PeopleStudentsPage.jsx'));
+const PeopleTeamPage = lazy(() => import('@/pages/PeopleTeamPage.jsx'));
 
 // Pages for anyone who can read the college's training data (trainer, TPO, admin).
 // What a page lets them change is decided inside it, by training:write / :complete.
@@ -138,6 +140,23 @@ export default function App() {
                   }
                 />
               ))}
+              {/* what a person may change is decided inside: students:write, roles:write */}
+              <Route
+                path="/people/students"
+                element={
+                  <RequireAccess permission="students:read">
+                    <PeopleStudentsPage />
+                  </RequireAccess>
+                }
+              />
+              <Route
+                path="/people/team"
+                element={
+                  <RequireAccess permission="roles:read">
+                    <PeopleTeamPage />
+                  </RequireAccess>
+                }
+              />
               <Route
                 path="/me/progress"
                 element={

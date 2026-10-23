@@ -4,7 +4,7 @@ const base =
   'inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-transparent text-sm font-medium whitespace-nowrap transition-colors disabled:pointer-events-none disabled:opacity-50';
 
 const variants = {
-  default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+  default: 'bg-primary text-primary-foreground hover:bg-primary/95',
   outline: 'border-border bg-card hover:bg-muted',
   secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
   ghost: 'hover:bg-muted',

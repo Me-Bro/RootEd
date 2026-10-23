@@ -24,9 +24,29 @@ college from the access token's `tenantId` claim (`resolveTenant()`), set by
 - the portal blanks `X-Forwarded-Host` — Express trusts it, so a browser could
   otherwise name any college. (`apps/web`'s nginx does not do this; pre-existing.)
 
-Registration, password reset, invites, account claim and Google sign-in stay in
-`apps/web`; the portal links there (`VITE_MAIN_APP_URL`). Emailed links
-therefore open `apps/web`, not the portal.
+Registration, invites and Google sign-in stay in `apps/web`; the portal links there
+(`VITE_MAIN_APP_URL`). Password reset and account claim have portal pages
+(`/forgot-password`, `/reset-password`, the latter with `&welcome=1` for a claim), and with
+`CATALYST_PUBLIC_URL` set on the api, reset and claim links for colleges on the training
+module open there (`getResetBaseUrl`, `claimUrlFor`). Other emailed links (staff invites)
+still open `apps/web`.
+
+## People (students and team)
+
+`/people/students` and `/people/team` are the college administrator's screens for logins;
+they are thin wrappers over the api, which the main app also uses.
+
+- Students (`students:read`, actions need `students:write`; suspend needs `roles:write`): batch
+  filter, search, add, CSV import into a picked batch (`sectionId` form field, so repeated
+  section names cannot misplace anyone), give a login to an existing student
+  (`POST /academic/students/:id/account`), resend the claim link
+  (`.../account/resend`), suspend/reactivate (`PATCH /tenant/members/:id/status`). The login
+  column comes from `account` on `GET /academic/students`, sent only to `students:write`.
+- Team (`roles:read`, actions need `roles:write`): add a mentor/TPO/admin with a claimable
+  login (`POST /tenant/members`; the invite flow needs an existing account, which the portal
+  cannot create), change role, suspend, remove, resend link, approve/reject join requests.
+  `GET /tenant/members?audience=staff|students` splits the list.
+- Nobody is hard-deleted from the students page; suspend is the way to cut access.
 
 ## Dev
 

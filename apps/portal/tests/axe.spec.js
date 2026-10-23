@@ -88,6 +88,34 @@ test.describe('accessibility', () => {
     }
   });
 
+  test.describe('people pages', () => {
+    test.use({ storageState: AUTH_STATES.tenant_admin });
+
+    test('students, with the add form open, have no violations', async ({ page }) => {
+      await page.goto('/people/students');
+      await expect(page.getByText('Student1 Test').first()).toBeVisible();
+      await page.getByRole('button', { name: 'Add student' }).click();
+      await expect(page.getByRole('form', { name: 'Add a student' })).toBeVisible();
+      expect(describeViolations((await scan(page)).violations)).toEqual([]);
+    });
+
+    test('students, with the import panel open, have no violations', async ({ page }) => {
+      await page.goto('/people/students');
+      await expect(page.getByText('Student1 Test').first()).toBeVisible();
+      await page.getByRole('button', { name: 'Import CSV' }).click();
+      await expect(page.getByLabel('CSV file')).toBeVisible();
+      expect(describeViolations((await scan(page)).violations)).toEqual([]);
+    });
+
+    test('team, with the add form open, has no violations', async ({ page }) => {
+      await page.goto('/people/team');
+      await expect(page.getByTestId('person-row-tadmin@testschool.local')).toBeVisible();
+      await page.getByRole('button', { name: 'Add person' }).click();
+      await expect(page.getByRole('form', { name: 'Add a team member' })).toBeVisible();
+      expect(describeViolations((await scan(page)).violations)).toEqual([]);
+    });
+  });
+
   test.describe('roadmap builder', () => {
     test.use({ storageState: AUTH_STATES.tenant_admin });
     test('has no violations with the item form open', async ({ page }) => {

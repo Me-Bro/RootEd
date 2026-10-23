@@ -8,6 +8,8 @@ import { TenantMembership } from '../models/TenantMembership.js';
 import {
   createInviteSchema,
   updateMemberRolesSchema,
+  addMemberSchema,
+  updateMemberStatusSchema,
   approveJoinRequestSchema,
   updateJoinPolicySchema,
 } from '@rooted/shared/schemas';
@@ -25,6 +27,7 @@ import {
   formatJoinCode,
 } from '../services/joinRequest.service.js';
 import { sendTenantInvite } from '../services/email.service.js';
+import { provisionStaffAccount, sendClaimEmail } from '../services/identity.service.js';
 import { markRead, getUnread, broadcastToRole } from '../services/notification.service.js';
 import { auditLog } from '../services/audit.service.js';
 import { blockToken } from '../services/auth.service.js';
@@ -281,9 +284,21 @@ router.get('/members', requirePermission('roles:read'), async (req, res, next) =
     const filter = { tenantId: req.tenant._id };
     if (req.query.status) filter.status = req.query.status;
 
+    // 'staff' = anyone holding a role other than the student one, so a mentor who
+    // also happens to be on a roster still shows. 'students' = student role only.
+    if (req.query.audience === 'staff' || req.query.audience === 'students') {
+      const studentRoleIds = (
+        await Role.find({ tenantId: req.tenant._id, templateKey: 'student' }, '_id').lean()
+      ).map((r) => r._id);
+      filter.roleIds =
+        req.query.audience === 'staff'
+          ? { $elemMatch: { $nin: studentRoleIds } }
+          : { $not: { $elemMatch: { $nin: studentRoleIds } } };
+    }
+
     const [members, total] = await Promise.all([
       TenantMembership.find(filter)
-        .populate('userId', 'email username firstName lastName')
+        .populate('userId', 'email username firstName lastName status')
         .populate('roleIds', 'name templateKey')
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
@@ -375,6 +390,125 @@ router.delete('/members/:id', requirePermission('roles:write'), async (req, res,
     next(err);
   }
 });
+
+// Adds a person straight away, with a login they claim from an emailed link. The
+// portal has no sign-up screen, so the invite flow (which needs an existing
+// account to accept it) cannot bring a new mentor in from there.
+router.post(
+  '/members',
+  requirePermission('roles:write'),
+  validate(addMemberSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { email, firstName, lastName, roleIds } = req.body;
+
+      const roles = await Role.find({ _id: { $in: roleIds }, tenantId }, '_id').lean();
+      if (roles.length !== roleIds.length) {
+        throw new AppError('One or more roles do not belong to this organization', 400);
+      }
+
+      const { user, reason } = await provisionStaffAccount({
+        tenant: req.tenant,
+        email,
+        firstName,
+        lastName,
+        roleIds,
+      });
+      if (!user) throw new AppError(`Could not add this person: ${reason}`, 409);
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'member.added',
+        target: { model: 'User', id: user._id },
+        after: { email, roleIds },
+        ip: req.ip,
+      });
+
+      res.status(201).json({ userId: user._id, email, status: user.status ?? 'pending_claim' });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.patch(
+  '/members/:id/status',
+  requirePermission('roles:write'),
+  validate(updateMemberStatusSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { status } = req.body;
+
+      const membership = await TenantMembership.findOne({ _id: req.params.id, tenantId });
+      if (!membership) throw new AppError('Member not found', 404);
+      if (!['active', 'suspended'].includes(membership.status)) {
+        throw new AppError('Only active or suspended members can be changed here', 409);
+      }
+
+      if (status === 'suspended') {
+        if (String(membership.userId) === String(req.user.sub)) {
+          throw new AppError('You cannot suspend yourself', 400);
+        }
+        if (await isLastAdmin(tenantId, membership._id)) {
+          throw new AppError('This is the last administrator — assign another first', 409);
+        }
+      }
+
+      const before = membership.status;
+      membership.status = status;
+      await membership.save();
+      // Permissions are cached for 60s; a suspension must bite now.
+      await invalidatePermissions(tenantId, membership.userId);
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: status === 'suspended' ? 'member.suspended' : 'member.reactivated',
+        target: { model: 'TenantMembership', id: membership._id },
+        before: { status: before },
+        after: { status },
+        ip: req.ip,
+      });
+
+      res.json(membership);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// A claim link expires and UAT mail may never arrive: let an admin send another.
+router.post(
+  '/members/:id/resend-claim',
+  requirePermission('roles:write'),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const membership = await TenantMembership.findOne({ _id: req.params.id, tenantId }).lean();
+      if (!membership || membership.status !== 'active')
+        throw new AppError('Member not found', 404);
+
+      const user = await User.findById(membership.userId, 'email status').lean();
+      const sent = user && (await sendClaimEmail({ tenant: req.tenant, user, email: user.email }));
+      if (!sent) throw new AppError('This person has already set a password', 409);
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'member.claim_resent',
+        target: { model: 'TenantMembership', id: membership._id },
+        ip: req.ip,
+      });
+
+      res.json({ message: 'Link sent' });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.post(
   '/invites',
