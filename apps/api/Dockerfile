@@ -11,7 +11,10 @@ COPY apps/api/package.json ./apps/api/
 COPY packages/shared/package.json ./packages/shared/
 
 # Install deps (skip all scripts), then rebuild only the native modules we need
-RUN pnpm install --frozen-lockfile --ignore-scripts && \
+# A slow link to the npm registry (the UAT host manages ~130 KB/s) fails the install on
+# pnpm's default 60 s fetch timeout, so allow longer, retry, and fetch fewer files at once.
+# These must be CLI flags: pnpm 11 ignores the npm_config_* environment variables.
+RUN pnpm install --frozen-lockfile --ignore-scripts --fetch-timeout=600000 --fetch-retries=10 --fetch-retry-mintimeout=20000 --network-concurrency=8 && \
     pnpm --filter api rebuild argon2 msgpackr-extract
 
 # Copy source
