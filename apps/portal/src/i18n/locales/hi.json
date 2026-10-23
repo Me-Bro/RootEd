@@ -239,7 +239,16 @@
       "record": "दर्ज करें",
       "recordFor": "{{name}} का निर्णय दर्ज करें",
       "confirmQuestion": "{{decision}}: {{name}}?",
-      "confirmFor": "{{name}} के निर्णय की पुष्टि करें"
+      "confirmFor": "{{name}} के निर्णय की पुष्टि करें",
+      "selectRow": "{{name}} को चुनें",
+      "selectAll": "दिख रहे सभी विद्यार्थियों को चुनें",
+      "bulkGroup": "चुने हुए विद्यार्थियों के लिए निर्णय",
+      "bulkSelected": "{{count}} चुने गए",
+      "bulkDecision": "चुने हुए विद्यार्थियों के लिए निर्णय",
+      "bulkNotes": "चुने हुए विद्यार्थियों के लिए टिप्पणी",
+      "bulkRecord": "चुने हुओं के लिए दर्ज करें",
+      "bulkConfirmQuestion": "{{count}} विद्यार्थियों के लिए {{decision}}?",
+      "bulkConfirm": "चुने हुओं के लिए पुष्टि करें"
     }
   },
   "me": {
@@ -612,6 +621,8 @@
     "progressOf": "{{total}} में से {{completed}} आइटम पूरे",
     "typeCount": "{{type}}: {{total}} में से {{completed}}",
     "noItems": "अभी पूरा करने के लिए कुछ नहीं है।",
+    "nextUp": "अगला काम: {{title}}",
+    "allDone": "आपने अपने रोडमैप का सब कुछ पूरा कर लिया है। शाबाश!",
     "viewLeaderboard": "लीडरबोर्ड देखें"
   },
   "leaderboard": {

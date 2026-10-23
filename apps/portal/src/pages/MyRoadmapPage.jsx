@@ -5,7 +5,7 @@ import { Check, Lock } from 'lucide-react';
 import api from '@/lib/api.js';
 import { useAuth } from '@/contexts/useAuth.js';
 import { hasPermission } from '@/lib/access.js';
-import { TYPE_VARIANT, scheduleLabel } from '@/lib/roadmap.js';
+import { TYPE_VARIANT, nextUp, scheduleLabel } from '@/lib/roadmap.js';
 import { ProgressSummary } from '@/components/roadmap/ProgressSummary.jsx';
 import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Button } from '@/components/ui/Button.jsx';
@@ -147,10 +147,21 @@ export default function MyRoadmapPage() {
   }
 
   const { roadmaps, summary } = query.data;
+  const next = nextUp(roadmaps);
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={t('myRoadmap.title')} description={t('myRoadmap.description')} />
       {roadmaps.length > 0 && <ProgressSummary summary={summary} />}
+      {next && (
+        <p className="rounded-lg bg-primary/10 p-3 text-sm font-medium" data-testid="next-up">
+          {t('myRoadmap.nextUp', { title: next.item.title })}
+        </p>
+      )}
+      {!next && summary.total > 0 && summary.completed === summary.total && (
+        <p className="rounded-lg bg-success/15 p-3 text-sm font-medium" data-testid="all-done">
+          {t('myRoadmap.allDone')}
+        </p>
+      )}
       {roadmaps.length === 0 && (
         <EmptyState title={t('myRoadmap.none')} description={t('myRoadmap.noneHint')} />
       )}

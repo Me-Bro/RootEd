@@ -31,6 +31,9 @@ test.describe('a student works through their roadmap', () => {
     await expect(page.getByTestId('my-roadmap-Seed: Full-stack roadmap')).toBeVisible();
     await expect(page.getByText('Seed: Draft')).toHaveCount(0);
 
+    // Nothing is done yet, so the first open item is what to do next.
+    await expect(page.getByTestId('next-up')).toHaveText('Next up: Seed: HTML basics');
+
     const open = page.getByTestId('my-item-Seed: HTML basics');
     await expect(open).toContainText('Week 1');
     await expect(open.getByLabel('What is semantic HTML?')).toBeVisible();

@@ -674,6 +674,69 @@ describe('admin-decided completion', () => {
     const res = await call('put', '/completion', 'tenant_admin', decision('graduated'));
     expect(res.status).toBe(400);
   });
+
+  describe('bulk', () => {
+    const bulk = (studentIds, status = 'completed', extra = {}) => ({
+      studentIds: studentIds.map(String),
+      sectionId: String(fx.section._id),
+      status,
+      ...extra,
+    });
+
+    test('only the tenant_admin can decide for many', async () => {
+      const body = bulk([fx.s1._id, fx.s2._id]);
+      expect((await call('put', '/completion/bulk', 'teacher', body)).status).toBe(403);
+      expect((await call('put', '/completion/bulk', 'principal', body)).status).toBe(403);
+    });
+
+    test('decides every student, one audit entry each, and can be reverted', async () => {
+      auditLog.mockClear();
+      const res = await call(
+        'put',
+        '/completion/bulk',
+        'tenant_admin',
+        bulk([fx.s1._id, fx.s2._id], 'completed', { notes: 'Batch signed off' })
+      );
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ updated: 2 });
+      for (const s of [fx.s1, fx.s2]) {
+        expect(await enrollmentOf(s)).toMatchObject({
+          status: 'completed',
+          notes: 'Batch signed off',
+        });
+      }
+      expect(
+        auditLog.mock.calls.filter(([a]) => a.action === 'training.completion.set')
+      ).toHaveLength(2);
+
+      await call('put', '/completion/bulk', 'tenant_admin', bulk([fx.s1._id, fx.s2._id], 'active'));
+      expect((await enrollmentOf(fx.s1)).endDate).toBeNull();
+    });
+
+    test('changes nothing when any student is not on the batch', async () => {
+      const before = await enrollmentOf(fx.s1);
+      const res = await call(
+        'put',
+        '/completion/bulk',
+        'tenant_admin',
+        bulk([fx.s1._id, fx.outsider._id])
+      );
+      expect(res.status).toBe(404);
+      expect(await enrollmentOf(fx.s1)).toEqual(before);
+    });
+
+    test('rejects an empty or duplicated list, and a section from another college', async () => {
+      expect((await call('put', '/completion/bulk', 'tenant_admin', bulk([]))).status).toBe(400);
+      expect(
+        (await call('put', '/completion/bulk', 'tenant_admin', bulk([fx.s1._id, fx.s1._id]))).status
+      ).toBe(400);
+      const foreign = await call('put', '/completion/bulk', 'tenant_admin', {
+        ...bulk([fx.s1._id]),
+        sectionId: String(fxB.section._id),
+      });
+      expect(foreign.status).toBe(404);
+    });
+  });
 });
 
 describe('the generic enrollment route is not a completion bypass (AC11)', () => {

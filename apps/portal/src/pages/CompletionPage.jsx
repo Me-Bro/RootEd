@@ -32,7 +32,7 @@ const DECISIONS = ['completed', 'dropped', 'active'];
  * completion percentage is what the college is billed against, so a stray click
  * must not be able to change it.
  */
-function DecisionRow({ row, batch, canDecide, onChanged }) {
+function DecisionRow({ row, batch, canDecide, onChanged, selected, onToggle }) {
   const { t, i18n } = useTranslation();
   const [decision, setDecision] = useState('');
   const [notes, setNotes] = useState('');
@@ -58,6 +58,16 @@ function DecisionRow({ row, batch, canDecide, onChanged }) {
 
   return (
     <TableRow data-testid={`completion-${row.student.admissionNo}`}>
+      {canDecide && (
+        <TableCell className="w-8">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggle}
+            aria-label={t('training.completion.selectRow', { name })}
+          />
+        </TableCell>
+      )}
       <TableCell>
         <div className="font-medium">{name}</div>
         <div className="text-xs text-muted-foreground">{row.student.admissionNo}</div>
@@ -137,6 +147,87 @@ function DecisionRow({ row, batch, canDecide, onChanged }) {
   );
 }
 
+/**
+ * One decision for every ticked student. Like a single decision it asks first:
+ * the completion percentage is what the college is billed against.
+ */
+function BulkBar({ ids, batch, onDone }) {
+  const { t } = useTranslation();
+  const [choice, setChoice] = useState('completed');
+  const [notes, setNotes] = useState('');
+  const [confirming, setConfirming] = useState(false);
+
+  const save = useMutation({
+    mutationFn: () =>
+      api.put('/training/completion/bulk', {
+        studentIds: ids,
+        sectionId: batch.sectionId,
+        status: choice,
+        ...(notes ? { notes } : {}),
+      }),
+    onSuccess: () => {
+      setConfirming(false);
+      setNotes('');
+      onDone();
+    },
+  });
+
+  return (
+    <div
+      className="flex flex-wrap items-center gap-2 rounded-lg bg-muted p-3"
+      role="group"
+      aria-label={t('training.completion.bulkGroup')}
+      data-testid="bulk-bar"
+    >
+      <span className="text-sm font-medium" data-testid="bulk-count">
+        {t('training.completion.bulkSelected', { count: ids.length })}
+      </span>
+      {!confirming ? (
+        <>
+          <select
+            aria-label={t('training.completion.bulkDecision')}
+            className="h-8 rounded-lg border border-input bg-card px-2 text-sm"
+            value={choice}
+            onChange={(e) => setChoice(e.target.value)}
+          >
+            {DECISIONS.map((d) => (
+              <option key={d} value={d}>
+                {t(`training.completion.decision.${d}`)}
+              </option>
+            ))}
+          </select>
+          <input
+            aria-label={t('training.completion.bulkNotes')}
+            placeholder={t('training.completion.notes')}
+            className="h-8 w-48 rounded-lg border border-input bg-card px-2 text-sm"
+            value={notes}
+            maxLength={1000}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+          <Button size="sm" variant="outline" onClick={() => setConfirming(true)}>
+            {t('training.completion.bulkRecord')}
+          </Button>
+        </>
+      ) : (
+        <>
+          <span className="text-sm">
+            {t('training.completion.bulkConfirmQuestion', {
+              count: ids.length,
+              decision: t(`training.completion.decision.${choice}`).toLowerCase(),
+            })}
+          </span>
+          <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+            {t('training.completion.bulkConfirm')}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>
+            {t('common.cancel')}
+          </Button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function CompletionPage() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
@@ -144,6 +235,7 @@ export default function CompletionPage() {
   const batch = useBatch();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const [picked, setPicked] = useState(() => new Set());
 
   const rosterQuery = useQuery({
     queryKey: ['training-roster', batch.sectionId],
@@ -172,6 +264,28 @@ export default function CompletionPage() {
   const rows = allRows.filter((r) =>
     matchesQuery(search, fullName(r.student), r.student.admissionNo)
   );
+
+  // Only what is on screen counts: a search can hide ticked students, and a
+  // decision must never reach someone the admin can no longer see.
+  const shownIds = rows.map((r) => r.student._id);
+  const selectedIds = shownIds.filter((id) => picked.has(id));
+  const toggle = (id) =>
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const allShownPicked = shownIds.length > 0 && selectedIds.length === shownIds.length;
+  const toggleAll = () =>
+    setPicked((prev) => {
+      const next = new Set(prev);
+      for (const id of shownIds) {
+        if (allShownPicked) next.delete(id);
+        else next.add(id);
+      }
+      return next;
+    });
 
   function exportCsv() {
     downloadCsv(
@@ -237,12 +351,33 @@ export default function CompletionPage() {
           />
         )}
         {allRows.length > 0 && rows.length === 0 && <EmptyState title={t('common.noMatches')} />}
+        {canDecide && selectedIds.length > 0 && (
+          <BulkBar
+            key={batch.sectionId}
+            ids={selectedIds}
+            batch={batch}
+            onDone={() => {
+              setPicked(new Set());
+              changed();
+            }}
+          />
+        )}
         {rows.length > 0 && (
           <Card>
             <CardContent className="pt-4">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {canDecide && (
+                      <TableHead className="w-8">
+                        <input
+                          type="checkbox"
+                          checked={allShownPicked}
+                          onChange={toggleAll}
+                          aria-label={t('training.completion.selectAll')}
+                        />
+                      </TableHead>
+                    )}
                     <TableHead>{t('training.common.student')}</TableHead>
                     <TableHead>{t('training.common.status')}</TableHead>
                     <TableHead>{t('training.completion.ended')}</TableHead>
@@ -258,6 +393,8 @@ export default function CompletionPage() {
                       batch={batch}
                       canDecide={canDecide}
                       onChanged={changed}
+                      selected={picked.has(row.student._id)}
+                      onToggle={() => toggle(row.student._id)}
                     />
                   ))}
                 </TableBody>

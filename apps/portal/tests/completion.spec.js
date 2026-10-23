@@ -32,6 +32,59 @@ test.describe('the college administrator decides completion', () => {
     await expect(page.getByTestId('metric-completion')).toContainText('3 of 10 enrolled completed');
   });
 
+  test('decides for several selected students at once, after a second click', async ({ page }) => {
+    await page.goto('/completion');
+    const seven = page.getByTestId('completion-2025-TEST-007');
+    const eight = page.getByTestId('completion-2025-TEST-008');
+    await expect(seven.getByTestId('completion-status')).toHaveText('In progress');
+    await expect(page.getByTestId('bulk-bar')).toHaveCount(0);
+
+    await page.getByLabel('Select Student7 Test', { exact: true }).check();
+    await page.getByLabel('Select Student8 Test', { exact: true }).check();
+    await expect(page.getByTestId('bulk-count')).toHaveText('2 selected');
+
+    await page.getByLabel('Decision for the selected students').selectOption('completed');
+    await page.getByRole('button', { name: 'Record for selected' }).click();
+    // Nothing changes until confirmed.
+    await expect(page.getByTestId('bulk-bar')).toContainText('mark completed for 2 students?');
+    await expect(seven.getByTestId('completion-status')).toHaveText('In progress');
+
+    await page.getByRole('button', { name: 'Confirm for selected' }).click();
+    await expect(seven.getByTestId('completion-status')).toHaveText('Completed');
+    await expect(eight.getByTestId('completion-status')).toHaveText('Completed');
+    await expect(page.getByTestId('bulk-bar')).toHaveCount(0);
+
+    // Put them back so later specs see the seeded figures.
+    await page.getByLabel('Select Student7 Test', { exact: true }).check();
+    await page.getByLabel('Select Student8 Test', { exact: true }).check();
+    await page.getByLabel('Decision for the selected students').selectOption('active');
+    await page.getByRole('button', { name: 'Record for selected' }).click();
+    await page.getByRole('button', { name: 'Confirm for selected' }).click();
+    await expect(seven.getByTestId('completion-status')).toHaveText('In progress');
+    await expect(eight.getByTestId('completion-status')).toHaveText('In progress');
+  });
+
+  test('a search hides students from the selection, so they are never decided blind', async ({
+    page,
+  }) => {
+    await page.goto('/completion');
+    await page.getByLabel('Select Student7 Test', { exact: true }).check();
+    await expect(page.getByTestId('bulk-count')).toHaveText('1 selected');
+    await page.getByLabel('Search by name or admission no.').fill('Student9');
+    await expect(page.getByTestId('bulk-bar')).toHaveCount(0);
+    await page.getByLabel('Search by name or admission no.').fill('');
+    await expect(page.getByTestId('bulk-count')).toHaveText('1 selected');
+  });
+
+  test('a read-only role gets no checkboxes', async ({ browser }) => {
+    const context = await browser.newContext({ storageState: AUTH_STATES.principal });
+    const page = await context.newPage();
+    await page.goto('/completion');
+    await expect(page.getByTestId('completion-2025-TEST-007')).toBeVisible();
+    await expect(page.getByRole('checkbox')).toHaveCount(0);
+    await context.close();
+  });
+
   test('a decision can be cancelled before it is recorded', async ({ page }) => {
     await page.goto('/completion');
     const row = page.getByTestId('completion-2025-TEST-006');
