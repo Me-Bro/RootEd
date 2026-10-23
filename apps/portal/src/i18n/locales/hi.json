@@ -5,6 +5,12 @@
     "language": "भाषा",
     "skipToContent": "मुख्य सामग्री पर जाएँ"
   },
+  "notifications": {
+    "label": "सूचनाएँ ({{count}} अपठित)",
+    "title": "सूचनाएँ",
+    "markAllRead": "सभी पढ़ा हुआ करें",
+    "none": "कोई नई सूचना नहीं"
+  },
   "languages": {
     "en": "English",
     "hi": "हिन्दी",

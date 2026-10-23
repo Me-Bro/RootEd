@@ -5,6 +5,12 @@
     "language": "Language",
     "skipToContent": "Skip to content"
   },
+  "notifications": {
+    "label": "Notifications ({{count}} unread)",
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "none": "No new notifications"
+  },
   "languages": {
     "en": "English",
     "hi": "हिन्दी",

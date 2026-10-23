@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button.jsx';
 import { CrashFallback, Spinner } from '@/components/ui/Feedback.jsx';
 import { LanguageSwitcher } from './LanguageSwitcher.jsx';
+import { NotificationBell } from './NotificationBell.jsx';
 
 // Every entry says which permission shows it. The route guards in App.jsx check
 // the same permission, so a link is never offered that the page would refuse.
@@ -56,6 +57,8 @@ export default function PortalShell() {
             {college && <p className="truncate text-xs text-muted-foreground">{college.name}</p>}
           </div>
           <LanguageSwitcher />
+          {/* a super admin has no college, and so no notifications */}
+          {user?.systemRole !== 'super_admin' && <NotificationBell />}
           {(user?.orgs ?? []).length > 1 && (
             <Button variant="ghost" size="sm" onClick={() => navigate('/select-college')}>
               <Repeat className="size-3.5" aria-hidden="true" />
