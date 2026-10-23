@@ -62,8 +62,9 @@ export default function LeaderboardPage() {
                     <TableCell>{row.rank}</TableCell>
                     <TableCell>
                       {row.displayName}
+                      {/* solid chip: a tinted one on the tinted "me" row misses 4.5:1 contrast */}
                       {row.isMe && (
-                        <Badge variant="info" className="ml-2">
+                        <Badge className="ml-2 bg-primary text-primary-foreground">
                           {t('leaderboard.you')}
                         </Badge>
                       )}
