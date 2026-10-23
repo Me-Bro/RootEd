@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/Button.jsx';
 import { Input, Textarea } from '@/components/ui/Input.jsx';
 import { Badge } from '@/components/ui/Badge.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card.jsx';
-import { EmptyState, ErrorNote, Spinner } from '@/components/ui/Feedback.jsx';
+import { EmptyState, ErrorNote, ListSkeleton } from '@/components/ui/Feedback.jsx';
 
 // A link is only ever rendered as an anchor when it is plain http(s); the API
 // refuses anything else, this is the second lock on the same door.
@@ -137,7 +137,7 @@ export default function MyRoadmapPage() {
     queryFn: () => api.get('/me/roadmap').then((r) => r.data),
   });
 
-  if (query.isLoading) return <Spinner />;
+  if (query.isLoading) return <ListSkeleton />;
   if (query.error) {
     return query.error.response?.status === 404 ? (
       <EmptyState title={t('me.noRecord')} description={t('me.noRecordHint')} />
