@@ -1,19 +1,23 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import * as Sentry from '@sentry/react';
 import './index.css';
 import './i18n/index.js';
 import App from './App.jsx';
 import { CrashFallback } from './components/ui/Feedback.jsx';
+import { ErrorBoundary } from './components/ErrorBoundary.jsx';
+import { initReporting } from './lib/report.js';
 
-if (import.meta.env.VITE_SENTRY_DSN) {
-  Sentry.init({ dsn: import.meta.env.VITE_SENTRY_DSN, environment: import.meta.env.MODE });
+initReporting();
+
+// Installable and openable offline. Only in a built app: in dev it would cache stale modules.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
 }
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <Sentry.ErrorBoundary fallback={<CrashFallback />}>
+    <ErrorBoundary fallback={<CrashFallback />}>
       <App />
-    </Sentry.ErrorBoundary>
+    </ErrorBoundary>
   </StrictMode>
 );

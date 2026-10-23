@@ -2,7 +2,7 @@
 import { test, expect } from '@playwright/test';
 import { hasPermission, currentCollege, homeRoute } from '../src/lib/access.js';
 import { fmtPct, fmtNum, fullName, matchesQuery, DASH } from '../src/lib/format.js';
-import { scheduleLabel } from '../src/lib/roadmap.js';
+import { nextUp, scheduleLabel } from '../src/lib/roadmap.js';
 
 const college = { _id: 'c1', name: 'Test School' };
 const member = (extra = {}) => ({
@@ -100,5 +100,23 @@ test.describe('roadmap scheduleLabel', () => {
     expect(scheduleLabel({}, 'daily', t)).toBe('');
     expect(scheduleLabel({ dayNumber: 3 }, 'none', t)).toBe('');
     expect(scheduleLabel({}, 'dated', t)).toBe('');
+  });
+});
+
+test.describe('roadmap nextUp', () => {
+  const item = (title, open, completed) => ({ title, open, completed });
+
+  test('is the first open item that is not done, across roadmaps in order', () => {
+    const roadmaps = [
+      { items: [item('a', true, true), item('b', false, false)] },
+      { items: [item('c', true, false), item('d', true, false)] },
+    ];
+    expect(nextUp(roadmaps).item.title).toBe('c');
+    expect(nextUp(roadmaps).roadmap).toBe(roadmaps[1]);
+  });
+
+  test('is nothing when everything open is done, or there are no roadmaps', () => {
+    expect(nextUp([{ items: [item('a', true, true), item('b', false, false)] }])).toBeNull();
+    expect(nextUp([])).toBeNull();
   });
 });

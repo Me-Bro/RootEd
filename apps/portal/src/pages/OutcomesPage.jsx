@@ -4,7 +4,7 @@ import api from '@/lib/api.js';
 import { fmtNum, fmtPct } from '@/lib/format.js';
 import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card.jsx';
-import { EmptyState, ErrorNote, Spinner } from '@/components/ui/Feedback.jsx';
+import { EmptyState, ErrorNote, ListSkeleton } from '@/components/ui/Feedback.jsx';
 import {
   Table,
   TableBody,
@@ -25,7 +25,7 @@ export default function OutcomesPage() {
     queryFn: () => api.get('/admin/training/outcomes').then((r) => r.data),
   });
 
-  if (query.isLoading) return <Spinner />;
+  if (query.isLoading) return <ListSkeleton />;
   if (query.error) return <ErrorNote error={query.error} onRetry={query.refetch} />;
 
   const { colleges, totals } = query.data;

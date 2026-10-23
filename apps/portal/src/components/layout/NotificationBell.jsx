@@ -25,6 +25,7 @@ export function NotificationBell() {
   });
 
   const markAllRead = useMutation({
+    meta: { silent: true },
     mutationFn: () =>
       Promise.all(notices.map((n) => api.patch(`/tenant/notifications/${n._id}/read`))),
     onSettled: () => queryClient.invalidateQueries({ queryKey: KEY }),

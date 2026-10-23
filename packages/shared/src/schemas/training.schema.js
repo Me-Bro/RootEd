@@ -147,6 +147,21 @@ export const completionSchema = z
   })
   .strict();
 
+// The same decision for several students of one batch at once. Capped so one
+// request stays a bounded amount of work.
+export const bulkCompletionSchema = z
+  .object({
+    studentIds: z
+      .array(objectId)
+      .min(1)
+      .max(200)
+      .refine((ids) => new Set(ids).size === ids.length, 'Duplicate student'),
+    sectionId: objectId,
+    status: z.enum(COMPLETION_STATUSES),
+    notes: shortText(1000).optional(),
+  })
+  .strict();
+
 export const batchQuerySchema = z.object({ sectionId: objectId });
 
 // ── Metrics, readiness, report ──────────────────────────────────────────────

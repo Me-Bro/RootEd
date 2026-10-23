@@ -51,6 +51,18 @@ test.describe('accessibility', () => {
     expect(describeViolations((await scan(page)).violations)).toEqual([]);
   });
 
+  test('forgot-password page', async ({ page }) => {
+    await page.goto('/forgot-password');
+    await expect(page.getByRole('button', { name: 'Send reset link' })).toBeVisible();
+    expect(describeViolations((await scan(page)).violations)).toEqual([]);
+  });
+
+  test('reset-password page', async ({ page }) => {
+    await page.goto('/reset-password?token=abc');
+    await expect(page.getByRole('button', { name: 'Set password' })).toBeVisible();
+    expect(describeViolations((await scan(page)).violations)).toEqual([]);
+  });
+
   test.describe('trainer dashboard', () => {
     test.use({ storageState: AUTH_STATES.teacher });
     test('has no violations', async ({ page }) => {

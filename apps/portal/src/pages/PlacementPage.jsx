@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/Button.jsx';
 import { Input, Select } from '@/components/ui/Input.jsx';
 import { Badge } from '@/components/ui/Badge.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card.jsx';
-import { EmptyState, ErrorNote, Spinner } from '@/components/ui/Feedback.jsx';
+import { EmptyState, ErrorNote, ListSkeleton } from '@/components/ui/Feedback.jsx';
 import {
   Table,
   TableBody,
@@ -340,7 +340,7 @@ export default function PlacementPage() {
           <NewApplicationForm roster={roster} employers={employers} onCreated={refreshPlacements} />
         )}
 
-        {placementsQuery.isLoading && <Spinner />}
+        {placementsQuery.isLoading && <ListSkeleton />}
         {placementsQuery.error && (
           <ErrorNote error={placementsQuery.error} onRetry={placementsQuery.refetch} />
         )}

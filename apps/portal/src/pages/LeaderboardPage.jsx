@@ -5,7 +5,7 @@ import { fmtPct } from '@/lib/format.js';
 import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Badge } from '@/components/ui/Badge.jsx';
 import { Card, CardContent } from '@/components/ui/Card.jsx';
-import { EmptyState, ErrorNote, Meter, Spinner } from '@/components/ui/Feedback.jsx';
+import { EmptyState, ErrorNote, ListSkeleton, Meter } from '@/components/ui/Feedback.jsx';
 import {
   Table,
   TableBody,
@@ -23,7 +23,7 @@ export default function LeaderboardPage() {
     queryFn: () => api.get('/me/roadmap/leaderboard').then((r) => r.data.leaderboard),
   });
 
-  if (query.isLoading) return <Spinner />;
+  if (query.isLoading) return <ListSkeleton />;
   if (query.error) {
     return query.error.response?.status === 404 ? (
       <EmptyState title={t('me.noRecord')} description={t('me.noRecordHint')} />

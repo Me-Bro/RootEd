@@ -1,11 +1,11 @@
 import { Suspense } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import * as Sentry from '@sentry/react';
 import { useTranslation } from 'react-i18next';
 import { LogOut, Repeat } from 'lucide-react';
 import { useAuth } from '@/contexts/useAuth.js';
 import { currentCollege, hasPermission } from '@/lib/access.js';
 import { cn } from '@/lib/utils';
+import { ErrorBoundary } from '@/components/ErrorBoundary.jsx';
 import { Button } from '@/components/ui/Button.jsx';
 import { CrashFallback, Spinner } from '@/components/ui/Feedback.jsx';
 import { LanguageSwitcher } from './LanguageSwitcher.jsx';
@@ -95,11 +95,11 @@ export default function PortalShell() {
 
       <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
         {/* keyed by route: a crash on one page clears when the user navigates away */}
-        <Sentry.ErrorBoundary key={pathname} fallback={<CrashFallback />}>
+        <ErrorBoundary key={pathname} fallback={<CrashFallback />}>
           <Suspense fallback={<Spinner />}>
             <Outlet />
           </Suspense>
-        </Sentry.ErrorBoundary>
+        </ErrorBoundary>
       </main>
     </div>
   );

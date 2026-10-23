@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/useAuth.js';
 import { homeRoute } from '@/lib/access.js';
@@ -15,7 +15,7 @@ import {
 import { Spinner } from '@/components/ui/Feedback.jsx';
 import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher.jsx';
 
-// Registration, password reset and invites live in the main RootEd app.
+// Registration and invites live in the main RootEd app; password reset is here.
 const MAIN_APP_URL = (import.meta.env.VITE_MAIN_APP_URL ?? '').replace(/\/$/, '');
 
 export default function LoginPage() {
@@ -109,16 +109,16 @@ export default function LoginPage() {
             <Button type="submit" size="lg" disabled={busy}>
               {busy ? t('auth.signingIn') : t('auth.signIn')}
             </Button>
-            {MAIN_APP_URL && (
-              <p className="flex justify-between text-xs text-muted-foreground">
-                <a className="underline" href={`${MAIN_APP_URL}/forgot-password`}>
-                  {t('auth.forgotPassword')}
-                </a>
+            <p className="flex justify-between text-xs text-muted-foreground">
+              <Link className="underline" to="/forgot-password">
+                {t('auth.forgotPassword')}
+              </Link>
+              {MAIN_APP_URL && (
                 <a className="underline" href={`${MAIN_APP_URL}/register`}>
                   {t('auth.createAccount')}
                 </a>
-              </p>
-            )}
+              )}
+            </p>
           </form>
         </CardContent>
       </Card>

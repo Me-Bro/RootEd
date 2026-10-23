@@ -12,3 +12,12 @@ export function scheduleLabel(item, mode, t, locale) {
   if (mode === 'weekly') return item.weekNumber ? t('roadmap.week', { n: item.weekNumber }) : '';
   return '';
 }
+
+/** The first item, in roadmap order, the student can work on now: open and not yet done. */
+export function nextUp(roadmaps) {
+  for (const roadmap of roadmaps) {
+    const item = roadmap.items.find((i) => i.open && !i.completed);
+    if (item) return { item, roadmap };
+  }
+  return null;
+}

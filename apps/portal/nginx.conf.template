@@ -37,6 +37,15 @@ server {
     try_files $uri $uri/ /index.html;
   }
 
+  # The service worker and manifest must always be revalidated: a year-long cache
+  # on sw.js would pin every browser to the version it first installed.
+  location = /sw.js {
+    add_header Cache-Control "no-cache";
+  }
+  location = /manifest.webmanifest {
+    add_header Cache-Control "no-cache";
+  }
+
   # Cache static assets
   location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff2?)$ {
     expires 1y;

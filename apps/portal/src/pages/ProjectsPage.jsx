@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/Button.jsx';
 import { Input, Textarea } from '@/components/ui/Input.jsx';
 import { Badge } from '@/components/ui/Badge.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card.jsx';
-import { EmptyState, ErrorNote, Spinner } from '@/components/ui/Feedback.jsx';
+import { EmptyState, ErrorNote, ListSkeleton } from '@/components/ui/Feedback.jsx';
 
 function NewProjectForm({ batch, roster, onCreated }) {
   const { t } = useTranslation();
@@ -295,7 +295,7 @@ export default function ProjectsPage() {
       <BatchGate batch={batch}>
         <BatchPicker batch={batch} />
         {canWrite && <NewProjectForm batch={batch} roster={roster} onCreated={refresh} />}
-        {projectsQuery.isLoading && <Spinner />}
+        {projectsQuery.isLoading && <ListSkeleton />}
         {projectsQuery.error && (
           <ErrorNote error={projectsQuery.error} onRetry={projectsQuery.refetch} />
         )}

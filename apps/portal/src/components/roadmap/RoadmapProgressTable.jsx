@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import api from '@/lib/api.js';
 import { fmtPct, fullName } from '@/lib/format.js';
 import { Card, CardContent } from '@/components/ui/Card.jsx';
-import { EmptyState, ErrorNote, Meter, Spinner } from '@/components/ui/Feedback.jsx';
+import { EmptyState, ErrorNote, ListSkeleton, Meter } from '@/components/ui/Feedback.jsx';
 import {
   Table,
   TableBody,
@@ -78,7 +78,7 @@ export function RoadmapProgressTable({ roadmapId }) {
     queryFn: () => api.get(`/training/roadmaps/${roadmapId}/progress`).then((r) => r.data),
   });
 
-  if (query.isLoading) return <Spinner />;
+  if (query.isLoading) return <ListSkeleton />;
   if (query.error) return <ErrorNote error={query.error} onRetry={query.refetch} />;
 
   const { items, students } = query.data;

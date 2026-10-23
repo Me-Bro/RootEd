@@ -14,6 +14,7 @@ import {
   placementQuerySchema,
   consentSchema,
   completionSchema,
+  bulkCompletionSchema,
   batchQuerySchema,
   batchTermQuerySchema,
 } from '@rooted/shared/schemas';
@@ -572,6 +573,27 @@ router.get('/enrollments', requirePermission('training:read'), async (req, res, 
 // of a student's membership of a batch) rather than a second table, and is
 // keyed by student + batch because a college student may not have an Enrollment
 // row yet — this creates it.
+// Writes and audits one student's decision. `entry` is that student's row from
+// getBatchEnrollments, so the caller checks the roster once, not once per student.
+async function recordCompletion(req, entry, { sectionId, status, notes }) {
+  const tenantId = req.tenant._id;
+  const studentId = String(entry.student._id);
+  const update = applyCompletion(entry.enrollment, status, notes);
+  const enrollment = await Enrollment.findOneAndUpdate(
+    { tenantId, studentId, sectionId },
+    { $set: update, $setOnInsert: { enrolledBy: req.user.sub } },
+    { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+  );
+
+  await audit(
+    req,
+    'training.completion.set',
+    { model: 'Enrollment', id: enrollment._id },
+    { before: entry.enrollment ?? undefined, after: enrollment.toObject() }
+  );
+  return enrollment;
+}
+
 router.put(
   '/completion',
   requirePermission('training:complete'),
@@ -586,20 +608,36 @@ router.put(
       const entry = batch.find((b) => String(b.student._id) === studentId);
       if (!entry) throw new AppError('Student is not on this batch', 404);
 
-      const update = applyCompletion(entry.enrollment, status, notes);
-      const enrollment = await Enrollment.findOneAndUpdate(
-        { tenantId, studentId, sectionId },
-        { $set: update, $setOnInsert: { enrolledBy: req.user.sub } },
-        { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
-      );
+      res.json(await recordCompletion(req, entry, { sectionId, status, notes }));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
-      await audit(
-        req,
-        'training.completion.set',
-        { model: 'Enrollment', id: enrollment._id },
-        { before: entry.enrollment ?? undefined, after: enrollment.toObject() }
-      );
-      res.json(enrollment);
+// One decision for many students. All must be on the batch or none is changed;
+// each still gets its own audit entry, exactly as if decided one by one.
+router.put(
+  '/completion/bulk',
+  requirePermission('training:complete'),
+  validate(bulkCompletionSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { studentIds, sectionId, status, notes } = req.body;
+      await assertRefs(tenantId, { sectionId });
+
+      const batch = await getBatchEnrollments(tenantId, sectionId);
+      const byStudent = new Map(batch.map((b) => [String(b.student._id), b]));
+      if (studentIds.some((id) => !byStudent.has(id))) {
+        throw new AppError('Student is not on this batch', 404);
+      }
+
+      const updated = [];
+      for (const id of studentIds) {
+        updated.push(await recordCompletion(req, byStudent.get(id), { sectionId, status, notes }));
+      }
+      res.json({ updated: updated.length });
     } catch (err) {
       next(err);
     }

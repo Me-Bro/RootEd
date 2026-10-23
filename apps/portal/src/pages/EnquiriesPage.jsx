@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Select } from '@/components/ui/Input.jsx';
 import { Badge } from '@/components/ui/Badge.jsx';
 import { Card, CardContent } from '@/components/ui/Card.jsx';
-import { EmptyState, ErrorNote, Spinner } from '@/components/ui/Feedback.jsx';
+import { EmptyState, ErrorNote, ListSkeleton } from '@/components/ui/Feedback.jsx';
 import {
   Table,
   TableBody,
@@ -113,7 +113,7 @@ export default function EnquiriesPage() {
       </div>
 
       {query.isLoading ? (
-        <Spinner />
+        <ListSkeleton />
       ) : query.error ? (
         <ErrorNote error={query.error} onRetry={query.refetch} />
       ) : query.data.enquiries.length === 0 ? (

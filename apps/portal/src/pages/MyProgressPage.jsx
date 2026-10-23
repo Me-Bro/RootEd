@@ -5,7 +5,7 @@ import { fmtDate, fmtNum, fmtPct } from '@/lib/format.js';
 import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Badge } from '@/components/ui/Badge.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card.jsx';
-import { EmptyState, ErrorNote, Meter, Spinner } from '@/components/ui/Feedback.jsx';
+import { EmptyState, ErrorNote, ListSkeleton, Meter } from '@/components/ui/Feedback.jsx';
 import {
   Table,
   TableBody,
@@ -51,7 +51,7 @@ export default function MyProgressPage() {
     queryFn: () => api.get('/me/progress').then((r) => r.data),
   });
 
-  if (query.isLoading) return <Spinner />;
+  if (query.isLoading) return <ListSkeleton />;
   if (query.error) {
     const missing = query.error.response?.status === 404;
     return missing ? (

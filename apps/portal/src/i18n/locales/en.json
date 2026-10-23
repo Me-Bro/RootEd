@@ -5,6 +5,9 @@
     "language": "Language",
     "skipToContent": "Skip to content"
   },
+  "toast": {
+    "saved": "Saved"
+  },
   "notifications": {
     "label": "Notifications ({{count}} unread)",
     "title": "Notifications",
@@ -57,7 +60,26 @@
     "entering": "Opening…",
     "couldNotActivate": "Could not open that college. Please try again.",
     "logout": "Sign out",
-    "switchCollege": "Switch college"
+    "switchCollege": "Switch college",
+    "forgotTitle": "Forgot your password?",
+    "forgotIntro": "Enter your email and we will send you a link to set a new one.",
+    "email": "Email",
+    "sendResetLink": "Send reset link",
+    "sending": "Sending…",
+    "resetSent": "If that email has an account, a reset link is on its way. It works for 30 minutes.",
+    "resetRequestFailed": "We could not send the link. Please try again.",
+    "backToSignIn": "Back to sign in",
+    "resetTitle": "Set a new password",
+    "resetIntro": "Choose a password you have not used before.",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "setPassword": "Set password",
+    "saving": "Saving…",
+    "passwordTooShort": "That password is too short.",
+    "passwordsDiffer": "The two passwords do not match.",
+    "resetFailed": "We could not reset your password. The link may have expired.",
+    "resetDone": "Your password has been set. You can now sign in.",
+    "resetLinkMissing": "This reset link is incomplete. Ask for a new one."
   },
   "nav": {
     "main": "Main navigation",
@@ -236,7 +258,16 @@
       "record": "Record",
       "recordFor": "Record decision for {{name}}",
       "confirmQuestion": "{{decision}}: {{name}}?",
-      "confirmFor": "Confirm decision for {{name}}"
+      "confirmFor": "Confirm decision for {{name}}",
+      "selectRow": "Select {{name}}",
+      "selectAll": "Select every student shown",
+      "bulkGroup": "Decide for the selected students",
+      "bulkSelected": "{{count}} selected",
+      "bulkDecision": "Decision for the selected students",
+      "bulkNotes": "Notes for the selected students",
+      "bulkRecord": "Record for selected",
+      "bulkConfirmQuestion": "{{decision}} for {{count}} students?",
+      "bulkConfirm": "Confirm for selected"
     }
   },
   "me": {
@@ -609,6 +640,8 @@
     "progressOf": "{{completed}} of {{total}} items complete",
     "typeCount": "{{type}}: {{completed}} of {{total}}",
     "noItems": "There is nothing to complete yet.",
+    "nextUp": "Next up: {{title}}",
+    "allDone": "You have completed everything on your roadmap. Well done!",
     "viewLeaderboard": "See the leaderboard"
   },
   "leaderboard": {

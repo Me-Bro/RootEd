@@ -1,6 +1,9 @@
 import { lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MutationCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import i18n from '@/i18n/index.js';
+import { pushToast } from '@/lib/toast.js';
+import { Toaster } from '@/components/ui/Toaster.jsx';
 import { AuthProvider } from '@/contexts/AuthContext.jsx';
 import { useAuth } from '@/contexts/useAuth.js';
 import { hasPermission, homeRoute } from '@/lib/access.js';
@@ -8,6 +11,8 @@ import { Spinner } from '@/components/ui/Feedback.jsx';
 import PortalShell from '@/components/layout/PortalShell.jsx';
 import LandingPage from '@/pages/LandingPage.jsx';
 import LoginPage from '@/pages/LoginPage.jsx';
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage.jsx';
+import ResetPasswordPage from '@/pages/ResetPasswordPage.jsx';
 import SelectCollegePage from '@/pages/SelectCollegePage.jsx';
 import NoAccessPage from '@/pages/NoAccessPage.jsx';
 const DashboardPage = lazy(() => import('@/pages/DashboardPage.jsx'));
@@ -35,8 +40,20 @@ const STAFF_PAGES = [
   { path: '/completion', Page: CompletionPage },
 ];
 
+// Every save reports itself here, so no page has to remember to. A mutation that
+// is not a user's save (e.g. clearing the bell) sets `meta: { silent: true }`.
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
+  mutationCache: new MutationCache({
+    onSuccess: (_data, _vars, _ctx, mutation) => {
+      if (!mutation.meta?.silent) pushToast(i18n.t('toast.saved'));
+    },
+    onError: (error, _vars, _ctx, mutation) => {
+      if (!mutation.meta?.silent) {
+        pushToast(error?.response?.data?.error || i18n.t('common.error'), 'error');
+      }
+    },
+  }),
 });
 
 /** Signed in, with the user record loaded (AuthContext drops the token if /auth/me fails). */
@@ -78,10 +95,13 @@ function RootRoute() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <Toaster />
       <AuthProvider>
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route
               path="/select-college"
               element={

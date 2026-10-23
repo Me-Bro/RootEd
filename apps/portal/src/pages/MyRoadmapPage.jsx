@@ -5,14 +5,14 @@ import { Check, Lock } from 'lucide-react';
 import api from '@/lib/api.js';
 import { useAuth } from '@/contexts/useAuth.js';
 import { hasPermission } from '@/lib/access.js';
-import { TYPE_VARIANT, scheduleLabel } from '@/lib/roadmap.js';
+import { TYPE_VARIANT, nextUp, scheduleLabel } from '@/lib/roadmap.js';
 import { ProgressSummary } from '@/components/roadmap/ProgressSummary.jsx';
 import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Button } from '@/components/ui/Button.jsx';
 import { Input, Textarea } from '@/components/ui/Input.jsx';
 import { Badge } from '@/components/ui/Badge.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card.jsx';
-import { EmptyState, ErrorNote, Spinner } from '@/components/ui/Feedback.jsx';
+import { EmptyState, ErrorNote, ListSkeleton } from '@/components/ui/Feedback.jsx';
 
 // A link is only ever rendered as an anchor when it is plain http(s); the API
 // refuses anything else, this is the second lock on the same door.
@@ -137,7 +137,7 @@ export default function MyRoadmapPage() {
     queryFn: () => api.get('/me/roadmap').then((r) => r.data),
   });
 
-  if (query.isLoading) return <Spinner />;
+  if (query.isLoading) return <ListSkeleton />;
   if (query.error) {
     return query.error.response?.status === 404 ? (
       <EmptyState title={t('me.noRecord')} description={t('me.noRecordHint')} />
@@ -147,10 +147,21 @@ export default function MyRoadmapPage() {
   }
 
   const { roadmaps, summary } = query.data;
+  const next = nextUp(roadmaps);
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={t('myRoadmap.title')} description={t('myRoadmap.description')} />
       {roadmaps.length > 0 && <ProgressSummary summary={summary} />}
+      {next && (
+        <p className="rounded-lg bg-primary/10 p-3 text-sm font-medium" data-testid="next-up">
+          {t('myRoadmap.nextUp', { title: next.item.title })}
+        </p>
+      )}
+      {!next && summary.total > 0 && summary.completed === summary.total && (
+        <p className="rounded-lg bg-success/15 p-3 text-sm font-medium" data-testid="all-done">
+          {t('myRoadmap.allDone')}
+        </p>
+      )}
       {roadmaps.length === 0 && (
         <EmptyState title={t('myRoadmap.none')} description={t('myRoadmap.noneHint')} />
       )}
