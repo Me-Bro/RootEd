@@ -22,7 +22,8 @@ COPY apps/api ./apps/api
 COPY packages/shared ./packages/shared
 
 # Create self-contained production deployment
-RUN pnpm --filter api --prod deploy --legacy --ignore-scripts /deploy
+# Resolves package metadata from the registry again, so it needs the same allowances.
+RUN pnpm --filter api --prod deploy --legacy --ignore-scripts --fetch-timeout=600000 --fetch-retries=10 --fetch-retry-mintimeout=20000 --network-concurrency=8 /deploy
 
 FROM node:22-alpine AS runner
 WORKDIR /app
