@@ -11,6 +11,8 @@ import { Spinner } from '@/components/ui/Feedback.jsx';
 import PortalShell from '@/components/layout/PortalShell.jsx';
 import LandingPage from '@/pages/LandingPage.jsx';
 import LoginPage from '@/pages/LoginPage.jsx';
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage.jsx';
+import ResetPasswordPage from '@/pages/ResetPasswordPage.jsx';
 import SelectCollegePage from '@/pages/SelectCollegePage.jsx';
 import NoAccessPage from '@/pages/NoAccessPage.jsx';
 const DashboardPage = lazy(() => import('@/pages/DashboardPage.jsx'));
@@ -98,6 +100,8 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route
               path="/select-college"
               element={

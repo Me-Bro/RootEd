@@ -29,6 +29,14 @@ const schema = z.object({
   // of being looked up as a real tenant subdomain. Needed on deployments (like the
   // Cloudflare Tunnel one) where the apex domain isn't reachable/desired for login.
   PORTAL_SUBDOMAIN: z.string().optional(),
+  // Public origin of the RR Cloud Career Catalyst portal (apps/portal), e.g.
+  // "https://catalyst.ruralrootcloud.com". Only used so a password-reset link
+  // requested from that portal opens there; unset, every link goes to the main app.
+  CATALYST_PUBLIC_URL: z
+    .string()
+    .url()
+    .optional()
+    .transform((v) => v?.replace(/\/+$/, '')),
   // Comma-separated full origins (e.g. "https://rooted-uat.ranabrothers.online") served
   // in addition to *.APP_DOMAIN — lets one deployment answer on a second domain. CORS
   // plus emailed links (see getPortalHost); tenants still resolve under APP_DOMAIN.
@@ -101,4 +109,12 @@ export function getPortalHost(reqHost) {
   const host = (reqHost ?? '').split(':')[0].toLowerCase();
   const extra = env.EXTRA_ALLOWED_ORIGINS.map((o) => URL.parse(o)?.hostname);
   return host && extra.includes(host) ? host : canonical;
+}
+
+// Origin that a password-reset link should open. `app` is a fixed name, never a
+// URL from the request: a caller-supplied address would let anyone get a valid
+// reset token mailed to a page they control.
+export function getResetBaseUrl(app, reqHost) {
+  if (app === 'portal' && env.CATALYST_PUBLIC_URL) return env.CATALYST_PUBLIC_URL;
+  return `https://${getPortalHost(reqHost)}`;
 }

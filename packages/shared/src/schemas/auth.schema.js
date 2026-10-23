@@ -51,6 +51,8 @@ export const registerSchema = z.object({
 
 export const forgotPasswordSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
+  // Which app asked, so the emailed link opens there. A name, not a URL.
+  app: z.enum(['portal']).optional(),
 });
 
 export const resetPasswordSchema = z.object({
