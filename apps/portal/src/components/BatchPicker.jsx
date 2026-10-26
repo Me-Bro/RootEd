@@ -1,4 +1,7 @@
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '@/contexts/useAuth.js';
+import { hasPermission } from '@/lib/access.js';
 import { Select } from '@/components/ui/Input.jsx';
 import { EmptyState, ErrorNote, Spinner } from '@/components/ui/Feedback.jsx';
 
@@ -46,11 +49,24 @@ export function BatchPicker({ batch, showTerm = true }) {
  */
 export function BatchGate({ batch, children }) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   if (batch.loading) return <Spinner />;
   if (batch.error) return <ErrorNote error={batch.error} />;
   if (!batch.ready) {
+    // Only an administrator can add a programme run, so only they get the way there.
+    const canSetUp = batch.terms.length === 0 && hasPermission(user, 'tenant:admin');
     return (
-      <EmptyState title={t('training.batch.none')} description={t('training.batch.noneHint')} />
+      <EmptyState
+        title={t('training.batch.none')}
+        description={canSetUp ? t('setup.needTerm') : t('training.batch.noneHint')}
+        action={
+          canSetUp && (
+            <Link to="/setup" className="text-sm font-medium underline">
+              {t('setup.goSetup')}
+            </Link>
+          )
+        }
+      />
     );
   }
   return children;

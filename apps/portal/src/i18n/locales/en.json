@@ -98,7 +98,8 @@
     "myRoadmap": "My roadmap",
     "leaderboard": "Leaderboard",
     "students": "Students",
-    "team": "Team"
+    "team": "Team",
+    "setup": "Setup"
   },
   "noAccess": {
     "title": "Nothing to open yet",
@@ -749,6 +750,54 @@
       "approveFor": "Approve {{name}}",
       "reject": "Reject",
       "rejectFor": "Reject {{name}}"
+    }
+  },
+  "setup": {
+    "title": "Setup",
+    "description": "Create the programme runs and modules your batches work with.",
+    "name": "Name",
+    "code": "Code",
+    "startDate": "Starts",
+    "endDate": "Ends",
+    "terms": {
+      "title": "Programme runs (terms)",
+      "hint": "A programme run is one cycle of training, such as \"Semester 1\". Marks and assignments are recorded against it.",
+      "needYear": "Create an academic year first. Every programme run belongs to one.",
+      "createYear": "Create academic year",
+      "add": "Add programme run",
+      "none": "No programme runs yet"
+    },
+    "subjects": {
+      "title": "Modules (subjects)",
+      "hint": "A module is one subject taught, such as \"Python\". Give each a short unique code.",
+      "add": "Add module",
+      "none": "No modules yet"
+    },
+    "needTerm": "No programme run yet. Add one in Setup.",
+    "needSubject": "No modules yet. Add one in Setup.",
+    "goSetup": "Go to Setup",
+    "checklist": {
+      "title": "Set up your college",
+      "progress": "{{done}} of {{total}} steps done",
+      "done": "Done",
+      "todo": "Not done yet",
+      "terms": {
+        "title": "Add a programme run",
+        "hint": "Marks and assignments are recorded against it."
+      },
+      "subjects": {
+        "title": "Add modules",
+        "hint": "The subjects your trainers teach."
+      },
+      "batches": {
+        "title": "Create a batch",
+        "hint": "Add a class and a batch in the RootEd web app, under Classes & Sections."
+      },
+      "students": {
+        "title": "Add students",
+        "hint": "Add or import them under Students."
+      },
+      "open": "Open"
     }
   }
 }
