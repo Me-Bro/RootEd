@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '@/lib/api.js';
@@ -24,7 +25,7 @@ import {
 
 const STATUSES = ['pending', 'submitted', 'reviewed'];
 
-function NewAssignmentForm({ batch, subjects, onCreated }) {
+function NewAssignmentForm({ batch, subjects, subjectsLoaded, onCreated }) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [subjectId, setSubjectId] = useState('');
@@ -102,6 +103,14 @@ function NewAssignmentForm({ batch, subjects, onCreated }) {
           </div>
         </form>
         {create.error && <ErrorNote error={create.error} />}
+        {subjectsLoaded && subjects.length === 0 && (
+          <p className="mt-3 text-sm text-muted-foreground">
+            {t('setup.needSubject')}{' '}
+            <Link to="/setup" className="font-medium underline">
+              {t('setup.goSetup')}
+            </Link>
+          </p>
+        )}
       </CardContent>
     </Card>
   );
@@ -284,6 +293,7 @@ export default function AssignmentsPage() {
           <NewAssignmentForm
             batch={batch}
             subjects={subjects}
+            subjectsLoaded={subjectsQuery.isSuccess}
             onCreated={() => queryClient.invalidateQueries({ queryKey: ['training-assignments'] })}
           />
         )}

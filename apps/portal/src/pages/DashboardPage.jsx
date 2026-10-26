@@ -5,6 +5,7 @@ import { Download } from 'lucide-react';
 import api from '@/lib/api.js';
 import { useBatch } from '@/hooks/useBatch.js';
 import { BatchGate, BatchPicker } from '@/components/BatchPicker.jsx';
+import { SetupChecklist } from '@/components/SetupChecklist.jsx';
 import { MetricCard } from '@/components/MetricCard.jsx';
 import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Button } from '@/components/ui/Button.jsx';
@@ -58,6 +59,7 @@ export default function DashboardPage() {
           </Button>
         }
       />
+      <SetupChecklist />
       <BatchGate batch={batch}>
         <BatchPicker batch={batch} />
         {downloadError && <ErrorNote error={downloadError} />}
