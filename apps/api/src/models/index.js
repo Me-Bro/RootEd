@@ -54,6 +54,7 @@ export { StockMovement } from './StockMovement.js';
 export { Student } from './Student.js';
 export { Submission } from './Submission.js';
 export { Subject } from './Subject.js';
+export { SubjectTeacher } from './SubjectTeacher.js';
 export { Tenant } from './Tenant.js';
 export { TenantMembership } from './TenantMembership.js';
 export { Term } from './Term.js';
