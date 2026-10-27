@@ -268,6 +268,21 @@ export default function AssignmentsPage() {
   const subjects = subjectsQuery.data ?? [];
   const subjectName = (id) => subjects.find((s) => s._id === id)?.name ?? '—';
 
+  const teachersQuery = useQuery({
+    queryKey: ['subject-teachers', batch.sectionId, batch.termId],
+    queryFn: () =>
+      api
+        .get('/academic/subject-teachers', {
+          params: { sectionId: batch.sectionId, termId: batch.termId },
+        })
+        .then((r) => r.data),
+    enabled: batch.ready,
+  });
+  const teacherName = (subjectId) => {
+    const teacher = teachersQuery.data?.find((a) => a.subjectId === subjectId)?.teacher;
+    return teacher ? fullName(teacher) || teacher.email : null;
+  };
+
   const listQuery = useQuery({
     queryKey: ['training-assignments', batch.sectionId, batch.termId],
     queryFn: () =>
@@ -326,7 +341,14 @@ export default function AssignmentsPage() {
                   {listQuery.data.map((a) => (
                     <TableRow key={a._id} data-testid={`assignment-${a.title}`}>
                       <TableCell className="font-medium">{a.title}</TableCell>
-                      <TableCell>{subjectName(a.subjectId)}</TableCell>
+                      <TableCell>
+                        {subjectName(a.subjectId)}
+                        {teacherName(a.subjectId) && (
+                          <div className="text-xs text-muted-foreground">
+                            {teacherName(a.subjectId)}
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell>{fmtDate(a.dueDate, i18n.language)}</TableCell>
                       <TableCell>{a.maxScore}</TableCell>
                       <TableCell>

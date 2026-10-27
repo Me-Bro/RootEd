@@ -24,6 +24,7 @@ const STAFF_LINKS = [
   { to: '/people/students', key: 'students', permission: 'students:read' },
   { to: '/people/team', key: 'team', permission: 'roles:read' },
   { to: '/setup', key: 'setup', permission: 'tenant:admin' },
+  { to: '/teaching', key: 'teaching', permission: 'tenant:admin' },
   { to: '/me/progress', key: 'myProgress', permission: 'self:training:read' },
   { to: '/me/roadmap', key: 'myRoadmap', permission: 'self:training:read' },
   { to: '/me/leaderboard', key: 'leaderboard', permission: 'self:training:read' },

@@ -99,7 +99,8 @@
     "leaderboard": "Leaderboard",
     "students": "Students",
     "team": "Team",
-    "setup": "Setup"
+    "setup": "Setup",
+    "teaching": "Teaching"
   },
   "noAccess": {
     "title": "Nothing to open yet",
@@ -752,6 +753,16 @@
       "rejectFor": "Reject {{name}}"
     }
   },
+  "teaching": {
+    "title": "Teaching",
+    "description": "Choose who teaches each module for a batch and programme run.",
+    "teacher": "Teacher",
+    "notAssigned": "Not assigned",
+    "teacherFor": "Teacher for {{name}}",
+    "noSubjects": "No modules yet. Add one in Setup.",
+    "noStaff": "No team members yet. Add your trainers first.",
+    "goTeam": "Go to Team"
+  },
   "setup": {
     "title": "Setup",
     "description": "Create the programme runs and modules your batches work with.",
@@ -796,6 +807,10 @@
       "batches": {
         "title": "Create a batch",
         "hint": "Add a class and a batch in the RootEd web app, under Classes & Sections."
+      },
+      "teaching": {
+        "title": "Assign teachers to modules",
+        "hint": "Pick who teaches each module for a batch, under Teaching."
       },
       "students": {
         "title": "Add students",
