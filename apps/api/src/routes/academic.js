@@ -19,6 +19,8 @@ import {
   reportCardGenerateSchema,
   reportCardHistoryQuerySchema,
   studentAccountSchema,
+  createSubjectSchema,
+  updateSubjectSchema,
 } from '@rooted/shared/schemas';
 import { scoreToLetter, isBatchOrgType, isModuleEnabled } from '@rooted/shared/utils';
 import { REPORT_CARD_EXCLUDED_ASSESSMENT_TYPES } from '@rooted/shared/constants';
@@ -45,6 +47,7 @@ import { TenantMembership } from '../models/TenantMembership.js';
 import { provisionStudentAccount, sendClaimEmail } from '../services/identity.service.js';
 import { StaffMember } from '../models/StaffMember.js';
 import { Timetable } from '../models/Timetable.js';
+import { Assignment } from '../models/Assignment.js';
 import { TimetablePublish } from '../models/TimetablePublish.js';
 import { AttendanceRecord } from '../models/AttendanceRecord.js';
 import { Grade } from '../models/Grade.js';
@@ -270,21 +273,19 @@ router.patch('/sections/:id', requirePermission('tenant:admin'), async (req, res
 
 // ── Subjects ──────────────────────────────────────────────────────────────────
 
-router.post('/subjects', requirePermission('tenant:admin'), async (req, res, next) => {
-  try {
-    const { name, code, classId, creditHours } = req.body;
-    const subject = await Subject.create({
-      tenantId: req.tenant._id,
-      name,
-      code,
-      classId,
-      creditHours,
-    });
-    res.status(201).json(subject);
-  } catch (err) {
-    next(err);
+router.post(
+  '/subjects',
+  requirePermission('tenant:admin'),
+  validate(createSubjectSchema),
+  async (req, res, next) => {
+    try {
+      const subject = await Subject.create({ tenantId: req.tenant._id, ...req.body });
+      res.status(201).json(subject);
+    } catch (err) {
+      next(err);
+    }
   }
-});
+);
 
 router.get('/subjects', requirePermission('students:read'), async (req, res, next) => {
   try {
@@ -297,15 +298,42 @@ router.get('/subjects', requirePermission('students:read'), async (req, res, nex
   }
 });
 
-router.patch('/subjects/:id', requirePermission('tenant:admin'), async (req, res, next) => {
+router.patch(
+  '/subjects/:id',
+  requirePermission('tenant:admin'),
+  validate(updateSubjectSchema),
+  async (req, res, next) => {
+    try {
+      const subject = await Subject.findOneAndUpdate(
+        { _id: req.params.id, tenantId: req.tenant._id },
+        { $set: req.body },
+        { new: true }
+      );
+      if (!subject) return res.status(404).json({ error: 'Not found' });
+      res.json(subject);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// Grades, attendance and the like point at a subject by id, so deleting one that
+// is in use would orphan them. Unused subjects (a typo, a trial) can go.
+router.delete('/subjects/:id', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
-    const subject = await Subject.findOneAndUpdate(
-      { _id: req.params.id, tenantId: req.tenant._id },
-      { $set: req.body },
-      { new: true }
+    const tenantId = req.tenant._id;
+    const subjectId = req.params.id;
+    const used = await Promise.all(
+      [Grade, GradeLock, AttendanceRecord, Timetable, Assignment].map((m) =>
+        m.exists({ tenantId, subjectId })
+      )
     );
+    if (used.some(Boolean)) {
+      return res.status(409).json({ error: 'This module is in use and cannot be deleted' });
+    }
+    const subject = await Subject.findOneAndDelete({ _id: subjectId, tenantId });
     if (!subject) return res.status(404).json({ error: 'Not found' });
-    res.json(subject);
+    res.status(204).end();
   } catch (err) {
     next(err);
   }

@@ -147,6 +147,77 @@ function TermsCard() {
   );
 }
 
+function SubjectRow({ subject, onChanged }) {
+  const { t } = useTranslation();
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({ name: subject.name, code: subject.code });
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const save = useMutation({
+    mutationFn: () => api.patch(`/academic/subjects/${subject._id}`, form),
+    onSuccess: () => {
+      setEditing(false);
+      onChanged();
+    },
+  });
+  const remove = useMutation({
+    mutationFn: () => api.delete(`/academic/subjects/${subject._id}`),
+    onSuccess: onChanged,
+  });
+  const error = save.error || remove.error;
+
+  return (
+    <TableRow>
+      <TableCell className="font-medium">
+        {editing ? (
+          <Input aria-label={t('setup.name')} value={form.name} onChange={set('name')} required />
+        ) : (
+          subject.name
+        )}
+      </TableCell>
+      <TableCell>
+        {editing ? (
+          <Input aria-label={t('setup.code')} value={form.code} onChange={set('code')} required />
+        ) : (
+          subject.code
+        )}
+        {error && <ErrorNote error={error} />}
+      </TableCell>
+      <TableCell>
+        <span className="flex justify-end gap-1.5">
+          {editing ? (
+            <>
+              <Button size="sm" disabled={save.isPending} onClick={() => save.mutate()}>
+                {t('common.save')}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setEditing(false)}>
+                {t('common.cancel')}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+                {t('setup.subjects.edit')}
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                disabled={remove.isPending}
+                onClick={() =>
+                  window.confirm(t('setup.subjects.confirmDelete', { name: subject.name })) &&
+                  remove.mutate()
+                }
+              >
+                {t('setup.subjects.delete')}
+              </Button>
+            </>
+          )}
+        </span>
+      </TableCell>
+    </TableRow>
+  );
+}
+
 function SubjectsCard() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -199,14 +270,18 @@ function SubjectsCard() {
               <TableRow>
                 <TableHead>{t('setup.name')}</TableHead>
                 <TableHead>{t('setup.code')}</TableHead>
+                <TableHead>
+                  <span className="sr-only">{t('setup.subjects.actions')}</span>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {subjects.data.map((s) => (
-                <TableRow key={s._id}>
-                  <TableCell className="font-medium">{s.name}</TableCell>
-                  <TableCell>{s.code}</TableCell>
-                </TableRow>
+                <SubjectRow
+                  key={s._id}
+                  subject={s}
+                  onChanged={() => queryClient.invalidateQueries({ queryKey: ['subjects'] })}
+                />
               ))}
             </TableBody>
           </Table>
