@@ -771,6 +771,10 @@
       "title": "Modules (subjects)",
       "hint": "A module is one subject taught, such as \"Python\". Give each a short unique code.",
       "add": "Add module",
+      "edit": "Edit",
+      "delete": "Delete",
+      "actions": "Actions",
+      "confirmDelete": "Delete the module \"{{name}}\"? This cannot be undone.",
       "none": "No modules yet"
     },
     "needTerm": "No programme run yet. Add one in Setup.",

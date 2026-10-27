@@ -15,6 +15,14 @@ export function errorHandler(err, req, res, _next) {
     return res.status(400).json({ error: 'Validation error', details });
   }
 
+  // A unique-index clash is the caller's conflict, not a server fault.
+  if (err?.code === 11000) {
+    const field = Object.keys(err.keyPattern ?? {}).find((k) => k !== 'tenantId');
+    return res.status(409).json({
+      error: field ? `A record with this ${field} already exists` : 'Record already exists',
+    });
+  }
+
   const status = err.status ?? err.statusCode ?? 500;
   const message = status < 500 ? err.message : 'Internal server error';
 

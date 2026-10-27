@@ -5,6 +5,16 @@ const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid id');
 const dateString = z.coerce.date();
 const assessmentType = z.enum(ASSESSMENT_TYPES);
 
+export const createSubjectSchema = z.object({
+  name: z.string().trim().min(1),
+  code: z.string().trim().min(1),
+  classId: objectId.optional(),
+  creditHours: z.number().positive().optional(),
+});
+
+// Partial, so a PATCH can send one field; unknown keys (tenantId) are stripped.
+export const updateSubjectSchema = createSubjectSchema.partial();
+
 export const markAttendanceSchema = z.object({
   date: dateString,
   sectionId: objectId,
