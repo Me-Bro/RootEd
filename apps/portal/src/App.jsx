@@ -30,6 +30,7 @@ const RoadmapPage = lazy(() => import('@/pages/RoadmapPage.jsx'));
 const PeopleStudentsPage = lazy(() => import('@/pages/PeopleStudentsPage.jsx'));
 const PeopleTeamPage = lazy(() => import('@/pages/PeopleTeamPage.jsx'));
 const SetupPage = lazy(() => import('@/pages/SetupPage.jsx'));
+const TeachingPage = lazy(() => import('@/pages/TeachingPage.jsx'));
 
 // Pages for anyone who can read the college's training data (trainer, TPO, admin).
 // What a page lets them change is decided inside it, by training:write / :complete.
@@ -163,6 +164,14 @@ export default function App() {
                 element={
                   <RequireAccess permission="tenant:admin">
                     <SetupPage />
+                  </RequireAccess>
+                }
+              />
+              <Route
+                path="/teaching"
+                element={
+                  <RequireAccess permission="tenant:admin">
+                    <TeachingPage />
                   </RequireAccess>
                 }
               />

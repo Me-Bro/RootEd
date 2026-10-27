@@ -39,19 +39,27 @@ export function SetupChecklist() {
     queryFn: () => api.get('/academic/classes?includeSections=true').then((r) => r.data),
     enabled: isAdmin,
   });
+  // Any assignment at all, in any batch: the step is about starting, not finishing.
+  const teaching = useQuery({
+    queryKey: ['subject-teachers'],
+    queryFn: () => api.get('/academic/subject-teachers').then((r) => r.data),
+    enabled: isAdmin,
+  });
   const students = useQuery({
     queryKey: ['students-count'],
     queryFn: () => api.get('/academic/students?limit=1').then((r) => r.data.total),
     enabled: isAdmin,
   });
 
-  if (!isAdmin || [terms, subjects, classes, students].some((q) => !q.isSuccess)) return null;
+  if (!isAdmin || [terms, subjects, classes, teaching, students].some((q) => !q.isSuccess))
+    return null;
 
   // `to` is only set where the portal has a screen; creating a batch is still done in the web app.
   const steps = [
     { key: 'terms', done: terms.data.length > 0, to: '/setup' },
     { key: 'subjects', done: subjects.data.length > 0, to: '/setup' },
     { key: 'batches', done: classes.data.some((c) => c.sections?.length > 0) },
+    { key: 'teaching', done: teaching.data.length > 0, to: '/teaching' },
     { key: 'students', done: students.data > 0, to: '/people/students' },
   ];
   const doneCount = steps.filter((s) => s.done).length;
