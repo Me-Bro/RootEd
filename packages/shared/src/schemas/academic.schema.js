@@ -15,6 +15,18 @@ export const createSubjectSchema = z.object({
 // Partial, so a PATCH can send one field; unknown keys (tenantId) are stripped.
 export const updateSubjectSchema = createSubjectSchema.partial();
 
+export const subjectTeacherSchema = z.object({
+  subjectId: objectId,
+  sectionId: objectId,
+  termId: objectId,
+  teacherId: objectId,
+});
+
+export const subjectTeacherQuerySchema = z.object({
+  sectionId: objectId.optional(),
+  termId: objectId.optional(),
+});
+
 export const markAttendanceSchema = z.object({
   date: dateString,
   sectionId: objectId,

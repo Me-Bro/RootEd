@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import multer from 'multer';
 import { parse } from 'csv-parse/sync';
 import { Queue } from 'bullmq';
@@ -21,6 +22,8 @@ import {
   studentAccountSchema,
   createSubjectSchema,
   updateSubjectSchema,
+  subjectTeacherSchema,
+  subjectTeacherQuerySchema,
 } from '@rooted/shared/schemas';
 import { scoreToLetter, isBatchOrgType, isModuleEnabled } from '@rooted/shared/utils';
 import { REPORT_CARD_EXCLUDED_ASSESSMENT_TYPES } from '@rooted/shared/constants';
@@ -48,6 +51,9 @@ import { provisionStudentAccount, sendClaimEmail } from '../services/identity.se
 import { StaffMember } from '../models/StaffMember.js';
 import { Timetable } from '../models/Timetable.js';
 import { Assignment } from '../models/Assignment.js';
+import { SubjectTeacher } from '../models/SubjectTeacher.js';
+import { assertRefs } from '../services/training.service.js';
+import { assertTeacher } from '../services/subjectTeacher.service.js';
 import { TimetablePublish } from '../models/TimetablePublish.js';
 import { AttendanceRecord } from '../models/AttendanceRecord.js';
 import { Grade } from '../models/Grade.js';
@@ -324,7 +330,7 @@ router.delete('/subjects/:id', requirePermission('tenant:admin'), async (req, re
     const tenantId = req.tenant._id;
     const subjectId = req.params.id;
     const used = await Promise.all(
-      [Grade, GradeLock, AttendanceRecord, Timetable, Assignment].map((m) =>
+      [Grade, GradeLock, AttendanceRecord, Timetable, Assignment, SubjectTeacher].map((m) =>
         m.exists({ tenantId, subjectId })
       )
     );
@@ -338,6 +344,83 @@ router.delete('/subjects/:id', requirePermission('tenant:admin'), async (req, re
     next(err);
   }
 });
+
+// ── Subject teachers ──────────────────────────────────────────────────────────
+
+router.get('/subject-teachers', requirePermission('training:read'), async (req, res, next) => {
+  try {
+    const query = subjectTeacherQuerySchema.parse(req.query);
+    const rows = await SubjectTeacher.find({ tenantId: req.tenant._id, ...query })
+      .populate('teacherId', 'firstName lastName email')
+      .lean();
+    res.json(
+      rows.map(({ teacherId, ...row }) => ({
+        ...row,
+        teacherId: teacherId?._id ?? null,
+        teacher: teacherId ?? null,
+      }))
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+// One teacher per module, batch and run: assigning again replaces the old one.
+router.put(
+  '/subject-teachers',
+  requirePermission('tenant:admin'),
+  validate(subjectTeacherSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { subjectId, sectionId, termId, teacherId } = req.body;
+      await assertRefs(tenantId, { subjectId, sectionId, termId });
+      await assertTeacher(tenantId, teacherId);
+
+      const row = await SubjectTeacher.findOneAndUpdate(
+        { tenantId, subjectId, sectionId, termId },
+        { $set: { teacherId } },
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+      );
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'subject_teacher.assign',
+        target: { model: 'SubjectTeacher', id: row._id },
+        after: { subjectId, sectionId, termId, teacherId },
+        ip: req.ip,
+      });
+      res.json(row);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.delete(
+  '/subject-teachers/:id',
+  requirePermission('tenant:admin'),
+  async (req, res, next) => {
+    try {
+      if (!mongoose.isValidObjectId(req.params.id))
+        return res.status(404).json({ error: 'Not found' });
+      const tenantId = req.tenant._id;
+      const row = await SubjectTeacher.findOneAndDelete({ _id: req.params.id, tenantId });
+      if (!row) return res.status(404).json({ error: 'Not found' });
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'subject_teacher.remove',
+        target: { model: 'SubjectTeacher', id: row._id },
+        before: { subjectId: row.subjectId, sectionId: row.sectionId, termId: row.termId },
+        ip: req.ip,
+      });
+      res.status(204).end();
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 // ── Students ──────────────────────────────────────────────────────────────────
 
