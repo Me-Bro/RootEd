@@ -44,18 +44,19 @@ RootEd/
 │   │       ├── __tests__/  # Jest/Supertest tests
 │   │       ├── app.js      # Express app + middleware chain
 │   │       └── index.js    # process entrypoint
-│   └── web/                 # React 19 SPA (Vite, no TypeScript)
-│       └── src/
-│           ├── components/ # UI components (attendance, ui/, etc.)
-│           ├── contexts/   # React context providers
-│           ├── hooks/      # custom hooks
-│           ├── i18n/       # i18next setup + en/hi locales, hi_en merge
-│           ├── lib/        # API client (axios), etc.
-│           ├── pages/      # route-level pages
-│           ├── stories/    # Storybook stories
-│           └── utils/      # frontend helpers
+│   ├── rooted/              # React 19 SPA for schools (Vite, no TypeScript)
+│   │   └── src/
+│   │       ├── components/ # UI components (attendance, ui/, etc.)
+│   │       ├── contexts/   # React context providers
+│   │       ├── hooks/      # custom hooks
+│   │       ├── i18n/       # i18next setup + en/hi locales, hi_en merge
+│   │       ├── lib/        # API client (axios), etc.
+│   │       ├── pages/      # route-level pages
+│   │       ├── stories/    # Storybook stories
+│   │       └── utils/      # frontend helpers
+│   └── catalyst/            # RR Cloud Career Catalyst: React SPA for college training/placement
 ├── packages/
-│   └── shared/              # Zod schemas shared by api + web
+│   └── shared/              # Zod schemas shared by api, rooted and catalyst
 ├── docs/
 │   ├── adr/                 # architecture decision records
 │   └── mobile-ui/           # mobile-responsive design notes
@@ -73,8 +74,9 @@ See [CLAUDE.md](CLAUDE.md) for full dev setup, commands, and architecture notes.
 
 ```bash
 pnpm install
-pnpm dev:api    # Express API on :3001
-pnpm dev:web    # Vite frontend on :5173
+pnpm dev:api        # Express API on :3001
+pnpm dev:rooted     # RootEd school frontend (Vite) on :5173
+pnpm dev:catalyst   # Career Catalyst frontend (Vite) on :5174
 ```
 
 ## Deployment

@@ -1,14 +1,14 @@
 # E2E Test Plan — RootEd (Playwright)
 
 ## Tool
-Playwright — already configured at `apps/web/playwright.config.js`. Extend it.
+Playwright — already configured at `apps/rooted/playwright.config.js`. Extend it.
 
 ---
 
 ## Test Organization
 
 ```
-apps/web/tests/
+apps/rooted/tests/
 ├── axe.spec.js                   ← existing (accessibility)
 ├── fixtures/
 │   ├── auth.js                   ← login helpers, role fixtures
@@ -143,7 +143,7 @@ tests/
 
 ## CI Integration
 
-Add to `apps/web/package.json`:
+Add to `apps/rooted/package.json`:
 
 ```json
 {
@@ -170,7 +170,7 @@ steps:
     run: pnpm seed:test
 
   - name: Run E2E tests
-    run: pnpm --filter web test:e2e
+    run: pnpm --filter rooted test:e2e
 ```
 
 ---
@@ -306,10 +306,10 @@ steps:
 
 | File | Purpose |
 |------|---------|
-| `apps/web/tests/fixtures/auth.js` | `loginAs(browser, role)` with storageState caching |
-| `apps/web/tests/fixtures/data.js` | Entity creation helpers via API |
-| `apps/web/tests/seed/seed.js` | One-time DB seed script |
-| `apps/web/tests/seed/snapshot.js` | mongodump/mongorestore helpers |
-| `apps/web/tests/fixtures/files/students-valid.csv` | Valid bulk import fixture |
-| `apps/web/tests/fixtures/files/students-malformed.csv` | Invalid CSV for error testing |
-| `apps/web/tests/fixtures/files/attachment.pdf` | Expense/staff doc upload fixture |
+| `apps/rooted/tests/fixtures/auth.js` | `loginAs(browser, role)` with storageState caching |
+| `apps/rooted/tests/fixtures/data.js` | Entity creation helpers via API |
+| `apps/rooted/tests/seed/seed.js` | One-time DB seed script |
+| `apps/rooted/tests/seed/snapshot.js` | mongodump/mongorestore helpers |
+| `apps/rooted/tests/fixtures/files/students-valid.csv` | Valid bulk import fixture |
+| `apps/rooted/tests/fixtures/files/students-malformed.csv` | Invalid CSV for error testing |
+| `apps/rooted/tests/fixtures/files/attachment.pdf` | Expense/staff doc upload fixture |

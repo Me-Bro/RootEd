@@ -10,7 +10,7 @@ See [CLAUDE.md](CLAUDE.md) for full dev environment setup (env vars, Docker vari
 pnpm install
 cp apps/api/.env.example apps/api/.env   # fill in required vars, see CLAUDE.md
 pnpm dev:api
-pnpm dev:web
+pnpm dev:rooted
 ```
 
 ## Workflow

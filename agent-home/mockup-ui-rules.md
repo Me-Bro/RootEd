@@ -56,7 +56,7 @@ absent, Heena Malhotra late. Wrong data is the fastest way to lose a reviewer's 
 
 Before designing, read the page being redesigned and count what it costs today: taps of
 setup, native pickers, horizontal scroll, silent failure modes. Every claim in a mockup
-("11 setup taps") must be traceable to a line in `apps/web/src/pages/**`. Bugs found while
+("11 setup taps") must be traceable to a line in `apps/rooted/src/pages/**`. Bugs found while
 auditing go in the plan's findings section, not silently fixed in the mockup.
 
 ## Rule 5 — one product, two widths

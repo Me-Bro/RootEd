@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: [api, web, portal]
+        app: [api, rooted, catalyst]
 
     services:
       mongodb:
@@ -126,7 +126,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browser
-        run: pnpm --filter web exec playwright install --with-deps chromium
+        run: pnpm --filter rooted exec playwright install --with-deps chromium
 
       - name: Seed the test database
         run: pnpm --filter api seed:test:clean
@@ -144,22 +144,22 @@ jobs:
       # cannot see — an unenforced browser suite is how 20 failures accumulated
       # on main unnoticed.
       - name: Run Playwright e2e
-        run: pnpm --filter web test:e2e
+        run: pnpm --filter rooted test:e2e
 
       - name: Run axe accessibility check
         if: always()
-        run: pnpm --filter web exec playwright test --project=axe
+        run: pnpm --filter rooted exec playwright test --project=axe
 
       # The portal (RR Cloud Career Catalyst) is a separate app on the same API;
       # its Playwright config starts its own vite server on :5174, which proxies
       # to the API started above.
-      - name: Run portal e2e
+      - name: Run catalyst e2e
         if: always()
-        run: pnpm --filter portal test:e2e
+        run: pnpm --filter catalyst test:e2e
 
-      - name: Run portal axe accessibility check
+      - name: Run catalyst axe accessibility check
         if: always()
-        run: pnpm --filter portal test:axe
+        run: pnpm --filter catalyst test:axe
 
       - name: API log
         if: failure()
@@ -171,10 +171,10 @@ jobs:
         with:
           name: playwright-report
           path: |
-            apps/web/playwright-report
-            apps/web/test-results
-            apps/portal/playwright-report
-            apps/portal/test-results
+            apps/rooted/playwright-report
+            apps/rooted/test-results
+            apps/catalyst/playwright-report
+            apps/catalyst/test-results
           retention-days: 7
 
   build:
@@ -209,9 +209,9 @@ jobs:
       - name: Build and push Web
         uses: docker/build-push-action@v5
         with:
-          context: ./apps/web
+          context: ./apps/rooted
           push: true
-          tags: ghcr.io/${{ github.repository }}/web:${{ github.sha }},ghcr.io/${{ github.repository }}/web:latest
+          tags: ghcr.io/${{ github.repository }}/rooted:${{ github.sha }},ghcr.io/${{ github.repository }}/rooted:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -221,9 +221,9 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: apps/portal/Dockerfile
+          file: apps/catalyst/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}/portal:${{ github.sha }},ghcr.io/${{ github.repository }}/portal:latest
+          tags: ghcr.io/${{ github.repository }}/catalyst:${{ github.sha }},ghcr.io/${{ github.repository }}/catalyst:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -241,10 +241,10 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Build web
-        run: pnpm --filter web build
+      - name: Build rooted
+        run: pnpm --filter rooted build
       - name: Run Lighthouse CI
-        run: pnpm --filter web exec lhci autorun
+        run: pnpm --filter rooted exec lhci autorun
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
 

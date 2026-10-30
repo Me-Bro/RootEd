@@ -63,7 +63,7 @@ dev stack:
 If the task genuinely requires super_admin (e.g. testing cross-tenant admin
 screens), log in at the bare `APP_DOMAIN` host (or `PORTAL_SUBDOMAIN`) first,
 go to **Tenants → pick the tenant → Impersonate** button
-(`apps/web/src/pages/admin/TenantDetailPage.jsx`, calls `POST
+(`apps/rooted/src/pages/admin/TenantDetailPage.jsx`, calls `POST
 /admin/tenants/:id/impersonate`), which redirects to the tenant subdomain
 with an impersonation token — *that's* when a super_admin gets real tenant
 permissions, not from logging in on the subdomain directly.
@@ -75,7 +75,7 @@ permissions, not from logging in on the subdomain directly.
 | No sidebar sections, dashboard shows tenant counts not school data | Logged in as `super_admin` without impersonating — see §2 |
 | Sidebar has *some* items but fewer than a tenant_admin | Expected — that role's permission template is narrower, not a bug |
 | "Tenant not found" / 404 on load | Wrong subdomain (see §1), or hit a host that doesn't end in `.${APP_DOMAIN}` |
-| "invalid csrf token" on every mutating request | Stale/absolute `VITE_API_URL` in `apps/web/.env` — see CLAUDE.md's dev-mode section, not a login issue |
+| "invalid csrf token" on every mutating request | Stale/absolute `VITE_API_URL` in `apps/rooted/.env` — see CLAUDE.md's dev-mode section, not a login issue |
 | Page loads but every list/query is empty even for `tadmin` | Check you're pointed at the DB you think you are — dev (`rooted`) vs test (`rooted_test`) have separate, differently-shaped seed data; confirm with the tenant query in §1 against the right container |
 
 ## 4. Verifying a claim before making it

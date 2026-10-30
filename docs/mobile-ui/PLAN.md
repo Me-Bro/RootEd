@@ -1,6 +1,6 @@
 # Academic Module — Mobile UI Plan
 
-> **Scope:** the 10 Academic screens in `apps/web/src/pages/academic/`, redesigned for a
+> **Scope:** the 10 Academic screens in `apps/rooted/src/pages/academic/`, redesigned for a
 > phone (390 × 844). Five UI concepts per screen, in `docs/mobile-ui/*.html`.
 > **Status:** design proposals for review — no application code changed yet.
 > **Data:** every mockup uses the real seeded dataset (1000 students, 74 staff,

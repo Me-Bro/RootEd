@@ -2,7 +2,7 @@
    proposals, no build step, no framework. Brand tokens pulled from the
    product's own favicon.svg (violet/cyan) and LoginPage.jsx's existing brand
    glow — nothing invented here that isn't already latent in the shipped app.
-   Body font matches apps/web/src/index.css (Geist Variable) so this reads as
+   Body font matches apps/rooted/src/index.css (Geist Variable) so this reads as
    the same product, not a bolted-on microsite. */
 
 :root {

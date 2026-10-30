@@ -13,11 +13,11 @@ Thumbs.db
 cookies.txt
 
 # Playwright
-apps/web/playwright-report/
-apps/web/test-results/
-apps/web/tests/fixtures/.auth/
-apps/web/tests/seed/.snapshot/
-apps/web/tests/seed/.test-ids.json
+apps/rooted/playwright-report/
+apps/rooted/test-results/
+apps/rooted/tests/fixtures/.auth/
+apps/rooted/tests/seed/.snapshot/
+apps/rooted/tests/seed/.test-ids.json
 
 .claude/settings.local.json
 

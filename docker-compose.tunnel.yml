@@ -26,7 +26,7 @@
 # Usage:
 #   docker compose -f docker-compose.yml -f docker-compose.tunnel.yml up -d --build
 
-# RR Cloud Career Catalyst (apps/portal) is served at catalyst.ruralrootcloud.com —
+# RR Cloud Career Catalyst (apps/catalyst) is served at catalyst.ruralrootcloud.com —
 # one label under the zone, covered by the same Universal SSL cert. It needs its
 # own one-time DNS route and an explicit cloudflared ingress line (a wildcard
 # rule alone is not enough, see agent-home/prod-staging-mongo-migration.md):
@@ -40,14 +40,14 @@ services:
       - ./nginx/nginx.tunnel.conf:/etc/nginx/nginx.conf:ro
     ports: !override
       - '80:80'
-  portal:
+  catalyst:
     build:
       args:
         VITE_APP_DOMAIN: ruralrootcloud.com
         VITE_MAIN_APP_URL: https://rooted.ruralrootcloud.com
     environment:
       PORTAL_API_HOST: rooted.ruralrootcloud.com
-  web:
+  rooted:
     build:
       args:
         VITE_APP_DOMAIN: ruralrootcloud.com

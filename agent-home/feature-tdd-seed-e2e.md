@@ -42,12 +42,12 @@ just written. Four phases, run in order.
 
 ## 4. E2E testing
 
-- Write/extend Playwright specs under `apps/web/tests/` *before* or alongside
+- Write/extend Playwright specs under `apps/rooted/tests/` *before* or alongside
   the UI (same red→green discipline as step 2).
 - Bring up the stack per `CLAUDE.md`'s E2E section — infra via
   `docker compose -f docker-compose.yml -f docker-compose.test.yml up -d`,
   API via `node --env-file=apps/api/.env.test apps/api/src/index.js`, web via
-  `pnpm --filter web exec vite --mode test`.
+  `pnpm --filter rooted exec vite --mode test`.
 - **If a dev stack is already running on those ports** (`docker ps`), don't
   fight it — `docker stop` just `web`/`nginx`/`api` for the duration, run
   local instead, and restore the dev stack afterward

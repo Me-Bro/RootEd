@@ -24,7 +24,7 @@ services:
     pull_policy: missing
 
   # Disable web and nginx — Playwright drives the Vite dev server locally
-  web:
+  rooted:
     profiles:
       - disabled
   nginx:

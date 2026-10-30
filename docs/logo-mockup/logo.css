@@ -1,6 +1,6 @@
 /* RootEd — logo/icon exploration. Self-contained, no build step.
    Brand tokens match docs/landing-page-mockup/landing.css (same violet/cyan
-   already shipped in apps/web/public/favicon.svg + LoginPage.jsx's brand glow). */
+   already shipped in apps/rooted/public/favicon.svg + LoginPage.jsx's brand glow). */
 
 :root {
   --ink: #0f1115;
@@ -92,7 +92,7 @@ a { color: inherit; }
 .icon-tile .sq.on-brand { background: var(--brand-grad); }
 .icon-tile .sq.on-brand svg { color: #fff; }
 
-/* nav lockup test (icon + wordmark, the actual usage in apps/web) */
+/* nav lockup test (icon + wordmark, the actual usage in apps/rooted) */
 .lockup { width: 130px; height: 130px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; gap: 8px; }
 .lockup.light { background: #ffffff; box-shadow: var(--shadow-sm); }
 .lockup.dark { background: #0b0d12; border: 1px solid #262b36; }

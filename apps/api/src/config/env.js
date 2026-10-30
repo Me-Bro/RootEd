@@ -29,7 +29,7 @@ const schema = z.object({
   // of being looked up as a real tenant subdomain. Needed on deployments (like the
   // Cloudflare Tunnel one) where the apex domain isn't reachable/desired for login.
   PORTAL_SUBDOMAIN: z.string().optional(),
-  // Public origin of the RR Cloud Career Catalyst portal (apps/portal), e.g.
+  // Public origin of the RR Cloud Career Catalyst portal (apps/catalyst), e.g.
   // "https://catalyst.ruralrootcloud.com". Only used so a password-reset link
   // requested from that portal, and a claim link for a college on the training
   // programme, open there; unset, every link goes to the main app.
