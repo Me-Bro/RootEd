@@ -80,6 +80,10 @@ pnpm --filter rooted test:seed:docker
 pnpm --filter rooted test:snapshot:dump
 pnpm --filter rooted test:snapshot:restore
 
+# Run pending data migrations (apps/api/src/migrations/*.js, tracked in MigrationLog).
+# These also run automatically at API boot, before the workers start.
+pnpm --filter api migrate:run
+
 # Reconcile every collection's indexes with its schema (Mongo will not redefine
 # an index in place, so a changed sparse/unique/partial option needs this).
 # --dry-run reports drift and exits 1, usable as a pre-deploy gate.
@@ -115,21 +119,29 @@ seeded users share password `TestPass123!`.
 - `apps/catalyst` — **RR Cloud Career Catalyst** (renamed from `apps/portal`; the compose service, pnpm package and GHCR image are `catalyst`, while API env vars like `PORTAL_API_HOST`/`PORTAL_SUBDOMAIN` keep their names): a second, separate React SPA for the `training` module (college training/placement tracking). Same API and database as `apps/rooted`, own build/nginx/hostname. It never uses a tenant subdomain: its server presents the deployment's existing portal host (`PORTAL_API_HOST`) to the API, so the college comes from the sign-in token. See `agent-home/portal-dev-and-deploy.md` before touching it. `/` is its public landing page (English and Hindi; the Hindi copy has not had a native-speaker review); the "request a proposal" form posts to the public `POST /enquiries`, stored as a platform-level `CollegeEnquiry` (no tenant, like `Feedback`) that `super_admin` reviews at `/enquiries` (`GET`/`PATCH /admin/enquiries`).
 - `packages/shared` — Zod validation schemas shared by the apps
 
-**Multi-tenant model:** Shared MongoDB database, tenant-scoped via `tenantId` field. `apps/api/src/models/plugins/tenantScope.js` is a Mongoose plugin (applied to every model except `Tenant` and `User`) that throws on any find/update/save missing `tenantId` in its filter — this is the tenant-isolation guarantee, not an app-level convention. Callers that must cross tenants (e.g. super-admin routes) pass `{ _bypassTenantScope: true }` in query options. Compound indexes follow `{tenantId:1, ...}` pattern.
+**Multi-tenant model:** Shared MongoDB database, tenant-scoped via `tenantId` field. `apps/api/src/models/plugins/tenantScope.js` is a Mongoose plugin (applied to every tenant-owned model; the platform-level models `Tenant`, `User`, `AuditLog`, `FeatureFlag`, `Feedback`, `CollegeEnquiry`, `RequestLog` and `MigrationLog` deliberately skip it) that throws on any find/update/save missing `tenantId` in its filter — this is the tenant-isolation guarantee, not an app-level convention. Callers that must cross tenants (e.g. super-admin routes) pass `{ _bypassTenantScope: true }` in query options. Compound indexes follow `{tenantId:1, ...}` pattern.
 
 **Prod + staging split:** The live deployment runs as two independent checkouts on the same box — prod (`rooted.ruralrootcloud.com`) and staging (`rooted-uat.ruralrootcloud.com`) — sharing **one** Mongo instance (separate `rooted`/`rooted_uat` databases, separate credentials) that lives outside either app checkout so neither owns its lifecycle. Staging reuses the `PORTAL_SUBDOMAIN` mechanism (`getPortalHost()` in `apps/api/src/config/env.js`) instead of a second-level `APP_DOMAIN`, since Cloudflare's free wildcard cert only covers one subdomain level. Each checkout runs its own Redis/Minio. See `agent-home/prod-staging-mongo-migration.md` for the full setup, including a cloudflared gotcha: its wildcard ingress matching is full-label only, so each staging hostname (not just prod's) needs an explicit config line, not a shared wildcard rule.
 
 **Auth flow:** JWT (15m access token) + refresh token in httpOnly cookie (7d, `SameSite=Lax`). Revocation via Redis blocklist, checked two ways in `authenticate()`: per-token (`isTokenBlocked`) and per-user (`blocklist:user:<id>` timestamp set by the revoke-all-sessions runbook, compared against the token's `iat`). MFA via TOTP (otplib). Three-layer RBAC: System (`user.systemRole`, e.g. `super_admin`) → Tenant (`TenantMembership`) → Module permissions (`Role.permissions`, from a fixed `PERMISSIONS` list in `models/Role.js`); 5 role templates seeded per tenant (`tenant_admin`, `principal`, `teacher`, `accountant`, `librarian`). Resolved permissions are cached in Redis for 60s per `(tenantId, userId)` — role/membership changes can take up to a minute to take effect.
 
 **Request lifecycle** (see `apps/api/src/app.js` for the actual middleware order — routers are mounted, not chained in one file):
-1. Global: `helmet` → CORS (dev/test allows any origin; prod restricts to `*.${APP_DOMAIN}`) → cookie parser → JSON body parse → `sanitizeBody()` (DOMPurify XSS sanitization) → request logging/metrics → rate limiting → CSRF (double-submit cookie via `csrf-csrf`, skipped for `GET`/`HEAD`/`OPTIONS` and `/auth/login`, `/auth/refresh`)
-2. `/auth` and `/admin` routers mount *before* `resolveTenant()` — they are tenant-agnostic (login, refresh, system-level admin)
-3. `resolveTenant()` runs once, globally, before all tenant-scoped routers (`/tenant`, `/academic`, `/staff`, `/expense`, `/fee`, `/inventory`, `/billing`) — it strips `.${APP_DOMAIN}` off the request Host header to get the subdomain and loads the active `Tenant` into `req.tenant`
+1. Global: `helmet` → CORS (dev/test allows any origin; prod restricts to `*.${APP_DOMAIN}`) → cookie parser → JSON body parse → `sanitizeBody()` (DOMPurify XSS sanitization) → request logging/metrics (`requestMonitor`, persisted by the `requestLog` worker to a separate monitoring DB, see below) → rate limiting → CSRF (double-submit cookie via `csrf-csrf`, skipped for `GET`/`HEAD`/`OPTIONS` and `/auth/login`, `/auth/refresh`)
+2. `/auth`, `/admin`, `/orgs` (organization creation on the bare domain), `/feedback` and `/enquiries` (both public) mount *before* `resolveTenant()` — they are tenant-agnostic
+3. `resolveTenant()` runs once, globally, before all tenant-scoped routers (`/me`, `/tenant`, `/academic`, `/staff`, `/expense`, `/fee`, `/inventory`, `/training/roadmaps`, `/training`, and `/billing`, which is only mounted when `BILLING_ENABLED`). It strips `.${APP_DOMAIN}` off the request Host header to get the subdomain and loads the active `Tenant` into `req.tenant`. Module routers are then gated by `requireModuleEnabled(<module>)`
 4. Each tenant router applies `authenticate()` (JWT + blocklist) via `router.use()`, then individual routes apply `requirePermission('module:action')` and Zod `validate(schema)` as needed
 
 Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts must literally end in `.${APP_DOMAIN}` (default `rooted.app`) or resolution fails with "Tenant not found" — the test env overrides `APP_DOMAIN=localhost` so `testschool.localhost` resolves correctly instead.
 
-**Background workers:** 8 in-process BullMQ workers (Redis-backed), started in `apps/api/src/index.js` alongside the HTTP server (not separate processes): `audit.worker.js`, `reportCard.worker.js`, `expenseEscalation.worker.js`, `inventoryOverdue.worker.js`, `trialExpiry.worker.js`, `stockValuation.worker.js`, `feeLateCharge.worker.js`, `salarySlip.worker.js`.
+**Background workers:** 10 in-process BullMQ workers (Redis-backed), started in `apps/api/src/index.js` alongside the HTTP server (not separate processes): `audit.worker.js`, `reportCard.worker.js`, `expenseEscalation.worker.js`, `inventoryOverdue.worker.js`, `trialExpiry.worker.js` (only when `BILLING_ENABLED`), `stockValuation.worker.js`, `feeLateCharge.worker.js`, `salarySlip.worker.js`, `requestLog.worker.js`, `bulkEmail.worker.js`.
+
+**Boot sequence** (`apps/api/src/index.js`): connect Mongo → connect the monitoring DB → connect Redis → `ensureBucket()` (a failure only warns, so the API still boots without Minio and uploads fail) → run pending migrations → start workers → listen → warn on index drift.
+
+**Data migrations:** `apps/api/src/migrations/NNNN-*.js` each export `up()`; `utils/migrations.js` runs the ones not yet recorded in `MigrationLog` (unique on filename) at every boot, and `pnpm --filter api migrate:run` runs them by hand. Older one-off scripts live in `apps/api/src/scripts/migrate-*.js`; incident runbooks (`restore-tenant.js`, `revoke-all-sessions.js`, `cleanup-expired-trials.js`) in `scripts/runbooks/`.
+
+**Monitoring DB:** `RequestLog` is stored on a second Mongoose connection (`config/monitoringDb.js`), in `MONITORING_MONGODB_URI` or, by default, `<MONGODB_URI db>_monitoring`. Not tenant-scoped.
+
+**Backups:** the `backup` service in `docker-compose.yml` (`ops/db-backup/`) runs a daily `mongodump` to Minio via cron; restore is manual (`restore.sh`). See `agent-home/db-backup-restore.md`.
 
 **Field encryption:** AES-256-GCM (`apps/api/src/utils/fieldEncryption.js`) for `StaffMember` PII (government ID, bank account, salary). Per-tenant DEK derived from `MASTER_ENCRYPTION_KEY` via HKDF-SHA256 (salt = tenantId, info = `'rooted-field-encryption'`). Transparent via Mongoose getters/setters — never decrypt/re-encrypt manually.
 
@@ -141,24 +153,42 @@ Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts 
 
 **Learning roadmap** (same `training` module; mentor routes in `routes/roadmap.js` at `/training/roadmaps`, student routes `GET /me/roadmap`, `PUT /me/roadmap/items/:itemId` and `GET /me/roadmap/leaderboard` in `routes/me.js`): `Roadmap` (per batch + term, one timeline mode `dated|daily|weekly|none`, `published`) → `RoadmapItem` (theory/practical/assignment, `locked` + `unlockAfter`) → `RoadmapProgress` (one row per student and item; `completedAt` set = complete, absence is never complete). Self-reported and never scored: it does not touch `trainingMetrics` or readiness. Lock and progress rules are pure (`utils/roadmapLock.js`, `utils/roadmapProgress.js`); a closed item's body, prompt and link are withheld by the server, not hidden in the UI. Students write through `self:training:write` (added to existing tenants by migration `0003`). The leaderboard payload is a whitelist (rank, name, counts, `isMe`); only mentors (`GET /training/roadmaps/:id/progress`) ever see answers and links.
 
+**Auth extras:** Google sign-in (`services/googleAuth.service.js`, needs `GOOGLE_CLIENT_ID`), invites and join requests (`invite.service.js`, `joinRequest.service.js`), and a `student` role template that holds only self-scoped permissions (`self:*`, reached through `/me`).
+
 **Frontend API client:** `apps/rooted/src/lib/api.js` defaults `baseURL` to `${window.location.origin}/__api` when `VITE_API_URL` is unset, so requests stay same-origin (subdomain-based tenant resolution needs the real Host header, and the refresh cookie must stay first-party). Both the Vite dev proxy (`vite.config.js`, active only in `--mode test`) and the built rooted image's own nginx (`apps/rooted/nginx.conf`) rewrite `/__api/*` → the API, forwarding `Host`. Don't call the API by absolute URL/different hostname from the page — it breaks CORS and cookie handling by design.
 
 **i18n:** `apps/rooted/src/i18n/` — i18next + react-i18next. Three languages: `en`, `hi`, and `hi_en` (a merged "Hindi / English" resource built at init time by `mergeHiEn.js`, which walks `en.json` and appends ` / <hi>` after each Hindi string). `languagePreference.js` persists the active language (`app-lang` in localStorage) and is the source of truth for `SUPPORTED_LANGUAGES` — add a new language there and to `locales/` together. All user-facing strings in `apps/rooted/src/components/**` must go through `useTranslation()`/`t()`, not hardcoded text, since Hindi coverage is enforced per-module.
+
+## Logins
+
+Three entry points share one API, one `User` collection and one login endpoint (`POST /auth/login`, `identifier` = email **or** username, rate-limited). What differs is the host, the SPA, and where the role lands. Seeded users (`seed-test-data.js`, `seed-bulk-data.js`) all use password `TestPass123!`; verify before promising a UI (see `agent-home/local-dev-login-and-manual-verification.md`).
+
+| Login | App / URL | Account | Lands on |
+|---|---|---|---|
+| **RootEd school** | `apps/rooted`, tenant subdomain (`http://testschool-rooted.localtest.me` in dev/tunnel; `testschool.localhost` in e2e). The login is a dialog on the marketing page (`/`, `/login`) | `tadmin@testschool.local` (full access), `principal@` (Principal Dashboard), `teacher@`, `viewer@` (librarian), `accountant@`, `student@` (self-scoped `/me/*`) | `/dashboard`; a user in several tenants gets `/select-tenant`; a user in none gets `/onboarding` |
+| **Super admin** | `apps/rooted` on the bare `APP_DOMAIN`/portal host (not a tenant subdomain) | `admin@test.local` (`systemRole: super_admin`); real ones via `seed-super-admin.js`. TOTP required when `mfaEnabled` | Platform pages: `/dashboard`, `/tenants`, `/audit`, `/request-logs`, `/flags`, `/feedback`. Holds **zero** tenant permissions until `Tenants → Impersonate` (`POST /admin/tenants/:id/impersonate`) — logging in directly on a tenant subdomain "works" but renders almost nothing |
+| **Catalyst** | `apps/catalyst`, `http://localhost:5174` (dev) or `catalyst.ruralrootcloud.com`; `/login` (email/username + password, TOTP step if needed). No tenant subdomain: the college comes from the token | Same seeded users: `tadmin@`/`principal@`/`teacher@` (`training:read` → `/dashboard`), `student@` (`self:training:read` → `/me/progress`), `multi@testschool.local` (two colleges → `/select-college`), `viewer@` (→ `/no-access`), `admin@test.local` (→ `/outcomes`, `/enquiries`) | `homeRoute()` in `apps/catalyst/src/lib/access.js` |
+
+Catalyst `/no-access` reasons: `no-college` (no membership), `module` (college has `training` off), `role` (no training permission). Catalyst sessions are separate from `apps/rooted` (host-only cookies); registration, invites and Google sign-in stay in `apps/rooted`. Students and staff created from the Catalyst `/people/*` pages start as `pending_claim` and sign in only after setting a password from the emailed link.
+
+**Staging demo college:** `seed-uat-college.js` (tenant `demo-college`, emails `*@demo-college.example`: `uat-college-admin`, `uat-college-tpo`, `uat-trainer-meera`, `uat-trainer-arjun`, plus 24 students) refuses any DB not ending in `_uat` and uses **random** passwords printed once (`(unchanged)` on re-runs). `seed-uat-roadmap.js` then adds a roadmap for it.
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
 | `apps/api/src/app.js` | Express setup, middleware chain order |
-| `apps/api/src/index.js` | Process entrypoint — connects DB/Redis/S3, starts all 8 workers, then listens |
+| `apps/api/src/index.js` | Process entrypoint — connects DB/Redis/S3, starts all 10 workers, then listens |
 | `apps/api/src/config/env.js` | Zod-validated env schema — all required vars listed here |
 | `apps/api/src/middleware/resolveTenant.js` | Tenant resolution logic (Host-header subdomain matching against `APP_DOMAIN`) |
 | `apps/api/src/middleware/authenticate.js` | JWT + Redis blocklist check |
 | `apps/api/src/middleware/requirePermission.js` | RBAC permission check + 60s Redis permission cache |
 | `apps/api/src/models/plugins/tenantScope.js` | Enforces `tenantId` on every tenant-scoped query/write |
-| `apps/api/src/routes/` | 9 routers: auth, admin, tenant, academic, staff, expense, fee, inventory, billing |
+| `apps/api/src/routes/` | 15 routers: auth, admin, orgs, feedback, enquiries, me, tenant, academic, staff, expense, fee, inventory, training, roadmap, billing |
+| `apps/api/src/migrations/` | Ordered data migrations, run at boot via `utils/migrations.js` |
+| `apps/api/src/config/monitoringDb.js` | Second Mongo connection for `RequestLog` |
 | `apps/api/src/scripts/seed-test-data.js` | Deterministic seed for `rooted_test` (tenant `testschool`, 4 users, academic/staff/fee/inventory data); `--clean` wipes all collections first |
-| `apps/api/src/models/index.js` | Barrel of all 51 models — the list index tooling iterates |
+| `apps/api/src/models/index.js` | Barrel of all 52 models — the list index tooling iterates |
 | `apps/api/src/utils/indexDrift.js` | Read-only schema-vs-database index diff; boot logs a warning on drift |
 | `apps/api/src/scripts/migrate-sync-indexes.js` | Drops/recreates drifted indexes (`--dry-run`, `--model=`) |
 | `apps/api/src/scripts/seed-super-admin.js` | Bootstraps one `systemRole: super_admin` user against whatever `MONGODB_URI` is active |
@@ -180,6 +210,8 @@ Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts 
 - `branch-commit-pr-from-upstream.md` — cut a branch from `upstream/main`, commit with hooks, PR against upstream (fork workflow: `origin` = your fork, `upstream` = source repo)
 - `sync-main-with-upstream.md` — fast-forward local `main`/`origin/main` from `upstream/main`
 - `portal-dev-and-deploy.md` — **read this before running, testing or deploying `apps/catalyst`**: why it needs no API change (Host pinning, `X-Forwarded-Host` blanked), the e2e setup (re-seeds the DB itself, one worker), the `catalyst.ruralrootcloud.com` DNS/cloudflared steps the repo cannot do, and which files are copied from `apps/rooted`
+- `db-backup-restore.md` — daily `mongodump` backup container (cron, Minio bucket layout, retention) and the manual `restore.sh`
+- `mockup-ui-rules.md` — rules for producing static HTML UI mockups under `docs/mobile-ui/` before writing app code
 - `prod-staging-mongo-migration.md` — **read this before touching the shared Mongo instance, the prod/staging split, or the Cloudflare Tunnel config**: how `rooted-uat.ruralrootcloud.com` shares one Mongo instance with prod, the `COMPOSE_PROJECT_NAME` pin a renamed checkout directory depends on, and why a bind-mounted container (nginx, redis) can't just be `docker restart`ed after such a rename
 
 ## Environment Setup
@@ -231,8 +263,8 @@ The Vite dev proxy's upstream target (`vite.config.js`) comes from `API_PROXY_TA
 ## Current State
 
 MVP largely complete. Known gaps and open bugs:
-- Jest unit/logic coverage is broad (21 files under `apps/api/src/__tests__/`, spanning fee/salary/leave/grading/staff/auth), but all against pure functions or `mongodb-memory-server` directly — no Supertest coverage through the actual Express app (middleware chain: auth, tenant resolution, permission checks untested end-to-end)
-- Playwright E2E specs exist for auth, academic (attendance/students), fee payments, staff leaves, and expense entries, plus an axe accessibility spec — but coverage is not exhaustive
+- Jest coverage is broad (~72 test files under `apps/api/src/__tests__/`: fee/salary/leave/grading/staff/auth plus training, roadmap, enquiries and migrations), mostly against pure functions or `mongodb-memory-server`. Supertest goes through the real Express app only for the college/training surface (`trainingRoutes`, `roadmapRoutes`, `roadmapMe`, `peopleRoutes`, `enquiries`, `orgTypeModuleGating`); the school modules' middleware chain (auth, tenant resolution, permissions) is still not tested end-to-end
+- Playwright E2E: `apps/rooted/tests/` covers academic, admin, auth, dashboard, expense, fee, i18n, inventory, marketing, me, org, staff, sweep and tenant, plus an axe spec; `apps/catalyst/tests/` has ~28 specs (auth, landing, roadmap, completion, people, placement, axe, mobile/PWA, i18n, host pinning). Coverage is not exhaustive
 - i18n: `en` and `hi` (plus merged `hi_en`) done across all modules; `ta`/`es`/`fr` not created
 - Real-time notifications not implemented — the notification bell polls every 60s
 - `SES` is not a valid `EMAIL_PROVIDER` yet — the options are `smtp`, `postmark`, and `console` (logs each message and its link instead of sending; what the tunnel deployment runs, since it has no mail provider). Never point `EMAIL_PROVIDER=smtp` at an unresolvable `SMTP_HOST`: it builds a transport that throws on every send, breaking registration, password reset and invites. A blank `SMTP_HOST` no-ops safely; a fake one does not.
