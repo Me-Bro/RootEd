@@ -90,10 +90,10 @@ services:
       - rooted
       - shared
 
-  web:
+  rooted:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: apps/rooted/Dockerfile
       args:
         VITE_API_URL: ''
         VITE_APP_DOMAIN: ${APP_DOMAIN:-rooted.app}
@@ -107,14 +107,14 @@ services:
     networks:
       - rooted
 
-  # RR Cloud Career Catalyst — the training-programme portal (apps/portal). Its
+  # RR Cloud Career Catalyst — the training-programme portal (apps/catalyst). Its
   # own nginx proxies /__api/ to the api with Host pinned to PORTAL_API_HOST, so
   # no API change is needed to serve it. The TLS nginx below has no portal
   # vhost; the portal is served through the tunnel overlays.
-  portal:
+  catalyst:
     build:
       context: .
-      dockerfile: apps/portal/Dockerfile
+      dockerfile: apps/catalyst/Dockerfile
       args:
         VITE_APP_DOMAIN: ${APP_DOMAIN:-rooted.app}
         VITE_MAIN_APP_URL: ${VITE_MAIN_APP_URL:-}
@@ -140,7 +140,7 @@ services:
       - ./nginx/certs:/etc/nginx/certs:ro
     depends_on:
       - api
-      - web
+      - rooted
     networks:
       - rooted
 

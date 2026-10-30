@@ -1,6 +1,6 @@
 ---
 name: restore-dev-stack
-description: Switch this repo's local environment between "dev mode" (docker-compose.dev.yml web/api/nginx) and "e2e mode" (local API + `vite --mode test` on the same ports, per feature-tdd-seed-e2e.md step 4), and fix the recurring "port is already allocated" / crash-loop failures either direction produces. Trigger on "switch to e2e mode", "run local e2e", "restore the dev stack", "bring the dev containers back up", "web container port already allocated", or "nginx host not found in upstream".
+description: Switch this repo's local environment between "dev mode" (docker-compose.dev.yml rooted/api/nginx) and "e2e mode" (local API + `vite --mode test` on the same ports, per feature-tdd-seed-e2e.md step 4), and fix the recurring "port is already allocated" / crash-loop failures either direction produces. Trigger on "switch to e2e mode", "run local e2e", "restore the dev stack", "bring the dev containers back up", "web container port already allocated", or "nginx host not found in upstream".
 ---
 
 # Switching between dev mode and e2e mode
@@ -16,7 +16,7 @@ doc exists to prevent.
 
 ```bash
 # 1. Stop only web/api/nginx — leave mongo/redis/minio running, e2e reuses them
-docker stop rooted-web-1 rooted-api-1 rooted-nginx-1
+docker stop rooted-rooted-1 rooted-api-1 rooted-nginx-1
 
 # 2. Docker Desktop's port-forward proxy (com.docker.backend.exe on Windows/WSL2)
 #    holds 3001/5173 for several seconds after stop, even once the container
@@ -35,7 +35,7 @@ disown
 #    it picked a fallback port, kill that instance and re-wait on 5173 rather
 #    than pointing Playwright at the wrong port (playwright.config.js's
 #    baseURL is hardcoded to 127.0.0.1:5173, it will not follow a fallback):
-cd apps/web && nohup npx vite --mode test > "<scratchpad>/vite-test.log" 2>&1 &
+cd apps/rooted && nohup npx vite --mode test > "<scratchpad>/vite-test.log" 2>&1 &
 disown
 sleep 3 && curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:5173/
 ```
@@ -57,11 +57,11 @@ should return a token, and the curl above should print `200`.
 #    changes; `up -d` is what's documented/tested here.
 until ! (netstat -ano | grep -q ':3001.*LISTENING'); do sleep 2; done
 until ! (netstat -ano | grep -q ':5173.*LISTENING'); do sleep 2; done
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d web api nginx
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d rooted api nginx
 ```
 
 `api` takes a while (its entrypoint runs `pnpm install` on every boot) —
-don't read that as a hang. `nginx` depends on `web`; if `up -d web api nginx`
+don't read that as a hang. `nginx` depends on `web`; if `up -d rooted api nginx`
 brings nginx up before web finishes listening, just re-run
 `up -d nginx` once web shows healthy.
 
@@ -156,5 +156,5 @@ half-configured state from an earlier failed attempt (empty logs,
 `Created` but never `Up`):
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --force-recreate web nginx
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --force-recreate rooted nginx
 ```

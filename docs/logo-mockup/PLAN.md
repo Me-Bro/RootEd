@@ -2,7 +2,7 @@
 
 ## The problem with what's shipped today
 
-`apps/web/public/favicon.svg` is a full illustration, not an icon: one outer silhouette
+`apps/rooted/public/favicon.svg` is a full illustration, not an icon: one outer silhouette
 plus 15 layered, blurred, `color(display-p3 ...)` gradient ellipses under an alpha mask,
 built for a large canvas. Two real problems follow from that:
 
@@ -41,7 +41,7 @@ fallback — it's not a new brand, it's fixing a real technical problem (filter/
 illegibility at 16px) in the mark that's already shipped.
 
 Vibhanshu and David are the only two people who can make this call — pick one, and swapping
-`apps/web/public/favicon.svg` plus the `<img>` references in `LoginPage.jsx` and the landing
+`apps/rooted/public/favicon.svg` plus the `<img>` references in `LoginPage.jsx` and the landing
 page mockups is a small, mechanical follow-up once a direction is chosen.
 
 ## How to review
@@ -54,4 +54,4 @@ python3 -m http.server 8080 --directory docs
 
 Standalone SVG source for all 5 marks lives in `marks/` — each is a real, valid,
 production-sized icon (not a screenshot or placeholder), ready to drop straight into
-`apps/web/public/favicon.svg` if one is approved.
+`apps/rooted/public/favicon.svg` if one is approved.

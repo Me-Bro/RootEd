@@ -7,7 +7,7 @@ import { defineConfig, globalIgnores } from 'eslint/config';
 export default defineConfig([
   globalIgnores(['**/node_modules', '**/dist', '**/coverage', '**/playwright-report']),
   {
-    files: ['apps/web/**/*.{js,jsx}', 'apps/portal/**/*.{js,jsx}'],
+    files: ['apps/rooted/**/*.{js,jsx}', 'apps/catalyst/**/*.{js,jsx}'],
     extends: [
       js.configs.recommended,
       reactHooks.configs.flat.recommended,

@@ -64,7 +64,7 @@ tracked in this repo.
    shared Mongo instance or tunnel config.
 5. Inspect only the implementation surfaces the requirement actually touches
    (routes in `apps/api/src/routes/`, models in `apps/api/src/models/`, pages
-   in `apps/web/src/`, shared Zod schemas in `packages/shared/src/`).
+   in `apps/rooted/src/`, shared Zod schemas in `packages/shared/src/`).
 6. Build a requirement inventory before designing phases.
 7. Write the overall plan, phase docs, validation phase, precommit
    review/simplification phase, checkpoint state ledger.
@@ -119,7 +119,7 @@ evidence for and against — a human decides.
   `tenantId` scoping is preserved (or why the model is one of the two
   exemptions, `Tenant`/`User`).
 - If a phase adds a user-facing string anywhere under
-  `apps/web/src/components/**`, it must go through `useTranslation()`/`t()`
+  `apps/rooted/src/components/**`, it must go through `useTranslation()`/`t()`
   and get `en`/`hi` keys — never hardcoded text (see CLAUDE.md's i18n
   section).
 - Keep tightly coupled schema, route, Zod schema, and TDD coverage in the
@@ -129,7 +129,7 @@ evidence for and against — a human decides.
   (`apps/api/src/__tests__/*.test.js`, `pnpm --filter api test -- <name>`),
   smallest implementation, extend `apps/api/src/scripts/seed-test-data.js`
   additively if new UI/routes need fixtures, then Playwright coverage under
-  `apps/web/tests/` if the phase changes user-facing flow.
+  `apps/rooted/tests/` if the phase changes user-facing flow.
 - Do not add standalone lint/typecheck steps inside implementation phases —
   the precommit review/simplification phase owns those.
 - Each phase ends with a mandatory git commit (work outside `agent-home/`

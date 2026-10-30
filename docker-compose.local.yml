@@ -100,13 +100,13 @@ services:
     networks:
       - rooted
 
-  web:
+  rooted:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: apps/rooted/Dockerfile
       args:
         # Leave empty — frontend uses same-origin /__api, proxied by this
-        # image's own nginx (apps/web/nginx.conf) so resolveTenant() sees
+        # image's own nginx (apps/rooted/nginx.conf) so resolveTenant() sees
         # the real subdomain Host header and the refresh cookie stays first-party.
         VITE_API_URL: ''
     ports:

@@ -7,8 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 # Dev servers (run separately)
 pnpm dev:api          # Express API on :3001 (node --watch)
-pnpm dev:web          # Vite frontend on :5173
-pnpm dev:portal       # RR Cloud Career Catalyst portal (apps/portal) on :5174
+pnpm dev:rooted       # RootEd school frontend (apps/rooted), Vite on :5173
+pnpm dev:catalyst     # RR Cloud Career Catalyst portal (apps/catalyst) on :5174
 
 # "prod mode" — full stack via Docker, self-managed TLS (built images, nginx
 # terminates TLS itself using certs in nginx/certs/). Use when Claude is asked
@@ -39,7 +39,7 @@ docker compose -f docker-compose.yml -f docker-compose.tunnel.uat.yml up -d --bu
 # "dev mode" — full stack with hot reload (API node --watch + Vite HMR, plain-HTTP nginx)
 docker compose -f docker-compose.dev.yml up
 
-# "local mode" — fully local, no nginx/TLS at all (API :3001, Web :5173 direct)
+# "local mode" — fully local, no nginx/TLS at all (API :3001, rooted :5173 direct)
 docker compose -f docker-compose.local.yml up --build
 
 # Build all
@@ -61,23 +61,24 @@ pnpm --filter api test -- --testPathPattern=tenant-isolation
 k6 run tests/k6/api-load.js
 
 # E2E test stack (run in order)
-docker compose -f docker-compose.yml -f docker-compose.test.yml up -d   # infra only (Mongo/Redis/Minio; web+nginx disabled)
+docker compose -f docker-compose.yml -f docker-compose.test.yml up -d   # infra only (Mongo/Redis/Minio; rooted+nginx disabled)
 node --env-file=apps/api/.env.test apps/api/src/index.js                 # API on :3001 with test DB
-pnpm --filter web exec vite --mode test                                  # Web on :5173 with /__api proxy (Playwright's webServer also does this automatically)
-pnpm --filter web test:e2e                                                # Run Playwright E2E (project: e2e, depends on auth setup project)
-pnpm --filter web test:e2e:headed                                         # Same, headed browser
-pnpm --filter web test:axe                                                # Accessibility spec only
-pnpm --filter web test:e2e:report                                         # Open last HTML report
+pnpm --filter rooted exec vite --mode test                               # rooted on :5173 with /__api proxy (Playwright's webServer also does this automatically)
+pnpm --filter rooted test:e2e                                            # Run Playwright E2E (project: e2e, depends on auth setup project)
+pnpm --filter rooted test:e2e:headed                                     # Same, headed browser
+pnpm --filter rooted test:axe                                            # Accessibility spec only
+pnpm --filter rooted test:e2e:report                                     # Open last HTML report
+pnpm --filter catalyst test:e2e                                          # Catalyst Playwright E2E (re-seeds the DB itself; see agent-home/portal-dev-and-deploy.md)
 
 # Seed the E2E test DB (rooted_test) — outputs seeded IDs as JSON for Playwright fixtures
 pnpm --filter api seed:test          # seed (no wipe)
 pnpm --filter api seed:test:clean    # drop all collections, then seed
-# Or from the web package, via the running docker stack's api container:
-pnpm --filter web test:seed:docker
+# Or from the rooted package, via the running docker stack's api container:
+pnpm --filter rooted test:seed:docker
 
 # Dump/restore a DB snapshot for faster E2E iteration
-pnpm --filter web test:snapshot:dump
-pnpm --filter web test:snapshot:restore
+pnpm --filter rooted test:snapshot:dump
+pnpm --filter rooted test:snapshot:restore
 
 # Reconcile every collection's indexes with its schema (Mongo will not redefine
 # an index in place, so a changed sparse/unique/partial option needs this).
@@ -110,8 +111,8 @@ seeded users share password `TestPass123!`.
 
 **Monorepo** (pnpm workspaces):
 - `apps/api` — Express.js backend (ES Modules, Node 22)
-- `apps/web` — React 19 SPA (Vite, no TypeScript)
-- `apps/portal` — **RR Cloud Career Catalyst**: a second, separate React SPA for the `training` module (college training/placement tracking). Same API and database as `apps/web`, own build/nginx/hostname. It never uses a tenant subdomain: its server presents the deployment's existing portal host (`PORTAL_API_HOST`) to the API, so the college comes from the sign-in token. See `agent-home/portal-dev-and-deploy.md` before touching it. `/` is its public landing page (English and Hindi; the Hindi copy has not had a native-speaker review); the "request a proposal" form posts to the public `POST /enquiries`, stored as a platform-level `CollegeEnquiry` (no tenant, like `Feedback`) that `super_admin` reviews at `/enquiries` (`GET`/`PATCH /admin/enquiries`).
+- `apps/rooted` — React 19 SPA for schools (Vite, no TypeScript). Renamed from `apps/web`; the compose service, pnpm package and GHCR image are all `rooted` now
+- `apps/catalyst` — **RR Cloud Career Catalyst** (renamed from `apps/portal`; the compose service, pnpm package and GHCR image are `catalyst`, while API env vars like `PORTAL_API_HOST`/`PORTAL_SUBDOMAIN` keep their names): a second, separate React SPA for the `training` module (college training/placement tracking). Same API and database as `apps/rooted`, own build/nginx/hostname. It never uses a tenant subdomain: its server presents the deployment's existing portal host (`PORTAL_API_HOST`) to the API, so the college comes from the sign-in token. See `agent-home/portal-dev-and-deploy.md` before touching it. `/` is its public landing page (English and Hindi; the Hindi copy has not had a native-speaker review); the "request a proposal" form posts to the public `POST /enquiries`, stored as a platform-level `CollegeEnquiry` (no tenant, like `Feedback`) that `super_admin` reviews at `/enquiries` (`GET`/`PATCH /admin/enquiries`).
 - `packages/shared` — Zod validation schemas shared by the apps
 
 **Multi-tenant model:** Shared MongoDB database, tenant-scoped via `tenantId` field. `apps/api/src/models/plugins/tenantScope.js` is a Mongoose plugin (applied to every model except `Tenant` and `User`) that throws on any find/update/save missing `tenantId` in its filter — this is the tenant-isolation guarantee, not an app-level convention. Callers that must cross tenants (e.g. super-admin routes) pass `{ _bypassTenantScope: true }` in query options. Compound indexes follow `{tenantId:1, ...}` pattern.
@@ -136,13 +137,13 @@ Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts 
 
 **Approval workflows:** `LeaveRequest`, `ExpenseEntry`, and `PurchaseRequisition` each embed their own `approvalChain` array + `currentApproverIndex` rather than using a shared workflow engine (see `docs/adr/004-workflow-engine.txt`) — advancing the chain is a service function called from each module's approve/reject route handler, and BullMQ delayed jobs drive auto-escalation. Sequential approvers only (no parallel steps in v1); the pattern is intentionally duplicated per module, not shared.
 
-**Training module** (`training`, on by default for `college` orgs; routes in `apps/api/src/routes/training.js`, UI in `apps/portal`): batch = `Section`, programme run = `Term`, module = `Subject`, a student's membership and **completion** = `Enrollment` (`status: completed|dropped|active`). Completion is an admin's decision, not computed: only `training:complete` (held by `tenant_admin` alone) may set it, through `PUT /training/completion` or `PATCH /academic/enrollments/:id`. `training:complete` does not end in `:write`, so the `principal` template must exclude it by name (`models/Role.js`). Metrics are pure functions in `utils/trainingMetrics.js` (`null`, never 0, when nothing was measured; dropped students count against completion). `READINESS_WEIGHTS` in `packages/shared` is a **provisional** placeholder. The college administrator manages logins from the portal (`/people/students`, `/people/team`; see `agent-home/portal-dev-and-deploy.md`): a student gets a login by import or `POST /academic/students/:id/account`, staff by `POST /tenant/members`, both as a `pending_claim` account that activates when its owner sets a password from the emailed link (`claimUrlFor`). Students reach their own data only through `GET /me/progress` (published grades and reviewed work only); `GET /admin/training/outcomes` returns per-college counts and no personal data.
+**Training module** (`training`, on by default for `college` orgs; routes in `apps/api/src/routes/training.js`, UI in `apps/catalyst`): batch = `Section`, programme run = `Term`, module = `Subject`, a student's membership and **completion** = `Enrollment` (`status: completed|dropped|active`). Completion is an admin's decision, not computed: only `training:complete` (held by `tenant_admin` alone) may set it, through `PUT /training/completion` or `PATCH /academic/enrollments/:id`. `training:complete` does not end in `:write`, so the `principal` template must exclude it by name (`models/Role.js`). Metrics are pure functions in `utils/trainingMetrics.js` (`null`, never 0, when nothing was measured; dropped students count against completion). `READINESS_WEIGHTS` in `packages/shared` is a **provisional** placeholder. The college administrator manages logins from the portal (`/people/students`, `/people/team`; see `agent-home/portal-dev-and-deploy.md`): a student gets a login by import or `POST /academic/students/:id/account`, staff by `POST /tenant/members`, both as a `pending_claim` account that activates when its owner sets a password from the emailed link (`claimUrlFor`). Students reach their own data only through `GET /me/progress` (published grades and reviewed work only); `GET /admin/training/outcomes` returns per-college counts and no personal data.
 
 **Learning roadmap** (same `training` module; mentor routes in `routes/roadmap.js` at `/training/roadmaps`, student routes `GET /me/roadmap`, `PUT /me/roadmap/items/:itemId` and `GET /me/roadmap/leaderboard` in `routes/me.js`): `Roadmap` (per batch + term, one timeline mode `dated|daily|weekly|none`, `published`) → `RoadmapItem` (theory/practical/assignment, `locked` + `unlockAfter`) → `RoadmapProgress` (one row per student and item; `completedAt` set = complete, absence is never complete). Self-reported and never scored: it does not touch `trainingMetrics` or readiness. Lock and progress rules are pure (`utils/roadmapLock.js`, `utils/roadmapProgress.js`); a closed item's body, prompt and link are withheld by the server, not hidden in the UI. Students write through `self:training:write` (added to existing tenants by migration `0003`). The leaderboard payload is a whitelist (rank, name, counts, `isMe`); only mentors (`GET /training/roadmaps/:id/progress`) ever see answers and links.
 
-**Frontend API client:** `apps/web/src/lib/api.js` defaults `baseURL` to `${window.location.origin}/__api` when `VITE_API_URL` is unset, so requests stay same-origin (subdomain-based tenant resolution needs the real Host header, and the refresh cookie must stay first-party). Both the Vite dev proxy (`vite.config.js`, active only in `--mode test`) and the built web image's own nginx (`apps/web/nginx.conf`) rewrite `/__api/*` → the API, forwarding `Host`. Don't call the API by absolute URL/different hostname from the page — it breaks CORS and cookie handling by design.
+**Frontend API client:** `apps/rooted/src/lib/api.js` defaults `baseURL` to `${window.location.origin}/__api` when `VITE_API_URL` is unset, so requests stay same-origin (subdomain-based tenant resolution needs the real Host header, and the refresh cookie must stay first-party). Both the Vite dev proxy (`vite.config.js`, active only in `--mode test`) and the built rooted image's own nginx (`apps/rooted/nginx.conf`) rewrite `/__api/*` → the API, forwarding `Host`. Don't call the API by absolute URL/different hostname from the page — it breaks CORS and cookie handling by design.
 
-**i18n:** `apps/web/src/i18n/` — i18next + react-i18next. Three languages: `en`, `hi`, and `hi_en` (a merged "Hindi / English" resource built at init time by `mergeHiEn.js`, which walks `en.json` and appends ` / <hi>` after each Hindi string). `languagePreference.js` persists the active language (`app-lang` in localStorage) and is the source of truth for `SUPPORTED_LANGUAGES` — add a new language there and to `locales/` together. All user-facing strings in `apps/web/src/components/**` must go through `useTranslation()`/`t()`, not hardcoded text, since Hindi coverage is enforced per-module.
+**i18n:** `apps/rooted/src/i18n/` — i18next + react-i18next. Three languages: `en`, `hi`, and `hi_en` (a merged "Hindi / English" resource built at init time by `mergeHiEn.js`, which walks `en.json` and appends ` / <hi>` after each Hindi string). `languagePreference.js` persists the active language (`app-lang` in localStorage) and is the source of truth for `SUPPORTED_LANGUAGES` — add a new language there and to `locales/` together. All user-facing strings in `apps/rooted/src/components/**` must go through `useTranslation()`/`t()`, not hardcoded text, since Hindi coverage is enforced per-module.
 
 ## Key Files
 
@@ -161,11 +162,11 @@ Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts 
 | `apps/api/src/utils/indexDrift.js` | Read-only schema-vs-database index diff; boot logs a warning on drift |
 | `apps/api/src/scripts/migrate-sync-indexes.js` | Drops/recreates drifted indexes (`--dry-run`, `--model=`) |
 | `apps/api/src/scripts/seed-super-admin.js` | Bootstraps one `systemRole: super_admin` user against whatever `MONGODB_URI` is active |
-| `apps/web/src/App.jsx` | React Router setup |
-| `apps/web/src/lib/api.js` | Axios client — same-origin `/__api` base URL logic |
-| `apps/web/src/i18n/index.js` | i18next setup — registers `en`/`hi`/`hi_en` resources |
-| `apps/web/src/i18n/mergeHiEn.js` | Builds the `hi_en` merged resource from `en.json` + `hi.json` |
-| `apps/web/playwright.config.js` | E2E project setup — `setup` project builds per-role auth storage state before `e2e`/`axe` projects run; `webServer` auto-starts `vite --mode test` |
+| `apps/rooted/src/App.jsx` | React Router setup |
+| `apps/rooted/src/lib/api.js` | Axios client — same-origin `/__api` base URL logic |
+| `apps/rooted/src/i18n/index.js` | i18next setup — registers `en`/`hi`/`hi_en` resources |
+| `apps/rooted/src/i18n/mergeHiEn.js` | Builds the `hi_en` merged resource from `en.json` + `hi.json` |
+| `apps/rooted/playwright.config.js` | E2E project setup — `setup` project builds per-role auth storage state before `e2e`/`axe` projects run; `webServer` auto-starts `vite --mode test` |
 | `packages/shared/src/` | Zod schemas reused across API validation and frontend forms |
 | `docs/adr/` | Architecture decision records — tenancy model, field encryption, in-process workers, approval workflow engine |
 
@@ -178,7 +179,7 @@ Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts 
 - `local-dev-login-and-manual-verification.md` — **read this before answering any "show me the UI" / "give me login credentials" request**: the real seeded tenant subdomain (`testschool-rooted`, not `testschool`), which account to log in with, and why logging in as `super_admin` directly on a tenant subdomain silently renders almost no sidebar/data (needs an explicit impersonate step)
 - `branch-commit-pr-from-upstream.md` — cut a branch from `upstream/main`, commit with hooks, PR against upstream (fork workflow: `origin` = your fork, `upstream` = source repo)
 - `sync-main-with-upstream.md` — fast-forward local `main`/`origin/main` from `upstream/main`
-- `portal-dev-and-deploy.md` — **read this before running, testing or deploying `apps/portal`**: why it needs no API change (Host pinning, `X-Forwarded-Host` blanked), the e2e setup (re-seeds the DB itself, one worker), the `catalyst.ruralrootcloud.com` DNS/cloudflared steps the repo cannot do, and which files are copied from `apps/web`
+- `portal-dev-and-deploy.md` — **read this before running, testing or deploying `apps/catalyst`**: why it needs no API change (Host pinning, `X-Forwarded-Host` blanked), the e2e setup (re-seeds the DB itself, one worker), the `catalyst.ruralrootcloud.com` DNS/cloudflared steps the repo cannot do, and which files are copied from `apps/rooted`
 - `prod-staging-mongo-migration.md` — **read this before touching the shared Mongo instance, the prod/staging split, or the Cloudflare Tunnel config**: how `rooted-uat.ruralrootcloud.com` shares one Mongo instance with prod, the `COMPOSE_PROJECT_NAME` pin a renamed checkout directory depends on, and why a bind-mounted container (nginx, redis) can't just be `docker restart`ed after such a rename
 
 ## Environment Setup
@@ -192,21 +193,21 @@ Copy `apps/api/.env.example` → `apps/api/.env`. Required vars:
 - S3/Minio credentials (`S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`)
 - `APP_DOMAIN` (default `rooted.app`) — must match the suffix of whatever Host you access the API through, or `resolveTenant()` 404s
 
-Web build args (Dockerfile / `.env`): `VITE_API_URL`, `VITE_APP_DOMAIN`, `VITE_SENTRY_DSN`. Leave `VITE_API_URL` unset/empty to use the same-origin `/__api` proxy path described above.
+`apps/rooted` build args (Dockerfile / `.env`): `VITE_API_URL`, `VITE_APP_DOMAIN`, `VITE_SENTRY_DSN`. Leave `VITE_API_URL` unset/empty to use the same-origin `/__api` proxy path described above.
 
-Docker Compose (`docker-compose.yml`) brings up: MongoDB 7 (replica set `rs0`, initialized by a one-shot `mongo-init` service), Redis 7, Minio, API, Web (built static image), Nginx (wildcard-subdomain TLS — requires certs at `nginx/certs/fullchain.pem`/`privkey.pem`, which are **not** included in the repo; use `nginx/nginx.dev.conf` via `docker-compose.dev.yml` for a plain-HTTP local variant instead of generating certs).
+Docker Compose (`docker-compose.yml`) brings up: MongoDB 7 (replica set `rs0`, initialized by a one-shot `mongo-init` service), Redis 7, Minio, API, `rooted` (built static image), `catalyst` (built static image), Nginx (wildcard-subdomain TLS — requires certs at `nginx/certs/fullchain.pem`/`privkey.pem`, which are **not** included in the repo; use `nginx/nginx.dev.conf` via `docker-compose.dev.yml` for a plain-HTTP local variant instead of generating certs).
 
 **Minio image:** `minio/minio` is gone from Docker Hub (upstream archived the community edition) and quay.io has no mirror. The pinned release `RELEASE.2025-09-07T16-13-09Z` is built from source by `ops/minio/Dockerfile` (first build compiles Go, ~7 min). Dev, local, the e2e overlay and CI build it; the base `docker-compose.yml` (prod/staging) only references the tag `rooted-minio:2025-09-07` with `pull_policy: never`, so a fresh host must run `docker build -t rooted-minio:2025-09-07 ops/minio` once before `up`.
 
-`apps/web/.env.dev` is the known-good template for the `docker-compose.dev.yml` hot-reload workflow: `VITE_API_URL=` (empty — same-origin `/__api`, required for the CSRF double-submit cookie to match) and `VITE_APP_DOMAIN=localtest.me` (public wildcard DNS → `127.0.0.1`, matches `apps/api/.env`'s `APP_DOMAIN`). Copy it to `apps/web/.env` before running that stack — a stale/absolute `VITE_API_URL` in `apps/web/.env` (e.g. pointing at a tenant subdomain:3001 directly) causes `invalid csrf token` errors on every mutating request.
+`apps/rooted/.env.dev` is the known-good template for the `docker-compose.dev.yml` hot-reload workflow: `VITE_API_URL=` (empty — same-origin `/__api`, required for the CSRF double-submit cookie to match) and `VITE_APP_DOMAIN=localtest.me` (public wildcard DNS → `127.0.0.1`, matches `apps/api/.env`'s `APP_DOMAIN`). Copy it to `apps/rooted/.env` before running that stack — a stale/absolute `VITE_API_URL` in `apps/rooted/.env` (e.g. pointing at a tenant subdomain:3001 directly) causes `invalid csrf token` errors on every mutating request.
 
-The Vite dev proxy's upstream target (`vite.config.js`) comes from `API_PROXY_TARGET` (default `http://localhost:3001`) — `docker-compose.dev.yml` overrides `API_PROXY_TARGET: http://api:3001` for the `web` service, since inside that container `localhost` is the container itself, not the `api` container (`localhost:3001` there 502s). The `/__api` rule only pins a tenant `Host` (`testschool.${VITE_APP_DOMAIN}`) in `--mode test`, where Playwright browses `127.0.0.1` and its fixtures live in the seeded `testschool` tenant; in dev it forwards the browser's own Host, so `<subdomain>.localtest.me:5173` resolves that tenant and the apex `localtest.me:5173` falls back to the access token's `tenantId` claim (the only way to reach an org created through the org-creation flow, which has no `subdomain`).
+The Vite dev proxy's upstream target (`vite.config.js`) comes from `API_PROXY_TARGET` (default `http://localhost:3001`) — `docker-compose.dev.yml` overrides `API_PROXY_TARGET: http://api:3001` for the `rooted` service, since inside that container `localhost` is the container itself, not the `api` container (`localhost:3001` there 502s). The `/__api` rule only pins a tenant `Host` (`testschool.${VITE_APP_DOMAIN}`) in `--mode test`, where Playwright browses `127.0.0.1` and its fixtures live in the seeded `testschool` tenant; in dev it forwards the browser's own Host, so `<subdomain>.localtest.me:5173` resolves that tenant and the apex `localtest.me:5173` falls back to the access token's `tenantId` claim (the only way to reach an org created through the org-creation flow, which has no `subdomain`).
 
 ### Test (E2E)
 - `apps/api/.env.test` — separate `rooted_test` DB, `APP_DOMAIN=localhost` (never share with the dev DB/domain)
-- `apps/web/.env.test` — sets `VITE_API_URL=http://127.0.0.1:5173/__api` (routes through Vite proxy)
+- `apps/rooted/.env.test` — sets `VITE_API_URL=http://127.0.0.1:5173/__api` (routes through Vite proxy)
 - Vite proxy (`/__api` → `http://localhost:3001`) only active in `--mode test`; proxy injects `Host: testschool.localhost` so `resolveTenant()` resolves the correct tenant without custom DNS
-- `docker-compose.test.yml` overlay disables web + nginx (Playwright/Vite run locally) and points `api` at `rooted_test` with `APP_DOMAIN=localhost`
+- `docker-compose.test.yml` overlay disables the `rooted` service + nginx (Playwright/Vite run locally) and points `api` at `rooted_test` with `APP_DOMAIN=localhost`
 - Seeded test users (password `TestPass123!`): `admin@test.local` (super_admin), `tadmin@testschool.local`, `teacher@testschool.local`, `viewer@testschool.local`
 
 ## Tech Stack
@@ -216,16 +217,16 @@ The Vite dev proxy's upstream target (`vite.config.js`) comes from `API_PROXY_TA
 **Testing:** Jest + Supertest + mongodb-memory-server (API), Playwright + axe-core (web E2E/accessibility), k6 (load), Lighthouse CI
 **Infra:** Docker + Nginx (wildcard subdomain TLS in prod-like mode), MongoDB replica set, Redis, Minio (S3-compatible)
 
-**CI** (`.github/workflows/ci.yml`): matrixed lint+test per app (api/web) against real Mongo/Redis service containers → axe accessibility check → Lighthouse CI → (on `main` only) Docker build/push to GHCR → staging deploy (placeholder step, not wired up).
+**CI** (`.github/workflows/ci.yml`): matrixed lint+test per app (api/rooted/catalyst) against real Mongo/Redis service containers → axe accessibility check → Lighthouse CI → (on `main` only) Docker build/push to GHCR → staging deploy (placeholder step, not wired up).
 
 ## Code Conventions
 
-- **JavaScript only** — no TypeScript in either app
+- **JavaScript only** — no TypeScript in any app
 - Conventional commits enforced by commitlint + Husky (feat/fix/docs/style/refactor/test/chore/perf/ci/revert)
 - Pre-commit: lint-staged runs ESLint --fix + Prettier on staged files
 - Prettier: `singleQuote: true`, `semi: true`, `tabWidth: 2`, `printWidth: 100`, `trailingComma: "es5"`
 - Shared Zod schemas in `packages/shared` — always use these for validation rather than duplicating in API routes
-- ESLint config is split by path in the root `eslint.config.js`: `apps/web/**` gets the React/browser-globals config, `apps/api/**` + `packages/shared/**` get the Node-globals config
+- ESLint config is split by path in the root `eslint.config.js`: `apps/rooted/**` and `apps/catalyst/**` get the React/browser-globals config, `apps/api/**` + `packages/shared/**` get the Node-globals config
 
 ## Current State
 

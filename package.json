@@ -5,8 +5,8 @@
   "license": "MIT",
   "scripts": {
     "dev:api": "pnpm --filter api dev",
-    "dev:web": "pnpm --filter web dev",
-    "dev:portal": "pnpm --filter portal dev",
+    "dev:rooted": "pnpm --filter rooted dev",
+    "dev:catalyst": "pnpm --filter catalyst dev",
     "build": "pnpm -r build",
     "test": "pnpm --filter '*' test",
     "lint": "pnpm --filter '*' lint",

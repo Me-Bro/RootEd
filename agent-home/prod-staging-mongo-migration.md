@@ -310,7 +310,7 @@ if nothing else about their config changed.
 
 **Unrelated unfixed prod incident found and fixed along the way:** prod was
 returning 502 for several minutes before any of this session's tunnel work
-started — `rooted-web-1` had cleanly restarted (`ExitCode 0`, not OOM) at
+started — `rooted-rooted-1` had cleanly restarted (`ExitCode 0`, not OOM) at
 some point, got a new IP on the `rooted_rooted` bridge network, and
 `rooted-nginx-1` (which hadn't restarted since) kept trying the old IP
 (`nginx` resolves its `upstream { server web:80; }` once at startup, not

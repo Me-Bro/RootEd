@@ -37,7 +37,7 @@ services:
   # Staging copy of the RR Cloud Career Catalyst portal, at
   # catalyst-uat.ruralrootcloud.com (needs its own DNS route + explicit
   # cloudflared ingress line, like every other staging hostname).
-  portal:
+  catalyst:
     build:
       args:
         VITE_APP_DOMAIN: ruralrootcloud.com
@@ -46,7 +46,7 @@ services:
       PORTAL_API_HOST: rooted-uat.ruralrootcloud.com
     ports: !override
       - '5176:80'
-  web:
+  rooted:
     build:
       args:
         VITE_APP_DOMAIN: ruralrootcloud.com

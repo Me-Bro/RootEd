@@ -1,12 +1,12 @@
 ---
 name: portal-dev-and-deploy
-description: Run, test and deploy apps/portal (RR Cloud Career Catalyst) — dev/e2e commands, how it reaches the API without any API change, and the host-owned DNS/cloudflared steps. Trigger on "run the portal", "deploy the portal", "catalyst hostname", "portal e2e".
+description: Run, test and deploy apps/catalyst (RR Cloud Career Catalyst) — dev/e2e commands, how it reaches the API without any API change, and the host-owned DNS/cloudflared steps. Trigger on "run the portal", "deploy the portal", "catalyst hostname", "portal e2e".
 ---
 
-# RR Cloud Career Catalyst portal (`apps/portal`)
+# RR Cloud Career Catalyst portal (`apps/catalyst`)
 
 A separate Vite + React app for trainers, college TPOs, students and the Rural
-Root Cloud super admin. It uses the same API and database as `apps/web`; the
+Root Cloud super admin. It uses the same API and database as `apps/rooted`; the
 training data lives behind `/training`, `/me/progress` and
 `/admin/training/outcomes` (the `training` module).
 
@@ -20,16 +20,16 @@ college from the access token's `tenantId` claim (`resolveTenant()`), set by
 `POST /auth/select-tenant` or by a single-college login. So:
 
 - no API change is needed to serve the portal;
-- sessions are separate from `apps/web` (cookies are host-only);
+- sessions are separate from `apps/rooted` (cookies are host-only);
 - the portal blanks `X-Forwarded-Host` — Express trusts it, so a browser could
-  otherwise name any college. (`apps/web`'s nginx does not do this; pre-existing.)
+  otherwise name any college. (`apps/rooted`'s nginx does not do this; pre-existing.)
 
-Registration, invites and Google sign-in stay in `apps/web`; the portal links there
+Registration, invites and Google sign-in stay in `apps/rooted`; the portal links there
 (`VITE_MAIN_APP_URL`). Password reset and account claim have portal pages
 (`/forgot-password`, `/reset-password`, the latter with `&welcome=1` for a claim), and with
 `CATALYST_PUBLIC_URL` set on the api, reset and claim links for colleges on the training
 module open there (`getResetBaseUrl`, `claimUrlFor`). Other emailed links (staff invites)
-still open `apps/web`.
+still open `apps/rooted`.
 
 ## People (students and team)
 
@@ -51,8 +51,8 @@ they are thin wrappers over the api, which the main app also uses.
 ## Dev
 
 ```bash
-cp apps/portal/.env.example apps/portal/.env     # optional; defaults work with localtest.me
-pnpm dev:portal                                  # http://localhost:5174, API at :3001
+cp apps/catalyst/.env.example apps/catalyst/.env     # optional; defaults work with localtest.me
+pnpm dev:catalyst                                  # http://localhost:5174, API at :3001
 docker compose -f docker-compose.dev.yml up      # includes a hot-reload `portal` service on :5174
 ```
 
@@ -61,14 +61,14 @@ presents. With `APP_DOMAIN=localtest.me` the bare apex is the portal host.
 
 ## E2E (Playwright)
 
-Same stack as `apps/web`'s e2e (see CLAUDE.md): infra up, API on the test DB,
+Same stack as `apps/rooted`'s e2e (see CLAUDE.md): infra up, API on the test DB,
 then:
 
 ```bash
 pnpm --filter api seed:test:clean
-pnpm --filter portal test:e2e          # starts its own vite on :5174 with PORTAL_API_HOST=localhost
-pnpm --filter portal test:axe
-pnpm --filter portal exec playwright test --project=mobile   # phone viewport (Pixel 7)
+pnpm --filter catalyst test:e2e          # starts its own vite on :5174 with PORTAL_API_HOST=localhost
+pnpm --filter catalyst test:axe
+pnpm --filter catalyst exec playwright test --project=mobile   # phone viewport (Pixel 7)
 ```
 
 If the API is not on `:3001` set `API_PROXY_TARGET=http://127.0.0.1:<port>`.
@@ -124,9 +124,9 @@ a signed-in visitor is redirected to `homeRoute()`. Facts to keep true:
 ## Deploy (tunnel mode)
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.tunnel.yml up -d --build portal nginx
+docker compose -f docker-compose.yml -f docker-compose.tunnel.yml up -d --build catalyst nginx
 # staging checkout:
-docker compose -f docker-compose.yml -f docker-compose.tunnel.uat.yml up -d --build portal nginx
+docker compose -f docker-compose.yml -f docker-compose.tunnel.uat.yml up -d --build catalyst nginx
 ```
 
 Hostnames (derived from the programme name, unconfirmed): `catalyst.ruralrootcloud.com`
@@ -151,7 +151,7 @@ Hostnames (derived from the programme name, unconfirmed): `catalyst.ruralrootclo
 Real DNS/tunnel routing, the production TLS path (the `Secure` cookies and the
 `X-Forwarded-Proto` chain through two nginx hops), and `catalyst-uat`.
 
-## Code copied from `apps/web`
+## Code copied from `apps/rooted`
 
 Kept identical on purpose so a later shared package is a mechanical move:
 `src/lib/api.js`, `src/lib/utils.js`, `src/i18n/mergeHiEn.js`,
