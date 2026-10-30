@@ -27,7 +27,9 @@ async function main() {
   await connectDB();
   await connectMonitoringDB();
   await connectRedis();
-  await ensureBucket();
+  await ensureBucket().catch((err) =>
+    console.warn('S3 unavailable, uploads will fail:', err.message)
+  );
   await runMigrations(await loadMigrations());
   startAuditWorker();
   startReportCardWorker();
