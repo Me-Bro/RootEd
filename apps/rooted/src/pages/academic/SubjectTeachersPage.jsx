@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import SetupGap from '../../components/academic/SetupGap.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
+import { useTeachers } from '../../hooks/useTeachers.js';
 import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
 import {
   Table,
@@ -18,9 +19,6 @@ import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
 
 const EMPTY_ARRAY = [];
-
-const memberName = (m) =>
-  `${m.userId?.firstName ?? ''} ${m.userId?.lastName ?? ''}`.trim() || m.userId?.email || '';
 
 // Choosing a teacher saves at once; "Not assigned" removes the assignment.
 function TeacherRow({ subject, assigned, staff, sectionId, termId }) {
@@ -54,8 +52,8 @@ function TeacherRow({ subject, assigned, staff, sectionId, termId }) {
         >
           <option value="">{t('academic.teaching.notAssigned')}</option>
           {staff.map((m) => (
-            <option key={m.userId._id} value={m.userId._id}>
-              {memberName(m)}
+            <option key={m._id} value={m.userId}>
+              {m.firstName} {m.lastName}
             </option>
           ))}
         </select>
@@ -91,11 +89,7 @@ export default function SubjectTeachersPage() {
     queryKey: ['subjects'],
     queryFn: () => api.get('/academic/subjects').then((r) => r.data),
   });
-  const team = useQuery({
-    queryKey: ['staff-members'],
-    queryFn: () =>
-      api.get('/tenant/members', { params: { audience: 'staff', limit: 100 } }).then((r) => r.data),
-  });
+  const { staff, isSuccess: staffLoaded } = useTeachers();
   const ready = Boolean(sectionId && termId);
   const assignments = useQuery({
     queryKey: ['subject-teachers', sectionId, termId],
@@ -104,9 +98,8 @@ export default function SubjectTeachersPage() {
     enabled: ready,
   });
 
-  const staff = (team.data?.members ?? []).filter((m) => m.status === 'active' && m.userId);
   const bySubject = new Map((assignments.data ?? []).map((a) => [a.subjectId, a]));
-  const error = subjects.error || team.error || assignments.error;
+  const error = subjects.error || assignments.error;
   // No active year means no terms query runs, so that counts as "no terms" too.
   const noTerms = yearsLoaded && (!activeYearId || (termsLoaded && terms.length === 0));
 
@@ -164,7 +157,7 @@ export default function SubjectTeachersPage() {
           }
         />
       )}
-      {ready && subjects.data?.length > 0 && team.data && staff.length === 0 && (
+      {ready && subjects.data?.length > 0 && staffLoaded && staff.length === 0 && (
         <EmptyState
           title={t('academic.teaching.noStaff')}
           description={t('academic.teaching.noStaffHint')}

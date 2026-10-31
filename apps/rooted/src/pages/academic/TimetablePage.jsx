@@ -19,6 +19,7 @@ import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
 import { DaySlotList } from '../../components/timetable/DaySlotList.jsx';
 import SetupGap from '../../components/academic/SetupGap.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
+import { useTeachers } from '../../hooks/useTeachers.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { isCurrentPeriodCell } from '../../utils/scheduleHighlight.js';
 
@@ -49,13 +50,7 @@ function EntryModal({ open, onOpenChange, sectionId, yearId, day, period, entry 
   );
   const [error, setError] = useState('');
 
-  const { data: staff = [] } = useQuery({
-    queryKey: ['staff-list'],
-    // /staff/members is paginated ({ members, total, page, pages }) — the
-    // teacher picker needs the full list, so request the server's max page
-    // size rather than the default 20.
-    queryFn: () => api.get('/staff/members?limit=100').then((r) => r.data.members),
-  });
+  const { staff } = useTeachers();
 
   const { data: subjects = [] } = useQuery({
     queryKey: ['subjects'],
