@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -18,8 +18,16 @@ import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import DepartmentSection from '../../components/staff/DepartmentSection.jsx';
 import OnLeaveStrip from '../../components/staff/OnLeaveStrip.jsx';
 
-function AddStaffModal({ open, onOpenChange }) {
+function AddStaffModal({ open, onOpenChange, onAdded }) {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const perms = user?.permissions ?? [];
+  const canAssignRole = perms.includes('roles:write') && perms.includes('roles:read');
+  const { data: roles = [] } = useQuery({
+    queryKey: ['tenant-roles'],
+    queryFn: () => api.get('/tenant/roles').then((r) => r.data),
+    enabled: canAssignRole,
+  });
   const STEPS = [
     t('staff.directory.steps.basicInfo'),
     t('staff.directory.steps.contact'),
@@ -29,11 +37,12 @@ function AddStaffModal({ open, onOpenChange }) {
   const [step, setStep] = useState(0);
   const [error, setError] = useState('');
 
-  const { register, handleSubmit, getValues } = useForm({
+  const { register, handleSubmit, getValues, setValue } = useForm({
     defaultValues: {
       email: '',
       firstName: '',
       lastName: '',
+      roleId: '',
       employeeId: '',
       designation: '',
       department: '',
@@ -45,9 +54,23 @@ function AddStaffModal({ open, onOpenChange }) {
     },
   });
 
+  // Teacher is what most new staff are, so it is the starting choice.
+  const teacherId = roles.find((r) => r.templateKey === 'teacher')?._id;
+  useEffect(() => {
+    if (teacherId) setValue('roleId', teacherId);
+  }, [teacherId, setValue]);
+
   const mutation = useMutation({
-    mutationFn: (data) => api.post('/staff/members', data).then((r) => r.data),
-    onSuccess: () => {
+    mutationFn: ({ roleId, ...data }) =>
+      api
+        .post('/staff/members', roleId ? { ...data, roleIds: [roleId] } : data)
+        .then((r) => r.data),
+    onSuccess: (_, vars) => {
+      onAdded({
+        name: `${vars.firstName} ${vars.lastName}`,
+        email: vars.email,
+        login: Boolean(vars.roleId),
+      });
       queryClient.invalidateQueries({ queryKey: ['staff-members'] });
       onOpenChange(false);
       setStep(0);
@@ -96,6 +119,25 @@ function AddStaffModal({ open, onOpenChange }) {
                 label={t('staff.directory.lastName')}
                 {...register('lastName', { required: true })}
               />
+              {canAssignRole && (
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium">{t('staff.directory.loginRole')}</label>
+                  <select
+                    {...register('roleId')}
+                    className="h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                  >
+                    <option value="">{t('staff.directory.noLogin')}</option>
+                    {roles.map((r) => (
+                      <option key={r._id} value={r._id}>
+                        {r.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground">
+                    {t('staff.directory.loginRoleHint')}
+                  </p>
+                </div>
+              )}
               <Input label={t('staff.directory.employeeId')} {...register('employeeId')} />
               <Input label={t('staff.directory.designation')} {...register('designation')} />
               <Input label={t('staff.directory.department')} {...register('department')} />
@@ -137,7 +179,7 @@ function AddStaffModal({ open, onOpenChange }) {
                 {t('staff.directory.reviewDetails')}
               </p>
               {Object.entries(getValues()).map(([k, v]) =>
-                v ? (
+                v && k !== 'roleId' ? (
                   <div key={k} className="flex justify-between border-b border-border py-1">
                     <span className="text-muted-foreground capitalize">
                       {k.replace(/([A-Z])/g, ' $1')}
@@ -250,6 +292,7 @@ export default function StaffPage() {
 
   const [search, setSearch] = useState('');
   const [showAdd, setShowAdd] = useState(false);
+  const [added, setAdded] = useState(null);
   const [importResult, setImportResult] = useState(null);
   const fileRef = useRef(null);
 
@@ -369,7 +412,15 @@ export default function StaffPage() {
         </>
       )}
 
-      <AddStaffModal open={showAdd} onOpenChange={setShowAdd} />
+      {added && (
+        <p role="status" className="rounded-lg border border-border bg-card px-4 py-3 text-sm">
+          {t(
+            added.login ? 'staff.directory.addedWithLogin' : 'staff.directory.addedNoLogin',
+            added
+          )}
+        </p>
+      )}
+      <AddStaffModal open={showAdd} onOpenChange={setShowAdd} onAdded={setAdded} />
       <ImportResultModal
         open={Boolean(importResult)}
         onOpenChange={(v) => !v && setImportResult(null)}

@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { User } from '../models/User.js';
@@ -5,6 +6,7 @@ import { TenantMembership } from '../models/TenantMembership.js';
 import { StaffMember } from '../models/StaffMember.js';
 import {
   provisionStaffUser,
+  provisionStaffLogin,
   assertStaffMemberNotLinked,
   setStaffAccessStatus,
 } from '../services/staffOnboarding.service.js';
@@ -88,4 +90,56 @@ test('setStaffAccessStatus updates the membership status', async () => {
 
   const membership = await TenantMembership.findOne({ tenantId, userId });
   expect(membership.status).toBe('suspended');
+});
+
+describe('provisionStaffLogin', () => {
+  const tenant = { _id: new mongoose.Types.ObjectId(), name: 'Test School' };
+  const roleIds = [new mongoose.Types.ObjectId()];
+
+  test('gives someone new a claimable login with the chosen roles and mails the link', async () => {
+    const enqueue = jest.fn();
+
+    await provisionStaffLogin({
+      tenant,
+      email: 'new.teacher@testschool.local',
+      firstName: 'New',
+      lastName: 'Teacher',
+      roleIds,
+      enqueue,
+    });
+
+    const user = await User.findOne({ email: 'new.teacher@testschool.local' });
+    expect(user.status).toBe('pending_claim');
+    const membership = await TenantMembership.findOne({ tenantId: tenant._id, userId: user._id });
+    expect(membership.status).toBe('active');
+    expect(membership.roleIds.map(String)).toEqual(roleIds.map(String));
+    expect(enqueue).toHaveBeenCalledWith('accountClaim', [
+      'new.teacher@testschool.local',
+      'Test School',
+      expect.stringContaining('/accept-invite?token='),
+    ]);
+  });
+
+  test('leaves an existing member and their roles alone', async () => {
+    const enqueue = jest.fn();
+    const user = await User.create({ email: 'old@testschool.local', passwordHash: 'h' });
+    await TenantMembership.create({
+      tenantId: tenant._id,
+      userId: user._id,
+      roleIds: [],
+      status: 'active',
+    });
+
+    await provisionStaffLogin({ tenant, email: 'old@testschool.local', roleIds, enqueue });
+
+    const membership = await TenantMembership.findOne({ tenantId: tenant._id, userId: user._id });
+    expect(membership.roleIds).toEqual([]);
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  test('does nothing without roleIds', async () => {
+    const enqueue = jest.fn();
+    await provisionStaffLogin({ tenant, email: 'x@testschool.local', enqueue });
+    expect(await User.countDocuments({})).toBe(0);
+  });
 });

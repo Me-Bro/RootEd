@@ -6,6 +6,7 @@ import { StaffMember } from '../models/StaffMember.js';
 import { LeaveType } from '../models/LeaveType.js';
 import { LeaveBalance } from '../models/LeaveBalance.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { provisionStaffAccount } from './identity.service.js';
 
 export async function provisionStaffUser({ tenantId, email }) {
   let user = await User.findOne({ email });
@@ -23,6 +24,32 @@ export async function provisionStaffUser({ tenantId, email }) {
   }
 
   return user._id;
+}
+
+// With roleIds, someone new gets a login they can claim (active membership with those
+// roles, set-password email) instead of the role-less invited stub provisionStaffUser
+// leaves behind. Someone who is already a member keeps the roles they have.
+export async function provisionStaffLogin({
+  tenant,
+  email,
+  firstName,
+  lastName,
+  roleIds,
+  enqueue,
+}) {
+  if (!roleIds?.length) return;
+  const user = await User.findOne({ email }, '_id').lean();
+  if (user && (await TenantMembership.exists({ tenantId: tenant._id, userId: user._id }))) return;
+
+  const { user: created, reason } = await provisionStaffAccount({
+    tenant,
+    email,
+    firstName,
+    lastName,
+    roleIds,
+    enqueue,
+  });
+  if (!created) throw new AppError(`Could not add this person: ${reason}`, 409);
 }
 
 export async function assertStaffMemberNotLinked(tenantId, userId) {

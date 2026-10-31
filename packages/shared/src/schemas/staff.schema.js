@@ -17,6 +17,7 @@ export const createStaffMemberSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   firstName: z.string().trim().min(1),
   lastName: z.string().trim().min(1),
+  roleIds: optional(z.array(objectId).min(1)),
   employeeId: optional(z.string().trim().min(1)),
   designation: optional(z.string().trim().min(1)),
   department: optional(z.string().trim().min(1)),
