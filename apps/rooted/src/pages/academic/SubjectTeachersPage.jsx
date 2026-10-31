@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
+import SetupGap from '../../components/academic/SetupGap.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
 import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
 import {
@@ -72,7 +73,7 @@ export default function SubjectTeachersPage() {
   const { t } = useTranslation();
   const [sectionId, setSectionId] = useState('');
   const [termId, setTermId] = useState('');
-  const { sections } = useClassSections();
+  const { sections, isLoading: sectionsLoading } = useClassSections();
 
   // Same active-year scoping as GradesPage, so terms from old years don't pile up.
   const { data: years = EMPTY_ARRAY, isSuccess: yearsLoaded } = useQuery({
@@ -147,7 +148,8 @@ export default function SubjectTeachersPage() {
           }
         />
       )}
-      {!ready && !noTerms && (
+      {!sectionsLoading && sections.length === 0 && <SetupGap gap="sections" />}
+      {!ready && !noTerms && sections.length > 0 && (
         <p className="text-sm text-muted-foreground">{t('academic.teaching.pick')}</p>
       )}
       {error && <p className="text-sm text-destructive">{t('academic.teaching.loadError')}</p>}
@@ -163,7 +165,15 @@ export default function SubjectTeachersPage() {
         />
       )}
       {ready && subjects.data?.length > 0 && team.data && staff.length === 0 && (
-        <EmptyState title={t('academic.teaching.noStaff')} />
+        <EmptyState
+          title={t('academic.teaching.noStaff')}
+          description={t('academic.teaching.noStaffHint')}
+          action={
+            <Link to="/staff" className="text-sm font-medium underline">
+              {t('academic.teaching.goStaff')}
+            </Link>
+          }
+        />
       )}
       {ready && subjects.data?.length > 0 && staff.length > 0 && assignments.data && (
         <Table>

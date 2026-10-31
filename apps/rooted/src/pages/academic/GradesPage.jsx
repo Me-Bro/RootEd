@@ -9,6 +9,8 @@ import api from '../../lib/api.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
+import SetupGap from '../../components/academic/SetupGap.jsx';
+import { gradesGap } from '../../utils/gradesGap.js';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -70,7 +72,7 @@ export default function GradesPage() {
   const [importResult, setImportResult] = useState(null);
   const fileRef = useRef(null);
 
-  const { classes } = useClassSections();
+  const { classes, sections, isLoading: classesLoading } = useClassSections();
   const currentSection = classes
     .flatMap((c) => (c.sections || []).map((s) => ({ ...s, className: c.name })))
     .find((s) => s._id === sectionId);
@@ -79,21 +81,28 @@ export default function GradesPage() {
   // so the terms request below can be scoped to it. Without this, GET
   // /academic/terms returns every term across every seeded year (fixed here;
   // see docs/mobile-ui/05-grades-approved.html §0).
-  const { data: years = EMPTY_ARRAY } = useQuery({
+  const { data: years = EMPTY_ARRAY, isSuccess: yearsLoaded } = useQuery({
     queryKey: ['academic-years'],
     queryFn: () => api.get('/academic/years').then((r) => r.data),
   });
   const activeYearId = years.find((y) => y.isActive)?._id ?? '';
 
-  const { data: terms = EMPTY_ARRAY } = useQuery({
+  const { data: terms = EMPTY_ARRAY, isSuccess: termsLoaded } = useQuery({
     queryKey: ['terms', activeYearId],
     queryFn: () => api.get(`/academic/terms?yearId=${activeYearId}`).then((r) => r.data),
     enabled: Boolean(activeYearId),
   });
 
-  const { data: subjects = EMPTY_ARRAY } = useQuery({
+  const { data: subjects = EMPTY_ARRAY, isSuccess: subjectsLoaded } = useQuery({
     queryKey: ['subjects'],
     queryFn: () => api.get('/academic/subjects').then((r) => r.data),
+  });
+
+  // No active year means no terms request runs, so that counts as "no terms" too.
+  const gap = gradesGap({
+    sections: classesLoading ? undefined : sections,
+    terms: !yearsLoaded ? undefined : !activeYearId ? [] : termsLoaded ? terms : undefined,
+    subjects: subjectsLoaded ? subjects : undefined,
   });
 
   const {
@@ -453,7 +462,11 @@ export default function GradesPage() {
         </div>
       )}
 
-      {!sectionId && <EmptyState title={t('academic.grades.selectToEnter')} />}
+      {gap ? (
+        <SetupGap gap={gap} />
+      ) : (
+        !sectionId && <EmptyState title={t('academic.grades.selectToEnter')} />
+      )}
 
       {sectionId && !studentsLoading && gradesReady && students.length === 0 && (
         <EmptyState title={t('academic.grades.noActiveStudents')} />

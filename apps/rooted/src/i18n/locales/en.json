@@ -277,6 +277,24 @@
     }
   },
   "academic": {
+    "setupGap": {
+      "askAdmin": "Ask a school admin to set this up.",
+      "sections": {
+        "title": "No classes or sections yet",
+        "hint": "Attendance, grades and students are organised by section. Create a class and a section first.",
+        "link": "Create classes and sections"
+      },
+      "terms": {
+        "title": "No terms yet for the active year",
+        "hint": "Grades are entered per term. Add a term to the active academic year first.",
+        "link": "Add a term"
+      },
+      "subjects": {
+        "title": "No subjects yet",
+        "hint": "Add the subjects you teach before entering grades.",
+        "link": "Add subjects"
+      }
+    },
     "shared": {
       "searchPlaceholder": "Search name or admission no."
     },
@@ -672,6 +690,8 @@
       "noSubjects": "No subjects to assign yet.",
       "goSubjects": "Add subjects",
       "noStaff": "No active staff to assign.",
+      "noStaffHint": "Only teachers with an active login are listed. Add them under Staff, then invite them under Members with a Teacher role.",
+      "goStaff": "Go to Staff",
       "noTerms": "No terms yet for the active academic year.",
       "goYears": "Add a term"
     }

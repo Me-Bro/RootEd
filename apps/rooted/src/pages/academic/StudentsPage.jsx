@@ -17,6 +17,7 @@ import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
 import SearchField from '../../components/attendance/SearchField.jsx';
 import ClassGrid from '../../components/students/ClassGrid.jsx';
+import SetupGap from '../../components/academic/SetupGap.jsx';
 import RosterInfiniteList from '../../components/students/RosterInfiniteList.jsx';
 import CreateSectionDialog from '../../components/students/CreateSectionDialog.jsx';
 import { useAuth } from '../../contexts/useAuth.js';
@@ -222,7 +223,7 @@ export default function StudentsPage() {
   const [drillClassId, setDrillClassId] = useState(null);
   const [lastUsedSectionId, setLastUsedSectionId] = useState(drillSectionId);
 
-  const { classes, sections } = useClassSections();
+  const { classes, sections, isLoading: classesLoading } = useClassSections();
   const sectionsById = Object.fromEntries(sections.map((s) => [s._id, s]));
 
   useEffect(() => {
@@ -346,6 +347,7 @@ export default function StudentsPage() {
         <RosterInfiniteList search={search} />
       ) : (
         <div className="flex flex-col gap-4">
+          {!classesLoading && classes.length === 0 && <SetupGap gap="sections" />}
           {showRecentlyUsed && (
             <button
               type="button"
