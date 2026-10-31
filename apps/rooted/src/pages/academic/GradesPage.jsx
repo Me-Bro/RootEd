@@ -279,6 +279,9 @@ export default function GradesPage() {
     onClear: () => setDraft(''),
   });
 
+  // A mark still being typed (no Enter yet) counts, so Save doesn't drop it.
+  const savableMap = draft && focusedId ? { ...scoreMap, [focusedId]: Number(draft) } : scoreMap;
+
   function handleSave() {
     const grades = students
       .map((s) => ({
@@ -288,7 +291,7 @@ export default function GradesPage() {
         termId,
         academicYearId: selectedTerm?.academicYearId,
         assessmentType,
-        score: scoreMap[s._id],
+        score: savableMap[s._id],
       }))
       // "AB" (score === null) isn't a persistable value — the Grade model has
       // no absent flag and this UI-only spec leaves the API contract
@@ -296,6 +299,7 @@ export default function GradesPage() {
       // saved row. See report for the fuller note.
       .filter((g) => typeof g.score === 'number');
 
+    commitDraftAndAdvance();
     saveMutation.mutate(grades);
   }
 
@@ -542,7 +546,11 @@ export default function GradesPage() {
             <Button
               className="flex-1"
               onClick={handleSave}
-              disabled={saveMutation.isPending || locked || numericScores.length === 0}
+              disabled={
+                saveMutation.isPending ||
+                locked ||
+                !Object.values(savableMap).some((v) => typeof v === 'number')
+              }
             >
               {saveMutation.isPending ? t('common.saving') : t('academic.grades.saveGrades')}
             </Button>
