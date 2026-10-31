@@ -139,6 +139,41 @@
     "done": "Done"
   },
   "dashboard": {
+    "setup": {
+      "title": "Set up your school",
+      "progress": "{{done}} of {{total}} steps done",
+      "open": "Open",
+      "done": "Done",
+      "todo": "Not done yet",
+      "years": {
+        "title": "Create an academic year",
+        "hint": "Terms, grades and the timetable all hang off the active year."
+      },
+      "terms": {
+        "title": "Add a term",
+        "hint": "Grades and report cards are entered per term. Add it from the year's card."
+      },
+      "classes": {
+        "title": "Create a class and a section",
+        "hint": "Students, attendance and grades are organised by section."
+      },
+      "subjects": {
+        "title": "Add subjects",
+        "hint": "Subjects are what you teach and grade."
+      },
+      "staff": {
+        "title": "Add a teacher",
+        "hint": "Add them under Staff, then invite them with a Teacher role under Members so they can sign in."
+      },
+      "teaching": {
+        "title": "Assign teachers to subjects",
+        "hint": "Record who teaches which subject in each section."
+      },
+      "students": {
+        "title": "Add students",
+        "hint": "Add them one by one or import a CSV, and choose their section."
+      }
+    },
     "title": "Dashboard",
     "overview": "Overview",
     "systemOverview": "System overview and recent activity",
