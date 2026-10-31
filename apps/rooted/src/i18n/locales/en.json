@@ -40,8 +40,7 @@
     "members": "Members",
     "joinPolicy": "Joining",
     "accountSettings": "Account settings",
-    "subjects": "Subjects",
-    "teaching": "Teaching"
+    "subjects": "Subjects"
   },
   "auth": {
     "login": "Login",
@@ -175,7 +174,7 @@
       },
       "teaching": {
         "title": "Assign teachers to subjects",
-        "hint": "Record who teaches which subject in each section."
+        "hint": "Open a subject and choose who teaches each section."
       },
       "students": {
         "title": "Add students",
@@ -745,21 +744,20 @@
       "loadError": "Could not load subjects.",
       "saveFailed": "Could not save the subject.",
       "deleteFailed": "Could not delete the subject.",
-      "confirmDelete": "Delete {{name}}?"
+      "confirmDelete": "Delete {{name}}?",
+      "teachers": "Teachers",
+      "teachersTitle": "Teachers for {{name}}",
+      "teachersHint": "Applies to the whole academic year.",
+      "sameForAll": "Same teacher for all sections",
+      "pickTeacher": "Choose a teacher…",
+      "teacherForSection": "Teacher for {{section}}",
+      "noSections": "This subject's class has no sections yet.",
+      "noLoginName": "{{name}} (no login yet)"
     },
     "teaching": {
-      "title": "Teaching",
-      "description": "Choose which teacher takes each subject for a section and term.",
-      "section": "Section",
-      "term": "Term",
-      "pick": "Pick a section and a term to assign teachers.",
-      "teacher": "Teacher",
-      "teacherFor": "Teacher for {{name}}",
       "notAssigned": "Not assigned",
       "saveFailed": "Could not save the assignment.",
       "loadError": "Could not load teaching assignments.",
-      "noSubjects": "No subjects to assign yet.",
-      "goSubjects": "Add subjects",
       "noStaff": "No active staff to assign.",
       "noStaffHint": "Add your teachers under Staff first, then assign them here.",
       "goStaff": "Go to Staff",

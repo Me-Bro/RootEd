@@ -96,12 +96,6 @@ function getNavGroups(t, orgType) {
           permission: 'students:read',
         },
         {
-          to: '/academic/teaching',
-          label: t('nav.teaching'),
-          icon: GraduationCap,
-          permission: 'tenant:admin',
-        },
-        {
           to: '/academic/timetable',
           label: t('nav.timetable'),
           icon: Grid,

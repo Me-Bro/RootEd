@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '../../components/ui/table.jsx';
+import SubjectTeachersDialog from '../../components/academic/SubjectTeachersDialog.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
 
@@ -129,6 +130,7 @@ export default function SubjectsPage() {
   // null = closed, 'new' = add, otherwise the subject being edited.
   const [dialog, setDialog] = useState(null);
   const [deleteError, setDeleteError] = useState('');
+  const [teachersFor, setTeachersFor] = useState(null);
 
   const {
     data: subjects = EMPTY_ARRAY,
@@ -215,6 +217,9 @@ export default function SubjectsPage() {
                 {canWrite && (
                   <TableCell>
                     <span className="flex justify-end gap-1.5">
+                      <Button size="sm" variant="outline" onClick={() => setTeachersFor(s)}>
+                        {t('academic.subjects.teachers')}
+                      </Button>
                       <Button size="sm" variant="outline" onClick={() => setDialog(s)}>
                         {t('common.edit')}
                       </Button>
@@ -236,6 +241,10 @@ export default function SubjectsPage() {
             ))}
           </TableBody>
         </Table>
+      )}
+
+      {teachersFor && (
+        <SubjectTeachersDialog subject={teachersFor} onClose={() => setTeachersFor(null)} />
       )}
 
       <SubjectDialog
