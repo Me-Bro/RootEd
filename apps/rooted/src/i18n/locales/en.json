@@ -165,7 +165,40 @@
       "viewTimetable": "View Timetable",
       "viewAttendance": "View Attendance",
       "viewGrades": "View Grades",
-      "viewFees": "View Fees"
+      "viewFees": "View Fees",
+      "todayLabel": "Today",
+      "nowLabel": "Now",
+      "upNextLabel": "Up next",
+      "minutesLeft_one": "{{count}} min left",
+      "minutesLeft_other": "{{count}} min left",
+      "minutesUntil_one": "in {{count}} min",
+      "minutesUntil_other": "in {{count}} min",
+      "thenNext": "Next: {{subject}} at {{time}}",
+      "noClassesToday": "No classes today",
+      "noMoreClasses": "No more classes today",
+      "absentRun_one": "{{count}} absent in a row",
+      "absentRun_other": "{{count}} absent in a row",
+      "attendanceSummary_one": "{{pct}}% present over {{count}} day",
+      "attendanceSummary_other": "{{pct}}% present over {{count}} days",
+      "status": {
+        "present": "Present",
+        "absent": "Absent",
+        "late": "Late",
+        "excused": "Excused"
+      },
+      "statusLetter": {
+        "present": "P",
+        "absent": "A",
+        "late": "L",
+        "excused": "E"
+      },
+      "feeOverdue": "Overdue",
+      "feePaidUp": "Paid up",
+      "feeNoPayments": "No payments yet",
+      "gradesLabel": "Grades",
+      "gradesPublished_one": "{{count}} published",
+      "gradesPublished_other": "{{count}} published",
+      "gradesRange": "Highest {{high}} · lowest {{low}}"
     },
     "principal": {
       "greeting": "Good morning, {{name}}",
