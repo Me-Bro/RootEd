@@ -631,7 +631,9 @@
       "loadError": "Could not load teaching assignments.",
       "noSubjects": "No subjects to assign yet.",
       "goSubjects": "Add subjects",
-      "noStaff": "No active staff to assign."
+      "noStaff": "No active staff to assign.",
+      "noTerms": "No terms yet for the active academic year.",
+      "goYears": "Add a term"
     }
   },
   "staff": {

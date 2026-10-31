@@ -75,12 +75,12 @@ export default function SubjectTeachersPage() {
   const { sections } = useClassSections();
 
   // Same active-year scoping as GradesPage, so terms from old years don't pile up.
-  const { data: years = EMPTY_ARRAY } = useQuery({
+  const { data: years = EMPTY_ARRAY, isSuccess: yearsLoaded } = useQuery({
     queryKey: ['academic-years'],
     queryFn: () => api.get('/academic/years').then((r) => r.data),
   });
   const activeYearId = years.find((y) => y.isActive)?._id ?? '';
-  const { data: terms = EMPTY_ARRAY } = useQuery({
+  const { data: terms = EMPTY_ARRAY, isSuccess: termsLoaded } = useQuery({
     queryKey: ['terms', activeYearId],
     queryFn: () => api.get(`/academic/terms?yearId=${activeYearId}`).then((r) => r.data),
     enabled: Boolean(activeYearId),
@@ -106,6 +106,8 @@ export default function SubjectTeachersPage() {
   const staff = (team.data?.members ?? []).filter((m) => m.status === 'active' && m.userId);
   const bySubject = new Map((assignments.data ?? []).map((a) => [a.subjectId, a]));
   const error = subjects.error || team.error || assignments.error;
+  // No active year means no terms query runs, so that counts as "no terms" too.
+  const noTerms = yearsLoaded && (!activeYearId || (termsLoaded && terms.length === 0));
 
   return (
     <div className="flex flex-col gap-6">
@@ -135,7 +137,19 @@ export default function SubjectTeachersPage() {
         </SelectField>
       </div>
 
-      {!ready && <p className="text-sm text-muted-foreground">{t('academic.teaching.pick')}</p>}
+      {noTerms && (
+        <EmptyState
+          title={t('academic.teaching.noTerms')}
+          action={
+            <Link to="/academic/years" className="text-sm font-medium underline">
+              {t('academic.teaching.goYears')}
+            </Link>
+          }
+        />
+      )}
+      {!ready && !noTerms && (
+        <p className="text-sm text-muted-foreground">{t('academic.teaching.pick')}</p>
+      )}
       {error && <p className="text-sm text-destructive">{t('academic.teaching.loadError')}</p>}
 
       {ready && subjects.data?.length === 0 && (
