@@ -74,7 +74,7 @@ function getNavGroups(t, orgType) {
       ],
     },
     {
-      label: t('nav.academic'),
+      label: t('nav.academicSetup'),
       module: 'academic',
       items: [
         {
@@ -101,6 +101,18 @@ function getNavGroups(t, orgType) {
           icon: GraduationCap,
           permission: 'tenant:admin',
         },
+        {
+          to: '/academic/timetable',
+          label: t('nav.timetable'),
+          icon: Grid,
+          permission: 'students:read',
+        },
+      ],
+    },
+    {
+      label: t('nav.academic'),
+      module: 'academic',
+      items: [
         {
           to: '/academic/students',
           label: studentLabel,
@@ -130,12 +142,6 @@ function getNavGroups(t, orgType) {
           label: t('nav.gradeReport'),
           icon: BarChart2,
           permission: 'grades:read',
-        },
-        {
-          to: '/academic/timetable',
-          label: t('nav.timetable'),
-          icon: Grid,
-          permission: 'students:read',
         },
         {
           to: '/academic/my-timetable',
