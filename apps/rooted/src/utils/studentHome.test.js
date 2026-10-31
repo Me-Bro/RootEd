@@ -1,6 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { currentAndNext, absentRun, recentStrip } from './studentHome.js';
+import {
+  currentAndNext,
+  absentRun,
+  absentRunRecords,
+  nextClassDay,
+  recentStrip,
+} from './studentHome.js';
 
 // Friday 30 Oct 2026, local time. Periods match Grade 5-A's seeded Friday.
 const fri = (h, m) => new Date(2026, 9, 30, h, m);
@@ -71,4 +77,17 @@ test('recentStrip returns the newest n records first', () => {
     s.map((r) => r.date),
     ['2026-10-30', '2026-10-29', '2026-10-28']
   );
+});
+
+test('absentRunRecords lists the run newest first', () => {
+  assert.deepEqual(
+    absentRunRecords(records).map((r) => r.date),
+    ['2026-10-30', '2026-10-29', '2026-10-28']
+  );
+});
+
+test('nextClassDay finds the next weekday with classes, skipping the weekend', () => {
+  assert.equal(nextClassDay(timetable, sat).getDay(), 1);
+  assert.equal(nextClassDay(timetable, fri(16, 0)).getDate(), 2);
+  assert.equal(nextClassDay([], fri(16, 0)), null);
 });
