@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { Badge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
+import { LoginBadge } from '../ui/LoginBadge.jsx';
+import { studentLoginState } from '../../utils/loginState.js';
 import { EmptyState } from '../ui/EmptyState.jsx';
 
 const PAGE_SIZE = 20;
@@ -130,6 +132,9 @@ export default function RosterInfiniteList({ sectionId, search }) {
               </p>
               <p className="font-mono text-xs text-muted-foreground">{s.admissionNo}</p>
             </div>
+            {s.account !== undefined && studentLoginState(s.account) !== 'active' && (
+              <LoginBadge state={studentLoginState(s.account)} />
+            )}
             <Badge variant={statusVariant(s.status)}>{s.status}</Badge>
           </Link>
         ))}

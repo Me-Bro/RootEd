@@ -541,6 +541,10 @@ router.get('/students/:id', requirePermission('students:read'), async (req, res,
   try {
     const student = await Student.findOne({ _id: req.params.id, tenantId: req.tenant._id }).lean();
     if (!student) return res.status(404).json({ error: 'Not found' });
+    if (await userHasPermission(req, 'students:write')) {
+      const accounts = await accountsFor(req.tenant._id, [student]);
+      student.account = accounts.get(String(student.userId)) ?? null;
+    }
     res.json(student);
   } catch (err) {
     next(err);

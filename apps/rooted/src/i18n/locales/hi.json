@@ -110,6 +110,12 @@
     "resetRequested": "यदि वह ईमेल मौजूद है, तो रीसेट लिंक भेज दिया गया है।"
   },
   "common": {
+    "loginState": {
+      "none": "अभी लॉगिन नहीं",
+      "pending": "पासवर्ड का इंतज़ार",
+      "active": "साइन इन कर सकते हैं",
+      "suspended": "निलंबित"
+    },
     "save": "सहेजें",
     "cancel": "रद्द करें",
     "delete": "हटाएं",
@@ -443,6 +449,15 @@
       "loadMore": "अधिक लोड करें"
     },
     "studentDetail": {
+      "loginHeading": "लॉगिन",
+      "loginHint": "लॉगिन के बिना यह छात्र अपनी उपस्थिति, अंक या फीस नहीं देख सकता।",
+      "giveLogin": "लॉगिन बनाएँ",
+      "loginEmail": "छात्र का ईमेल",
+      "sendLink": "लिंक भेजें",
+      "resendLink": "लिंक दोबारा भेजें",
+      "loginSent": "पासवर्ड सेट करने का लिंक {{email}} पर भेजा गया।",
+      "linkResent": "लिंक दोबारा भेजा गया।",
+      "loginFailed": "लॉगिन नहीं बन सका",
       "editModalTitle": "छात्र संपादित करें",
       "updateFailed": "छात्र अपडेट करने में विफल",
       "parentGuardianContacts": "अभिभावक संपर्क",

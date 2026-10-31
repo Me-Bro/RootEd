@@ -18,7 +18,11 @@ import {
   payrollExportQuerySchema,
 } from '@rooted/shared/schemas';
 import { authenticate } from '../middleware/authenticate.js';
-import { requirePermission, resolvePermissions } from '../middleware/requirePermission.js';
+import {
+  requirePermission,
+  resolvePermissions,
+  userHasPermission,
+} from '../middleware/requirePermission.js';
 import { validate } from '../middleware/validate.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { StaffMember } from '../models/StaffMember.js';
@@ -38,6 +42,7 @@ import { redis } from '../config/redis.js';
 import {
   provisionStaffUser,
   provisionStaffLogin,
+  staffLoginStates,
   assertStaffMemberNotLinked,
   setStaffAccessStatus,
   seedLeaveBalancesForStaff,
@@ -207,6 +212,12 @@ router.get('/members', requirePermission('staff:read'), async (req, res, next) =
         .lean(),
       StaffMember.countDocuments(filter),
     ]);
+
+    // Only those who may fix a login need to see whether it works.
+    if (await userHasPermission(req, 'staff:write')) {
+      const logins = await staffLoginStates(tenantId, members);
+      for (const m of members) m.login = logins.get(String(m.userId)) ?? 'none';
+    }
 
     res.json({ members, total, page, pages: Math.ceil(total / limit) });
   } catch (err) {

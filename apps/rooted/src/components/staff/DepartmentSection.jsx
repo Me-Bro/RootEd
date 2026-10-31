@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Badge } from '../ui/Badge.jsx';
+import { LoginBadge } from '../ui/LoginBadge.jsx';
 
 function initials(firstName, lastName) {
   return `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase();
@@ -44,6 +45,7 @@ export default function DepartmentSection({ department, members }) {
                 {m.designation ? ` · ${m.designation}` : ''}
               </p>
             </div>
+            {m.login && m.login !== 'active' && <LoginBadge state={m.login} />}
             <Badge variant={statusVariant(m.employmentStatus)}>{m.employmentStatus}</Badge>
           </Link>
         ))}
