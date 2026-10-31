@@ -20,6 +20,8 @@ import { DaySlotList } from '../../components/timetable/DaySlotList.jsx';
 import SetupGap from '../../components/academic/SetupGap.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
 import { useTeachers } from '../../hooks/useTeachers.js';
+import { subjectsForSection } from '../../utils/subjectsForSection.js';
+import { yearAssignment } from '../../utils/yearAssignment.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { isCurrentPeriodCell } from '../../utils/scheduleHighlight.js';
 
@@ -51,11 +53,46 @@ function EntryModal({ open, onOpenChange, sectionId, yearId, day, period, entry 
   const [error, setError] = useState('');
 
   const { staff } = useTeachers();
+  const { sections } = useClassSections();
 
   const { data: subjects = [] } = useQuery({
     queryKey: ['subjects'],
     queryFn: () => api.get('/academic/subjects').then((r) => r.data),
   });
+  // The section's own subjects, keeping whatever an edited slot already holds.
+  const offeredSubjects = subjectsForSection(
+    subjects,
+    sections.find((x) => x._id === sectionId)
+  ).concat(subjects.filter((x) => x._id === form.subjectId));
+  const uniqueSubjects = [...new Map(offeredSubjects.map((x) => [x._id, x])).values()];
+
+  // Starting from the subject's assigned teacher saves choosing one the section already has.
+  const { data: terms = [] } = useQuery({
+    queryKey: ['terms', yearId],
+    queryFn: () => api.get(`/academic/terms?yearId=${yearId}`).then((r) => r.data),
+    enabled: Boolean(yearId),
+  });
+  const { data: assignments = [] } = useQuery({
+    queryKey: ['subject-teachers', sectionId],
+    queryFn: () =>
+      api.get('/academic/subject-teachers', { params: { sectionId } }).then((r) => r.data),
+  });
+  const [prefilled, setPrefilled] = useState(false);
+
+  function pickSubject(subjectId) {
+    const termIds = [...terms]
+      .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
+      .map((term) => term._id);
+    const assigned = form.teacherId
+      ? null
+      : yearAssignment(
+          assignments.filter((a) => a.subjectId === subjectId),
+          sectionId,
+          termIds
+        );
+    setForm((f) => ({ ...f, subjectId, teacherId: assigned?.teacherId ?? f.teacherId }));
+    setPrefilled(Boolean(assigned));
+  }
 
   function update(field) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -120,7 +157,10 @@ function EntryModal({ open, onOpenChange, sectionId, yearId, day, period, entry 
           <SelectField
             label={t('academic.timetable.teacher')}
             value={form.teacherId}
-            onValueChange={(v) => setForm((f) => ({ ...f, teacherId: v }))}
+            onValueChange={(v) => {
+              setForm((f) => ({ ...f, teacherId: v }));
+              setPrefilled(false);
+            }}
             placeholder={t('academic.timetable.selectTeacherPlaceholder')}
           >
             {staff.map((s) => (
@@ -132,15 +172,20 @@ function EntryModal({ open, onOpenChange, sectionId, yearId, day, period, entry 
           <SelectField
             label={t('common.subject')}
             value={form.subjectId}
-            onValueChange={(v) => setForm((f) => ({ ...f, subjectId: v }))}
+            onValueChange={pickSubject}
             placeholder={t('academic.timetable.selectSubjectPlaceholder')}
           >
-            {subjects.map((s) => (
+            {uniqueSubjects.map((s) => (
               <SelectItem key={s._id} value={s._id}>
                 {s.name}
               </SelectItem>
             ))}
           </SelectField>
+          {prefilled && (
+            <p className="-mt-2 text-xs text-muted-foreground">
+              {t('academic.timetable.teacherPrefilled')}
+            </p>
+          )}
           <div className="flex gap-3">
             <Input
               label={t('academic.timetable.startTime')}

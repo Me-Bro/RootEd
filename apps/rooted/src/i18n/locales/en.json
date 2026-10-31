@@ -674,7 +674,8 @@
       "selectYearPlaceholder": "— Select Year —",
       "copyResult": "Copied {{copied}}, skipped {{skipped}} (already existed).",
       "copying": "Copying…",
-      "copy": "Copy"
+      "copy": "Copy",
+      "teacherPrefilled": "Pre-filled from the subject’s teacher. You can change it."
     },
     "mySchedule": {
       "title": "My Schedule",

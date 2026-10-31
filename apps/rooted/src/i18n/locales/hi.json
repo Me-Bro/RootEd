@@ -674,7 +674,8 @@
       "selectYearPlaceholder": "— वर्ष चुनें —",
       "copyResult": "{{copied}} कॉपी किए गए, {{skipped}} छोड़े गए (पहले से मौजूद)।",
       "copying": "कॉपी हो रहा है…",
-      "copy": "कॉपी करें"
+      "copy": "कॉपी करें",
+      "teacherPrefilled": "विषय के शिक्षक से भरा गया। आप इसे बदल सकते हैं।"
     },
     "mySchedule": {
       "title": "मेरा कार्यक्रम",
