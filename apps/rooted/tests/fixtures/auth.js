@@ -84,7 +84,8 @@ export async function loginViaUi(page, email, password) {
   await page.goto('/login');
   const dialog = await openLoginDialog(page);
   await dialog.getByLabel('Email').fill(email);
-  await dialog.getByLabel('Password').fill(password);
+  // exact: the password field's "Show password" toggle would otherwise match too.
+  await dialog.getByLabel('Password', { exact: true }).fill(password);
   await dialog.getByRole('button', { name: 'Sign in' }).click();
   await page.waitForURL('**/dashboard', { timeout: 15_000 });
 }

@@ -165,7 +165,40 @@
       "viewTimetable": "समय सारणी देखें",
       "viewAttendance": "उपस्थिति देखें",
       "viewGrades": "ग्रेड देखें",
-      "viewFees": "फीस देखें"
+      "viewFees": "फीस देखें",
+      "todayLabel": "आज",
+      "nowLabel": "अभी",
+      "upNextLabel": "अगला",
+      "minutesLeft_one": "{{count}} मिनट शेष",
+      "minutesLeft_other": "{{count}} मिनट शेष",
+      "minutesUntil_one": "{{count}} मिनट में",
+      "minutesUntil_other": "{{count}} मिनट में",
+      "thenNext": "अगला: {{subject}}, {{time}} बजे",
+      "noClassesToday": "आज कोई कक्षा नहीं",
+      "noMoreClasses": "आज और कोई कक्षा नहीं",
+      "absentRun_one": "लगातार {{count}} दिन अनुपस्थित",
+      "absentRun_other": "लगातार {{count}} दिन अनुपस्थित",
+      "attendanceSummary_one": "{{count}} दिन में {{pct}}% उपस्थित",
+      "attendanceSummary_other": "{{count}} दिनों में {{pct}}% उपस्थित",
+      "status": {
+        "present": "उपस्थित",
+        "absent": "अनुपस्थित",
+        "late": "देर से",
+        "excused": "क्षमा प्राप्त"
+      },
+      "statusLetter": {
+        "present": "उ",
+        "absent": "अ",
+        "late": "दे",
+        "excused": "क्ष"
+      },
+      "feeOverdue": "बकाया",
+      "feePaidUp": "चुकता",
+      "feeNoPayments": "अभी तक कोई भुगतान नहीं",
+      "gradesLabel": "ग्रेड",
+      "gradesPublished_one": "{{count}} प्रकाशित",
+      "gradesPublished_other": "{{count}} प्रकाशित",
+      "gradesRange": "सर्वाधिक {{high}} · न्यूनतम {{low}}"
     },
     "principal": {
       "greeting": "सुप्रभात, {{name}}",

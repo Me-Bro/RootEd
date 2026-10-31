@@ -14,6 +14,22 @@ test.describe('Student self-service portal', () => {
     await expect(page.getByText('School', { exact: true })).toHaveCount(0);
   });
 
+  test.describe('home cards', () => {
+    test.use({ timezoneId: 'Asia/Kolkata' });
+
+    test('the dashboard answers now, attendance, fees and grades', async ({ page }) => {
+      // Monday 09:10 IST: Student1's seeded Mathematics period (09:00-09:45, Room 101) is live.
+      await page.clock.setFixedTime(new Date('2026-10-26T09:10:00+05:30'));
+      await page.goto('/dashboard');
+      await expect(visibleText(page, '35 min left')).toBeVisible({ timeout: 15_000 });
+      await expect(visibleText(page, 'Room 101 · 09:00–09:45')).toBeVisible();
+      await expect(visibleText(page, 'Next: English at 09:45')).toBeVisible();
+      await expect(visibleText(page, /% present over \d+ days/)).toBeVisible();
+      await expect(visibleText(page, 'Fee balance')).toBeVisible();
+      await expect(visibleText(page, '1 published')).toBeVisible();
+    });
+  });
+
   test('the dashboard links out to the four self-service pages', async ({ page }) => {
     await page.goto('/dashboard');
     await expect(page.getByRole('button', { name: 'View Timetable' })).toBeVisible({

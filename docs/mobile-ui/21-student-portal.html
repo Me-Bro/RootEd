@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Student portal — 2 mockups + proposed spec · RootEd</title>
+<link rel="stylesheet" href="mockup.css">
+</head>
+<body>
+<div class="page wide">
+  <p class="crumbs"><a href="index.html">← All modules</a> · Self-service · <code>pages/me/*.jsx</code></p>
+
+  <div class="notebox" style="max-width:900px">
+    <b>PROPOSED, not yet approved.</b> Lightweight process: what the desktop does today → exactly <b>2 mobile mockups</b> (simple, then smart) → pick one → build spec. Sign-off is blank at the bottom.
+  </div>
+
+  <h1 class="page-title">Student portal — mobile mock</h1>
+  <p class="page-sub">Real data: <b>Chetan Shetty</b>, GPS/2026/0418, Grade 5-A — 20 attendance records (13 present, 2 late, 1 excused, 4 absent), one unpaid fee of ₹40,500, 8 of 32 grades published, a full Friday of 8 periods. Pulled from the seeded <code>rooted</code> database on 31 Oct 2026.</p>
+
+  <div class="statrow" style="max-width:900px">
+    <div class="s"><div class="n">2</div><div class="l">Mockups made</div></div>
+    <div class="s"><div class="n">4</div><div class="l">Pages today</div></div>
+    <div class="s hot"><div class="n">0</div><div class="l">New endpoints</div></div>
+  </div>
+
+  <div class="toc">
+    <a href="#current"><b>0</b> · What the desktop does today</a>
+    <a href="#mocks"><b>1</b> · The 2 mockups</a>
+    <a href="#wiring"><b>2</b> · API contracts</a>
+    <a href="#state"><b>3</b> · State &amp; logic</a>
+    <a href="#components"><b>4</b> · File &amp; component plan</a>
+    <a href="#edge"><b>5</b> · Errors, empty, a11y</a>
+    <a href="#dod"><b>6</b> · Definition of done</a>
+    <a href="#signoff"><b>7</b> · Sign-off</a>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:34px" id="current">0 · What the desktop does today <span style="color:#6e7a8a;font-size:13px;font-weight:400">— read from the real code</span></h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Behaviour</th><th>Where it lives</th></tr></thead>
+      <tbody>
+        <tr><td>Four separate routes (<code>/me/attendance</code>, <code>/me/fees</code>, <code>/me/grades</code>, <code>/me/timetable</code>), each its own page. No combined home.</td><td>App.jsx, pages/me/*</td></tr>
+        <tr><td>Attendance is a Date / Status table, newest first, up to 400 rows, with one summary line. Late counts as present in the percentage (15 of 20 = 75%).</td><td>MyAttendancePage.jsx:17, routes/me.js:108</td></tr>
+        <tr><td><b>Finding:</b> the badge is green only for <code>present</code>. <code>late</code> and <code>excused</code> render red like <code>absent</code>, although late is counted as present in the line above.</td><td>MyAttendancePage.jsx:44</td></tr>
+        <tr><td>Fees: one card with total due, total paid, balance; then an assignments table (due date, net amount, status) and a payments table (date, amount, method, receipt).</td><td>MyFeesPage.jsx</td></tr>
+        <tr><td>Grades: Subject / Assessment / Score / Grade table. Only grades whose section, subject, term and assessment have a <code>GradeLock</code> appear, so Chetan sees 8 of his 32. The page never says any are pending.</td><td>MyGradesPage.jsx, routes/me.js:133</td></tr>
+        <tr><td>Timetable: the shared weekly grid plus a Print button. Returns <code>[]</code> until the timetable is published for the section.</td><td>MyTimetablePage.jsx, routes/me.js:178</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="mocks">1 · The 2 mockups</h2>
+
+  <div class="rail">
+    <div class="variant">
+      <div class="variant-head">
+        <span class="statechip" style="background:#3a4152;color:#e2e7ee">MOCK 1 · SIMPLE</span>
+        <div class="variant-title">One page per tab, as the desktop has it</div>
+        <p class="variant-for">Attendance page, mobile-shaped: summary line, then the date list. Same data, same order. The red late and excused badges are kept on purpose, so you can see the finding.</p>
+      </div>
+      <div class="phone">
+        <div class="statusbar"><span>10:38</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="grow"><h2 style="font-size:17px">My attendance</h2></div></div></div>
+          <div class="body">
+            <p class="small muted">75% present · 15 of 20 days</p>
+            <div class="slot"><div class="time">30 Oct</div><div class="grow"><div class="subj">Friday</div></div><span class="badge bad">absent</span></div>
+            <div class="slot"><div class="time">29 Oct</div><div class="grow"><div class="subj">Thursday</div></div><span class="badge bad">absent</span></div>
+            <div class="slot"><div class="time">28 Oct</div><div class="grow"><div class="subj">Wednesday</div></div><span class="badge bad">absent</span></div>
+            <div class="slot"><div class="time">27 Oct</div><div class="grow"><div class="subj">Tuesday</div></div><span class="badge ok">present</span></div>
+            <div class="slot"><div class="time">26 Oct</div><div class="grow"><div class="subj">Monday</div></div><span class="badge ok">present</span></div>
+            <div class="slot"><div class="time">23 Oct</div><div class="grow"><div class="subj">Friday</div></div><span class="badge ok">present</span></div>
+            <div class="slot"><div class="time">22 Oct</div><div class="grow"><div class="subj">Thursday</div></div><span class="badge ok">present</span></div>
+            <div class="slot"><div class="time">21 Oct</div><div class="grow"><div class="subj">Wednesday</div></div><span class="badge bad">absent</span></div>
+            <div class="slot"><div class="time">20 Oct</div><div class="grow"><div class="subj">Tuesday</div></div><span class="badge ok">present</span></div>
+            <div class="slot"><div class="time">19 Oct</div><div class="grow"><div class="subj">Monday</div></div><span class="badge bad">excused</span></div>
+            <div class="slot"><div class="time">16 Oct</div><div class="grow"><div class="subj">Friday</div></div><span class="badge bad">late</span></div>
+          </div>
+          <div class="tabbar">
+            <div class="on"><span class="ic">✓</span>Attendance</div>
+            <div><span class="ic">₹</span>Fees</div>
+            <div><span class="ic">A</span>Grades</div>
+            <div><span class="ic">▦</span>Timetable</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div class="variant" style="position:relative">
+      <div class="variant-head">
+        <span class="statechip">MOCK 2 · SMART</span>
+        <div class="variant-title">One home that answers four questions</div>
+        <p class="variant-for">Where am I now, am I in trouble, do I owe money, how am I doing. The four pages stay one tap away. Each addition is justified against Chetan's real data below.</p>
+      </div>
+      <div class="phone">
+        <div class="redline-dot" style="left:200px;top:160px">1</div>
+        <div class="redline-dot" style="left:200px;top:290px">2</div>
+        <div class="redline-dot" style="left:200px;top:420px">3</div>
+        <div class="redline-dot" style="left:200px;top:520px">4</div>
+        <div class="statusbar"><span>10:38</span><span class="dots">●●● ⏶ ▮</span></div>
+        <div class="screen">
+          <div class="appbar"><div class="appbar-row"><div class="avatar">CS</div><div class="grow"><h2 style="font-size:17px">Chetan Shetty</h2><p class="sub">Grade 5-A · GPS/2026/0418</p></div></div></div>
+          <div class="body">
+            <div class="card" style="border-color:var(--accent);background:var(--accent-soft)">
+              <div class="between"><span class="badge ok">● Now</span><span class="tiny" style="font-weight:650;color:var(--accent-ink)">37 min left</span></div>
+              <div style="font-size:19px;font-weight:680;margin-top:6px">Mathematics</div>
+              <div class="small" style="color:var(--accent-ink)">R-5A · 10:30–11:15 · next: English 11:15</div>
+            </div>
+            <div class="card">
+              <div class="between"><div class="card-title">Attendance</div><span class="badge bad">3 absent in a row</span></div>
+              <div class="tiny muted">Last 7 school days, newest left</div>
+              <div class="chiprow"><span class="badge bad">A</span><span class="badge bad">A</span><span class="badge bad">A</span><span class="badge ok">P</span><span class="badge ok">P</span><span class="badge ok">P</span><span class="badge ok">P</span></div>
+              <div class="tiny muted" style="margin-top:6px">75% over 20 days</div>
+            </div>
+            <div class="card">
+              <div class="between"><div class="card-title">Fees</div><span class="badge bad">overdue</span></div>
+              <div style="font-size:19px;font-weight:680">₹40,500 due</div>
+              <div class="tiny muted">1 unpaid · was due 30 Apr 2026 · no payments yet</div>
+            </div>
+            <div class="card">
+              <div class="between"><div class="card-title">Grades</div><span class="tiny muted">8 published</span></div>
+              <div class="tiny muted">Highest Art &amp; Craft 83 (B) · lowest Mathematics 67 (D)</div>
+            </div>
+          </div>
+          <div class="tabbar">
+            <div class="on"><span class="ic">⌂</span>Home</div>
+            <div><span class="ic">✓</span>Attendance</div>
+            <div><span class="ic">₹</span>Fees</div>
+            <div><span class="ic">A</span>Grades</div>
+          </div>
+        </div>
+        <div class="homebar"></div>
+      </div>
+    </div>
+
+    <div style="max-width:300px;padding-top:52px">
+      <ol class="speclist">
+        <li><b>Now / next hero.</b> Friday has 8 periods in one room; the timetable already knows which one is live. Hidden outside school hours.</li>
+        <li><b>Attendance strip, not a list.</b> 20 records is too many to read, 7 is one glance. It shows the one thing the list hides: 3 absences in a row (28–30 Oct). Late and excused get their own colours.</li>
+        <li><b>Fee card shows the balance, not two tables.</b> Chetan has 1 assignment and 0 payments. A table for one row is noise. The full tables stay on the Fees tab.</li>
+        <li><b>Grades is a summary, not a table.</b> Only 8 rows exist, so no sort, filter or search. The tab keeps the full table.</li>
+      </ol>
+      <p class="tiny muted" style="margin-top:12px">Not added: search, filter, sort. The largest list is 20 rows.</p>
+    </div>
+  </div>
+
+  <div class="painbox">
+    <b>Proposed pick: Mock 2.</b> The costs on the desktop are real: four navigations to answer four questions, a red badge on a late arrival that the page itself counts as present, and a grade list that doesn't say 24 of 32 marks are unpublished. Mock 1 fixes none of them. The home screen fixes the first; the finding below fixes the second whichever mock you pick.
+  </div>
+
+  <div class="painbox" style="margin-top:12px">
+    <b>Findings (not fixed here):</b>
+    <ul class="checklist">
+      <li><code>MyAttendancePage.jsx:44</code> — only <code>present</code> is green. <code>late</code> counts as present in the percentage but shows red; <code>excused</code> shows red too.</li>
+      <li><code>MyGradesPage.jsx</code> — unpublished grades are filtered out server-side with no hint. A student with 24 pending marks sees an apparently complete list of 8.</li>
+      <li><code>routes/me.js:108</code> — attendance is capped at 400 rows with no pagination or date range from the page. Fine for one year (about 200 school days), wrong for several.</li>
+    </ul>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="wiring">2 · API contracts <span style="color:#6e7a8a;font-size:13px;font-weight:400">— all four already exist, none changes</span></h2>
+  <div class="codeblock"><span class="k">GET</span> /me/attendance         <span class="c1">// [{ _id, date, status }]  status: present|absent|late|excused, newest first, max 400</span>
+<span class="k">GET</span> /me/fees               <span class="c1">// { assignments:[{ dueDate, totalAmount, discountAmount, status }], payments:[{ paymentDate, amount, paymentMethod, receiptNumber }] }</span>
+<span class="k">GET</span> /me/grades             <span class="c1">// [{ subject:{ name, code }, assessmentType, score, letterGrade }]  published only</span>
+<span class="k">GET</span> /me/timetable          <span class="c1">// [{ dayOfWeek, periodNumber, startTime, endTime, room, subjectId:{ name, code } }]  [] if unpublished</span>
+<span class="k">GET</span> /me/profile            <span class="c1">// { isStudent, isStaff, student:{ firstName, lastName, admissionNo, sectionId, status } }</span></div>
+  <p class="small muted" style="max-width:900px">The home screen issues these in parallel with React Query, the same query keys the pages already use (<code>['me','attendance']</code> and so on), so opening a tab afterwards is a cache hit. <code>/me/profile</code> returns only <code>sectionId</code>, not the "Grade 5-A" label shown in the header, so the build needs either one extra lookup or a small addition to that endpoint. Decide before building.</p>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="state">3 · State &amp; logic</h2>
+  <div class="codeblock"><span class="c1">// all derived, no new useState</span>
+<span class="k">const</span> today = timetable.filter(e => e.dayOfWeek === dow(now)).sort(byPeriod);
+<span class="k">const</span> live = today.find(e => e.startTime &lt;= hhmm(now) &amp;&amp; hhmm(now) &lt; e.endTime);
+<span class="k">const</span> next = today.find(e => e.startTime &gt; hhmm(now));
+<span class="k">const</span> strip = attendance.slice(0, 7);                       <span class="c1">// already newest first</span>
+<span class="k">const</span> run   = leadingCount(attendance, r => r.status === <span class="s">'absent'</span>);  <span class="c1">// 3 for Chetan</span>
+<span class="k">const</span> pct   = (present + late) / attendance.length;          <span class="c1">// same rule as MyAttendancePage:17</span>
+<span class="k">const</span> due   = assignments.reduce((s,a) => s + a.totalAmount - (a.discountAmount||0), 0)
+          - payments.reduce((s,p) => s + p.amount, 0);               <span class="c1">// same rule as MyFeesPage:23</span></div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="components">4 · File &amp; component plan</h2>
+  <div class="rail" style="gap:16px">
+    <div class="variant" style="width:520px">
+      <div class="variant-head" style="max-width:520px"><div class="variant-title" style="font-size:15px">Files</div></div>
+      <div class="codeblock filetree" style="width:100%;box-sizing:border-box"><span class="new">A</span> apps/rooted/src/components/dashboard/StudentHomeCards.jsx
+<span class="new">A</span> apps/rooted/src/utils/studentHome.js              <span class="c1">// now/next, recent strip, absent run</span>
+<span class="mod">M</span> apps/rooted/src/pages/admin/DashboardPage.jsx    <span class="c1">// StudentDashboard shows the four cards on /dashboard</span>
+<span class="mod">M</span> apps/rooted/src/i18n/locales/en.json, hi.json</div>
+    </div>
+    <div class="variant" style="width:420px">
+      <div class="variant-head" style="max-width:420px"><div class="variant-title" style="font-size:15px">Component contracts</div></div>
+      <div class="card" style="width:100%">
+        <div class="kv"><span class="k">NowNextCard</span><span class="v">{ live, next }</span></div>
+        <div class="kv"><span class="k">AttendanceStrip</span><span class="v">{ records, pct, run }</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="edge">5 · Errors, empty states, accessibility</h2>
+  <div style="max-width:1080px">
+    <table class="cmp">
+      <thead><tr><th>Situation</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td><b>No student linked to the login</b></td><td><code>studentIdOf</code> throws 404 "No student record is linked to this account". Show that as a full-page message, not four failed cards.</td></tr>
+        <tr><td><b>Weekend or holiday</b> (31 Oct 2026 is a Saturday)</td><td>Hero reads "No classes today" and names Monday's first period.</td></tr>
+        <tr><td><b>Between periods</b> (lunch 12:00–12:45)</td><td>Hero shows "Next: Science in 12 min" (Friday period 6 starts 12:45).</td></tr>
+        <tr><td><b>Timetable not published</b></td><td><code>[]</code>: hide the hero, don't show an error.</td></tr>
+        <tr><td><b>Fee module off for the tenant</b></td><td><code>requireModuleEnabled('fee')</code> rejects: hide the fee card and tab.</td></tr>
+        <tr><td><b>No grades published</b></td><td>"No grades yet" card, same copy as <code>noGradesYet</code>.</td></tr>
+        <tr><td><b>Colour only</b></td><td>The strip letters (A, P, L, E) carry the meaning; red and green alone are not enough.</td></tr>
+        <tr><td><b>Hindi</b></td><td>Every string goes through <code>t()</code>. "3 absent in a row" needs a plural-safe key.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="dod">6 · Definition of done</h2>
+  <div class="painbox" style="max-width:900px">
+    <ul class="checklist">
+      <li>A student sees now/next, attendance, fee balance and grade summary without leaving the home screen</li>
+      <li>No new endpoint; the four existing <code>/me/*</code> calls feed it</li>
+      <li>Late and excused are no longer red on the attendance tab</li>
+      <li>Home numbers match the tab pages for the same student</li>
+      <li>Works with fee module off and with an unpublished timetable</li>
+      <li>English and Hindi strings added; axe spec passes</li>
+    </ul>
+  </div>
+
+  <h2 class="page-title" style="font-size:20px;margin-top:46px" id="signoff">7 · Sign-off</h2>
+  <div class="painbox" style="max-width:900px">
+    <div class="signoff">
+      <div class="field"><div class="l">Approved by</div><div class="v"></div></div>
+      <div class="field"><div class="l">Date</div><div class="v"></div></div>
+      <div class="field"><div class="l">Spec version</div><div class="v">v0.1 · 31 Oct 2026 · proposed</div></div>
+      <div class="field"><div class="l">Module</div><div class="v">Self-service · 21</div></div>
+    </div>
+  </div>
+
+</div>
+<nav class="reviewnav" title="← → move between screens · I gallery">
+  <a class="rn-btn" href="20-dashboard-approved.html" data-nav="prev">‹ <span class="rn-lbl">Dashboard</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">PROPOSED</span><span class="rn-title">Student portal · 21</span></a>
+  <span class="rn-keys">← →  ·  I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { isSelfScoped } from '@rooted/shared/constants';
 import { isModuleEnabled } from '@rooted/shared/utils';
 import api from '../../lib/api.js';
-import { formatDate, formatCurrency } from '../../utils/intl.js';
+import { formatDate } from '../../utils/intl.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
@@ -15,6 +15,13 @@ import { Button } from '../../components/ui/Button.jsx';
 import AttentionStrip from '../../components/dashboard/AttentionStrip.jsx';
 import KpiCard from '../../components/dashboard/KpiCard.jsx';
 import TrendChart from '../../components/dashboard/TrendChart.jsx';
+import {
+  NowNextCard,
+  AttendanceCard,
+  FeeCard,
+  GradesCard,
+} from '../../components/dashboard/StudentHomeCards.jsx';
+import { useNow } from '../../hooks/useNow.js';
 
 function StatCard({ label, value }) {
   return (
@@ -183,6 +190,12 @@ function StudentDashboard() {
     queryFn: () => api.get('/me/fees').then((r) => r.data),
     enabled: isStudent && feeEnabled,
   });
+  const { data: timetable = [] } = useQuery({
+    queryKey: ['me', 'timetable'],
+    queryFn: () => api.get('/me/timetable').then((r) => r.data),
+    enabled: isStudent && academicEnabled,
+  });
+  const now = useNow();
 
   if (loadingProfile) return <p className="text-sm text-muted-foreground">{t('common.loading')}</p>;
 
@@ -197,20 +210,6 @@ function StudentDashboard() {
   }
 
   const student = profile.student;
-  const present = attendance.filter((r) => r.status === 'present' || r.status === 'late').length;
-  const attendancePct = attendance.length ? Math.round((present / attendance.length) * 100) : null;
-
-  const numericScores = grades.map((g) => g.score).filter((v) => typeof v === 'number');
-  const avgScore = numericScores.length
-    ? Math.round(numericScores.reduce((a, b) => a + b, 0) / numericScores.length)
-    : null;
-
-  const totalDue = (fees?.assignments ?? []).reduce(
-    (sum, a) => sum + a.totalAmount - (a.discountAmount || 0),
-    0
-  );
-  const totalPaid = (fees?.payments ?? []).reduce((sum, p) => sum + p.amount, 0);
-  const balance = totalDue - totalPaid;
 
   return (
     <div className="flex flex-col gap-6">
@@ -220,25 +219,11 @@ function StudentDashboard() {
         })}
       </p>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {academicEnabled && (
-          <StatCard
-            label={t('dashboard.student.attendanceLabel')}
-            value={attendancePct !== null ? `${attendancePct}%` : '—'}
-          />
-        )}
-        {academicEnabled && (
-          <StatCard
-            label={t('dashboard.student.averageScoreLabel')}
-            value={avgScore !== null ? avgScore : t('dashboard.student.noGradesYet')}
-          />
-        )}
-        {feeEnabled && (
-          <StatCard
-            label={t('dashboard.student.feeBalanceLabel')}
-            value={formatCurrency(balance)}
-          />
-        )}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {academicEnabled && <NowNextCard timetable={timetable} now={now} />}
+        {academicEnabled && <AttendanceCard records={attendance} />}
+        {feeEnabled && <FeeCard fees={fees} now={now} />}
+        {academicEnabled && <GradesCard grades={grades} />}
       </div>
 
       <div className="flex flex-wrap gap-2">
