@@ -29,6 +29,17 @@ test.describe('Student detail/profile page', () => {
     await expect(page.getByText(/Balance:/)).toBeVisible({ timeout: 10_000 });
   });
 
+  test("lists the section's subjects with their teachers", async ({ page }) => {
+    const studentId = getTestIds().students[0]._id;
+
+    await page.goto(`/academic/students/${studentId}`);
+    await page.waitForLoadState('networkidle');
+
+    await expect(page.getByRole('heading', { name: 'Subjects and teachers' })).toBeVisible();
+    // Seeded: Mathematics is assigned to this student's section.
+    await expect(page.getByTestId('section-teachers')).toContainText('Mathematics');
+  });
+
   test('edits student details and adds a parent contact', async ({ page, request }) => {
     const client = await createTestApiClient(request, 'tenant_admin');
     const student = await createStudent(client, { firstName: 'EditMe', lastName: 'Original' });

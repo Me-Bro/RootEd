@@ -385,6 +385,7 @@
       "retry": "Retry"
     },
     "classesSections": {
+      "subjectsLink": "Subjects and teachers",
       "title": "Classes & Sections",
       "classLevel": "Class",
       "section": "Section",
@@ -465,6 +466,8 @@
       "noYearHint": "An admin needs to activate an academic year first."
     },
     "studentDetail": {
+      "subjectsHeading": "Subjects and teachers",
+      "subjectsEmpty": "No teachers assigned to this section yet.",
       "loginHeading": "Login",
       "loginHint": "Without a login this student cannot see their own attendance, grades or fees.",
       "giveLogin": "Create login",
@@ -727,6 +730,8 @@
       "ringOfTotal": "of {{total}}"
     },
     "subjects": {
+      "filteredBy": "Showing subjects for {{name}}.",
+      "clearFilter": "Show all",
       "title": "Subjects",
       "description": "The subjects your school teaches.",
       "add": "Add subject",
@@ -814,6 +819,8 @@
       "onLeaveToday_other": "On leave today · {{count}}"
     },
     "detail": {
+      "teachesHeading": "Teaches",
+      "teachesEmpty": "Not assigned to any class this year.",
       "editModalTitle": "Edit Staff Member",
       "firstName": "First Name",
       "lastName": "Last Name",

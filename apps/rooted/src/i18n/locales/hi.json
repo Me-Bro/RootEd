@@ -385,6 +385,7 @@
       "retry": "पुनः प्रयास करें"
     },
     "classesSections": {
+      "subjectsLink": "विषय और शिक्षक",
       "title": "कक्षाएं और अनुभाग",
       "classLevel": "कक्षा",
       "section": "अनुभाग",
@@ -465,6 +466,8 @@
       "noYearHint": "पहले एडमिन को एक शैक्षणिक वर्ष सक्रिय करना होगा।"
     },
     "studentDetail": {
+      "subjectsHeading": "विषय और शिक्षक",
+      "subjectsEmpty": "इस सेक्शन में अभी कोई शिक्षक नहीं सौंपा गया।",
       "loginHeading": "लॉगिन",
       "loginHint": "लॉगिन के बिना यह छात्र अपनी उपस्थिति, अंक या फीस नहीं देख सकता।",
       "giveLogin": "लॉगिन बनाएँ",
@@ -727,6 +730,8 @@
       "ringOfTotal": "{{total}} में से"
     },
     "subjects": {
+      "filteredBy": "{{name}} के विषय दिखा रहे हैं।",
+      "clearFilter": "सभी दिखाएँ",
       "title": "विषय",
       "description": "आपके विद्यालय में पढ़ाए जाने वाले विषय।",
       "add": "विषय जोड़ें",
@@ -814,6 +819,8 @@
       "onLeaveToday_other": "आज अवकाश पर · {{count}}"
     },
     "detail": {
+      "teachesHeading": "पढ़ाते हैं",
+      "teachesEmpty": "इस वर्ष किसी कक्षा में नहीं सौंपे गए।",
       "editModalTitle": "स्टाफ सदस्य संपादित करें",
       "firstName": "पहला नाम",
       "lastName": "अंतिम नाम",
