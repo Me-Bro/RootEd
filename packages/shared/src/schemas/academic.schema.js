@@ -27,6 +27,10 @@ export const subjectTeacherQuerySchema = z.object({
   termId: objectId.optional(),
 });
 
+export const teachingLoadQuerySchema = z.object({
+  teacherId: objectId.optional(),
+});
+
 export const markAttendanceSchema = z.object({
   date: dateString,
   sectionId: objectId,
