@@ -110,6 +110,12 @@
     "resetRequested": "If that email exists, a reset link has been sent."
   },
   "common": {
+    "loginState": {
+      "none": "No login yet",
+      "pending": "Waiting for password",
+      "active": "Can sign in",
+      "suspended": "Suspended"
+    },
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
@@ -443,6 +449,15 @@
       "loadMore": "Load more"
     },
     "studentDetail": {
+      "loginHeading": "Login",
+      "loginHint": "Without a login this student cannot see their own attendance, grades or fees.",
+      "giveLogin": "Create login",
+      "loginEmail": "Student email",
+      "sendLink": "Send link",
+      "resendLink": "Resend link",
+      "loginSent": "A link to set a password was sent to {{email}}.",
+      "linkResent": "Link sent again.",
+      "loginFailed": "Could not create the login",
       "editModalTitle": "Edit Student",
       "updateFailed": "Failed to update student",
       "parentGuardianContacts": "Parent / Guardian Contacts",

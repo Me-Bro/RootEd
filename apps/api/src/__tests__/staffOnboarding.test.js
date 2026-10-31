@@ -7,6 +7,8 @@ import { StaffMember } from '../models/StaffMember.js';
 import {
   provisionStaffUser,
   provisionStaffLogin,
+  staffLoginState,
+  staffLoginStates,
   assertStaffMemberNotLinked,
   setStaffAccessStatus,
 } from '../services/staffOnboarding.service.js';
@@ -142,4 +144,37 @@ describe('provisionStaffLogin', () => {
     await provisionStaffLogin({ tenant, email: 'x@testschool.local', enqueue });
     expect(await User.countDocuments({})).toBe(0);
   });
+});
+
+test('staffLoginState tells a working login from one that cannot sign in', () => {
+  const roles = { status: 'active', roleIds: [new mongoose.Types.ObjectId()] };
+  expect(staffLoginState({ status: 'active' }, roles)).toBe('active');
+  expect(staffLoginState({ status: 'pending_claim' }, roles)).toBe('pending');
+  expect(staffLoginState({ status: 'invited' }, roles)).toBe('none');
+  expect(staffLoginState({ status: 'active' }, { status: 'active', roleIds: [] })).toBe('none');
+  expect(staffLoginState({ status: 'active' }, undefined)).toBe('none');
+  expect(staffLoginState(undefined, undefined)).toBe('none');
+  expect(staffLoginState({ status: 'active' }, { ...roles, status: 'suspended' })).toBe(
+    'suspended'
+  );
+});
+
+test('staffLoginStates marks the role-less invited stub as none and a claimable login as pending', async () => {
+  const tenantId = new mongoose.Types.ObjectId();
+  const stubId = await provisionStaffUser({ tenantId, email: 'stub@testschool.local' });
+  await provisionStaffLogin({
+    tenant: { _id: tenantId, name: 'T' },
+    email: 'real@testschool.local',
+    firstName: 'R',
+    lastName: 'L',
+    roleIds: [new mongoose.Types.ObjectId()],
+    enqueue: jest.fn(),
+  });
+  const user = await User.findOne({ email: 'real@testschool.local' });
+
+  const states = await staffLoginStates(tenantId, [{ userId: stubId }, { userId: user._id }, {}]);
+
+  expect(states.get(String(stubId))).toBe('none');
+  expect(states.get(String(user._id))).toBe('pending');
+  expect(states.size).toBe(2);
 });

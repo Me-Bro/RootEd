@@ -52,6 +52,33 @@ export async function provisionStaffLogin({
   if (!created) throw new AppError(`Could not add this person: ${reason}`, 409);
 }
 
+// How a staff member's login looks to an administrator: none (cannot sign in: no
+// account, no role, or the stub provisionStaffUser leaves), pending (has the
+// set-password link), active, suspended.
+export function staffLoginState(user, membership) {
+  if (membership?.status === 'suspended' || user?.status === 'suspended') return 'suspended';
+  if (!user || !membership?.roleIds?.length || user.status === 'invited') return 'none';
+  return user.status === 'pending_claim' ? 'pending' : 'active';
+}
+
+// userId -> state, for the staff directory.
+export async function staffLoginStates(tenantId, members) {
+  const userIds = members.map((m) => m.userId).filter(Boolean);
+  if (!userIds.length) return new Map();
+  const [users, memberships] = await Promise.all([
+    User.find({ _id: { $in: userIds } }, 'status').lean(),
+    TenantMembership.find({ tenantId, userId: { $in: userIds } }, 'userId status roleIds').lean(),
+  ]);
+  const userById = new Map(users.map((u) => [String(u._id), u]));
+  const membershipByUser = new Map(memberships.map((m) => [String(m.userId), m]));
+  return new Map(
+    userIds.map((id) => [
+      String(id),
+      staffLoginState(userById.get(String(id)), membershipByUser.get(String(id))),
+    ])
+  );
+}
+
 export async function assertStaffMemberNotLinked(tenantId, userId) {
   const existing = await StaffMember.findOne({ tenantId, userId }).lean();
   if (existing) {

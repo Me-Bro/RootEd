@@ -8,6 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar.
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
+import { LoginBadge } from '../../components/ui/LoginBadge.jsx';
 import {
   Dialog,
   DialogContent,
@@ -18,6 +19,7 @@ import {
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
+import { studentLoginState } from '../../utils/loginState.js';
 
 const selectCls =
   'h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
@@ -515,6 +517,101 @@ function DocumentsPanel({ student, canWrite }) {
   );
 }
 
+function LoginPanel({ student }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [asking, setAsking] = useState(false);
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const state = studentLoginState(student.account);
+
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['student', student._id] });
+    queryClient.invalidateQueries({ queryKey: ['students'] });
+  };
+  const failed = (err) =>
+    setError(err.response?.data?.error || t('academic.studentDetail.loginFailed'));
+
+  const give = useMutation({
+    mutationFn: () => api.post(`/academic/students/${student._id}/account`, { email }),
+    onSuccess: () => {
+      setAsking(false);
+      setError('');
+      setMessage(t('academic.studentDetail.loginSent', { email }));
+      setEmail('');
+      refresh();
+    },
+    onError: failed,
+  });
+  const resend = useMutation({
+    mutationFn: () => api.post(`/academic/students/${student._id}/account/resend`),
+    onSuccess: () => {
+      setError('');
+      setMessage(t('academic.studentDetail.linkResent'));
+    },
+    onError: failed,
+  });
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <LoginBadge state={state} />
+        {student.account?.email && (
+          <span className="text-sm text-muted-foreground">{student.account.email}</span>
+        )}
+        {state === 'pending' && (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={resend.isPending}
+            onClick={() => resend.mutate()}
+          >
+            {t('academic.studentDetail.resendLink')}
+          </Button>
+        )}
+        {state === 'none' && !asking && (
+          <Button variant="outline" size="sm" onClick={() => setAsking(true)}>
+            {t('academic.studentDetail.giveLogin')}
+          </Button>
+        )}
+      </div>
+      {state === 'none' && !asking && (
+        <p className="text-xs text-muted-foreground">{t('academic.studentDetail.loginHint')}</p>
+      )}
+      {state === 'none' && asking && (
+        <form
+          className="flex flex-wrap items-end gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            give.mutate();
+          }}
+        >
+          <Input
+            type="email"
+            required
+            label={t('academic.studentDetail.loginEmail')}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <Button type="submit" size="sm" disabled={give.isPending}>
+            {t('academic.studentDetail.sendLink')}
+          </Button>
+          <Button type="button" size="sm" variant="ghost" onClick={() => setAsking(false)}>
+            {t('common.cancel')}
+          </Button>
+        </form>
+      )}
+      {message && (
+        <p role="status" className="text-sm">
+          {message}
+        </p>
+      )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
+  );
+}
+
 export default function StudentDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams();
@@ -617,6 +714,14 @@ export default function StudentDetailPage() {
               {t('academic.studentDetail.feesHeading')}
             </h2>
             <FeeSummary studentId={id} />
+          </div>
+        )}
+        {canWrite && (
+          <div className="rounded-lg border border-border p-4">
+            <h2 className="mb-3 text-sm font-semibold">
+              {t('academic.studentDetail.loginHeading')}
+            </h2>
+            <LoginPanel student={student} />
           </div>
         )}
         <div className="rounded-lg border border-border p-4">
