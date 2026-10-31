@@ -37,6 +37,7 @@ import { auditLog } from '../services/audit.service.js';
 import { redis } from '../config/redis.js';
 import {
   provisionStaffUser,
+  provisionStaffLogin,
   assertStaffMemberNotLinked,
   setStaffAccessStatus,
   seedLeaveBalancesForStaff,
@@ -141,8 +142,20 @@ router.post(
   async (req, res, next) => {
     try {
       const tenantId = req.tenant._id;
-      const { email, ...body } = req.body;
+      const { email, roleIds, ...body } = req.body;
 
+      if (roleIds) {
+        // Handing out roles is a roles:write act; staff:write alone must not reach it.
+        const perms = await resolvePermissions(req.user.sub, tenantId.toString());
+        if (!perms.includes('roles:write')) {
+          throw new AppError('Assigning a role needs permission to manage roles', 403);
+        }
+        const roles = await Role.countDocuments({ _id: { $in: roleIds }, tenantId });
+        if (roles !== roleIds.length) {
+          throw new AppError('One or more roles do not belong to this organization', 400);
+        }
+      }
+      await provisionStaffLogin({ tenant: req.tenant, email, roleIds, ...body });
       const userId = await provisionStaffUser({ tenantId, email });
       await assertStaffMemberNotLinked(tenantId, userId);
 
