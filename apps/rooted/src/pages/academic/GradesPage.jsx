@@ -542,7 +542,7 @@ export default function GradesPage() {
             <Button
               className="flex-1"
               onClick={handleSave}
-              disabled={saveMutation.isPending || locked}
+              disabled={saveMutation.isPending || locked || numericScores.length === 0}
             >
               {saveMutation.isPending ? t('common.saving') : t('academic.grades.saveGrades')}
             </Button>
