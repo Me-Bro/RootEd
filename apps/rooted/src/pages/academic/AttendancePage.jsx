@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
+import SetupGap from '../../components/academic/SetupGap.jsx';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -54,7 +55,7 @@ export default function AttendancePage() {
   const [sectionId, setSectionId] = useState(() => searchParams.get('sectionId') || '');
   const [moreSheetFor, setMoreSheetFor] = useState(null); // studentId | null
 
-  const { classes } = useClassSections();
+  const { classes, sections, isLoading: classesLoading } = useClassSections();
   const currentSection = classes
     .flatMap((c) => (c.sections || []).map((s) => ({ ...s, className: c.name })))
     .find((s) => s._id === sectionId);
@@ -149,7 +150,12 @@ export default function AttendancePage() {
         )}
       </div>
 
-      {!sectionId && <EmptyState title={t('academic.attendance.selectSectionEmpty')} />}
+      {!sectionId &&
+        (!classesLoading && sections.length === 0 ? (
+          <SetupGap gap="sections" />
+        ) : (
+          <EmptyState title={t('academic.attendance.selectSectionEmpty')} />
+        ))}
 
       {sectionId && reportError && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
