@@ -725,7 +725,7 @@
       "noSubjects": "No subjects to assign yet.",
       "goSubjects": "Add subjects",
       "noStaff": "No active staff to assign.",
-      "noStaffHint": "Only teachers with an active login are listed. Add them under Staff, then invite them under Members with a Teacher role.",
+      "noStaffHint": "Add your teachers under Staff first, then assign them here.",
       "goStaff": "Go to Staff",
       "noTerms": "No terms yet for the active academic year.",
       "goYears": "Add a term"

@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { resolveOrgTerm } from '@rooted/shared/utils';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { useClassSections } from '../../hooks/useClassSections.js';
+import { useTeachers } from '../../hooks/useTeachers.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
@@ -233,11 +234,7 @@ export default function ClassesSectionsPage() {
     : resolveOrgTerm(orgType, 'section');
 
   const { classes, isLoading } = useClassSections();
-  const { data: staff = [] } = useQuery({
-    queryKey: ['staff-list'],
-    queryFn: () => api.get('/staff/members?limit=100').then((r) => r.data.members),
-  });
-  const teacherNameById = new Map(staff.map((s) => [s.userId, `${s.firstName} ${s.lastName}`]));
+  const { staff, nameById: teacherNameById } = useTeachers();
 
   const [showCreateClass, setShowCreateClass] = useState(false);
   const [editingClass, setEditingClass] = useState(null);
