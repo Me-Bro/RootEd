@@ -37,7 +37,9 @@
     "organization": "Organization",
     "members": "Members",
     "joinPolicy": "Joining",
-    "accountSettings": "Account settings"
+    "accountSettings": "Account settings",
+    "subjects": "Subjects",
+    "teaching": "Teaching"
   },
   "auth": {
     "login": "Login",
@@ -599,6 +601,37 @@
       "ringAriaLabel": "{{completed}} of {{total}} report cards built",
       "ringStartingAria": "Report card generation starting",
       "ringOfTotal": "of {{total}}"
+    },
+    "subjects": {
+      "title": "Subjects",
+      "description": "The subjects your school teaches.",
+      "add": "Add subject",
+      "addTitle": "Add subject",
+      "editTitle": "Edit subject",
+      "code": "Code",
+      "class": "Class",
+      "anyClass": "All classes",
+      "emptyTitle": "No subjects yet",
+      "emptyDescription": "Add the first subject to start assigning teachers.",
+      "loadError": "Could not load subjects.",
+      "saveFailed": "Could not save the subject.",
+      "deleteFailed": "Could not delete the subject.",
+      "confirmDelete": "Delete {{name}}?"
+    },
+    "teaching": {
+      "title": "Teaching",
+      "description": "Choose which teacher takes each subject for a section and term.",
+      "section": "Section",
+      "term": "Term",
+      "pick": "Pick a section and a term to assign teachers.",
+      "teacher": "Teacher",
+      "teacherFor": "Teacher for {{name}}",
+      "notAssigned": "Not assigned",
+      "saveFailed": "Could not save the assignment.",
+      "loadError": "Could not load teaching assignments.",
+      "noSubjects": "No subjects to assign yet.",
+      "goSubjects": "Add subjects",
+      "noStaff": "No active staff to assign."
     }
   },
   "staff": {

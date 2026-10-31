@@ -347,7 +347,7 @@ router.delete('/subjects/:id', requirePermission('tenant:admin'), async (req, re
 
 // ── Subject teachers ──────────────────────────────────────────────────────────
 
-router.get('/subject-teachers', requirePermission('training:read'), async (req, res, next) => {
+router.get('/subject-teachers', requirePermission('students:read'), async (req, res, next) => {
   try {
     const query = subjectTeacherQuerySchema.parse(req.query);
     const rows = await SubjectTeacher.find({ tenantId: req.tenant._id, ...query })

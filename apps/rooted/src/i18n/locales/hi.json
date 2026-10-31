@@ -37,7 +37,9 @@
     "organization": "संस्था",
     "members": "सदस्य",
     "joinPolicy": "जुड़ना",
-    "accountSettings": "खाता सेटिंग्स"
+    "accountSettings": "खाता सेटिंग्स",
+    "subjects": "विषय",
+    "teaching": "अध्यापन"
   },
   "auth": {
     "login": "लॉगिन",
@@ -599,6 +601,37 @@
       "ringAriaLabel": "{{total}} में से {{completed}} रिपोर्ट कार्ड बने",
       "ringStartingAria": "रिपोर्ट कार्ड जनरेशन शुरू हो रहा है",
       "ringOfTotal": "{{total}} में से"
+    },
+    "subjects": {
+      "title": "विषय",
+      "description": "आपके विद्यालय में पढ़ाए जाने वाले विषय।",
+      "add": "विषय जोड़ें",
+      "addTitle": "विषय जोड़ें",
+      "editTitle": "विषय संपादित करें",
+      "code": "कोड",
+      "class": "कक्षा",
+      "anyClass": "सभी कक्षाएँ",
+      "emptyTitle": "अभी कोई विषय नहीं",
+      "emptyDescription": "शिक्षक नियुक्त करने के लिए पहला विषय जोड़ें।",
+      "loadError": "विषय लोड नहीं हो सके।",
+      "saveFailed": "विषय सहेजा नहीं जा सका।",
+      "deleteFailed": "विषय हटाया नहीं जा सका।",
+      "confirmDelete": "{{name}} हटाएँ?"
+    },
+    "teaching": {
+      "title": "अध्यापन",
+      "description": "चुनें कि किसी अनुभाग और सत्र में हर विषय कौन सा शिक्षक पढ़ाएगा।",
+      "section": "अनुभाग",
+      "term": "सत्र",
+      "pick": "शिक्षक नियुक्त करने के लिए अनुभाग और सत्र चुनें।",
+      "teacher": "शिक्षक",
+      "teacherFor": "{{name}} के लिए शिक्षक",
+      "notAssigned": "नियुक्त नहीं",
+      "saveFailed": "नियुक्ति सहेजी नहीं जा सकी।",
+      "loadError": "अध्यापन नियुक्तियाँ लोड नहीं हो सकीं।",
+      "noSubjects": "नियुक्त करने के लिए अभी कोई विषय नहीं।",
+      "goSubjects": "विषय जोड़ें",
+      "noStaff": "नियुक्त करने के लिए कोई सक्रिय स्टाफ नहीं।"
     }
   },
   "staff": {
