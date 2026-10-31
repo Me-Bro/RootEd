@@ -25,7 +25,7 @@ const LAST_SECTION_KEY = 'students:lastSectionId';
 
 const NEW_SECTION = '__new__';
 
-function AddStudentModal({ open, onOpenChange, sections, classes, canCreateSection }) {
+function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCreateSection }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [showCreateSection, setShowCreateSection] = useState(false);
@@ -41,8 +41,9 @@ function AddStudentModal({ open, onOpenChange, sections, classes, canCreateSecti
 
   const mutation = useMutation({
     mutationFn: (data) => api.post('/academic/students', data).then((r) => r.data),
-    onSuccess: () => {
+    onSuccess: (student) => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
+      onAdded(`${student.firstName} ${student.lastName}`);
       onOpenChange(false);
       setForm({
         admissionNo: '',
@@ -200,6 +201,7 @@ export default function StudentsPage() {
   const { user } = useAuth();
   const canCreateSection = (user?.permissions ?? []).includes('tenant:admin');
   const [showAdd, setShowAdd] = useState(false);
+  const [addedName, setAddedName] = useState('');
   const [addSectionFor, setAddSectionFor] = useState(null); // classId | null
   const [importResult, setImportResult] = useState(null);
   const [searchInput, setSearchInput] = useState('');
@@ -332,6 +334,12 @@ export default function StudentsPage() {
         }
       />
 
+      {addedName && (
+        <p role="status" className="rounded-lg border border-border bg-card px-4 py-3 text-sm">
+          {t('academic.students.addedNext', { name: addedName })}
+        </p>
+      )}
+
       <SearchField value={searchInput} onChange={setSearchInput} />
 
       {search ? (
@@ -369,6 +377,7 @@ export default function StudentsPage() {
       <AddStudentModal
         open={showAdd}
         onOpenChange={setShowAdd}
+        onAdded={setAddedName}
         sections={sections}
         classes={classes}
         canCreateSection={canCreateSection}

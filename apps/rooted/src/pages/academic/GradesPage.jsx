@@ -533,6 +533,12 @@ export default function GradesPage() {
             </p>
           )}
 
+          {canPublish && !locked && (
+            <p className="text-center text-xs text-muted-foreground">
+              {t('academic.grades.lockHint')}
+            </p>
+          )}
+
           <div className="flex gap-2">
             {canPublish && (
               <Button
