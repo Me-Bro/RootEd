@@ -37,6 +37,8 @@ import AttendanceReportPage from './pages/academic/AttendanceReportPage.jsx';
 import GradesPage from './pages/academic/GradesPage.jsx';
 import GradeReportPage from './pages/academic/GradeReportPage.jsx';
 import TimetablePage from './pages/academic/TimetablePage.jsx';
+import SubjectsPage from './pages/academic/SubjectsPage.jsx';
+import SubjectTeachersPage from './pages/academic/SubjectTeachersPage.jsx';
 import MySchedulePage from './pages/academic/MySchedulePage.jsx';
 import ReportCardPage from './pages/academic/ReportCardPage.jsx';
 import MyTimetablePage from './pages/me/MyTimetablePage.jsx';
@@ -249,6 +251,22 @@ function AppRoutes() {
             element={
               <RequirePermission permission="students:read">
                 <ClassesSectionsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/academic/subjects"
+            element={
+              <RequirePermission permission="students:read">
+                <SubjectsPage />
+              </RequirePermission>
+            }
+          />
+          <Route
+            path="/academic/teaching"
+            element={
+              <RequirePermission permission="tenant:admin">
+                <SubjectTeachersPage />
               </RequirePermission>
             }
           />
