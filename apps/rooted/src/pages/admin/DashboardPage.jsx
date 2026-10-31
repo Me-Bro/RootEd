@@ -13,6 +13,7 @@ import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.js
 import { Input } from '../../components/ui/Input.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import AttentionStrip from '../../components/dashboard/AttentionStrip.jsx';
+import SetupChecklist from '../../components/dashboard/SetupChecklist.jsx';
 import KpiCard from '../../components/dashboard/KpiCard.jsx';
 import TrendChart from '../../components/dashboard/TrendChart.jsx';
 import {
@@ -455,6 +456,8 @@ function PrincipalDashboard() {
           {t('dashboard.principal.viewingPastDay')} — {t('dashboard.principal.liveQueueNote')}
         </div>
       )}
+
+      <SetupChecklist />
 
       <AttentionStrip items={attentionItems} />
 
