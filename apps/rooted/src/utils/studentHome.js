@@ -27,11 +27,22 @@ export function recentStrip(records, n = 7) {
   return newestFirst(records).slice(0, n);
 }
 
-export function absentRun(records) {
-  let n = 0;
+export function absentRunRecords(records) {
+  const run = [];
   for (const r of newestFirst(records)) {
     if (r.status !== 'absent') break;
-    n += 1;
+    run.push(r);
   }
-  return n;
+  return run;
+}
+
+export const absentRun = (records) => absentRunRecords(records).length;
+
+// The next day after today with a period in the timetable, or null if it has none.
+export function nextClassDay(timetable, now = new Date()) {
+  for (let i = 1; i <= 7; i += 1) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+    if (timetable.some((e) => e.dayOfWeek === d.getDay())) return d;
+  }
+  return null;
 }

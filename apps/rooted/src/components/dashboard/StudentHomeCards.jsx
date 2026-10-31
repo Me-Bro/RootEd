@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { Badge } from '../ui/Badge.jsx';
 import { Card, CardContent } from '../ui/Card.jsx';
-import { formatCurrency } from '../../utils/intl.js';
-import { absentRun, currentAndNext, recentStrip } from '../../utils/studentHome.js';
+import { formatCurrency, formatDate } from '../../utils/intl.js';
+import { absentRun, currentAndNext, nextClassDay, recentStrip } from '../../utils/studentHome.js';
 
 // Shown as a warning once a student has missed this many school days in a row.
 const ABSENT_RUN_ALERT = 3;
@@ -29,7 +29,14 @@ function HomeCard({ title, badge, children }) {
 
 export function NowNextCard({ timetable, now }) {
   const { t } = useTranslation();
-  if (!timetable.length) return null;
+  if (!timetable) return null;
+  if (!timetable.length) {
+    return (
+      <HomeCard title={t('dashboard.student.todayLabel')}>
+        <p className="text-sm text-muted-foreground">{t('dashboard.student.noTimetable')}</p>
+      </HomeCard>
+    );
+  }
 
   const { current, next, minutesLeft, minutesToNext, hasClassesToday } = currentAndNext(
     timetable,
@@ -39,6 +46,7 @@ export function NowNextCard({ timetable, now }) {
   const nameOf = (e) => e.subjectId?.name ?? '—';
 
   if (!period) {
+    const nextDay = nextClassDay(timetable, now);
     return (
       <HomeCard title={t('dashboard.student.todayLabel')}>
         <p className="text-sm text-muted-foreground">
@@ -46,6 +54,13 @@ export function NowNextCard({ timetable, now }) {
             ? t('dashboard.student.noMoreClasses')
             : t('dashboard.student.noClassesToday')}
         </p>
+        {nextDay && (
+          <p className="text-xs text-muted-foreground">
+            {t('dashboard.student.nextClassesOn', {
+              day: formatDate(nextDay, 'en-IN', { weekday: 'long' }),
+            })}
+          </p>
+        )}
       </HomeCard>
     );
   }
@@ -90,17 +105,23 @@ export function AttendanceCard({ records }) {
         )
       }
     >
-      <div className="flex flex-wrap gap-1.5" role="list">
-        {recentStrip(records).map((r) => (
-          <Badge
-            key={r._id ?? r.date}
-            role="listitem"
-            variant={STATUS_VARIANT[r.status] ?? 'secondary'}
-            aria-label={t(`dashboard.student.status.${r.status}`, r.status)}
-          >
-            {t(`dashboard.student.statusLetter.${r.status}`, r.status[0].toUpperCase())}
-          </Badge>
-        ))}
+      <div className="flex flex-wrap gap-2" role="list">
+        {recentStrip(records).map((r) => {
+          const day = formatDate(r.date, 'en-IN', { weekday: 'short', day: 'numeric' });
+          return (
+            <div
+              key={r._id ?? r.date}
+              role="listitem"
+              aria-label={`${day}: ${t(`dashboard.student.status.${r.status}`, r.status)}`}
+              className="flex flex-col items-center gap-1"
+            >
+              <Badge aria-hidden="true" variant={STATUS_VARIANT[r.status] ?? 'secondary'}>
+                {t(`dashboard.student.statusLetter.${r.status}`, r.status[0].toUpperCase())}
+              </Badge>
+              <span className="text-xs text-muted-foreground">{day}</span>
+            </div>
+          );
+        })}
       </div>
       <p className="text-xs text-muted-foreground">
         {t('dashboard.student.attendanceSummary', {
@@ -118,10 +139,12 @@ export function FeeCard({ fees, now }) {
   const payments = fees?.payments ?? [];
   const due = assignments.reduce((sum, a) => sum + a.totalAmount - (a.discountAmount || 0), 0);
   const balance = due - payments.reduce((sum, p) => sum + p.amount, 0);
-  const overdue = assignments.some(
-    (a) =>
-      (a.status === 'unpaid' || a.status === 'partial') && a.dueDate && new Date(a.dueDate) < now
-  );
+  const open = assignments.filter((a) => a.status === 'unpaid' || a.status === 'partial');
+  const dueDates = open
+    .map((a) => a.dueDate)
+    .filter(Boolean)
+    .sort();
+  const overdue = dueDates.length > 0 && new Date(dueDates[0]) < now;
 
   return (
     <HomeCard
@@ -135,6 +158,16 @@ export function FeeCard({ fees, now }) {
       }
     >
       <p className="text-xl font-semibold text-foreground">{formatCurrency(balance)}</p>
+      {balance > 0 && open.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          {[
+            t('dashboard.student.feeUnpaid', { count: open.length }),
+            dueDates[0] && t('dashboard.student.feeDueOn', { date: formatDate(dueDates[0]) }),
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
+      )}
       {balance > 0 && !payments.length && (
         <p className="text-xs text-muted-foreground">{t('dashboard.student.feeNoPayments')}</p>
       )}

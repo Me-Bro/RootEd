@@ -190,7 +190,7 @@ function StudentDashboard() {
     queryFn: () => api.get('/me/fees').then((r) => r.data),
     enabled: isStudent && feeEnabled,
   });
-  const { data: timetable = [] } = useQuery({
+  const { data: timetable } = useQuery({
     queryKey: ['me', 'timetable'],
     queryFn: () => api.get('/me/timetable').then((r) => r.data),
     enabled: isStudent && academicEnabled,
