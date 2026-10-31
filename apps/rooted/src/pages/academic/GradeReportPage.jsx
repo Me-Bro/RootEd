@@ -15,6 +15,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuItem,
 } from '../../components/ui/dropdown-menu.jsx';
+import SetupGap from '../../components/academic/SetupGap.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
 import DistributionBars from '../../components/grade-report/DistributionBars.jsx';
 
@@ -57,7 +58,7 @@ export default function GradeReportPage() {
   );
   const [bandFilter, setBandFilter] = useState(null); // 'A'|'B'|'C'|'D'|'F'|null
 
-  const { classes } = useClassSections();
+  const { classes, sections, isLoading: classesLoading } = useClassSections();
   const classId = classes.find((c) => (c.sections || []).some((s) => s._id === sectionId))?._id;
   const currentClass = classes.find((c) => c._id === classId);
   const currentSection = currentClass?.sections?.find((s) => s._id === sectionId);
@@ -203,7 +204,12 @@ export default function GradeReportPage() {
         </DropdownMenu>
       </div>
 
-      {!ready && <EmptyState title={t('academic.gradeReport.selectToView')} />}
+      {!ready &&
+        (!classesLoading && sections.length === 0 ? (
+          <SetupGap gap="sections" />
+        ) : (
+          <EmptyState title={t('academic.gradeReport.selectToView')} />
+        ))}
       {isLoading && (
         <p className="text-sm text-muted-foreground">
           {t('academic.attendanceReport.loadingReport')}

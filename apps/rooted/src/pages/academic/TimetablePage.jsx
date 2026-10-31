@@ -17,6 +17,7 @@ import {
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
 import { DaySlotList } from '../../components/timetable/DaySlotList.jsx';
+import SetupGap from '../../components/academic/SetupGap.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { isCurrentPeriodCell } from '../../utils/scheduleHighlight.js';
@@ -274,7 +275,7 @@ export default function TimetablePage() {
     queryFn: () => api.get('/academic/years').then((r) => r.data),
   });
 
-  const { classes } = useClassSections();
+  const { classes, sections, isLoading: classesLoading } = useClassSections();
 
   const { data: timetable = [], isLoading } = useQuery({
     queryKey: ['timetable', sectionId, yearId],
@@ -390,7 +391,9 @@ export default function TimetablePage() {
         )}
       </div>
 
-      {(!sectionId || !yearId) && (
+      {!classesLoading && sections.length === 0 && <SetupGap gap="sections" />}
+
+      {(!sectionId || !yearId) && sections.length > 0 && (
         <p className="text-muted-foreground text-sm">
           {t('academic.timetable.selectYearSectionPrompt')}
         </p>

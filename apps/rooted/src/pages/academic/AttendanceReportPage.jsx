@@ -15,6 +15,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuItem,
 } from '../../components/ui/dropdown-menu.jsx';
+import SetupGap from '../../components/academic/SetupGap.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
 import DefaulterRing from '../../components/attendance-report/DefaulterRing.jsx';
 import CallRow from '../../components/attendance-report/CallRow.jsx';
@@ -60,7 +61,7 @@ export default function AttendanceReportPage() {
   const [from, setFrom] = useState(searchParams.get('from') || defaultFrom);
   const [to, setTo] = useState(() => searchParams.get('to') || isoDate(new Date()));
 
-  const { classes } = useClassSections();
+  const { classes, sections, isLoading: classesLoading } = useClassSections();
   const currentSection = classes
     .flatMap((c) => (c.sections || []).map((s) => ({ ...s, className: c.name })))
     .find((s) => s._id === sectionId);
@@ -187,7 +188,12 @@ export default function AttendanceReportPage() {
         </div>
       </div>
 
-      {!sectionId && <EmptyState title={t('academic.attendanceReport.selectSectionEmpty')} />}
+      {!sectionId &&
+        (!classesLoading && sections.length === 0 ? (
+          <SetupGap gap="sections" />
+        ) : (
+          <EmptyState title={t('academic.attendanceReport.selectSectionEmpty')} />
+        ))}
 
       {sectionId && isLoading && (
         <p className="text-sm text-muted-foreground">
