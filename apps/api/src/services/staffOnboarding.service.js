@@ -6,7 +6,7 @@ import { StaffMember } from '../models/StaffMember.js';
 import { LeaveType } from '../models/LeaveType.js';
 import { LeaveBalance } from '../models/LeaveBalance.js';
 import { AppError } from '../middleware/errorHandler.js';
-import { provisionStaffAccount } from './identity.service.js';
+import { provisionStaffAccount, sendClaimEmail } from './identity.service.js';
 
 export async function provisionStaffUser({ tenantId, email }) {
   let user = await User.findOne({ email });
@@ -77,6 +77,29 @@ export async function staffLoginStates(tenantId, members) {
       staffLoginState(userById.get(String(id)), membershipByUser.get(String(id))),
     ])
   );
+}
+
+// Gives a staff member who cannot sign in (see staffLoginState) the roles they
+// lack and, if they never set a password, a set-password link. Returns whether a
+// link was mailed.
+export async function giveStaffLogin({ tenant, staff, roleIds, enqueue }) {
+  const [user, membership] = await Promise.all([
+    staff.userId ? User.findById(staff.userId, 'email status') : null,
+    TenantMembership.findOne({ tenantId: tenant._id, userId: staff.userId }),
+  ]);
+  if (!user || !membership) throw new AppError('This staff member has no account', 409);
+  if (staffLoginState(user, membership) !== 'none') {
+    throw new AppError('This staff member already has a login', 409);
+  }
+
+  membership.roleIds = roleIds;
+  membership.status = 'active';
+  await membership.save();
+
+  if (user.status !== 'invited') return false;
+  user.status = 'pending_claim';
+  await user.save();
+  return sendClaimEmail({ tenant, user, email: user.email, enqueue });
 }
 
 export async function assertStaffMemberNotLinked(tenantId, userId) {

@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/useAuth.js';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
+import { LoginBadge } from '../../components/ui/LoginBadge.jsx';
 import {
   Dialog,
   DialogContent,
@@ -270,6 +271,83 @@ function DocumentsPanel({ staff, canWrite }) {
   );
 }
 
+function LoginPanel({ staff }) {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const perms = user?.permissions ?? [];
+  const canAssignRole = perms.includes('roles:write') && perms.includes('roles:read');
+  const queryClient = useQueryClient();
+  const [roleId, setRoleId] = useState('');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  const { data: roles = [] } = useQuery({
+    queryKey: ['tenant-roles'],
+    queryFn: () => api.get('/tenant/roles').then((r) => r.data),
+    enabled: canAssignRole && staff.login === 'none',
+  });
+  // Teacher is what most staff are, so it is the starting choice.
+  const chosen = roleId || roles.find((r) => r.templateKey === 'teacher')?._id || '';
+
+  const give = useMutation({
+    mutationFn: () => api.post(`/staff/members/${staff._id}/login`, { roleIds: [chosen] }),
+    onSuccess: ({ data }) => {
+      setError('');
+      setMessage(t(data.mailed ? 'staff.detail.loginSent' : 'staff.detail.loginGiven'));
+      queryClient.invalidateQueries({ queryKey: ['staff-member', staff._id] });
+      queryClient.invalidateQueries({ queryKey: ['staff-members'] });
+    },
+    onError: (err) => setError(err.response?.data?.error || t('staff.detail.loginFailed')),
+  });
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div>
+        <LoginBadge state={staff.login} />
+      </div>
+      {staff.login === 'none' &&
+        (canAssignRole ? (
+          <form
+            className="flex flex-wrap items-end gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              give.mutate();
+            }}
+          >
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium" htmlFor="staff-login-role">
+                {t('staff.directory.loginRole')}
+              </label>
+              <select
+                id="staff-login-role"
+                value={chosen}
+                onChange={(e) => setRoleId(e.target.value)}
+                className={selectCls}
+              >
+                {roles.map((r) => (
+                  <option key={r._id} value={r._id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button type="submit" size="sm" disabled={!chosen || give.isPending}>
+              {t('staff.detail.giveLogin')}
+            </Button>
+          </form>
+        ) : (
+          <p className="text-xs text-muted-foreground">{t('staff.detail.loginNeedsRoles')}</p>
+        ))}
+      {message && (
+        <p role="status" className="text-sm">
+          {message}
+        </p>
+      )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
+  );
+}
+
 export default function StaffDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams();
@@ -355,6 +433,12 @@ export default function StaffDetailPage() {
           </div>
         </div>
 
+        {canWrite && staff.login && (
+          <div className="rounded-lg border border-border p-4">
+            <h2 className="mb-3 text-sm font-semibold">{t('staff.detail.loginHeading')}</h2>
+            <LoginPanel staff={staff} />
+          </div>
+        )}
         <div className="rounded-lg border border-border p-4">
           <h2 className="mb-3 text-sm font-semibold">{t('staff.detail.documentsHeading')}</h2>
           <DocumentsPanel staff={staff} canWrite={canWrite} />

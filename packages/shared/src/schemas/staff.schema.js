@@ -32,6 +32,9 @@ export const createStaffMemberSchema = z.object({
   salaryStructureId: optional(objectId),
 });
 
+// Roles for a staff member who has no working login yet.
+export const staffLoginSchema = z.object({ roleIds: z.array(objectId).min(1) }).strict();
+
 export const patchStaffMemberSchema = z.object({
   firstName: optional(z.string().trim().min(1)),
   lastName: optional(z.string().trim().min(1)),
