@@ -15,6 +15,7 @@ import { Button } from '../../components/ui/Button.jsx';
 import AttentionStrip from '../../components/dashboard/AttentionStrip.jsx';
 import SetupChecklist from '../../components/dashboard/SetupChecklist.jsx';
 import KpiCard from '../../components/dashboard/KpiCard.jsx';
+import MyClassesList from '../../components/academic/MyClassesList.jsx';
 import TrendChart from '../../components/dashboard/TrendChart.jsx';
 import {
   NowNextCard,
@@ -161,6 +162,39 @@ function hasSchoolWideVisibility(user) {
 // disjoint by construction (see DEFAULT_ROLE_TEMPLATES.student).
 function hasSelfScopedVisibility(user) {
   return (user?.permissions ?? []).some(isSelfScoped);
+}
+
+function TeacherDashboard() {
+  const { t } = useTranslation();
+  const { user } = useAuth();
+  const now = useNow();
+
+  const { data: years = [] } = useQuery({
+    queryKey: ['academic-years'],
+    queryFn: () => api.get('/academic/years').then((r) => r.data),
+  });
+  const activeYearId = years.find((y) => y.isActive)?._id ?? '';
+  // Same key as My Schedule, so the two share one fetch.
+  const { data: timetable } = useQuery({
+    queryKey: ['timetable', 'my-schedule', user?._id, activeYearId],
+    queryFn: () =>
+      api
+        .get(`/academic/timetable?teacherId=${user._id}&yearId=${activeYearId}`)
+        .then((r) => r.data),
+    enabled: Boolean(user?._id) && Boolean(activeYearId),
+  });
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <NowNextCard timetable={timetable} now={now} />
+      </div>
+      <div className="flex flex-col gap-3">
+        <h2 className="text-sm font-semibold">{t('academic.myClasses.title')}</h2>
+        <MyClassesList />
+      </div>
+    </div>
+  );
 }
 
 function StudentDashboard() {
@@ -519,6 +553,14 @@ export default function DashboardPage() {
   const isSuperAdmin = user?.systemRole === 'super_admin';
   const isStudentView = !isSuperAdmin && hasSelfScopedVisibility(user);
   const isPrincipalView = !isSuperAdmin && !isStudentView && hasSchoolWideVisibility(user);
+  // A teacher holds attendance:write but not the fee, leave and grade reads that make a
+  // principal, so they used to land on the school metadata card.
+  const isTeacherView =
+    !isSuperAdmin &&
+    !isStudentView &&
+    !isPrincipalView &&
+    isModuleEnabled(user, 'academic') &&
+    (user?.permissions ?? []).includes('attendance:write');
 
   return (
     <div className="flex flex-col gap-6">
@@ -532,6 +574,8 @@ export default function DashboardPage() {
         <StudentDashboard />
       ) : isPrincipalView ? (
         <PrincipalDashboard />
+      ) : isTeacherView ? (
+        <TeacherDashboard />
       ) : (
         <TenantDashboard />
       )}

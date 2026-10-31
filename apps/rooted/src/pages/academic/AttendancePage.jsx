@@ -11,12 +11,10 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuItem,
 } from '../../components/ui/dropdown-menu.jsx';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '../../components/ui/sheet.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
+import SectionMenuItems from '../../components/academic/SectionMenuItems.jsx';
 import { useAttendanceRoster } from '../../hooks/useAttendanceRoster.js';
 import SearchField from '../../components/attendance/SearchField.jsx';
 import FilterChips from '../../components/attendance/FilterChips.jsx';
@@ -123,16 +121,7 @@ export default function AttendancePage() {
             <ChevronDown size={14} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            {classes.map((c) => (
-              <DropdownMenuGroup key={c._id}>
-                <DropdownMenuLabel>{c.name}</DropdownMenuLabel>
-                {(c.sections || []).map((s) => (
-                  <DropdownMenuItem key={s._id} onClick={() => setSectionId(s._id)}>
-                    {c.name} - {s.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
-            ))}
+            <SectionMenuItems classes={classes} onPick={setSectionId} />
           </DropdownMenuContent>
         </DropdownMenu>
 
