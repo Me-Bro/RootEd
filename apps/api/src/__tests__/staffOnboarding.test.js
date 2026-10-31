@@ -9,6 +9,7 @@ import {
   provisionStaffLogin,
   staffLoginState,
   staffLoginStates,
+  giveStaffLogin,
   assertStaffMemberNotLinked,
   setStaffAccessStatus,
 } from '../services/staffOnboarding.service.js';
@@ -177,4 +178,51 @@ test('staffLoginStates marks the role-less invited stub as none and a claimable 
   expect(states.get(String(stubId))).toBe('none');
   expect(states.get(String(user._id))).toBe('pending');
   expect(states.size).toBe(2);
+});
+
+describe('giveStaffLogin', () => {
+  const tenant = { _id: new mongoose.Types.ObjectId(), name: 'Test School' };
+  const roleIds = [new mongoose.Types.ObjectId()];
+
+  test('gives the role-less invited stub its roles and a set-password link', async () => {
+    const enqueue = jest.fn();
+    const userId = await provisionStaffUser({
+      tenantId: tenant._id,
+      email: 'old@testschool.local',
+    });
+
+    const mailed = await giveStaffLogin({ tenant, staff: { userId }, roleIds, enqueue });
+
+    expect(mailed).toBe(true);
+    expect((await User.findById(userId)).status).toBe('pending_claim');
+    const membership = await TenantMembership.findOne({ tenantId: tenant._id, userId });
+    expect(membership.status).toBe('active');
+    expect(membership.roleIds.map(String)).toEqual(roleIds.map(String));
+    expect(enqueue).toHaveBeenCalledWith('accountClaim', [
+      'old@testschool.local',
+      'Test School',
+      expect.stringContaining('/accept-invite?token='),
+    ]);
+  });
+
+  test('gives an account that already has a password its roles without mailing', async () => {
+    const enqueue = jest.fn();
+    const userId = await provisionStaffUser({
+      tenantId: tenant._id,
+      email: 'known@testschool.local',
+    });
+    await User.updateOne({ _id: userId }, { $set: { status: 'active' } });
+
+    expect(await giveStaffLogin({ tenant, staff: { userId }, roleIds, enqueue })).toBe(false);
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  test('refuses someone who already has a working login', async () => {
+    const userId = await provisionStaffUser({ tenantId: tenant._id, email: 'ok@testschool.local' });
+    await giveStaffLogin({ tenant, staff: { userId }, roleIds, enqueue: jest.fn() });
+
+    await expect(
+      giveStaffLogin({ tenant, staff: { userId }, roleIds, enqueue: jest.fn() })
+    ).rejects.toMatchObject({ status: 409 });
+  });
 });

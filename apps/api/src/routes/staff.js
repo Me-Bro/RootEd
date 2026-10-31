@@ -4,6 +4,7 @@ import { parse } from 'csv-parse/sync';
 import { Queue } from 'bullmq';
 import {
   createStaffMemberSchema,
+  staffLoginSchema,
   patchStaffMemberSchema,
   staffCsvRowSchema,
   createLeaveRequestSchema,
@@ -42,6 +43,7 @@ import { redis } from '../config/redis.js';
 import {
   provisionStaffUser,
   provisionStaffLogin,
+  giveStaffLogin,
   staffLoginStates,
   assertStaffMemberNotLinked,
   setStaffAccessStatus,
@@ -140,6 +142,19 @@ async function buildLeaveApprovalChain(staff, tenantId) {
 
 // ── Staff Members ─────────────────────────────────────────────────────────────
 
+// Handing out roles is a roles:write act; staff:write alone must not reach it.
+async function assertMayAssignRoles(req, roleIds) {
+  const tenantId = req.tenant._id;
+  const perms = await resolvePermissions(req.user.sub, tenantId.toString());
+  if (!perms.includes('roles:write')) {
+    throw new AppError('Assigning a role needs permission to manage roles', 403);
+  }
+  const roles = await Role.countDocuments({ _id: { $in: roleIds }, tenantId });
+  if (roles !== roleIds.length) {
+    throw new AppError('One or more roles do not belong to this organization', 400);
+  }
+}
+
 router.post(
   '/members',
   requirePermission('staff:write'),
@@ -149,17 +164,7 @@ router.post(
       const tenantId = req.tenant._id;
       const { email, roleIds, ...body } = req.body;
 
-      if (roleIds) {
-        // Handing out roles is a roles:write act; staff:write alone must not reach it.
-        const perms = await resolvePermissions(req.user.sub, tenantId.toString());
-        if (!perms.includes('roles:write')) {
-          throw new AppError('Assigning a role needs permission to manage roles', 403);
-        }
-        const roles = await Role.countDocuments({ _id: { $in: roleIds }, tenantId });
-        if (roles !== roleIds.length) {
-          throw new AppError('One or more roles do not belong to this organization', 400);
-        }
-      }
+      if (roleIds) await assertMayAssignRoles(req, roleIds);
       await provisionStaffLogin({ tenant: req.tenant, email, roleIds, ...body });
       const userId = await provisionStaffUser({ tenantId, email });
       await assertStaffMemberNotLinked(tenantId, userId);
@@ -247,6 +252,7 @@ router.get('/members/:id', requirePermission('staff:read'), async (req, res, nex
     if (!staff) return res.status(404).json({ error: 'Not found' });
 
     if (hasPermission(req, 'staff:write')) {
+      staff.login = (await staffLoginStates(tenantId, [staff])).get(String(staff.userId)) ?? 'none';
       if (staff.governmentId) staff.governmentId = decryptField(staff.governmentId, tenantId);
       if (staff.bankAccount) staff.bankAccount = decryptField(staff.bankAccount, tenantId);
     } else {
@@ -259,6 +265,36 @@ router.get('/members/:id', requirePermission('staff:read'), async (req, res, nex
     next(err);
   }
 });
+
+router.post(
+  '/members/:id/login',
+  requirePermission('staff:write'),
+  validate(staffLoginSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { roleIds } = req.body;
+      await assertMayAssignRoles(req, roleIds);
+
+      const staff = await StaffMember.findOne({ _id: req.params.id, tenantId }, 'userId').lean();
+      if (!staff) throw new AppError('Not found', 404);
+      const mailed = await giveStaffLogin({ tenant: req.tenant, staff, roleIds });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'staff.login_created',
+        target: { model: 'StaffMember', id: req.params.id },
+        after: { roleIds },
+        ip: req.ip,
+      });
+
+      res.status(201).json({ mailed });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.patch(
   '/members/:id',
