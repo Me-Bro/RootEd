@@ -1,23 +1,27 @@
 @import 'tailwindcss';
 
 :root {
-  --background: oklch(0.99 0.002 190);
-  --foreground: oklch(0.2 0.02 200);
-  --card: oklch(1 0 0);
-  --muted: oklch(0.965 0.006 190);
-  --muted-foreground: oklch(0.5 0.02 200);
-  --border: oklch(0.915 0.008 190);
-  --input: oklch(0.88 0.01 190);
-  --primary: oklch(0.51 0.09 185);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.955 0.012 185);
-  --secondary-foreground: oklch(0.3 0.05 190);
+  /* Palette from design-system/catalyst/MASTER.md, with two deviations. Primary is blue-700
+     (#1d4ed8), not the generated #2563eb: Badge and the roadmap callouts set it as text on a
+     10% tint of itself, and #2563eb only reaches 3.9-4.5:1 there. The orange CTA (#ea580c) is
+     not mapped, as there is no accent token and a tinted one would colour every hover. */
+  --background: #f8fafc;
+  --foreground: #1e293b;
+  --card: #ffffff;
+  --muted: #e9eff8;
+  --muted-foreground: #475569;
+  --border: #e2e8f0;
+  --input: #cbd5e1;
+  --primary: #1d4ed8;
+  --primary-foreground: #ffffff;
+  --secondary: #e9eff8;
+  --secondary-foreground: #1e293b;
   /* Status colours are used as text on a 10-15% tint of themselves (Badge), so
      they are dark enough to clear 4.5:1 against that tint. */
   --destructive: oklch(0.5 0.21 27);
   --success: oklch(0.4 0.12 150);
   --warning: oklch(0.45 0.11 70);
-  --ring: oklch(0.6 0.09 185);
+  --ring: #2563eb;
   --radius: 0.625rem;
 }
 
