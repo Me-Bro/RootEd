@@ -248,6 +248,7 @@
   "dashboard": {
     "setup": {
       "title": "Set up your school",
+      "titleCentre": "Set up your centre",
       "progress": "{{done}} of {{total}} steps done",
       "open": "Open",
       "done": "Done",
@@ -275,6 +276,22 @@
       "teaching": {
         "title": "Assign teachers to subjects",
         "hint": "Open a subject and choose who teaches each section."
+      },
+      "shifts": {
+        "title": "Create a shift",
+        "hint": "A shift is a time slot such as Morning or Evening. Members and seats are held per shift."
+      },
+      "seats": {
+        "title": "Add seats",
+        "hint": "Add the chairs you have, one by one or a run like A-1 to A-20."
+      },
+      "plans": {
+        "title": "Add a plan or day pass",
+        "hint": "Set a fixed price for a shift plan or a day pass. Without one nothing can be sold."
+      },
+      "members": {
+        "title": "Add members",
+        "hint": "Add them one by one or import a CSV, then give each a seat in their shift."
       },
       "students": {
         "title": "Add students",

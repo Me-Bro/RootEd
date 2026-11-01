@@ -52,21 +52,39 @@ test('every step links to the page that completes it', () => {
   assert.equal(to.students, '/academic/students');
 });
 
-test('a study center has no terms, subjects or teaching steps', () => {
-  const keys = setupSteps({ ...empty, seats: true }).map((s) => s.key);
-  assert.deepEqual(keys, ['years', 'classes', 'staff', 'students']);
+test('a study center gets its own four steps, in order', () => {
+  const steps = setupSteps({ ...empty, seats: true, planCount: 0 });
+  assert.deepEqual(
+    steps.map((s) => s.key),
+    ['shifts', 'seats', 'plans', 'members']
+  );
+  assert.deepEqual(done(steps), []);
 });
 
-test('a study center that has a year, a shift and a learner is fully set up', () => {
+test('a study center never asks for a year, terms, subjects, teachers or staff', () => {
+  const keys = setupSteps({ ...empty, seats: true, planCount: 0, staffTotal: 0 }).map((s) => s.key);
+  for (const k of ['years', 'terms', 'subjects', 'staff', 'teaching']) assert.ok(!keys.includes(k));
+});
+
+test('each study center step ticks from its own data and links to its page', () => {
   const steps = setupSteps({
     ...empty,
     seats: true,
-    years: [{}],
     classes: [{ sections: [{}] }],
-    staffTotal: 2,
+    seatCount: 12,
+    planCount: 2,
     studentsTotal: 5,
   });
-  assert.equal(done(steps).length, steps.length);
+  assert.equal(done(steps).length, 4);
+  assert.deepEqual(
+    steps.map((s) => s.to),
+    ['/academic/classes-sections', '/academic/seats', '/fee/structures', '/academic/students']
+  );
+});
+
+test('the plans step is left out when planCount is unknown (fee module off)', () => {
+  const keys = setupSteps({ ...empty, seats: true }).map((s) => s.key);
+  assert.deepEqual(keys, ['shifts', 'seats', 'members']);
 });
 
 test('without seats the existing step list is unchanged', () => {
