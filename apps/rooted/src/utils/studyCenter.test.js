@@ -78,3 +78,26 @@ test('only everyone-discounts inside their dates are pickable', () => {
     ['A window', 'B open']
   );
 });
+
+import { splitMinutes, localDayString, localMonthString, daysAgoString } from './studyCenter.js';
+
+test('minutes split into hours and minutes, never negative', () => {
+  assert.deepEqual(splitMinutes(290), { hours: 4, minutes: 50 });
+  assert.deepEqual(splitMinutes(45), { hours: 0, minutes: 45 });
+  assert.deepEqual(splitMinutes(120), { hours: 2, minutes: 0 });
+  assert.deepEqual(splitMinutes(0), { hours: 0, minutes: 0 });
+  assert.deepEqual(splitMinutes(-5), { hours: 0, minutes: 0 });
+  assert.deepEqual(splitMinutes(59.6), { hours: 1, minutes: 0 });
+});
+
+test('local day and month strings use the browser clock, zero padded', () => {
+  const d = new Date(2026, 4, 5, 23, 30); // 5 May 2026, local
+  assert.equal(localDayString(d), '2026-05-05');
+  assert.equal(localMonthString(d), '2026-05');
+});
+
+test('days ago crosses month and year ends', () => {
+  assert.equal(daysAgoString(29, new Date(2026, 4, 20)), '2026-04-21');
+  assert.equal(daysAgoString(1, new Date(2026, 0, 1)), '2025-12-31');
+  assert.equal(daysAgoString(0, new Date(2026, 4, 20)), '2026-05-20');
+});

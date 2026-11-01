@@ -24,6 +24,7 @@ import {
 } from '../services/fee.service.js';
 import { sellPlan } from '../services/sale.service.js';
 import { entitlementFor } from '../services/entitlement.service.js';
+import { dayPassSales } from '../services/studyReports.service.js';
 import { resolveCentreSettings } from '../utils/centreSettings.js';
 import { canApplyAdHocDiscount } from '../utils/discountPolicy.js';
 import { summarizeFeeCollection } from '../utils/feeCollectionSummary.js';
@@ -48,6 +49,7 @@ import {
   refundFeePaymentSchema,
   saleSchema,
   entitlementQuerySchema,
+  dayRangeQuerySchema,
 } from '@rooted/shared/schemas';
 import { hasSeats } from '@rooted/shared/utils';
 
@@ -810,6 +812,21 @@ router.post(
 
       const receiptUrl = payment?.receiptPdfKey ? await getSignedUrl(payment.receiptPdfKey) : null;
       res.status(201).json({ assignment, payment, receiptUrl, discountAmount });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// Day pass sales per day and in total over a range (default: the last 30 days).
+router.get(
+  '/reports/day-pass-sales',
+  requireSeatsOrg,
+  requirePermission('fees:read'),
+  async (req, res, next) => {
+    try {
+      const range = dayRangeQuerySchema.parse(req.query);
+      res.json(await dayPassSales(req.tenant, range));
     } catch (err) {
       next(err);
     }

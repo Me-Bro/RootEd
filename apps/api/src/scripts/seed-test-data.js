@@ -35,6 +35,7 @@ import { PlacementApplication } from '../models/PlacementApplication.js';
 import { Enrollment } from '../models/Enrollment.js';
 import { Seat } from '../models/Seat.js';
 import { SeatAllocation } from '../models/SeatAllocation.js';
+import { Visit } from '../models/Visit.js';
 import { GradeLock } from '../models/GradeLock.js';
 import { ReportCardBatch } from '../models/ReportCardBatch.js';
 import { Timetable } from '../models/Timetable.js';
@@ -141,6 +142,7 @@ async function run() {
   await Student.syncIndexes();
   await Seat.syncIndexes();
   await SeatAllocation.syncIndexes();
+  await Visit.syncIndexes();
   await StaffMember.syncIndexes();
   await AttendanceRecord.syncIndexes();
   await Grade.syncIndexes();
@@ -616,6 +618,97 @@ async function run() {
     },
     { upsert: true, ...BYPASS_SC }
   );
+
+  // Reports (TICKET-007 phase 5): two closed visits for member1 early this month
+  // (IST), and two day passes sold to a walk-in on different days. Nobody is left
+  // inside, so the front-desk specs start from an empty room.
+  const istShift = 5.5 * 60 * 60 * 1000;
+  const istNow = new Date(Date.now() + istShift);
+  const monthStart = new Date(
+    Date.UTC(istNow.getUTCFullYear(), istNow.getUTCMonth(), 1) - istShift
+  );
+  for (const [offsetMin, minutes] of [
+    [60, 60],
+    [180, 90],
+  ]) {
+    const inAt = new Date(monthStart.getTime() + offsetMin * 60 * 1000);
+    await Visit.findOneAndUpdate(
+      { tenantId: studyTenantId, studentId: studyMembers.studyMember1._id, inAt },
+      {
+        $setOnInsert: {
+          tenantId: studyTenantId,
+          studentId: studyMembers.studyMember1._id,
+          seatId: studySeats['A-1']._id,
+          inAt,
+          outAt: new Date(inAt.getTime() + minutes * 60 * 1000),
+          recordedBy: users.studyDesk._id,
+          entitlementAtCheckIn: 'valid',
+        },
+      },
+      { upsert: true, ...BYPASS_SC }
+    );
+  }
+
+  const seedWalkIn = await Student.findOneAndUpdate(
+    { tenantId: studyTenantId, admissionNo: 'W-SEED-001' },
+    {
+      $setOnInsert: {
+        tenantId: studyTenantId,
+        admissionNo: 'W-SEED-001',
+        firstName: 'Seed',
+        lastName: 'Visitor',
+        phone: '9000000099',
+        kind: 'walk_in',
+        status: 'active',
+      },
+    },
+    { upsert: true, new: true, ...BYPASS_SC }
+  ).lean();
+  for (const [daysBack, receiptNumber] of [
+    [1, 'RCP-SEED-STUDY-0002'],
+    [0, 'RCP-SEED-STUDY-0003'],
+  ]) {
+    const soldAt = new Date(Date.now() - daysBack * dayMs);
+    const coversFrom = new Date(soldAt.getTime() - 6 * 60 * 60 * 1000);
+    const passAssignment = await FeeAssignment.findOneAndUpdate(
+      {
+        tenantId: studyTenantId,
+        studentId: seedWalkIn._id,
+        feeStructureId: studyPlans['Day pass']._id,
+        dueDate: coversFrom,
+      },
+      {
+        $setOnInsert: {
+          tenantId: studyTenantId,
+          studentId: seedWalkIn._id,
+          feeStructureId: studyPlans['Day pass']._id,
+          academicYearId: studyYear._id,
+          totalAmount: 150,
+          status: 'paid',
+          dueDate: coversFrom,
+          coversFrom,
+          coversTo: new Date(coversFrom.getTime() + 24 * 60 * 60 * 1000 - 1),
+        },
+      },
+      { upsert: true, new: true, ...BYPASS_SC }
+    ).lean();
+    await FeePayment.findOneAndUpdate(
+      { tenantId: studyTenantId, receiptNumber },
+      {
+        $setOnInsert: {
+          tenantId: studyTenantId,
+          assignmentId: passAssignment._id,
+          studentId: seedWalkIn._id,
+          amount: 150,
+          paymentMethod: 'cash',
+          receiptNumber,
+          paymentDate: soldAt,
+          collectedBy: users.studyDesk._id,
+        },
+      },
+      { upsert: true, ...BYPASS_SC }
+    );
+  }
 
   // ── Academic Year ─────────────────────────────────────────────────────────
   let year = await AcademicYear.findOne({ tenantId, name: '2025-26' }, null, {

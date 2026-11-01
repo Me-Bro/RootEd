@@ -40,3 +40,24 @@ export function pickableDiscounts(discounts, now = new Date()) {
     .filter((d) => !d.validTo || new Date(d.validTo) >= now)
     .sort((a, b) => a.name.localeCompare(b.name));
 }
+
+// 290 minutes -> { hours: 4, minutes: 50 }. The page picks the wording.
+export function splitMinutes(total) {
+  const rounded = Math.max(0, Math.round(total));
+  return { hours: Math.floor(rounded / 60), minutes: rounded % 60 };
+}
+
+const pad = (n) => String(n).padStart(2, '0');
+
+// Calendar day and month of a Date on the browser's own clock, as the report
+// endpoints expect them ("2026-05-20", "2026-05").
+export function localDayString(date = new Date()) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+export function localMonthString(date = new Date()) {
+  return localDayString(date).slice(0, 7);
+}
+export function daysAgoString(days, date = new Date()) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate() - days);
+  return localDayString(d);
+}
