@@ -27,4 +27,3 @@ Layout glue (verified present in the stylesheet): `flex`, `flex-col`, `grid`, `i
 - `Input` takes `label` and `error` itself; do not wrap it in a separate `Label`. `SelectField` is the labelled select; `Select` + `SelectTrigger` + `SelectContent` + `SelectItem` is the bare one.
 - Tables: `DataTable headers={[...]}` with `TableRow`/`TableCell` children on desktop, and `RecordList` + `RecordListItem` on phones (`RecordList` is hidden from the `md` breakpoint up, so show both and let it switch).
 - Overlays (`Dialog`, `AlertDialog`, `Sheet`, `DropdownMenu`) take `defaultOpen` to render open.
-- `Tabs` needs `className="flex-col"` so panels sit under the tab list.
