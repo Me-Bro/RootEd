@@ -7,6 +7,9 @@ import { FeeStructure } from '../models/FeeStructure.js';
 import { FeeAssignment } from '../models/FeeAssignment.js';
 import { FeePayment } from '../models/FeePayment.js';
 import { addDaysToDayString, dayStringInTz, zonedMidnight } from '../utils/dayKey.js';
+import { fullName as nameOf } from '../utils/fullName.js';
+
+const fullName = (person) => nameOf(person, '—');
 import {
   groupSalesByDay,
   hoursPerLearner,
@@ -15,7 +18,6 @@ import {
   occupancy,
 } from '../utils/visitReports.js';
 
-const fullName = (s) => (s ? `${s.firstName} ${s.lastName}`.trim() : '—');
 const monthBounds = (month, timezone) => ({
   from: zonedMidnight(`${month}-01`, timezone),
   to: zonedMidnight(`${nextMonth(month)}-01`, timezone),

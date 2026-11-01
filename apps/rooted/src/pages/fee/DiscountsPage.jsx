@@ -10,6 +10,7 @@ import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
 import LearnerPicker from '../../components/study/LearnerPicker.jsx';
 import { formatCurrency, formatDate } from '../../utils/intl.js';
+import { apiError } from '../../utils/studyCenter.js';
 
 const blank = { name: '', type: 'percentage', value: '', scope: 'all', validFrom: '', validTo: '' };
 
@@ -55,12 +56,7 @@ export default function DiscountsPage() {
       queryClient.invalidateQueries({ queryKey: ['fee-discounts'] });
     },
     onError: (err) => {
-      const details = err.response?.data?.details;
-      setError(
-        (details && Object.values(details).flat()[0]) ||
-          err.response?.data?.error ||
-          t('studyCenter.discounts.failed')
-      );
+      setError(apiError(err, t('studyCenter.discounts.failed')));
     },
   });
 

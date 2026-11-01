@@ -8,11 +8,7 @@ import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
-
-const errorOf = (err, fallback) =>
-  (err.response?.data?.details && Object.values(err.response.data.details).flat()[0]) ||
-  err.response?.data?.error ||
-  fallback;
+import { apiError } from '../../utils/studyCenter.js';
 
 // Seat management: one seat at a time or a run of them, and taking a chair out of
 // use. Who holds a seat is the seat map's business; deactivating a held seat is
@@ -38,7 +34,7 @@ export default function SeatsPage() {
   };
   const failed = (err) => {
     setNotice('');
-    setError(errorOf(err, t('studyCenter.seats.failed')));
+    setError(apiError(err, t('studyCenter.seats.failed')));
   };
 
   const addOne = useMutation({

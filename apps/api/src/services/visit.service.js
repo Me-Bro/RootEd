@@ -11,8 +11,7 @@ import { dayKeyInTz } from '../utils/dayKey.js';
 import { isWithinOpenHours } from '../utils/openHours.js';
 import { freeSeatsFor } from '../utils/seatPool.js';
 import { selectVisitsToClose } from '../utils/visitClose.js';
-
-const fullName = (s) => (s ? `${s.firstName} ${s.lastName}`.trim() : 'another learner');
+import { fullName } from '../utils/fullName.js';
 
 async function loadSeatingContext(tenantId, student) {
   const [seats, allocations, openVisits] = await Promise.all([
