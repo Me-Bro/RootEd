@@ -22,8 +22,11 @@ import {
   AttendanceCard,
   FeeCard,
   GradesCard,
+  ScheduleCard,
+  SubjectSheet,
 } from '../../components/dashboard/StudentHomeCards.jsx';
 import { useNow } from '../../hooks/useNow.js';
+import { gradedSubjectIds } from '../../utils/studentHome.js';
 
 function StatCard({ label, value }) {
   return (
@@ -203,6 +206,7 @@ function StudentDashboard() {
   const navigate = useNavigate();
   const academicEnabled = isModuleEnabled(user, 'academic');
   const feeEnabled = isModuleEnabled(user, 'fee');
+  const [subject, setSubject] = useState(null);
 
   const { data: profile, isLoading: loadingProfile } = useQuery({
     queryKey: ['me', 'profile'],
@@ -210,17 +214,17 @@ function StudentDashboard() {
   });
   const isStudent = Boolean(profile?.isStudent);
 
-  const { data: attendance = [] } = useQuery({
+  const { data: attendance = [], isLoading: loadingAttendance } = useQuery({
     queryKey: ['me', 'attendance', 'dashboard'],
     queryFn: () => api.get('/me/attendance').then((r) => r.data),
     enabled: isStudent && academicEnabled,
   });
-  const { data: grades = [] } = useQuery({
+  const { data: grades = [], isLoading: loadingGrades } = useQuery({
     queryKey: ['me', 'grades', 'dashboard'],
     queryFn: () => api.get('/me/grades').then((r) => r.data),
     enabled: isStudent && academicEnabled,
   });
-  const { data: fees } = useQuery({
+  const { data: fees, isLoading: loadingFees } = useQuery({
     queryKey: ['me', 'fees', 'dashboard'],
     queryFn: () => api.get('/me/fees').then((r) => r.data),
     enabled: isStudent && feeEnabled,
@@ -255,11 +259,23 @@ function StudentDashboard() {
       </p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {academicEnabled && <NowNextCard timetable={timetable} now={now} />}
-        {academicEnabled && <AttendanceCard records={attendance} />}
-        {feeEnabled && <FeeCard fees={fees} now={now} />}
-        {academicEnabled && <GradesCard grades={grades} />}
+        {academicEnabled && (
+          <ScheduleCard
+            timetable={timetable}
+            now={now}
+            gradedSubjects={gradedSubjectIds(grades)}
+            onOpenSubject={setSubject}
+          />
+        )}
+        {academicEnabled && (
+          <AttendanceCard records={attendance} now={now} loading={loadingAttendance} />
+        )}
+        {academicEnabled && (
+          <GradesCard grades={grades} loading={loadingGrades} onOpenSubject={setSubject} />
+        )}
+        {feeEnabled && <FeeCard fees={fees} now={now} loading={loadingFees} />}
       </div>
+      <SubjectSheet subject={subject} grades={grades} onClose={() => setSubject(null)} />
 
       <div className="flex flex-wrap gap-2">
         {academicEnabled && (
