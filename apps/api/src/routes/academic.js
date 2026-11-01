@@ -24,6 +24,7 @@ import {
   updateSubjectSchema,
   subjectTeacherSchema,
   subjectTeacherQuerySchema,
+  teachingLoadQuerySchema,
 } from '@rooted/shared/schemas';
 import { scoreToLetter, isBatchOrgType, isModuleEnabled } from '@rooted/shared/utils';
 import { REPORT_CARD_EXCLUDED_ASSESSMENT_TYPES } from '@rooted/shared/constants';
@@ -54,6 +55,7 @@ import { Assignment } from '../models/Assignment.js';
 import { SubjectTeacher } from '../models/SubjectTeacher.js';
 import { assertRefs } from '../services/training.service.js';
 import { assertTeacher } from '../services/subjectTeacher.service.js';
+import { loadTeachingLoad } from '../services/teachingLoad.service.js';
 import { TimetablePublish } from '../models/TimetablePublish.js';
 import { AttendanceRecord } from '../models/AttendanceRecord.js';
 import { Grade } from '../models/Grade.js';
@@ -360,6 +362,25 @@ router.get('/subject-teachers', requirePermission('students:read'), async (req, 
         teacher: teacherId ?? null,
       }))
     );
+  } catch (err) {
+    next(err);
+  }
+});
+
+// The sections and subjects a teacher covers this academic year. Your own needs only
+// students:read; someone else's needs staff:read (or being an admin), since it shows
+// where they are timetabled.
+router.get('/teaching-load', requirePermission('students:read'), async (req, res, next) => {
+  try {
+    const { teacherId = req.user.sub } = teachingLoadQuerySchema.parse(req.query);
+    if (
+      String(teacherId) !== String(req.user.sub) &&
+      !(await userHasPermission(req, 'staff:read')) &&
+      !(await userHasPermission(req, 'tenant:admin'))
+    ) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    res.json(await loadTeachingLoad({ tenantId: req.tenant._id, teacherId }));
   } catch (err) {
     next(err);
   }
