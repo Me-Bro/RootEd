@@ -2,7 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from 'rooted';
 
 export function Default() {
   return (
-    <Tabs defaultValue="attendance" className="flex-col" style={{ width: 380 }}>
+    <Tabs defaultValue="attendance" style={{ width: 380 }}>
       <TabsList>
         <TabsTrigger value="attendance">Attendance</TabsTrigger>
         <TabsTrigger value="grades">Grades</TabsTrigger>
