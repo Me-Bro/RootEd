@@ -5,6 +5,7 @@ import { Role, DEFAULT_ROLE_TEMPLATES } from '../models/Role.js';
 import { AcademicYear } from '../models/AcademicYear.js';
 import { up as addFrontDesk } from '../migrations/0005-study-center-front-desk-role.js';
 import { up as addOngoingYear } from '../migrations/0006-study-center-ongoing-year.js';
+import { up as addSelfSeatRead } from '../migrations/0007-add-self-seat-read.js';
 
 let mongod;
 const BYPASS = { _bypassTenantScope: true };
@@ -101,5 +102,50 @@ describe('0006 Ongoing academic year', () => {
 
     const years = await AcademicYear.find({ tenantId: study._id }, null, BYPASS).lean();
     expect(years.map((y) => y.name)).toEqual(['2026']);
+  });
+});
+
+describe('0007 self:seat:read', () => {
+  test('adds the permission to every student template of every tenant, and is idempotent', async () => {
+    const [a, b] = await Promise.all([
+      tenantOf('study_center', 'sc-e'),
+      tenantOf('school', 'sch-e'),
+    ]);
+    for (const tenant of [a, b]) {
+      await Role.create([
+        {
+          tenantId: tenant._id,
+          name: 'student',
+          templateKey: 'student',
+          isTemplate: true,
+          permissions: ['self:attendance:read'],
+        },
+        {
+          tenantId: tenant._id,
+          name: 'teacher',
+          templateKey: 'teacher',
+          isTemplate: true,
+          permissions: ['attendance:write'],
+        },
+      ]);
+    }
+
+    await addSelfSeatRead();
+    await addSelfSeatRead();
+
+    for (const tenant of [a, b]) {
+      const student = await Role.findOne(
+        { tenantId: tenant._id, templateKey: 'student' },
+        null,
+        BYPASS
+      ).lean();
+      expect(student.permissions).toEqual(['self:attendance:read', 'self:seat:read']);
+      const teacher = await Role.findOne(
+        { tenantId: tenant._id, templateKey: 'teacher' },
+        null,
+        BYPASS
+      ).lean();
+      expect(teacher.permissions).toEqual(['attendance:write']);
+    }
   });
 });

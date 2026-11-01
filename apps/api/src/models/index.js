@@ -48,6 +48,8 @@ export { RoadmapItem } from './RoadmapItem.js';
 export { RoadmapProgress } from './RoadmapProgress.js';
 export { SalarySlip } from './SalarySlip.js';
 export { SalaryStructure } from './SalaryStructure.js';
+export { Seat } from './Seat.js';
+export { SeatAllocation } from './SeatAllocation.js';
 export { Section } from './Section.js';
 export { StaffMember } from './StaffMember.js';
 export { StockMovement } from './StockMovement.js';

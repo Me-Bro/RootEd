@@ -26,6 +26,7 @@ import {
   subjectTeacherQuerySchema,
   teachingLoadQuerySchema,
   indianMobileSchema,
+  sectionTimesSchema,
 } from '@rooted/shared/schemas';
 import { scoreToLetter, isBatchOrgType, isModuleEnabled } from '@rooted/shared/utils';
 import { REPORT_CARD_EXCLUDED_ASSESSMENT_TYPES } from '@rooted/shared/constants';
@@ -58,6 +59,7 @@ import { assertRefs } from '../services/training.service.js';
 import { assertTeacher, ensureAssignments } from '../services/subjectTeacher.service.js';
 import { logger } from '../utils/logger.js';
 import { loadTeachingLoad } from '../services/teachingLoad.service.js';
+import { endAllocationsFor } from '../services/seat.service.js';
 import { TimetablePublish } from '../models/TimetablePublish.js';
 import { AttendanceRecord } from '../models/AttendanceRecord.js';
 import { Grade } from '../models/Grade.js';
@@ -244,11 +246,16 @@ router.patch('/classes/:id', requirePermission('tenant:admin'), async (req, res,
 router.post('/sections', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
     const { classId, name, classTeacherId } = req.body;
+    const times = sectionTimesSchema.parse({
+      startTime: req.body.startTime,
+      endTime: req.body.endTime,
+    });
     const section = await Section.create({
       tenantId: req.tenant._id,
       classId,
       name,
       classTeacherId,
+      ...times,
     });
     res.status(201).json(section);
   } catch (err) {
@@ -269,9 +276,23 @@ router.get('/sections', requirePermission('students:read'), async (req, res, nex
 
 router.patch('/sections/:id', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
+    const body = { ...req.body };
+    // Shift hours are the only section fields with a format; a null clears one.
+    if ('startTime' in body || 'endTime' in body) {
+      const times = sectionTimesSchema.parse({ startTime: body.startTime, endTime: body.endTime });
+      for (const key of ['startTime', 'endTime']) {
+        if (key in body) body[key] = times[key];
+      }
+    }
+    const update = { $set: {}, $unset: {} };
+    for (const [key, value] of Object.entries(body)) {
+      if (value === null && (key === 'startTime' || key === 'endTime')) update.$unset[key] = '';
+      else update.$set[key] = value;
+    }
+    if (!Object.keys(update.$unset).length) delete update.$unset;
     const section = await Section.findOneAndUpdate(
       { _id: req.params.id, tenantId: req.tenant._id },
-      { $set: req.body },
+      update,
       { new: true }
     );
     if (!section) return res.status(404).json({ error: 'Not found' });
@@ -981,6 +1002,10 @@ router.patch('/enrollments/:id', requirePermission('students:write'), async (req
       { new: true, runValidators: true }
     );
     if (!enrollment) return res.status(404).json({ error: 'Not found' });
+    // A learner who has left a shift no longer holds its seat.
+    if (status === 'completed' || status === 'dropped') {
+      await endAllocationsFor(req.tenant._id, enrollment.studentId, enrollment.sectionId);
+    }
     res.json(enrollment);
   } catch (err) {
     next(err);

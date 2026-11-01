@@ -33,6 +33,8 @@ import { Project } from '../models/Project.js';
 import { Employer } from '../models/Employer.js';
 import { PlacementApplication } from '../models/PlacementApplication.js';
 import { Enrollment } from '../models/Enrollment.js';
+import { Seat } from '../models/Seat.js';
+import { SeatAllocation } from '../models/SeatAllocation.js';
 import { GradeLock } from '../models/GradeLock.js';
 import { ReportCardBatch } from '../models/ReportCardBatch.js';
 import { Timetable } from '../models/Timetable.js';
@@ -137,6 +139,8 @@ async function run() {
   // a sync the old definition survives and every roster student without a
   // linked account collides on userId: null.
   await Student.syncIndexes();
+  await Seat.syncIndexes();
+  await SeatAllocation.syncIndexes();
   await StaffMember.syncIndexes();
   await AttendanceRecord.syncIndexes();
   await Grade.syncIndexes();
@@ -417,10 +421,17 @@ async function run() {
     { upsert: true, new: true, ...BYPASS_SC }
   ).lean();
   const studyShifts = {};
+  const shiftHours = {
+    Morning: { startTime: '06:00', endTime: '14:00' },
+    Evening: { startTime: '14:00', endTime: '22:00' },
+  };
   for (const name of ['Morning', 'Evening']) {
     studyShifts[name] = await Section.findOneAndUpdate(
       { tenantId: studyTenantId, classId: studyClass._id, name },
-      { $setOnInsert: { tenantId: studyTenantId, classId: studyClass._id, name } },
+      {
+        $setOnInsert: { tenantId: studyTenantId, classId: studyClass._id, name },
+        $set: shiftHours[name],
+      },
       { upsert: true, new: true, ...BYPASS_SC }
     ).lean();
   }
@@ -462,6 +473,46 @@ async function run() {
         { upsert: true, ...BYPASS_SC }
       );
     }
+  }
+
+  // Twelve seats in two halls. member1 holds A-1 in the Morning and B-4 in the
+  // Evening; member2 holds nothing (the "No seat yet" state).
+  const studySeats = {};
+  for (const [prefix, zone] of [
+    ['A-', 'Hall 1'],
+    ['B-', 'Hall 2'],
+  ]) {
+    for (let i = 1; i <= 6; i += 1) {
+      const label = `${prefix}${i}`;
+      studySeats[label] = await Seat.findOneAndUpdate(
+        { tenantId: studyTenantId, label },
+        { $setOnInsert: { tenantId: studyTenantId, label, zone, isActive: true } },
+        { upsert: true, new: true, ...BYPASS_SC }
+      ).lean();
+    }
+  }
+  for (const [shiftName, label] of [
+    ['Morning', 'A-1'],
+    ['Evening', 'B-4'],
+  ]) {
+    await SeatAllocation.findOneAndUpdate(
+      {
+        tenantId: studyTenantId,
+        studentId: studyMembers.studyMember1._id,
+        sectionId: studyShifts[shiftName]._id,
+        status: 'active',
+      },
+      {
+        $setOnInsert: {
+          tenantId: studyTenantId,
+          studentId: studyMembers.studyMember1._id,
+          sectionId: studyShifts[shiftName]._id,
+          seatId: studySeats[label]._id,
+          status: 'active',
+        },
+      },
+      { upsert: true, ...BYPASS_SC }
+    );
   }
 
   // ── Academic Year ─────────────────────────────────────────────────────────
@@ -2141,6 +2192,9 @@ async function run() {
       ),
       roles: Object.fromEntries(
         Object.entries(studyRoleByKey).map(([k, r]) => [k, r._id.toString()])
+      ),
+      seats: Object.fromEntries(
+        Object.entries(studySeats).map(([label, seat]) => [label, { _id: seat._id.toString() }])
       ),
       members: Object.fromEntries(
         Object.entries(studyMembers).map(([k, st]) => [

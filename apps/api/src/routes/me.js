@@ -16,6 +16,9 @@ import { Class } from '../models/Class.js';
 import { Section } from '../models/Section.js';
 import { Student } from '../models/Student.js';
 import { Subject } from '../models/Subject.js';
+import { Enrollment } from '../models/Enrollment.js';
+import { SeatAllocation } from '../models/SeatAllocation.js';
+import { requireSeatsOrg } from '../middleware/requireSeatsOrg.js';
 import { filterVisibleTimetableEntries } from '../utils/timetableVisibility.js';
 import {
   progressQuerySchema,
@@ -296,6 +299,48 @@ router.get(
       ]);
 
       res.json({ assignments, payments });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// The learner's own shifts and seats at a study center. A whitelist: shift name
+// and hours, seat label and zone, nothing about anyone else.
+router.get(
+  '/seat',
+  requireSeatsOrg,
+  requireModuleEnabled('academic'),
+  requirePermission('self:seat:read'),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const studentId = studentIdOf(req);
+
+      const enrollments = await Enrollment.find({ tenantId, studentId, status: 'active' }).lean();
+      const sectionIds = enrollments.map((e) => e.sectionId);
+      const [sections, allocations] = await Promise.all([
+        Section.find({ tenantId, _id: { $in: sectionIds } }, 'name startTime endTime').lean(),
+        SeatAllocation.find({ tenantId, studentId, status: 'active' })
+          .populate('seatId', 'label zone')
+          .lean(),
+      ]);
+      const seatBySection = new Map(allocations.map((a) => [String(a.sectionId), a.seatId]));
+
+      const shifts = sections
+        .map((s) => {
+          const seat = seatBySection.get(String(s._id));
+          return {
+            sectionId: s._id,
+            sectionName: s.name,
+            startTime: s.startTime ?? null,
+            endTime: s.endTime ?? null,
+            seat: seat ? { label: seat.label, zone: seat.zone ?? null } : null,
+          };
+        })
+        .sort((a, b) => (a.startTime ?? '99:99').localeCompare(b.startTime ?? '99:99'));
+
+      res.json({ shifts });
     } catch (err) {
       next(err);
     }

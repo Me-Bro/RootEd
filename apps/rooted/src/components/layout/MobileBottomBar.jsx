@@ -11,6 +11,8 @@ const SHORTCUT_ROUTES = [
   ['/academic/students'],
   ['/academic/attendance', '/me/attendance'],
   ['/fee', '/me/fees'],
+  // Study center only: the seat map for staff, the learner's own seat for members.
+  ['/academic/seat-map', '/me/seat'],
 ];
 
 export default function MobileBottomBar({ navGroups, onOpenMenu }) {

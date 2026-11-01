@@ -206,6 +206,8 @@ export const PERMISSIONS = [
   // Ticks items off, answers and attaches links on the caller's own roadmap.
   // Separate from the read so a read-only student role cannot change anything.
   'self:training:write',
+  // The learner's own shift, seat, plan and visits at a study center (GET /me/seat).
+  'self:seat:read',
 ];
 
 // Learning roadmap (training module): what an item asks the student to do, and

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { resolveOrgTerm } from '@rooted/shared/utils';
+import { hasSeats, resolveOrgTerm } from '@rooted/shared/utils';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { useClassSections } from '../../hooks/useClassSections.js';
@@ -131,12 +131,23 @@ function SectionModal({
   const [form, setForm] = useState({
     name: sectionItem?.name ?? '',
     classTeacherId: sectionItem?.classTeacherId ?? '',
+    startTime: sectionItem?.startTime ?? '',
+    endTime: sectionItem?.endTime ?? '',
   });
   const [error, setError] = useState('');
+  const { user } = useAuth();
+  // A study center's shifts carry their hours; they are labels, nothing enforces them.
+  const showTimes = hasSeats(user?.orgType);
 
   const mutation = useMutation({
     mutationFn: () => {
       const body = { name: form.name, classTeacherId: form.classTeacherId || undefined };
+      if (showTimes) {
+        // An edit sends null to clear a time; a create just leaves it out.
+        const empty = isEdit ? null : undefined;
+        body.startTime = form.startTime || empty;
+        body.endTime = form.endTime || empty;
+      }
       return isEdit
         ? api.patch(`/academic/sections/${sectionItem._id}`, body).then((r) => r.data)
         : api.post('/academic/sections', { ...body, classId }).then((r) => r.data);
@@ -145,7 +156,7 @@ function SectionModal({
       queryClient.invalidateQueries({ queryKey: CLASSES_QUERY_KEY });
       onOpenChange(false);
       if (!isEdit) {
-        setForm({ name: '', classTeacherId: '' });
+        setForm({ name: '', classTeacherId: '', startTime: '', endTime: '' });
         setError('');
       }
     },
@@ -201,6 +212,24 @@ function SectionModal({
               </SelectItem>
             ))}
           </SelectField>
+          {showTimes && (
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                type="time"
+                id="section-start-time"
+                label={t('studyCenter.shift.startTime')}
+                value={form.startTime}
+                onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
+              />
+              <Input
+                type="time"
+                id="section-end-time"
+                label={t('studyCenter.shift.endTime')}
+                value={form.endTime}
+                onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))}
+              />
+            </div>
+          )}
           {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
         <DialogFooter>

@@ -43,3 +43,60 @@ export const centreSettingsSchema = z
     message: 'Closing time must be later than opening time',
     path: ['closeTime'],
   });
+
+// ── Seats ───────────────────────────────────────────────────────────────────
+
+const objectId = z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid id');
+
+export const seatSchema = z
+  .object({
+    label: z.string().trim().min(1).max(20),
+    zone: z.string().trim().max(40).optional(),
+  })
+  .strict();
+
+// A rename, a zone change, or taking a chair out of use. A zone sent as an empty
+// string is allowed and clears it.
+export const updateSeatSchema = z
+  .object({
+    label: z.string().trim().min(1).max(20).optional(),
+    zone: z.string().trim().max(40).optional(),
+    isActive: z.boolean().optional(),
+  })
+  .strict()
+  .refine((v) => Object.keys(v).length > 0, 'Nothing to change');
+
+// "A-" and 6 gives A-1 .. A-6; `start` lets a second batch continue the numbering.
+export const bulkSeatSchema = z
+  .object({
+    prefix: z.string().trim().max(10).default(''),
+    count: z.number().int().min(1).max(200),
+    start: z.number().int().min(0).max(9999).default(1),
+    zone: z.string().trim().max(40).optional(),
+  })
+  .strict();
+
+export const seatAllocationSchema = z
+  .object({ studentId: objectId, sectionId: objectId, seatId: objectId })
+  .strict();
+
+export const moveAllocationSchema = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('end') }).strict(),
+  z.object({ action: z.literal('move'), seatId: objectId }).strict(),
+]);
+
+export const availabilityQuerySchema = z.object({ sectionId: objectId });
+
+export const allocationQuerySchema = z.object({
+  studentId: objectId.optional(),
+  sectionId: objectId.optional(),
+  seatId: objectId.optional(),
+});
+
+// Shift hours on a Section. Either may be null (clears it); both are labels.
+export const sectionTimesSchema = z
+  .object({ startTime: hhmm.nullable().optional(), endTime: hhmm.nullable().optional() })
+  .refine((v) => !v.startTime || !v.endTime || v.endTime > v.startTime, {
+    message: 'End time must be later than start time',
+    path: ['endTime'],
+  });

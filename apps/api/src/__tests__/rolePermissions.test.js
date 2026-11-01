@@ -129,7 +129,10 @@ describe('self-scoped permissions', () => {
   // 'students:read'. That is a wart in the permission naming, not in the
   // self-scoped set — splitting it out means a new permission and a backfill
   // for every existing role, so it is tracked rather than bundled here.
-  const WITHOUT_TENANT_WIDE_COUNTERPART = ['self:timetable:read'];
+  // 'seat:read' does not exist either: staff read seats, allocations and the seat
+  // map through 'students:read' and change them with 'students:write', so a
+  // study-center learner's own seat has no tenant-wide permission to mirror.
+  const WITHOUT_TENANT_WIDE_COUNTERPART = ['self:timetable:read', 'self:seat:read'];
 
   test('every self: permission has a real tenant-wide counterpart', () => {
     // Guards against a typo like 'self:grade:read' that would gate a route
@@ -171,5 +174,16 @@ describe('front_desk template', () => {
 
   test('carries no self-scoped permission', () => {
     expect(frontDesk.filter(isSelfScoped)).toEqual([]);
+  });
+});
+
+describe('self:seat:read', () => {
+  test('is a self-scoped permission held by the student template and nobody else', () => {
+    expect(SHARED_PERMISSIONS).toContain('self:seat:read');
+    expect(isSelfScoped('self:seat:read')).toBe(true);
+    const holders = Object.entries(DEFAULT_ROLE_TEMPLATES)
+      .filter(([, perms]) => perms.includes('self:seat:read'))
+      .map(([key]) => key);
+    expect(holders).toEqual(['student']);
   });
 });

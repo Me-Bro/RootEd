@@ -5,6 +5,7 @@ import { formatDistanceToNow } from 'date-fns';
 import {
   Activity,
   Archive,
+  Armchair,
   BarChart2,
   Bell,
   BookMarked,
@@ -131,6 +132,29 @@ function getNavGroups(t, orgType) {
           label: studentLabel,
           icon: Users,
           permission: 'students:read',
+        },
+        // Study center only: the chairs, who holds them per shift, and the
+        // learner's own seat.
+        {
+          to: '/academic/seat-map',
+          label: t('nav.seatMap'),
+          icon: Armchair,
+          permission: 'students:read',
+          seatsOnly: true,
+        },
+        {
+          to: '/academic/seats',
+          label: t('nav.seats'),
+          icon: Armchair,
+          permission: 'students:write',
+          seatsOnly: true,
+        },
+        {
+          to: '/me/seat',
+          label: t('nav.mySeat'),
+          icon: Armchair,
+          permission: 'self:seat:read',
+          seatsOnly: true,
         },
         {
           to: '/academic/attendance',
