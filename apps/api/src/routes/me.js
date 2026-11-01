@@ -132,15 +132,14 @@ router.get(
       // they are about.
       const locks = await GradeLock.find(
         { tenantId },
-        'sectionId subjectId termId assessmentType'
+        'sectionId subjectId termId assessmentType publishedAt'
       ).lean();
-      const published = new Set(
-        locks.map((l) => `${l.sectionId}:${l.subjectId}:${l.termId}:${l.assessmentType}`)
-      );
+      const keyOf = (g) => `${g.sectionId}:${g.subjectId}:${g.termId}:${g.assessmentType}`;
+      const publishedAt = new Map(locks.map((l) => [keyOf(l), l.publishedAt]));
 
-      const visible = grades.filter((g) =>
-        published.has(`${g.sectionId}:${g.subjectId}:${g.termId}:${g.assessmentType}`)
-      );
+      const visible = grades
+        .filter((g) => publishedAt.has(keyOf(g)))
+        .map((g) => ({ ...g, publishedAt: publishedAt.get(keyOf(g)) }));
       if (!visible.length) return res.json([]);
 
       const subjects = await Subject.find(
