@@ -4,6 +4,7 @@ import api from '../../lib/api.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
 import ShiftSeats from '../../components/study/ShiftSeats.jsx';
+import { formatCurrency, formatDate } from '../../utils/intl.js';
 
 // The learner's own shifts and seats. Plan validity, amount due and visits join
 // this page in later phases; the endpoint's answer only ever concerns the caller.
@@ -29,6 +30,35 @@ export default function MySeatPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* A learner with no plan and nothing owing sees no plan line at all. */}
+      {!isLoading && (data?.plan || data?.nextDue) && (
+        <Card data-testid="my-plan">
+          <CardContent className="flex flex-col gap-1 pt-4 text-sm">
+            <h2 className="text-sm font-semibold">{t('studyCenter.mySeat.planLabel')}</h2>
+            {data.plan && (
+              <>
+                <p>{data.plan.name}</p>
+                <p className="text-muted-foreground">
+                  {new Date(data.plan.coversTo) >= new Date()
+                    ? t('studyCenter.mySeat.validUntil', { date: formatDate(data.plan.coversTo) })
+                    : t('studyCenter.mySeat.planEnded', { date: formatDate(data.plan.coversTo) })}
+                </p>
+              </>
+            )}
+            {data.nextDue && (
+              <p className="font-medium">
+                {t('studyCenter.mySeat.amountDue', { amount: formatCurrency(data.nextDue.amount) })}
+                {data.nextDue.dueDate && (
+                  <span className="ml-1 font-normal text-muted-foreground">
+                    ({t('studyCenter.mySeat.dueOn', { date: formatDate(data.nextDue.dueDate) })})
+                  </span>
+                )}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

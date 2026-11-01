@@ -11,6 +11,9 @@ import { GradeLock } from '../models/GradeLock.js';
 import { Timetable } from '../models/Timetable.js';
 import { TimetablePublish } from '../models/TimetablePublish.js';
 import { FeeAssignment } from '../models/FeeAssignment.js';
+import { FeeStructure } from '../models/FeeStructure.js';
+import { summarizePlan } from '../utils/planSummary.js';
+import { isModuleEnabled } from '@rooted/shared/utils';
 import { FeePayment } from '../models/FeePayment.js';
 import { Class } from '../models/Class.js';
 import { Section } from '../models/Section.js';
@@ -340,7 +343,26 @@ router.get(
         })
         .sort((a, b) => (a.startTime ?? '99:99').localeCompare(b.startTime ?? '99:99'));
 
-      res.json({ shifts });
+      // The plan they are on and what they owe, from their own fee records only.
+      let plan = null;
+      let nextDue = null;
+      if (isModuleEnabled(req.tenant, 'fee')) {
+        const [assignments, payments] = await Promise.all([
+          FeeAssignment.find({ tenantId, studentId }).lean(),
+          FeePayment.find({ tenantId, studentId }, 'assignmentId amount refunded').lean(),
+        ]);
+        const structures = await FeeStructure.find(
+          { tenantId, _id: { $in: assignments.map((a) => a.feeStructureId) } },
+          'name'
+        ).lean();
+        ({ plan, nextDue } = summarizePlan({
+          assignments,
+          payments,
+          structureNames: new Map(structures.map((s) => [String(s._id), s.name])),
+        }));
+      }
+
+      res.json({ shifts, plan, nextDue });
     } catch (err) {
       next(err);
     }

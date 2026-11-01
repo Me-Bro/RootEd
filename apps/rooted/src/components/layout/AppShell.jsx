@@ -259,6 +259,21 @@ function getNavGroups(t, orgType) {
           permission: 'fees:read',
         },
         { to: '/fee', label: t('nav.feeCollection'), icon: Wallet, permission: 'fees:read' },
+        // Study center only: the desk sale, and the owner's discount catalog.
+        {
+          to: '/fee/sell',
+          label: t('nav.sell'),
+          icon: Wallet,
+          permission: 'fees:collect',
+          seatsOnly: true,
+        },
+        {
+          to: '/fee/discounts',
+          label: t('nav.discounts'),
+          icon: CreditCard,
+          permission: 'tenant:admin',
+          seatsOnly: true,
+        },
         {
           to: '/me/fees',
           label: t('nav.myFees'),

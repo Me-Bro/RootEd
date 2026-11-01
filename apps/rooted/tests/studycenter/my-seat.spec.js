@@ -32,6 +32,17 @@ test.describe('a member with seats', () => {
     await expect(page.getByText('Seat B-4')).toBeVisible();
   });
 
+  test('shows the plan they are on and when it ends, with nothing owing', async ({ page }) => {
+    await page.goto('/me/seat');
+    const plan = page.getByTestId('my-plan');
+    await expect(plan).toBeVisible({ timeout: 15_000 });
+    await expect(plan).toContainText('Morning monthly');
+    await expect(plan).toContainText('Valid until');
+    await expect(plan).not.toContainText('Amount due');
+    // The discount's reason is for the owner, not the learner.
+    await expect(page.getByText('Student 10%')).toHaveCount(0);
+  });
+
   test('the sidebar offers My seat but not My grades or My timetable', async ({ page }) => {
     await page.goto('/dashboard');
     const links = page.getByRole('link');
@@ -51,5 +62,7 @@ test.describe('a member with no seat yet', () => {
       timeout: 15_000,
     });
     await expect(page.getByRole('alert')).toHaveCount(0);
+    // No plan and nothing owing: no plan line at all.
+    await expect(page.getByTestId('my-plan')).toHaveCount(0);
   });
 });

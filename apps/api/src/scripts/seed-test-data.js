@@ -515,6 +515,108 @@ async function run() {
     );
   }
 
+  // Plans and day passes (TICKET-007 phase 3): a day pass, a monthly plan per shift,
+  // a standing 10% for member1 with an end date, an expired promo (the "not applied"
+  // case) and an everyone discount the desk can pick when the policy allows. member1
+  // has a paid Morning plan covering today; member2 has no plan.
+  const planDefs = [
+    ['Day pass', 150, { kind: 'day_pass', durationDays: 1 }],
+    [
+      'Morning monthly',
+      1200,
+      { kind: 'shift_plan', durationDays: 30, sectionId: studyShifts.Morning._id },
+    ],
+    [
+      'Evening monthly',
+      1000,
+      { kind: 'shift_plan', durationDays: 30, sectionId: studyShifts.Evening._id },
+    ],
+  ];
+  const studyPlans = {};
+  for (const [name, price, plan] of planDefs) {
+    studyPlans[name] = await FeeStructure.findOneAndUpdate(
+      { tenantId: studyTenantId, name, academicYearId: studyYear._id },
+      {
+        $setOnInsert: {
+          tenantId: studyTenantId,
+          name,
+          academicYearId: studyYear._id,
+          components: [{ label: name, amount: price, isOptional: false }],
+          applicableTo: 'student',
+          plan,
+          isActive: true,
+        },
+      },
+      { upsert: true, new: true, ...BYPASS_SC }
+    ).lean();
+  }
+
+  const studyDiscounts = {};
+  for (const def of [
+    {
+      name: 'Student 10%',
+      type: 'percentage',
+      value: 10,
+      applicableTo: 'student',
+      studentId: studyMembers.studyMember1._id,
+      validTo: new Date('2099-12-31'),
+    },
+    {
+      name: 'Old promo',
+      type: 'percentage',
+      value: 50,
+      applicableTo: 'all',
+      validTo: new Date('2020-01-01'),
+    },
+    { name: 'Open 5%', type: 'percentage', value: 5, applicableTo: 'all' },
+  ]) {
+    studyDiscounts[def.name] = await FeeDiscount.findOneAndUpdate(
+      { tenantId: studyTenantId, name: def.name },
+      { $setOnInsert: { tenantId: studyTenantId, academicYearId: studyYear._id, ...def } },
+      { upsert: true, new: true, ...BYPASS_SC }
+    ).lean();
+  }
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  const member1Plan = await FeeAssignment.findOneAndUpdate(
+    {
+      tenantId: studyTenantId,
+      studentId: studyMembers.studyMember1._id,
+      feeStructureId: studyPlans['Morning monthly']._id,
+    },
+    {
+      $setOnInsert: {
+        tenantId: studyTenantId,
+        studentId: studyMembers.studyMember1._id,
+        feeStructureId: studyPlans['Morning monthly']._id,
+        academicYearId: studyYear._id,
+        totalAmount: 1200,
+        discountAmount: 120,
+        discountReason: 'Student 10%',
+        status: 'paid',
+        dueDate: new Date(Date.now() - dayMs),
+        coversFrom: new Date(Date.now() - dayMs),
+        coversTo: new Date(Date.now() + 29 * dayMs),
+      },
+    },
+    { upsert: true, new: true, ...BYPASS_SC }
+  ).lean();
+  await FeePayment.findOneAndUpdate(
+    { tenantId: studyTenantId, receiptNumber: 'RCP-SEED-STUDY-0001' },
+    {
+      $setOnInsert: {
+        tenantId: studyTenantId,
+        assignmentId: member1Plan._id,
+        studentId: studyMembers.studyMember1._id,
+        amount: 1080,
+        paymentMethod: 'cash',
+        receiptNumber: 'RCP-SEED-STUDY-0001',
+        collectedBy: users.studyDesk._id,
+      },
+    },
+    { upsert: true, ...BYPASS_SC }
+  );
+
   // ── Academic Year ─────────────────────────────────────────────────────────
   let year = await AcademicYear.findOne({ tenantId, name: '2025-26' }, null, {
     _bypassTenantScope: true,
@@ -2192,6 +2294,12 @@ async function run() {
       ),
       roles: Object.fromEntries(
         Object.entries(studyRoleByKey).map(([k, r]) => [k, r._id.toString()])
+      ),
+      plans: Object.fromEntries(
+        Object.entries(studyPlans).map(([name, st]) => [name, { _id: st._id.toString() }])
+      ),
+      discounts: Object.fromEntries(
+        Object.entries(studyDiscounts).map(([name, d]) => [name, { _id: d._id.toString() }])
       ),
       seats: Object.fromEntries(
         Object.entries(studySeats).map(([label, seat]) => [label, { _id: seat._id.toString() }])

@@ -28,6 +28,13 @@ const feeStructureSchema = new mongoose.Schema(
     lateFeeValue: { type: Number },
     lateFeeGraceDays: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
+    // Study centers only: what this structure sells and for how long. A structure
+    // with a plan has no installments and is bought one learner at a time (a sale).
+    plan: {
+      kind: { type: String, enum: ['day_pass', 'shift_plan'] },
+      durationDays: { type: Number, min: 1 },
+      sectionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Section' },
+    },
   },
   { timestamps: true }
 );

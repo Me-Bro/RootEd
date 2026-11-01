@@ -64,7 +64,13 @@ export function canWaiveAssignment(status) {
   return status === 'unpaid' || status === 'partial';
 }
 
-export function discountAppliesTo({ discount, assignment, studentClassId }) {
+export function discountAppliesTo({ discount, assignment, studentClassId, at }) {
+  // A discount with a window only applies inside it. Callers that pass no `at`
+  // (everything before study centers) behave exactly as they did.
+  if (at) {
+    if (discount.validFrom && new Date(discount.validFrom).getTime() > at.getTime()) return false;
+    if (discount.validTo && new Date(discount.validTo).getTime() < at.getTime()) return false;
+  }
   if (discount.applicableTo === 'all') return true;
   if (discount.applicableTo === 'student') {
     return String(discount.studentId) === String(assignment.studentId);

@@ -23,6 +23,8 @@ import MembersPage from './pages/tenant/MembersPage.jsx';
 import JoinPolicyPage from './pages/tenant/JoinPolicyPage.jsx';
 import CentreSettingsPage from './pages/tenant/CentreSettingsPage.jsx';
 import SeatsPage from './pages/academic/SeatsPage.jsx';
+import SellPage from './pages/fee/SellPage.jsx';
+import DiscountsPage from './pages/fee/DiscountsPage.jsx';
 import SeatMapPage from './pages/academic/SeatMapPage.jsx';
 import MySeatPage from './pages/me/MySeatPage.jsx';
 import AppShell from './components/layout/AppShell.jsx';
@@ -542,6 +544,22 @@ function AppRoutes() {
           element={
             <RequirePermission permission="tenant:admin">
               <JoinPolicyPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/fee/sell"
+          element={
+            <RequirePermission permission="fees:collect">
+              <SellPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/fee/discounts"
+          element={
+            <RequirePermission permission="tenant:admin">
+              <DiscountsPage />
             </RequirePermission>
           }
         />

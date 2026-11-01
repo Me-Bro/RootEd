@@ -40,6 +40,8 @@ const { Class } = await import('../models/Class.js');
 const { Section } = await import('../models/Section.js');
 const { Enrollment } = await import('../models/Enrollment.js');
 const { Seat } = await import('../models/Seat.js');
+const { FeeStructure } = await import('../models/FeeStructure.js');
+const { FeeAssignment } = await import('../models/FeeAssignment.js');
 const { SeatAllocation } = await import('../models/SeatAllocation.js');
 const { TenantMembership } = await import('../models/TenantMembership.js');
 const { default: academicRouter } = await import('../routes/academic.js');
@@ -695,7 +697,10 @@ describe('GET /me/seat', () => {
   test('a learner sees only their own shifts and seats, ordered by start time', async () => {
     const res = await call('get', '/me/seat', 'learner1');
     expect(res.status).toBe(200);
-    expect(Object.keys(res.body)).toEqual(['shifts']);
+    expect(Object.keys(res.body).sort()).toEqual(['nextDue', 'plan', 'shifts']);
+    // No plan sold yet: both are null, not an error.
+    expect(res.body.plan).toBeNull();
+    expect(res.body.nextDue).toBeNull();
     expect(res.body.shifts.map((s) => s.sectionName)).toEqual(['Morning', 'Evening']);
     expect(res.body.shifts[0]).toMatchObject({
       sectionName: 'Morning',
@@ -710,6 +715,42 @@ describe('GET /me/seat', () => {
         ['endTime', 'seat', 'sectionId', 'sectionName', 'startTime'].sort()
       );
     }
+  });
+
+  test('shows the learner’s own plan and what they owe, and nothing else about the fee', async () => {
+    const structure = await FeeStructure.create({
+      tenantId: tenants.study._id,
+      name: 'Morning monthly',
+      academicYearId: new mongoose.Types.ObjectId(),
+      components: [{ label: 'Morning monthly', amount: 1200 }],
+      plan: { kind: 'shift_plan', durationDays: 30 },
+    });
+    const day = 24 * 60 * 60 * 1000;
+    await FeeAssignment.create({
+      tenantId: tenants.study._id,
+      studentId: ctx.m1._id,
+      feeStructureId: structure._id,
+      academicYearId: structure.academicYearId,
+      totalAmount: 1200,
+      discountAmount: 200,
+      discountReason: 'Secret internal reason',
+      dueDate: new Date(Date.now() - day),
+      coversFrom: new Date(Date.now() - day),
+      coversTo: new Date(Date.now() + 29 * day),
+    });
+
+    const res = await call('get', '/me/seat', 'learner1');
+    expect(res.status).toBe(200);
+    expect(res.body.plan.name).toBe('Morning monthly');
+    expect(Object.keys(res.body.plan).sort()).toEqual(['coversFrom', 'coversTo', 'name']);
+    // 1200 less the 200 discount, nothing paid yet.
+    expect(res.body.nextDue.amount).toBe(1000);
+    expect(Object.keys(res.body.nextDue).sort()).toEqual(['amount', 'dueDate']);
+    expect(JSON.stringify(res.body)).not.toMatch(/Secret internal reason|discount/i);
+
+    // Another learner never sees it.
+    expect((await call('get', '/me/seat', 'learner2')).body.plan).toBeNull();
+    await FeeAssignment.deleteMany({ tenantId: tenants.study._id });
   });
 
   test('a learner with no seat gets seat: null for each shift (EH2a)', async () => {
