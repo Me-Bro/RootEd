@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
@@ -30,6 +31,7 @@ export default function SellPage() {
   const [method, setMethod] = useState('cash');
   const [error, setError] = useState('');
   const [done, setDone] = useState(null);
+  const canCheckIn = permissions.includes('attendance:write');
 
   const settings = useQuery({
     queryKey: ['tenant-settings'],
@@ -110,6 +112,15 @@ export default function SellPage() {
               <p className="text-muted-foreground">
                 {t('studyCenter.sell.validUntil', { date: formatDate(done.assignment.coversTo) })}
               </p>
+            )}
+            {canCheckIn && (
+              <Link
+                to="/desk"
+                state={{ learner: done.learner }}
+                className="text-primary hover:underline"
+              >
+                {t('studyCenter.sell.checkInNow')}
+              </Link>
             )}
             {done.receiptUrl ? (
               <a

@@ -63,4 +63,5 @@ export { Term } from './Term.js';
 export { Timetable } from './Timetable.js';
 export { TimetablePublish } from './TimetablePublish.js';
 export { User } from './User.js';
+export { Visit } from './Visit.js';
 export { UsernameHistory } from './UsernameHistory.js';
