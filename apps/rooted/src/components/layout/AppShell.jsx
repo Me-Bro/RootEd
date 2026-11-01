@@ -114,6 +114,12 @@ function getNavGroups(t, orgType) {
       module: 'academic',
       items: [
         {
+          to: '/academic/my-classes',
+          label: t('nav.myClasses'),
+          icon: GraduationCap,
+          permission: 'attendance:write',
+        },
+        {
           to: '/academic/students',
           label: studentLabel,
           icon: Users,

@@ -26,6 +26,7 @@
     "salaryStructures": "Salary Structures",
     "academic": "Academic",
     "academicSetup": "Academic set-up",
+    "myClasses": "My classes",
     "staff": "Staff",
     "expenses": "Expenses",
     "budgets": "Budgets",
@@ -448,6 +449,20 @@
       "rosterCount_other": "{{count}} students",
       "loadingMore": "Loading more…",
       "loadMore": "Load more"
+    },
+    "myClasses": {
+      "title": "My classes",
+      "description": "The classes and subjects you teach this academic year.",
+      "menuHeading": "My classes",
+      "classTeacher": "Class teacher",
+      "periodsPerWeek": "{{count}} periods/week",
+      "attendance": "Attendance",
+      "grades": "Grades",
+      "students": "Students",
+      "emptyTitle": "No classes yet",
+      "emptyHint": "Ask an admin to assign you a subject or add you to the timetable.",
+      "noYearTitle": "No active academic year",
+      "noYearHint": "An admin needs to activate an academic year first."
     },
     "studentDetail": {
       "loginHeading": "Login",

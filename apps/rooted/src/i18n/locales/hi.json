@@ -26,6 +26,7 @@
     "salaryStructures": "वेतन संरचनाएं",
     "academic": "शैक्षणिक",
     "academicSetup": "शैक्षणिक सेटअप",
+    "myClasses": "मेरी कक्षाएँ",
     "staff": "स्टाफ",
     "expenses": "खर्च",
     "budgets": "बजट",
@@ -448,6 +449,20 @@
       "rosterCount_other": "{{count}} छात्र",
       "loadingMore": "अधिक लोड हो रहा है…",
       "loadMore": "अधिक लोड करें"
+    },
+    "myClasses": {
+      "title": "मेरी कक्षाएँ",
+      "description": "इस शैक्षणिक वर्ष में आप जो कक्षाएँ और विषय पढ़ाते हैं।",
+      "menuHeading": "मेरी कक्षाएँ",
+      "classTeacher": "कक्षा शिक्षक",
+      "periodsPerWeek": "{{count}} पीरियड/सप्ताह",
+      "attendance": "उपस्थिति",
+      "grades": "अंक",
+      "students": "छात्र",
+      "emptyTitle": "अभी कोई कक्षा नहीं",
+      "emptyHint": "किसी एडमिन से अपने को कोई विषय सौंपने या समय-सारणी में जोड़ने को कहें।",
+      "noYearTitle": "कोई सक्रिय शैक्षणिक वर्ष नहीं",
+      "noYearHint": "पहले एडमिन को एक शैक्षणिक वर्ष सक्रिय करना होगा।"
     },
     "studentDetail": {
       "loginHeading": "लॉगिन",

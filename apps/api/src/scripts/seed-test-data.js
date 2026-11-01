@@ -36,6 +36,7 @@ import { Enrollment } from '../models/Enrollment.js';
 import { GradeLock } from '../models/GradeLock.js';
 import { ReportCardBatch } from '../models/ReportCardBatch.js';
 import { Timetable } from '../models/Timetable.js';
+import { SubjectTeacher } from '../models/SubjectTeacher.js';
 import { TimetablePublish } from '../models/TimetablePublish.js';
 import { scoreToLetter } from '@rooted/shared/utils';
 import { StaffMember } from '../models/StaffMember.js';
@@ -1428,6 +1429,24 @@ async function run() {
     }
     timetable.push(entry);
   }
+
+  // Who teaches what, for the teacher's "My classes" view: Alice teaches Maths to
+  // section A (which her timetable already covers) and is section B's class teacher;
+  // Bob teaches Maths to section B. Science stays unassigned (the Teaching spec relies on that).
+  for (const [sec, teacherId] of [
+    [section, teacherUserId],
+    [sectionB, secondTeacherUserId],
+  ]) {
+    await SubjectTeacher.updateOne(
+      { tenantId, subjectId: mathSub._id, sectionId: sec._id, termId: term._id },
+      { $set: { teacherId } },
+      { upsert: true }
+    );
+  }
+  await Section.updateOne(
+    { _id: sectionB._id, tenantId },
+    { $set: { classTeacherId: teacherUserId } }
+  );
 
   let timetablePublish = await TimetablePublish.findOne(
     { tenantId, academicYearId: year._id, sectionId: section._id },
