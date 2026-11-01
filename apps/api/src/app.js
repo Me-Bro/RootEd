@@ -23,6 +23,7 @@ import adminRouter from './routes/admin.js';
 import tenantRouter from './routes/tenant.js';
 import academicRouter from './routes/academic.js';
 import walkInRouter from './routes/walkins.js';
+import seatsRouter from './routes/seats.js';
 import trainingRouter from './routes/training.js';
 import roadmapRouter from './routes/roadmap.js';
 import staffRouter from './routes/staff.js';
@@ -192,6 +193,7 @@ app.use('/tenant', tenantRouter);
 app.use('/academic', requireModuleEnabled('academic'), academicRouter);
 // Study-center routers share the /academic prefix and are gated on orgType.
 app.use('/academic', requireModuleEnabled('academic'), walkInRouter);
+app.use('/academic', requireModuleEnabled('academic'), seatsRouter);
 app.use('/staff', requireModuleEnabled('staff'), staffRouter);
 app.use('/expense', requireModuleEnabled('expense'), expenseRouter);
 app.use('/fee', requireModuleEnabled('fee'), feeRouter);

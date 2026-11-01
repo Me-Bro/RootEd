@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { isSelfScoped } from '@rooted/shared/constants';
-import { isModuleEnabled } from '@rooted/shared/utils';
+import { hasSeats, isModuleEnabled } from '@rooted/shared/utils';
 import api from '../../lib/api.js';
 import { formatDate } from '../../utils/intl.js';
 import { useAuth } from '../../contexts/useAuth.js';
@@ -14,6 +14,7 @@ import { Input } from '../../components/ui/Input.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import AttentionStrip from '../../components/dashboard/AttentionStrip.jsx';
 import SetupChecklist from '../../components/dashboard/SetupChecklist.jsx';
+import StudySeatCard from '../../components/dashboard/StudySeatCard.jsx';
 import KpiCard from '../../components/dashboard/KpiCard.jsx';
 import MyClassesList from '../../components/academic/MyClassesList.jsx';
 import TrendChart from '../../components/dashboard/TrendChart.jsx';
@@ -212,6 +213,8 @@ function StudentDashboard() {
   const navigate = useNavigate();
   const academicEnabled = isModuleEnabled(user, 'academic');
   const feeEnabled = isModuleEnabled(user, 'fee');
+  // A study center sells seats, not lessons: no timetable or grades, the seat leads.
+  const seats = hasSeats(user?.orgType);
   const [subject, setSubject] = useState(null);
 
   const { data: profile, isLoading: loadingProfile } = useQuery({
@@ -228,7 +231,7 @@ function StudentDashboard() {
   const { data: grades = [], isLoading: loadingGrades } = useQuery({
     queryKey: ['me', 'grades', 'dashboard'],
     queryFn: () => api.get('/me/grades').then((r) => r.data),
-    enabled: isStudent && academicEnabled,
+    enabled: isStudent && academicEnabled && !seats,
   });
   const { data: fees, isLoading: loadingFees } = useQuery({
     queryKey: ['me', 'fees', 'dashboard'],
@@ -238,7 +241,7 @@ function StudentDashboard() {
   const { data: timetable } = useQuery({
     queryKey: ['me', 'timetable'],
     queryFn: () => api.get('/me/timetable').then((r) => r.data),
-    enabled: isStudent && academicEnabled,
+    enabled: isStudent && academicEnabled && !seats,
   });
   const now = useNow();
 
@@ -269,7 +272,8 @@ function StudentDashboard() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {academicEnabled && (
+        {seats && <StudySeatCard />}
+        {academicEnabled && !seats && (
           <ScheduleCard
             timetable={timetable}
             now={now}
@@ -280,7 +284,7 @@ function StudentDashboard() {
         {academicEnabled && (
           <AttendanceCard records={attendance} now={now} loading={loadingAttendance} />
         )}
-        {academicEnabled && (
+        {academicEnabled && !seats && (
           <GradesCard grades={grades} loading={loadingGrades} onOpenSubject={setSubject} />
         )}
         {feeEnabled && <FeeCard fees={fees} now={now} loading={loadingFees} />}
@@ -290,15 +294,19 @@ function StudentDashboard() {
       <div className="flex flex-wrap gap-2">
         {academicEnabled && (
           <>
-            <Button variant="outline" onClick={() => navigate('/me/timetable')}>
-              {t('dashboard.student.viewTimetable')}
-            </Button>
+            {!seats && (
+              <Button variant="outline" onClick={() => navigate('/me/timetable')}>
+                {t('dashboard.student.viewTimetable')}
+              </Button>
+            )}
             <Button variant="outline" onClick={() => navigate('/me/attendance')}>
               {t('dashboard.student.viewAttendance')}
             </Button>
-            <Button variant="outline" onClick={() => navigate('/me/grades')}>
-              {t('dashboard.student.viewGrades')}
-            </Button>
+            {!seats && (
+              <Button variant="outline" onClick={() => navigate('/me/grades')}>
+                {t('dashboard.student.viewGrades')}
+              </Button>
+            )}
           </>
         )}
         {feeEnabled && (

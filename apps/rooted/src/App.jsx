@@ -22,6 +22,9 @@ import AccountDeletionPage from './pages/legal/AccountDeletionPage.jsx';
 import MembersPage from './pages/tenant/MembersPage.jsx';
 import JoinPolicyPage from './pages/tenant/JoinPolicyPage.jsx';
 import CentreSettingsPage from './pages/tenant/CentreSettingsPage.jsx';
+import SeatsPage from './pages/academic/SeatsPage.jsx';
+import SeatMapPage from './pages/academic/SeatMapPage.jsx';
+import MySeatPage from './pages/me/MySeatPage.jsx';
 import AppShell from './components/layout/AppShell.jsx';
 import DashboardPage from './pages/admin/DashboardPage.jsx';
 import TenantsPage from './pages/admin/TenantsPage.jsx';
@@ -539,6 +542,30 @@ function AppRoutes() {
           element={
             <RequirePermission permission="tenant:admin">
               <JoinPolicyPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/academic/seats"
+          element={
+            <RequirePermission permission="students:write">
+              <SeatsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/academic/seat-map"
+          element={
+            <RequirePermission permission="students:read">
+              <SeatMapPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/me/seat"
+          element={
+            <RequirePermission permission="self:seat:read">
+              <MySeatPage />
             </RequirePermission>
           }
         />

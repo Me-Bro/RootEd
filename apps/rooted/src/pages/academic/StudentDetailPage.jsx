@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { hasSeats } from '@rooted/shared/utils';
+import StudentSeatsPanel from '../../components/study/StudentSeatsPanel.jsx';
 import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
@@ -723,6 +725,12 @@ export default function StudentDetailPage() {
               {t('academic.studentDetail.loginHeading')}
             </h2>
             <LoginPanel student={student} />
+          </div>
+        )}
+        {hasSeats(user?.orgType) && student.kind !== 'walk_in' && (
+          <div className="rounded-lg border border-border p-4">
+            <h2 className="mb-3 text-sm font-semibold">{t('studyCenter.studentSeats.heading')}</h2>
+            <StudentSeatsPanel studentId={id} />
           </div>
         )}
         {student.sectionId && (
