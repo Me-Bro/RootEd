@@ -19,6 +19,7 @@ import {
 } from '../../components/ui/dropdown-menu.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
 import SectionMenuItems from '../../components/academic/SectionMenuItems.jsx';
+import { subjectsForSection } from '../../utils/subjectsForSection.js';
 import { useMarkEntryKeys } from '../../hooks/useMarkEntryKeys.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import DockedKeypad from '../../components/grades/DockedKeypad.jsx';
@@ -103,6 +104,17 @@ export default function GradesPage() {
     terms: !yearsLoaded ? undefined : !activeYearId ? [] : termsLoaded ? terms : undefined,
     subjects: subjectsLoaded ? subjects : undefined,
   });
+
+  // Offer only the section's class subjects, and drop a chosen subject the new section
+  // does not have.
+  const offeredSubjects = subjectsForSection(subjects, currentSection);
+  function pickSection(id) {
+    setSectionId(id);
+    const next = sections.find((x) => x._id === id);
+    if (subjectId && !subjectsForSection(subjects, next).some((x) => x._id === subjectId)) {
+      setSubjectId('');
+    }
+  }
 
   const {
     data: students = EMPTY_ARRAY,
@@ -378,7 +390,7 @@ export default function GradesPage() {
             <ChevronDown size={14} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <SectionMenuItems classes={classes} onPick={setSectionId} />
+            <SectionMenuItems classes={classes} onPick={pickSection} />
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -402,7 +414,7 @@ export default function GradesPage() {
             <ChevronDown size={14} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            {subjects.map((s) => (
+            {offeredSubjects.map((s) => (
               <DropdownMenuItem key={s._id} onClick={() => setSubjectId(s._id)}>
                 {s.name} ({s.code})
               </DropdownMenuItem>

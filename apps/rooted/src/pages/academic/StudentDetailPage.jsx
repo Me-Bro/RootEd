@@ -9,6 +9,7 @@ import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { LoginBadge } from '../../components/ui/LoginBadge.jsx';
+import SectionTeachersCard from '../../components/academic/SectionTeachersCard.jsx';
 import {
   Dialog,
   DialogContent,
@@ -722,6 +723,14 @@ export default function StudentDetailPage() {
               {t('academic.studentDetail.loginHeading')}
             </h2>
             <LoginPanel student={student} />
+          </div>
+        )}
+        {student.sectionId && (
+          <div className="rounded-lg border border-border p-4">
+            <h2 className="mb-3 text-sm font-semibold">
+              {t('academic.studentDetail.subjectsHeading')}
+            </h2>
+            <SectionTeachersCard sectionId={student.sectionId} />
           </div>
         )}
         <div className="rounded-lg border border-border p-4">

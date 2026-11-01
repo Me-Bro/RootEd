@@ -8,6 +8,7 @@ import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { LoginBadge } from '../../components/ui/LoginBadge.jsx';
+import TeachesList from '../../components/academic/TeachesList.jsx';
 import {
   Dialog,
   DialogContent,
@@ -437,6 +438,12 @@ export default function StaffDetailPage() {
           <div className="rounded-lg border border-border p-4">
             <h2 className="mb-3 text-sm font-semibold">{t('staff.detail.loginHeading')}</h2>
             <LoginPanel staff={staff} />
+          </div>
+        )}
+        {staff.userId && permissions.includes('students:read') && (
+          <div className="rounded-lg border border-border p-4">
+            <h2 className="mb-3 text-sm font-semibold">{t('staff.detail.teachesHeading')}</h2>
+            <TeachesList userId={staff.userId} />
           </div>
         )}
         <div className="rounded-lg border border-border p-4">

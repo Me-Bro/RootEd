@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
@@ -122,6 +123,8 @@ export default function SubjectsPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const canWrite = (user?.permissions ?? []).includes('tenant:admin');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const classFilter = searchParams.get('classId');
 
   // null = closed, 'new' = add, otherwise the subject being edited.
   const [dialog, setDialog] = useState(null);
@@ -140,6 +143,11 @@ export default function SubjectsPage() {
     queryFn: () => api.get('/academic/classes').then((r) => r.data),
   });
   const classNames = new Map(classes.map((c) => [c._id, c.name]));
+  // Reached from a class's "Subjects and teachers" link: that class's subjects, plus
+  // the ones with no class, which apply to every class.
+  const shown = classFilter
+    ? subjects.filter((x) => !x.classId || x.classId === classFilter)
+    : subjects;
 
   const remove = useMutation({
     mutationFn: (id) => api.delete(`/academic/subjects/${id}`),
@@ -173,6 +181,15 @@ export default function SubjectsPage() {
         />
       )}
 
+      {classFilter && (
+        <p className="text-sm text-muted-foreground">
+          {t('academic.subjects.filteredBy', { name: classNames.get(classFilter) ?? '—' })}{' '}
+          <button type="button" className="underline" onClick={() => setSearchParams({})}>
+            {t('academic.subjects.clearFilter')}
+          </button>
+        </p>
+      )}
+
       {subjects.length > 0 && (
         <Table>
           <TableHeader>
@@ -188,7 +205,7 @@ export default function SubjectsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {subjects.map((s) => (
+            {shown.map((s) => (
               <TableRow key={s._id} data-testid={`subject-row-${s.code}`}>
                 <TableCell className="font-medium">{s.name}</TableCell>
                 <TableCell>{s.code}</TableCell>
