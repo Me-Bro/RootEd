@@ -45,6 +45,7 @@ import MobileBottomBar from './MobileBottomBar.jsx';
 import { cn } from '../../lib/utils.js';
 import api from '../../lib/api.js';
 import OrgSwitcher from './OrgSwitcher.jsx';
+import HelpDrawer from '../help/HelpDrawer.jsx';
 
 function getNavGroups(t, orgType) {
   // Only override the translated label for org types whose terminology actually
@@ -426,6 +427,7 @@ export default function AppShell() {
           </span>
           <span className="flex-1 sm:hidden" />
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+            <HelpDrawer />
             <LanguageSwitcherTrigger />
             <ThemeConfiguratorTrigger />
             {(!isSuperAdmin || isImpersonating) && <NotificationBell />}
