@@ -5,8 +5,7 @@ import { Section } from '../models/Section.js';
 import { Enrollment } from '../models/Enrollment.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { buildAvailability, bulkLabels } from '../utils/seatAvailability.js';
-
-const fullName = (s) => (s ? `${s.firstName} ${s.lastName}`.trim() : 'another learner');
+import { fullName } from '../utils/fullName.js';
 
 /**
  * A learner who has left a shift no longer holds its seat. Called wherever an

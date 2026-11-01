@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { Button } from '../ui/Button.jsx';
 import { Input } from '../ui/Input.jsx';
+import { apiError } from '../../utils/studyCenter.js';
 
 const nameOf = (s) => `${s.firstName} ${s.lastName}`.trim();
 
@@ -42,12 +43,7 @@ export default function LearnerPicker({ value, onChange, allowWalkIn = false }) 
         onChange(existing);
         setAdding(false);
       } else {
-        const details = err.response?.data?.details;
-        setError(
-          (details && Object.values(details).flat()[0]) ||
-            err.response?.data?.error ||
-            t('studyCenter.sell.walkInFailed')
-        );
+        setError(apiError(err, t('studyCenter.sell.walkInFailed')));
       }
     }
   }

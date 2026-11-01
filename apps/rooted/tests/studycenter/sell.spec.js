@@ -120,13 +120,17 @@ test.describe('the owner', () => {
     await page.getByRole('button', { name: /New/ }).first().click();
     await page.getByLabel('Name', { exact: true }).fill('Weekend pass');
     await page.getByLabel('Type of fee').selectOption('day_pass');
-    await expect(page.getByLabel('Academic year')).toHaveCount(0);
+    await expect(page.getByRole('dialog').getByLabel('Academic year')).toHaveCount(0);
     await page.getByPlaceholder(/Label/i).first().fill('Weekend pass');
     await page
       .getByPlaceholder(/Amount/i)
       .first()
       .fill('200');
     await page.getByRole('button', { name: 'Create' }).click();
-    await expect(page.getByText('Weekend pass')).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('[data-slot="card-title"]', { hasText: 'Weekend pass' })).toBeVisible(
+      {
+        timeout: 15_000,
+      }
+    );
   });
 });

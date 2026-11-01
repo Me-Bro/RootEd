@@ -6,6 +6,7 @@ import { Card, CardContent } from '../../components/ui/Card.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
+import { apiError } from '../../utils/studyCenter.js';
 
 const POLICIES = ['owner', 'desk', 'staff'];
 
@@ -41,12 +42,7 @@ export default function CentreSettingsPage() {
     },
     onError: (err) => {
       setSaved(false);
-      const details = err.response?.data?.details;
-      setError(
-        (details && Object.values(details).flat()[0]) ||
-          err.response?.data?.error ||
-          t('centre.saveFailed')
-      );
+      setError(apiError(err, t('centre.saveFailed')));
     },
   });
 

@@ -9,12 +9,15 @@ import { Card, CardContent } from '../../components/ui/Card.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
 import LearnerPicker from '../../components/study/LearnerPicker.jsx';
-import { canApplyDiscount, pickableDiscounts, sellablePlans } from '../../utils/studyCenter.js';
+import {
+  apiError,
+  canApplyDiscount,
+  pickableDiscounts,
+  sellablePlans,
+} from '../../utils/studyCenter.js';
 import { formatCurrency, formatDate } from '../../utils/intl.js';
 
 const METHODS = ['cash', 'upi', 'card', 'bank_transfer', 'cheque'];
-
-const errorOf = (err, fallback) => err.response?.data?.error || fallback;
 
 // The front-desk sale: pick (or register) a learner, pick a plan or a day pass, take
 // the payment. A discount is offered only when the centre's policy lets this person
@@ -80,7 +83,7 @@ export default function SellPage() {
       queryClient.invalidateQueries({ queryKey: ['entitlement'] });
       queryClient.invalidateQueries({ queryKey: ['fee-assignments'] });
     },
-    onError: (err) => setError(errorOf(err, t('studyCenter.sell.failed'))),
+    onError: (err) => setError(apiError(err, t('studyCenter.sell.failed'))),
   });
 
   const status = entitlement.data?.status;

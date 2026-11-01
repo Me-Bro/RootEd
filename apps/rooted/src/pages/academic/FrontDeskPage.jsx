@@ -12,10 +12,9 @@ import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
 import LearnerPicker from '../../components/study/LearnerPicker.jsx';
 import { formatDate } from '../../utils/intl.js';
+import { apiError } from '../../utils/studyCenter.js';
 
 const time = (value) => formatDate(value, 'en-IN', { hour: '2-digit', minute: '2-digit' });
-const errorOf = (err, fallback) => err.response?.data?.error || fallback;
-
 // The front desk: find or register a learner, put them on a seat, take them off it.
 // Who is in right now is the list below. A plan that is unpaid, expired or missing
 // warns here and never stops a check-in; after closing time only an owner can check
@@ -83,7 +82,7 @@ export default function FrontDeskPage() {
     },
     onError: (err) => {
       setNotice(null);
-      setError(errorOf(err, t('studyCenter.desk.failed')));
+      setError(apiError(err, t('studyCenter.desk.failed')));
       refresh();
     },
   });
@@ -96,7 +95,7 @@ export default function FrontDeskPage() {
       refresh();
     },
     onError: (err) => {
-      setError(errorOf(err, t('studyCenter.desk.failed')));
+      setError(apiError(err, t('studyCenter.desk.failed')));
       refresh();
     },
   });

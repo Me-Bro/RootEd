@@ -101,3 +101,19 @@ test('days ago crosses month and year ends', () => {
   assert.equal(daysAgoString(1, new Date(2026, 0, 1)), '2025-12-31');
   assert.equal(daysAgoString(0, new Date(2026, 4, 20)), '2026-05-20');
 });
+
+import { apiError } from './studyCenter.js';
+
+test('apiError prefers a field message, then the server message, then the fallback', () => {
+  const withDetails = {
+    response: { data: { error: 'Validation error', details: { phone: ['Enter a valid mobile'] } } },
+  };
+  assert.equal(apiError(withDetails, 'fallback'), 'Enter a valid mobile');
+  assert.equal(
+    apiError({ response: { data: { error: 'Seat is taken' } } }, 'fallback'),
+    'Seat is taken'
+  );
+  assert.equal(apiError({ response: { data: { details: {} } } }, 'fallback'), 'fallback');
+  assert.equal(apiError(new Error('network'), 'fallback'), 'fallback');
+  assert.equal(apiError(undefined, 'fallback'), 'fallback');
+});

@@ -34,8 +34,10 @@ test.describe('reports', () => {
     // Member One has a paid plan covering today and the seed has no visit today.
     // (A front-desk spec may have checked them in; then the list is empty, which the
     // page says in words, so accept either.)
-    const none = page.getByText('Everyone with a plan came in.');
-    const row = page.getByRole('row', { name: /Member One Study/ }).last();
+    // Scoped to this report: Member One also appears in the hours table above.
+    const section = page.locator('section[aria-labelledby="rep-noshows"]');
+    const none = section.getByText('Everyone with a plan came in.');
+    const row = section.getByRole('row', { name: /Member One Study/ });
     await expect(none.or(row)).toBeVisible();
   });
 
@@ -55,7 +57,7 @@ test.describe('the front desk', () => {
   }) => {
     await page.goto('/academic/study-center-reports');
     await expect(page.getByRole('heading', { name: 'Reports' })).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText('Day pass sales')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Day pass sales' })).toBeVisible();
   });
 });
 

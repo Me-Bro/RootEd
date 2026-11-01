@@ -61,3 +61,11 @@ export function daysAgoString(days, date = new Date()) {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate() - days);
   return localDayString(d);
 }
+
+// The message to show for a failed request: the first field error of a validation
+// failure, else the server's own message, else `fallback`.
+export function apiError(err, fallback) {
+  const details = err?.response?.data?.details;
+  const first = details && Object.values(details).flat()[0];
+  return first || err?.response?.data?.error || fallback;
+}

@@ -59,7 +59,9 @@ test.describe('seat management', () => {
 
   test('adds a run of seats and takes them out of use again', async ({ page }) => {
     await page.goto('/academic/seats');
-    await expect(page.getByRole('heading', { name: 'Seats' })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('heading', { name: 'Seats', exact: true })).toBeVisible({
+      timeout: 15_000,
+    });
 
     await page.getByLabel('Prefix').fill('Z-');
     await page.getByLabel('How many').fill('2');
@@ -96,6 +98,6 @@ test.describe('front desk', () => {
     await page.goto('/academic/seat-map');
     await expect(page.getByRole('heading', { name: 'Seat map' })).toBeVisible({ timeout: 15_000 });
     await page.goto('/academic/seats');
-    await expect(page.getByRole('heading', { name: 'Seats' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Seats', exact: true })).toBeVisible();
   });
 });

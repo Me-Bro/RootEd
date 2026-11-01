@@ -9,9 +9,7 @@ import { Card, CardContent } from '../../components/ui/Card.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
 import { cn } from '../../lib/utils.js';
-import { formatShiftHours, learnersWithoutSeat } from '../../utils/studyCenter.js';
-
-const errorOf = (err, fallback) => err.response?.data?.error || fallback;
+import { apiError, formatShiftHours, learnersWithoutSeat } from '../../utils/studyCenter.js';
 
 // One shift's seats at a glance: who holds each, which are free, and how many are
 // open to day passes. Pick a learner, then a free seat, to seat them; use Move and
@@ -60,7 +58,7 @@ export default function SeatMapPage() {
     queryClient.invalidateQueries({ queryKey: ['seat-allocations'] });
   };
   const failed = (err) => {
-    setError(errorOf(err, t('studyCenter.seatMap.failed')));
+    setError(apiError(err, t('studyCenter.seatMap.failed')));
     // A lost race changes who holds what: show the truth, not the stale map.
     queryClient.invalidateQueries({ queryKey: ['seat-availability'] });
   };

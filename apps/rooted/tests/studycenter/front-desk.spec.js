@@ -40,7 +40,7 @@ test.describe('front desk', () => {
     await page.getByRole('button', { name: 'Check in', exact: true }).click();
 
     const done = page.getByTestId('checkin-done');
-    await expect(done).toContainText('Member checked in on seat A-1');
+    await expect(done).toContainText('Member One checked in on seat A-1');
     await expect(done.getByRole('status')).toHaveCount(0);
     await expect(page.getByRole('row', { name: /Member One Study/ })).toContainText('A-1');
 
