@@ -1,0 +1,61 @@
+{
+  "projectId": "0009ba69-47d2-4f2b-95ad-253365e33a28",
+  "shape": "package",
+  "pkg": "rooted",
+  "globalName": "RootEd",
+  "buildCmd": "pnpm --filter rooted build:ui-lib && node .ds-sync/node_modules/typescript/bin/tsc -p apps/rooted/ui-lib/tsconfig.json && node apps/rooted/ui-lib/emit-types.mjs",
+  "cssEntry": "dist-ui/rooted.css",
+  "provider": {
+    "component": "RootEdProvider"
+  },
+  "componentSrcMap": {
+    "RootEdProvider": null,
+    "AlertDialogFooter": null,
+    "AlertDialogHeader": null,
+    "AlertDialogMedia": null,
+    "CardFooter": null,
+    "SelectGroup": null,
+    "SheetFooter": null,
+    "SheetHeader": null,
+    "TableCaption": null,
+    "TableCell": null,
+    "TableHead": null
+  },
+  "overrides": {
+    "Dialog": {
+      "cardMode": "single",
+      "viewport": "720x520"
+    },
+    "AlertDialog": {
+      "cardMode": "single",
+      "viewport": "720x420"
+    },
+    "Sheet": {
+      "cardMode": "single",
+      "viewport": "720x520"
+    },
+    "DropdownMenu": {
+      "cardMode": "single",
+      "viewport": "420x320"
+    },
+    "DataTable": {
+      "cardMode": "column"
+    },
+    "Card": {
+      "cardMode": "column"
+    },
+    "PageHeader": {
+      "cardMode": "column"
+    },
+    "Progress": {
+      "cardMode": "single",
+      "primaryStory": "Setup"
+    },
+    "RecordList": {
+      "cardMode": "single",
+      "primaryStory": "Phone",
+      "viewport": "390x520"
+    }
+  },
+  "readmeHeader": ".design-sync/conventions.md"
+}
