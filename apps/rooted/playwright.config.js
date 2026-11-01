@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const STUDY_CENTER_URL = 'http://127.0.0.1:5175';
+const STUDY_CENTER_SPECS = /[\\/]tests[\\/]studycenter[\\/]/;
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
@@ -18,7 +21,7 @@ export default defineConfig({
     // Creates storageState auth files before any e2e tests run
     {
       name: 'setup',
-      testMatch: /auth\.setup\.js/,
+      testMatch: /[\\/]tests[\\/]auth\.setup\.js$/,
       use: { baseURL: 'http://127.0.0.1:5173' },
     },
 
@@ -33,6 +36,7 @@ export default defineConfig({
     {
       name: 'e2e',
       testMatch: /(?<!axe)(?<!auth\.setup)\.spec\.js$/,
+      testIgnore: STUDY_CENTER_SPECS,
       dependencies: ['setup'],
       use: {
         ...devices['Desktop Chrome'],
@@ -59,11 +63,39 @@ export default defineConfig({
         storageState: 'tests/fixtures/.auth/super_admin.json',
       },
     },
+
+    // Study-center tenant. A second Vite instance pins the API Host to the
+    // `studycenter` tenant (see webServer below), so these specs and their own
+    // login setup run against port 5175 and never touch the testschool projects.
+    {
+      name: 'setup-studycenter',
+      testMatch: /[\\/]tests[\\/]studycenter[\\/]auth\.setup\.js$/,
+      use: { baseURL: STUDY_CENTER_URL },
+    },
+    {
+      name: 'studycenter',
+      testMatch: /[\\/]tests[\\/]studycenter[\\/].*\.spec\.js$/,
+      dependencies: ['setup-studycenter'],
+      use: { ...devices['Desktop Chrome'], baseURL: STUDY_CENTER_URL },
+    },
   ],
 
-  webServer: {
-    command: 'npx vite --mode test',
-    url: 'http://127.0.0.1:5173',
-    reuseExistingServer: true,
-  },
+  webServer: [
+    {
+      command: 'npx vite --mode test',
+      url: 'http://127.0.0.1:5173',
+      reuseExistingServer: true,
+    },
+    {
+      command: 'npx vite --mode test --port 5175 --strictPort',
+      url: STUDY_CENTER_URL,
+      reuseExistingServer: true,
+      // Process env beats .env.test, so the API client and the pinned tenant both
+      // follow this instance instead of the testschool one on 5173.
+      env: {
+        E2E_TENANT_SUBDOMAIN: 'studycenter',
+        VITE_API_URL: `${STUDY_CENTER_URL}/__api`,
+      },
+    },
+  ],
 });

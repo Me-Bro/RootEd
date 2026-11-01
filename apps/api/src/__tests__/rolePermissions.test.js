@@ -149,3 +149,27 @@ describe('self-scoped permissions', () => {
     }
   });
 });
+
+describe('front_desk template', () => {
+  const frontDesk = DEFAULT_ROLE_TEMPLATES.front_desk;
+
+  test('can register, seat, check in and collect, but not create fee plans or administer', () => {
+    expect(frontDesk).toEqual(
+      expect.arrayContaining([
+        'students:read',
+        'students:write',
+        'attendance:write',
+        'fees:read',
+        'fees:collect',
+      ])
+    );
+    // No fees:write: it cannot create plans or discount outside discountPolicy.
+    expect(frontDesk).not.toContain('fees:write');
+    expect(frontDesk).not.toContain('tenant:admin');
+    expect(frontDesk).not.toContain('roles:write');
+  });
+
+  test('carries no self-scoped permission', () => {
+    expect(frontDesk.filter(isSelfScoped)).toEqual([]);
+  });
+});

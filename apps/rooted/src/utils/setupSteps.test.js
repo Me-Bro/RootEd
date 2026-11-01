@@ -51,3 +51,24 @@ test('every step links to the page that completes it', () => {
   assert.equal(to.teaching, '/academic/subjects');
   assert.equal(to.students, '/academic/students');
 });
+
+test('a study center has no terms, subjects or teaching steps', () => {
+  const keys = setupSteps({ ...empty, seats: true }).map((s) => s.key);
+  assert.deepEqual(keys, ['years', 'classes', 'staff', 'students']);
+});
+
+test('a study center that has a year, a shift and a learner is fully set up', () => {
+  const steps = setupSteps({
+    ...empty,
+    seats: true,
+    years: [{}],
+    classes: [{ sections: [{}] }],
+    staffTotal: 2,
+    studentsTotal: 5,
+  });
+  assert.equal(done(steps).length, steps.length);
+});
+
+test('without seats the existing step list is unchanged', () => {
+  assert.equal(setupSteps({ ...empty, seats: false }).length, 7);
+});

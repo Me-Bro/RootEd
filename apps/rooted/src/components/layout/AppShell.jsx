@@ -34,7 +34,7 @@ import {
   X,
 } from 'lucide-react';
 
-import { isModuleEnabled, resolveOrgTerm } from '@rooted/shared/utils';
+import { hasSeats, isModuleEnabled, resolveOrgTerm } from '@rooted/shared/utils';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Button } from '../ui/Button.jsx';
 import { ThemeConfiguratorTrigger } from '../ui/ThemeConfigurator.jsx';
@@ -46,6 +46,18 @@ import { cn } from '../../lib/utils.js';
 import api from '../../lib/api.js';
 import OrgSwitcher from './OrgSwitcher.jsx';
 import HelpDrawer from '../help/HelpDrawer.jsx';
+
+// A study center sells seats, not lessons: these pages do not apply to it. The
+// routes still work if opened by URL; only the nav entry is withheld.
+const STUDY_CENTER_HIDDEN = new Set([
+  '/academic/timetable',
+  '/academic/my-timetable',
+  '/academic/grades',
+  '/academic/grades/report',
+  '/academic/report-cards',
+  '/me/timetable',
+  '/me/grades',
+]);
 
 function getNavGroups(t, orgType) {
   // Only override the translated label for org types whose terminology actually
@@ -259,6 +271,13 @@ function getNavGroups(t, orgType) {
           icon: Settings2,
           permission: 'tenant:admin',
         },
+        {
+          to: '/tenant/centre',
+          label: t('nav.centreSettings'),
+          icon: Settings2,
+          permission: 'tenant:admin',
+          seatsOnly: true,
+        },
         // No permission: account settings belong to the person, not the
         // organization, so every signed-in user has them.
         { to: '/settings/account', label: t('nav.accountSettings'), icon: UserCog },
@@ -371,7 +390,13 @@ export default function AppShell() {
     // a tenant, treat them like any tenant_admin and let the permission filter below decide.
     .filter((g) => !isSuperAdmin || isImpersonating || g.label === null)
     .filter((g) => !g.module || isModuleEnabled(user, g.module))
-    .map((g) => ({ ...g, items: g.items.filter((item) => hasPermission(item.permission)) }))
+    .map((g) => ({
+      ...g,
+      items: g.items
+        .filter((item) => hasPermission(item.permission))
+        .filter((item) => !item.seatsOnly || hasSeats(user?.orgType))
+        .filter((item) => !hasSeats(user?.orgType) || !STUDY_CENTER_HIDDEN.has(item.to)),
+    }))
     .filter((g) => g.items.length > 0);
 
   return (

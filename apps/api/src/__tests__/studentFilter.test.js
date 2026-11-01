@@ -64,3 +64,39 @@ test('sectionId stays exact-match for a batch orgType when enrolledStudentIds is
   );
   expect(filter).toEqual({ tenantId, sectionId: 'sec-1' });
 });
+
+describe('study-center walk-in filter', () => {
+  const opts = { orgType: 'study_center' };
+
+  test('hides walk-ins by default, with $ne so legacy rows without kind still match', () => {
+    expect(buildStudentFilter(tenantId, {}, opts)).toEqual({
+      tenantId,
+      kind: { $ne: 'walk_in' },
+    });
+  });
+
+  test('kind=walk_in shows only walk-ins and kind=all shows everyone', () => {
+    expect(buildStudentFilter(tenantId, { kind: 'walk_in' }, opts).kind).toBe('walk_in');
+    expect(buildStudentFilter(tenantId, { kind: 'all' }, opts)).toEqual({ tenantId });
+  });
+
+  test('other org types ignore kind entirely', () => {
+    for (const orgType of ['school', 'college', 'tuition_center', undefined]) {
+      expect(buildStudentFilter(tenantId, { kind: 'walk_in' }, { orgType })).toEqual({ tenantId });
+    }
+  });
+
+  test('phone filter normalizes what was typed to the stored ten digits', () => {
+    expect(buildStudentFilter(tenantId, { phone: '+91 98765-43210', kind: 'all' }, opts)).toEqual({
+      tenantId,
+      phone: '9876543210',
+    });
+  });
+
+  test('search also matches the phone, but only in a study center', () => {
+    expect(buildStudentFilter(tenantId, { search: '9876' }, opts).$or).toHaveLength(4);
+    expect(
+      buildStudentFilter(tenantId, { search: '9876' }, { orgType: 'school' }).$or
+    ).toHaveLength(3);
+  });
+});

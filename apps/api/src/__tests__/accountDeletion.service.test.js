@@ -16,6 +16,7 @@ jest.unstable_mockModule('../config/redis.js', () => ({
 
 const { User } = await import('../models/User.js');
 const { Role } = await import('../models/Role.js');
+const { Student } = await import('../models/Student.js');
 const { TenantMembership } = await import('../models/TenantMembership.js');
 const { hashPassword } = await import('../services/auth.service.js');
 const { createOrganization } = await import('../services/tenant.service.js');
@@ -156,4 +157,40 @@ test('two deleted accounts do not collide on the sparse username index', async (
   expect(tombstoned.length).toBeGreaterThanOrEqual(2);
   const emails = tombstoned.map((u) => u.email);
   expect(new Set(emails).size).toBe(emails.length);
+});
+
+test('clears the phone on every linked Student row but keeps the name', async () => {
+  const user = await makeUser();
+  const tenantId = new mongoose.Types.ObjectId();
+  const otherTenantId = new mongoose.Types.ObjectId();
+  const [a, b, unrelated] = await Student.create([
+    {
+      tenantId,
+      userId: user._id,
+      admissionNo: 'D-1',
+      firstName: 'Asha',
+      lastName: 'Verma',
+      phone: '9876543210',
+    },
+    {
+      tenantId: otherTenantId,
+      userId: user._id,
+      admissionNo: 'D-1',
+      firstName: 'Asha',
+      lastName: 'Verma',
+      phone: '9876543210',
+    },
+    { tenantId, admissionNo: 'D-2', firstName: 'Ravi', lastName: 'Kumar', phone: '9123456780' },
+  ]);
+
+  await deleteUserAccount(user);
+
+  const rows = await Student.find({ _id: { $in: [a._id, b._id, unrelated._id] } }, null, {
+    _bypassTenantScope: true,
+  }).lean();
+  const byId = Object.fromEntries(rows.map((r) => [String(r._id), r]));
+  expect(byId[a._id].phone).toBeUndefined();
+  expect(byId[b._id].phone).toBeUndefined();
+  expect(byId[a._id].firstName).toBe('Asha');
+  expect(byId[unrelated._id].phone).toBe('9123456780');
 });

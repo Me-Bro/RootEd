@@ -4,6 +4,9 @@ import { Tenant } from '../models/Tenant.js';
 import { User } from '../models/User.js';
 import { Role, DEFAULT_ROLE_TEMPLATES } from '../models/Role.js';
 import { LeaveType, DEFAULT_LEAVE_TYPES } from '../models/LeaveType.js';
+import { AcademicYear } from '../models/AcademicYear.js';
+import { hasSeats } from '@rooted/shared/utils';
+import { ONGOING_YEAR_NAME, ONGOING_YEAR_SPAN_DAYS } from '@rooted/shared/constants';
 import { TenantMembership } from '../models/TenantMembership.js';
 import {
   hashPassword,
@@ -39,15 +42,35 @@ async function provisionTenant(
   );
 
   const roles = await Role.insertMany(
-    Object.entries(DEFAULT_ROLE_TEMPLATES).map(([key, permissions]) => ({
-      tenantId: tenant._id,
-      name: key.replaceAll('_', ' '),
-      permissions,
-      isTemplate: true,
-      templateKey: key,
-    })),
+    Object.entries(DEFAULT_ROLE_TEMPLATES)
+      .filter(([key]) => key !== 'front_desk' || hasSeats(orgType))
+      .map(([key, permissions]) => ({
+        tenantId: tenant._id,
+        name: key.replaceAll('_', ' '),
+        permissions,
+        isTemplate: true,
+        templateKey: key,
+      })),
     { session }
   );
+
+  // A study center has no school year, but fee plans and discounts both need an
+  // academic year to hang from. One long-running year means nobody re-clones
+  // plans every January. Nothing reads a year's start or end date for logic.
+  if (hasSeats(orgType)) {
+    await AcademicYear.create(
+      [
+        {
+          tenantId: tenant._id,
+          name: ONGOING_YEAR_NAME,
+          startDate: new Date(),
+          endDate: new Date(Date.now() + ONGOING_YEAR_SPAN_DAYS * 24 * 60 * 60 * 1000),
+          isActive: true,
+        },
+      ],
+      { session }
+    );
+  }
 
   await LeaveType.insertMany(
     DEFAULT_LEAVE_TYPES.map((leaveType) => ({ tenantId: tenant._id, ...leaveType })),

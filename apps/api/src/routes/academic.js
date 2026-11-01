@@ -25,6 +25,7 @@ import {
   subjectTeacherSchema,
   subjectTeacherQuerySchema,
   teachingLoadQuerySchema,
+  indianMobileSchema,
 } from '@rooted/shared/schemas';
 import { scoreToLetter, isBatchOrgType, isModuleEnabled } from '@rooted/shared/utils';
 import { REPORT_CARD_EXCLUDED_ASSESSMENT_TYPES } from '@rooted/shared/constants';
@@ -472,6 +473,13 @@ router.post('/students', requirePermission('students:write'), async (req, res, n
       req.body;
     const tenantId = req.tenant._id;
 
+    let phone;
+    if (req.body.phone) {
+      const parsed = indianMobileSchema.safeParse(req.body.phone);
+      if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+      phone = parsed.data;
+    }
+
     const existing = await Student.findOne({ tenantId, admissionNo });
     if (existing) return res.status(409).json({ error: 'Admission number already exists' });
 
@@ -484,6 +492,7 @@ router.post('/students', requirePermission('students:write'), async (req, res, n
       dateOfBirth,
       gender,
       parentContacts,
+      phone,
     });
     await ensureEnrollment(tenantId, student);
     res.status(201).json(student);
@@ -579,15 +588,32 @@ router.patch('/students/:id', requirePermission('students:write'), async (req, r
     // /training/students/:id/consent) so it carries who recorded it and when.
     // Dotted paths ("placementConsent.granted") reach the same field, so strip
     // every key that starts with it, not just the exact name.
+    //
+    // `kind` is written only by the walk-in route: a member must not be turned
+    // into a walk-in (which the learner list hides) by a stray PATCH.
     const body = Object.fromEntries(
       Object.entries(req.body).filter(
-        ([key]) => key !== 'placementConsent' && !key.startsWith('placementConsent.')
+        ([key]) =>
+          key !== 'placementConsent' && !key.startsWith('placementConsent.') && key !== 'kind'
       )
     );
 
+    // An empty phone clears it; anything else must be a real mobile number.
+    const update = { $set: body };
+    if ('phone' in body) {
+      if (body.phone) {
+        const parsed = indianMobileSchema.safeParse(body.phone);
+        if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+        body.phone = parsed.data;
+      } else {
+        delete body.phone;
+        update.$unset = { phone: '' };
+      }
+    }
+
     const student = await Student.findOneAndUpdate(
       { _id: req.params.id, tenantId: req.tenant._id },
-      { $set: body },
+      update,
       { new: true }
     );
     if (!student) return res.status(404).json({ error: 'Not found' });

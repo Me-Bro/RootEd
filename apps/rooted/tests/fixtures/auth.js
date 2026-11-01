@@ -63,6 +63,15 @@ export const TEST_TENANT = {
 
 const AUTH_DIR = path.join(import.meta.dirname, '.auth');
 
+// The study-center tenant ("studycenter", orgType study_center) is reached through
+// a second Vite instance, so its logins live apart from the testschool ones.
+export const STUDY_USERS = {
+  owner: { email: 'owner@studycenter.local', password: 'TestPass123!' },
+  desk: { email: 'desk@studycenter.local', password: 'TestPass123!' },
+  member1: { email: 'member1@studycenter.local', password: 'TestPass123!' },
+  member2: { email: 'member2@studycenter.local', password: 'TestPass123!' },
+};
+
 export const AUTH_STATES = {
   super_admin: path.join(AUTH_DIR, 'super_admin.json'),
   tenant_admin: path.join(AUTH_DIR, 'tenant_admin.json'),
@@ -71,6 +80,10 @@ export const AUTH_STATES = {
   principal: path.join(AUTH_DIR, 'principal.json'),
   student: path.join(AUTH_DIR, 'student.json'),
 };
+
+export const STUDY_AUTH_STATES = Object.fromEntries(
+  Object.keys(STUDY_USERS).map((role) => [role, path.join(AUTH_DIR, `study_${role}.json`)])
+);
 
 /**
  * Open the login dialog on /login and submit the form in it.

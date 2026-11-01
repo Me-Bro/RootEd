@@ -45,6 +45,18 @@ export const DEFAULT_ROLE_TEMPLATES = {
     'payroll:write',
   ],
   librarian: ['inventory:read', 'inventory:write'],
+  // Study-center front desk: registers walk-ins, assigns seats, checks learners in
+  // and out and takes payment. Deliberately has no 'fees:write' (cannot create
+  // plans or discount beyond the tenant's discountPolicy) and no 'tenant:admin'.
+  // Provisioned only for orgTypes where hasSeats() is true.
+  front_desk: [
+    'students:read',
+    'students:write',
+    'attendance:read',
+    'attendance:write',
+    'fees:read',
+    'fees:collect',
+  ],
   // Holds nothing tenant-wide. Every route a student can reach lives under
   // /me and answers only about them.
   student: PERMISSIONS.filter(isSelfScoped),

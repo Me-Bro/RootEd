@@ -12,7 +12,10 @@ import {
   updateMemberStatusSchema,
   approveJoinRequestSchema,
   updateJoinPolicySchema,
+  centreSettingsSchema,
 } from '@rooted/shared/schemas';
+import { hasSeats } from '@rooted/shared/utils';
+import { resolveCentreSettings } from '../utils/centreSettings.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { validate } from '../middleware/validate.js';
 import { requirePermission, invalidatePermissions } from '../middleware/requirePermission.js';
@@ -114,6 +117,9 @@ router.get('/settings', async (req, res, next) => {
     // exposed only through GET /tenant/join-policy, behind tenant:admin.
     const tenant = { ...req.tenant };
     delete tenant.joinPolicy;
+    // Study centers also get the centre settings with defaults filled in, so the
+    // settings page never has to know what an unsaved value means.
+    if (hasSeats(tenant.orgType)) tenant.centre = resolveCentreSettings(req.tenant);
     res.json(tenant);
   } catch (err) {
     next(err);
@@ -126,6 +132,8 @@ const settingsUpdateSchema = z.object({
   locale: z.string().optional(),
   currency: z.string().optional(),
   orgType: z.enum(ORG_TYPES).optional(),
+  // Opening hours and who may discount, for study centers only.
+  centre: centreSettingsSchema.optional(),
 });
 
 router.patch('/settings', requirePermission('tenant:admin'), async (req, res, next) => {
@@ -146,7 +154,20 @@ router.patch('/settings', requirePermission('tenant:admin'), async (req, res, ne
       }
     }
 
-    const tenant = await Tenant.findByIdAndUpdate(req.tenant._id, { $set: updates }, { new: true });
+    const { centre, ...rest } = updates;
+    const $set = { ...rest };
+    if (centre) {
+      if (!hasSeats(req.tenant.orgType)) {
+        throw new AppError('Centre settings are only available for study centers', 400);
+      }
+      // Each key is written on its own, so saving the discount policy does not
+      // wipe the opening hours. The ordering rule is checked on the merged
+      // result: sending only closeTime must still land after the saved openTime.
+      centreSettingsSchema.parse({ ...resolveCentreSettings(req.tenant), ...centre });
+      for (const [key, value] of Object.entries(centre)) $set[`settings.centre.${key}`] = value;
+    }
+
+    const tenant = await Tenant.findByIdAndUpdate(req.tenant._id, { $set }, { new: true });
     if (!tenant) throw new AppError('Tenant not found', 404);
     res.json(tenant);
   } catch (err) {

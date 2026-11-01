@@ -39,6 +39,7 @@ import { Timetable } from '../models/Timetable.js';
 import { SubjectTeacher } from '../models/SubjectTeacher.js';
 import { TimetablePublish } from '../models/TimetablePublish.js';
 import { scoreToLetter } from '@rooted/shared/utils';
+import { ONGOING_YEAR_NAME, ONGOING_YEAR_SPAN_DAYS } from '@rooted/shared/constants';
 import { StaffMember } from '../models/StaffMember.js';
 import { LeaveType } from '../models/LeaveType.js';
 import { LeaveBalance } from '../models/LeaveBalance.js';
@@ -80,6 +81,13 @@ const USERS = {
   // Belongs to a tuition_center-orgType tenant — exercises org-type module/nav
   // gating (no expense/inventory modules, "Learner"/"Batch" terminology).
   tuitionAdmin: { email: 'admin@tuitioncenter.local', username: 'test-tuition-admin' },
+  // Belong to a study_center-orgType tenant ("studycenter") - the seats, plans and
+  // check-in fixtures. Owner = tenant_admin, desk = front_desk, members = student
+  // role linked to a Student row each.
+  studyOwner: { email: 'owner@studycenter.local', username: 'test-study-owner' },
+  studyDesk: { email: 'desk@studycenter.local', username: 'test-study-desk' },
+  studyMember1: { email: 'member1@studycenter.local', username: 'test-study-member1' },
+  studyMember2: { email: 'member2@studycenter.local', username: 'test-study-member2' },
   // Verified, but belonging to no tenant at all — the state every
   // self-registered account starts in, and the only way to exercise
   // /onboarding. Deliberately given no membership below.
@@ -181,13 +189,17 @@ async function run() {
   const existingRoles = await Role.find({ tenantId }, null, { _bypassTenantScope: true }).lean();
   let roles = existingRoles;
   if (existingRoles.length === 0) {
-    const entries = Object.entries(DEFAULT_ROLE_TEMPLATES).map(([key, permissions]) => ({
-      tenantId,
-      name: key.replace('_', ' '),
-      permissions,
-      isTemplate: true,
-      templateKey: key,
-    }));
+    // front_desk is a study-center template; the school has no use for it, and an
+    // extra role would change what the members page offers.
+    const entries = Object.entries(DEFAULT_ROLE_TEMPLATES)
+      .filter(([key]) => key !== 'front_desk')
+      .map(([key, permissions]) => ({
+        tenantId,
+        name: key.replace('_', ' '),
+        permissions,
+        isTemplate: true,
+        templateKey: key,
+      }));
     roles = await Role.insertMany(entries);
   }
 
@@ -326,6 +338,131 @@ async function run() {
     },
     { upsert: true, _bypassTenantScope: true }
   );
+
+  // ── Study-center tenant (seats, plans, check-in fixtures) ────────────────
+  const BYPASS_SC = { _bypassTenantScope: true };
+  let studyTenant = await Tenant.findOne({ subdomain: 'studycenter' }).lean();
+  if (!studyTenant) {
+    studyTenant = (
+      await Tenant.create({
+        name: 'Study Center',
+        subdomain: 'studycenter',
+        plan: 'starter',
+        orgType: 'study_center',
+        status: 'active',
+        locale: 'en',
+        timezone: 'Asia/Kolkata',
+        currency: 'INR',
+      })
+    ).toObject();
+  }
+  const studyTenantId = studyTenant._id;
+
+  let studyRoles = await Role.find({ tenantId: studyTenantId }, null, BYPASS_SC).lean();
+  if (studyRoles.length === 0) {
+    studyRoles = await Role.insertMany(
+      Object.entries(DEFAULT_ROLE_TEMPLATES).map(([key, permissions]) => ({
+        tenantId: studyTenantId,
+        name: key.replace('_', ' '),
+        permissions,
+        isTemplate: true,
+        templateKey: key,
+      }))
+    );
+  }
+  const studyRoleByKey = Object.fromEntries(studyRoles.map((r) => [r.templateKey, r]));
+
+  for (const [userKey, roleKey] of [
+    ['studyOwner', 'tenant_admin'],
+    ['studyDesk', 'front_desk'],
+    ['studyMember1', 'student'],
+    ['studyMember2', 'student'],
+  ]) {
+    await TenantMembership.findOneAndUpdate(
+      { tenantId: studyTenantId, userId: users[userKey]._id },
+      {
+        $setOnInsert: {
+          tenantId: studyTenantId,
+          userId: users[userKey]._id,
+          roleIds: [studyRoleByKey[roleKey]._id],
+          status: 'active',
+        },
+      },
+      { upsert: true, ...BYPASS_SC }
+    );
+  }
+
+  // One long-running year, exactly as provisioning creates it for a study center.
+  let studyYear = await AcademicYear.findOne(
+    { tenantId: studyTenantId, name: ONGOING_YEAR_NAME },
+    null,
+    BYPASS_SC
+  ).lean();
+  if (!studyYear) {
+    studyYear = (
+      await AcademicYear.create({
+        tenantId: studyTenantId,
+        name: ONGOING_YEAR_NAME,
+        startDate: new Date('2026-01-01'),
+        endDate: new Date(new Date('2026-01-01').getTime() + ONGOING_YEAR_SPAN_DAYS * 86_400_000),
+        isActive: true,
+      })
+    ).toObject();
+  }
+
+  // A shift is a Section; the study center's two shifts live in one class.
+  const studyClass = await Class.findOneAndUpdate(
+    { tenantId: studyTenantId, name: 'Batches' },
+    { $setOnInsert: { tenantId: studyTenantId, name: 'Batches' } },
+    { upsert: true, new: true, ...BYPASS_SC }
+  ).lean();
+  const studyShifts = {};
+  for (const name of ['Morning', 'Evening']) {
+    studyShifts[name] = await Section.findOneAndUpdate(
+      { tenantId: studyTenantId, classId: studyClass._id, name },
+      { $setOnInsert: { tenantId: studyTenantId, classId: studyClass._id, name } },
+      { upsert: true, new: true, ...BYPASS_SC }
+    ).lean();
+  }
+
+  // Two members, each linked to a login, enrolled in both shifts.
+  const studyMembers = {};
+  for (const [userKey, admissionNo, firstName, phone] of [
+    ['studyMember1', 'SC-001', 'Member One', '9000000001'],
+    ['studyMember2', 'SC-002', 'Member Two', '9000000002'],
+  ]) {
+    const student = await Student.findOneAndUpdate(
+      { tenantId: studyTenantId, admissionNo },
+      {
+        $setOnInsert: {
+          tenantId: studyTenantId,
+          admissionNo,
+          firstName,
+          lastName: 'Study',
+          phone,
+          kind: 'member',
+          status: 'active',
+          userId: users[userKey]._id,
+        },
+      },
+      { upsert: true, new: true, ...BYPASS_SC }
+    ).lean();
+    studyMembers[userKey] = student;
+    for (const shift of Object.values(studyShifts)) {
+      await Enrollment.findOneAndUpdate(
+        { tenantId: studyTenantId, studentId: student._id, sectionId: shift._id },
+        {
+          $setOnInsert: {
+            tenantId: studyTenantId,
+            studentId: student._id,
+            sectionId: shift._id,
+            status: 'active',
+          },
+        },
+        { upsert: true, ...BYPASS_SC }
+      );
+    }
+  }
 
   // ── Academic Year ─────────────────────────────────────────────────────────
   let year = await AcademicYear.findOne({ tenantId, name: '2025-26' }, null, {
@@ -1992,6 +2129,25 @@ async function run() {
       _id: tuitionTenantId.toString(),
       subdomain: 'tuitioncenter',
       orgType: 'tuition_center',
+    },
+    studyTenant: {
+      _id: studyTenantId.toString(),
+      subdomain: 'studycenter',
+      orgType: 'study_center',
+      year: { _id: studyYear._id.toString() },
+      class: { _id: studyClass._id.toString() },
+      shifts: Object.fromEntries(
+        Object.entries(studyShifts).map(([name, sec]) => [name, { _id: sec._id.toString() }])
+      ),
+      roles: Object.fromEntries(
+        Object.entries(studyRoleByKey).map(([k, r]) => [k, r._id.toString()])
+      ),
+      members: Object.fromEntries(
+        Object.entries(studyMembers).map(([k, st]) => [
+          k,
+          { _id: st._id.toString(), admissionNo: st.admissionNo, phone: st.phone },
+        ])
+      ),
     },
     roles: Object.fromEntries(Object.entries(roleByKey).map(([k, r]) => [k, r._id.toString()])),
     academicYear: { _id: year._id.toString() },

@@ -3,6 +3,7 @@ import { User } from '../models/User.js';
 import { TenantMembership } from '../models/TenantMembership.js';
 import { Tenant } from '../models/Tenant.js';
 import { Role } from '../models/Role.js';
+import { Student } from '../models/Student.js';
 import { hashPassword, revokeUserSessions } from './auth.service.js';
 import { AppError } from '../middleware/errorHandler.js';
 
@@ -17,9 +18,9 @@ import { AppError } from '../middleware/errorHandler.js';
  * audit trail the platform is built around. So everything that identifies the
  * person goes, and the row survives only as an unusable reference target.
  *
- * What is removed: name, phone, avatar, username, email (replaced by a
- * per-account tombstone), password, MFA secret, every pending token, and every
- * organization seat.
+ * What is removed: name, phone (also on any linked Student row), avatar,
+ * username, email (replaced by a per-account tombstone), password, MFA secret,
+ * every pending token, and every organization seat.
  * What remains: tenant-owned academic and financial records, and AuditLog
  * entries — which are immutable by design and already expire on a 90-day TTL.
  */
@@ -106,6 +107,15 @@ export async function deleteUserAccount(user) {
   // Seats go first: if the scrub below fails, the account is still intact and
   // the user can retry, rather than being left nameless but still a member.
   await TenantMembership.deleteMany({ userId: user._id }, { _bypassTenantScope: true });
+
+  // The learner's own phone lives on their Student row in every organization that
+  // holds one. The row stays (receipts and registers reference the name); the
+  // contact detail goes.
+  await Student.updateMany(
+    { userId: user._id },
+    { $unset: { phone: '' } },
+    { _bypassTenantScope: true }
+  );
 
   await User.updateOne(
     { _id: user._id },
