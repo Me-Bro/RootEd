@@ -290,7 +290,9 @@
     "columnIp": "आईपी",
     "columnTime": "समय",
     "student": {
-      "greeting": "नमस्ते, {{name}}",
+      "greetingMorning": "सुप्रभात, {{name}}",
+      "greetingAfternoon": "नमस्कार, {{name}}",
+      "greetingEvening": "शुभ संध्या, {{name}}",
       "notLinked": "आपका खाता अभी तक किसी छात्र रिकॉर्ड से जुड़ा नहीं है। अपने स्कूल प्रशासक से संपर्क करें।",
       "attendanceLabel": "उपस्थिति",
       "averageScoreLabel": "औसत स्कोर",

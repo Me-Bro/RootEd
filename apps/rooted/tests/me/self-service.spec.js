@@ -8,7 +8,9 @@ test.describe('Student self-service portal', () => {
     page,
   }) => {
     await page.goto('/dashboard');
-    await expect(visibleText(page, /Hello, Student1 Test/)).toBeVisible({ timeout: 15_000 });
+    await expect(visibleText(page, /Good (morning|afternoon|evening), Student1/)).toBeVisible({
+      timeout: 15_000,
+    });
     // The metadata-card TenantDashboard a staff role without school-wide
     // permissions would otherwise fall through to.
     await expect(page.getByText('School', { exact: true })).toHaveCount(0);

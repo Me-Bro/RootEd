@@ -200,6 +200,12 @@ function TeacherDashboard() {
   );
 }
 
+function greetingKey(now) {
+  const hour = now.getHours();
+  if (hour < 12) return 'greetingMorning';
+  return hour < 17 ? 'greetingAfternoon' : 'greetingEvening';
+}
+
 function StudentDashboard() {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -252,11 +258,15 @@ function StudentDashboard() {
 
   return (
     <div className="flex flex-col gap-6">
-      <p className="text-lg font-medium text-foreground">
-        {t('dashboard.student.greeting', {
-          name: student ? `${student.firstName} ${student.lastName}` : '',
-        })}
-      </p>
+      <PageHeader
+        title={t(`dashboard.student.${greetingKey(now)}`, { name: student?.firstName ?? '' })}
+        description={[
+          profile.sectionLabel,
+          formatDate(now, 'en-IN', { weekday: 'long', day: 'numeric', month: 'long' }),
+        ]
+          .filter(Boolean)
+          .join(' · ')}
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {academicEnabled && (
