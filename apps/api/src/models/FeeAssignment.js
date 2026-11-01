@@ -25,6 +25,9 @@ const feeAssignmentSchema = new mongoose.Schema(
     waivedAt: { type: Date },
     waivedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     waivedReason: { type: String },
+    // The period this assignment lets the learner use the centre (a sale sets both).
+    coversFrom: { type: Date },
+    coversTo: { type: Date },
   },
   { timestamps: true, optimisticConcurrency: true }
 );

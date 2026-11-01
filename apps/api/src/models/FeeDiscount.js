@@ -11,6 +11,9 @@ const feeDiscountSchema = new mongoose.Schema(
     classId: { type: mongoose.Schema.Types.ObjectId, ref: 'Class' },
     studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
     academicYearId: { type: mongoose.Schema.Types.ObjectId, ref: 'AcademicYear', required: true },
+    // Optional window; a discount without one applies whenever it is applied.
+    validFrom: { type: Date },
+    validTo: { type: Date },
   },
   { timestamps: true }
 );

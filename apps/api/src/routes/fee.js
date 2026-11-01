@@ -3,13 +3,15 @@ import { Router } from 'express';
 import multer from 'multer';
 import { parse } from 'csv-parse/sync';
 import { authenticate } from '../middleware/authenticate.js';
-import { requirePermission } from '../middleware/requirePermission.js';
+import { requirePermission, userHasPermission } from '../middleware/requirePermission.js';
+import { requireSeatsOrg } from '../middleware/requireSeatsOrg.js';
 import { validate } from '../middleware/validate.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { FeeStructure } from '../models/FeeStructure.js';
 import { FeeAssignment } from '../models/FeeAssignment.js';
 import { FeePayment } from '../models/FeePayment.js';
 import { FeeDiscount } from '../models/FeeDiscount.js';
+import { Student } from '../models/Student.js';
 import {
   assignFeesToSection,
   assignFeesToStudents,
@@ -20,6 +22,10 @@ import {
   applyDiscountToAssignment,
   refundPayment,
 } from '../services/fee.service.js';
+import { sellPlan } from '../services/sale.service.js';
+import { entitlementFor } from '../services/entitlement.service.js';
+import { resolveCentreSettings } from '../utils/centreSettings.js';
+import { canApplyAdHocDiscount } from '../utils/discountPolicy.js';
 import { summarizeFeeCollection } from '../utils/feeCollectionSummary.js';
 import { getSignedUrl } from '../services/storage.service.js';
 import { env } from '../config/env.js';
@@ -40,12 +46,39 @@ import {
   applyFeeDiscountSchema,
   waiveFeeAssignmentSchema,
   refundFeePaymentSchema,
+  saleSchema,
+  entitlementQuerySchema,
 } from '@rooted/shared/schemas';
+import { hasSeats } from '@rooted/shared/utils';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 router.use(authenticate);
+
+// Who may apply a catalog discount depends on the tenant's discountPolicy (owner,
+// desk or staff). A school keeps today's rule (staff = fees:write) by default.
+async function mayApplyDiscount(req) {
+  const [admin, feesWrite, feesCollect] = await Promise.all([
+    userHasPermission(req, 'tenant:admin'),
+    userHasPermission(req, 'fees:write'),
+    userHasPermission(req, 'fees:collect'),
+  ]);
+  return canApplyAdHocDiscount(resolveCentreSettings(req.tenant).discountPolicy, {
+    admin,
+    feesWrite,
+    feesCollect,
+  });
+}
+
+async function requireDiscountRight(req, _res, next) {
+  try {
+    if (await mayApplyDiscount(req)) return next();
+    next(new AppError('You are not allowed to apply a discount', 403));
+  } catch (err) {
+    next(err);
+  }
+}
 
 router.post(
   '/structures',
@@ -55,6 +88,9 @@ router.post(
     try {
       const tenantId = req.tenant._id;
       const { name, academicYearId } = req.body;
+      if (req.body.plan && !hasSeats(req.tenant.orgType)) {
+        return res.status(400).json({ error: 'Plans are only available for study centers' });
+      }
 
       const existing = await FeeStructure.findOne({ tenantId, name, academicYearId });
       if (existing) {
@@ -101,9 +137,21 @@ router.patch(
       const before = await FeeStructure.findOne({ _id: req.params.id, tenantId }).lean();
       if (!before) return res.status(404).json({ error: 'Not found' });
 
+      const update = { ...req.body };
+      if (update.plan) {
+        if (!hasSeats(req.tenant.orgType)) {
+          return res.status(400).json({ error: 'Plans are only available for study centers' });
+        }
+        // Same rules as create: a plan is per-learner and has no installments.
+        update.applicableTo = 'student';
+        if ((update.installments ?? before.installments)?.length) {
+          return res.status(400).json({ error: 'A plan has no installments' });
+        }
+      }
+
       const doc = await FeeStructure.findOneAndUpdate(
         { _id: req.params.id, tenantId },
-        { $set: req.body },
+        { $set: update },
         { new: true }
       );
 
@@ -350,7 +398,7 @@ router.get('/assignments', requirePermission('fees:read'), async (req, res, next
 
 router.post(
   '/assignments/:id/discount',
-  requirePermission('fees:write'),
+  requireDiscountRight,
   validate(applyFeeDiscountSchema),
   async (req, res, next) => {
     try {
@@ -577,8 +625,23 @@ router.get('/discounts', requirePermission('fees:read'), async (req, res, next) 
   try {
     const filter = { tenantId: req.tenant._id };
     if (req.query.yearId) filter.academicYearId = req.query.yearId;
+    if (req.query.studentId) filter.studentId = req.query.studentId;
 
     const discounts = await FeeDiscount.find(filter).lean();
+
+    // The owner's discount page wants a learner's name beside a student-scoped
+    // discount; the existing `studentId` stays an id for every other caller.
+    if (req.query.withStudent === 'true') {
+      const ids = discounts.map((d) => d.studentId).filter(Boolean);
+      const students = await Student.find(
+        { tenantId: req.tenant._id, _id: { $in: ids } },
+        'firstName lastName'
+      ).lean();
+      const names = new Map(students.map((s) => [String(s._id), `${s.firstName} ${s.lastName}`]));
+      for (const d of discounts) {
+        if (d.studentId) d.studentName = names.get(String(d.studentId)) ?? null;
+      }
+    }
     res.json(discounts);
   } catch (err) {
     next(err);
@@ -689,5 +752,87 @@ router.get('/export/collection', requirePermission('fees:write'), async (req, re
     next(err);
   }
 });
+
+// ── Study-center sales ────────────────────────────────────────────────────────
+
+// One desk request: sell a plan or day pass, apply a discount if allowed, take the
+// payment. fees:collect is all the desk needs; it cannot create plans or discounts.
+router.post(
+  '/sales',
+  requireSeatsOrg,
+  requirePermission('fees:collect'),
+  validate(saleSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { studentId, feeStructureId, paymentMethod, transactionId, discountId, startDate } =
+        req.body;
+
+      // Asked-for discounts are checked against the caller before anything is written.
+      const allowAdHocDiscount = discountId ? await mayApplyDiscount(req) : false;
+
+      const result = await sellPlan({
+        tenant: req.tenant,
+        studentId,
+        feeStructureId,
+        paymentMethod,
+        transactionId,
+        discountId,
+        startDate,
+        collectedBy: req.user.sub,
+        allowAdHocDiscount,
+      });
+
+      const { assignment, payment, discount, discountAmount } = result;
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'feeSale.create',
+        target: { model: 'FeeAssignment', id: assignment._id },
+        after: { assignment, paymentId: payment?._id ?? null },
+        ip: req.ip,
+      });
+      if (discount) {
+        await auditLog({
+          actorId: req.user.sub,
+          tenantId: tenantId.toString(),
+          action: 'feeSale.discount',
+          target: { model: 'FeeAssignment', id: assignment._id },
+          after: {
+            discountId: discount._id,
+            name: discount.name,
+            amount: discountAmount,
+            standing: !discountId,
+          },
+          ip: req.ip,
+        });
+      }
+
+      const receiptUrl = payment?.receiptPdfKey ? await getSignedUrl(payment.receiptPdfKey) : null;
+      res.status(201).json({ assignment, payment, receiptUrl, discountAmount });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/entitlement',
+  requireSeatsOrg,
+  requirePermission('fees:read'),
+  async (req, res, next) => {
+    try {
+      const { studentId } = entitlementQuerySchema.parse(req.query);
+      const student = await Student.findOne(
+        { _id: studentId, tenantId: req.tenant._id },
+        '_id'
+      ).lean();
+      if (!student) return res.status(404).json({ error: 'Not found' });
+      res.json(await entitlementFor(req.tenant._id, studentId));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 export default router;

@@ -1,5 +1,6 @@
 import PDFDocument from 'pdfkit';
 import { Student } from '../models/Student.js';
+import { Tenant } from '../models/Tenant.js';
 import { Section } from '../models/Section.js';
 import { FeeAssignment } from '../models/FeeAssignment.js';
 import { FeePayment } from '../models/FeePayment.js';
@@ -18,6 +19,7 @@ import {
   discountAppliesTo,
 } from '../utils/feeCalculations.js';
 import { autoAssignSupported } from '../utils/feeAutoAssignScope.js';
+import { buildReceiptLines } from '../utils/receiptLines.js';
 import { scheduleLateCharge } from '../workers/feeLateCharge.worker.js';
 
 const MAX_MUTATION_ATTEMPTS = 3;
@@ -160,6 +162,7 @@ export async function recordPayment({
   notes,
   tenantId,
   installmentIndex,
+  receiptContext,
 }) {
   const assignment = await FeeAssignment.findOne({ _id: assignmentId, tenantId }).lean();
   if (!assignment) throw new AppError('FeeAssignment not found', 404);
@@ -213,6 +216,9 @@ export async function recordPayment({
   }
 
   const student = await Student.findOne({ _id: assignment.studentId, tenantId }).lean();
+  // The receipt names the organization that issued it. A sale passes the plan it
+  // sold; anything else falls back to the assignment's own coverage, if it has one.
+  const tenant = await Tenant.findById(tenantId, 'name timezone').lean();
   const receiptPdfKey = await generateReceiptPdf({
     payment,
     student,
@@ -220,6 +226,13 @@ export async function recordPayment({
     amount,
     paymentMethod,
     tenantId,
+    receiptContext: {
+      tenantName: tenant?.name,
+      timezone: tenant?.timezone,
+      coversFrom: assignment.coversFrom,
+      coversTo: assignment.coversTo,
+      ...receiptContext,
+    },
   });
 
   await FeePayment.findOneAndUpdate({ _id: payment._id, tenantId }, { $set: { receiptPdfKey } });
@@ -235,6 +248,7 @@ async function generateReceiptPdf({
   amount,
   paymentMethod,
   tenantId,
+  receiptContext = {},
 }) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50, size: 'A4' });
@@ -253,25 +267,29 @@ async function generateReceiptPdf({
     });
     doc.on('error', reject);
 
+    const { organization, lines } = buildReceiptLines({
+      tenantName: receiptContext.tenantName,
+      receiptNumber,
+      paymentDate: payment.paymentDate || new Date(),
+      student,
+      amount,
+      paymentMethod,
+      transactionId: payment.transactionId,
+      planName: receiptContext.planName,
+      coversFrom: receiptContext.coversFrom,
+      coversTo: receiptContext.coversTo,
+      timezone: receiptContext.timezone,
+    });
+
     doc.fontSize(20).text('Fee Receipt', { align: 'center' });
-    doc.moveDown();
-    doc.fontSize(12).text(`School: RootEd School`, { align: 'center' });
+    if (organization) {
+      doc.moveDown();
+      doc.fontSize(12).text(organization, { align: 'center' });
+    }
     doc.moveDown(2);
 
     doc.fontSize(11);
-    doc.text(`Receipt No: ${receiptNumber}`);
-    doc.text(`Date: ${new Date(payment.paymentDate || Date.now()).toLocaleDateString()}`);
-    doc.moveDown();
-
-    if (student) {
-      doc.text(`Student Name: ${student.firstName} ${student.lastName}`);
-      doc.text(`Admission No: ${student.admissionNo}`);
-      doc.moveDown();
-    }
-
-    doc.text(`Amount Paid: ${amount}`);
-    doc.text(`Payment Method: ${paymentMethod}`);
-    if (payment.transactionId) doc.text(`Transaction ID: ${payment.transactionId}`);
+    for (const line of lines) doc.text(line);
 
     doc.end();
   });

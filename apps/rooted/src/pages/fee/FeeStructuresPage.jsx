@@ -17,6 +17,8 @@ import {
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
 import { formatCurrency } from '../../utils/intl.js';
+import { hasSeats } from '@rooted/shared/utils';
+import { useAuth } from '../../contexts/useAuth.js';
 
 const selectCls =
   'h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
@@ -78,11 +80,20 @@ function NewStructureModal({ open, onOpenChange }) {
   const [dueDate, setDueDate] = useState('');
   const [components, setComponents] = useState([{ label: '', amount: '', isOptional: false }]);
   const [error, setError] = useState('');
+  const { user } = useAuth();
+  // A study center sells plans and day passes: one learner, one period, no installments.
+  const seats = hasSeats(user?.orgType);
+  const [planKind, setPlanKind] = useState('');
+  const [planDays, setPlanDays] = useState('30');
+  const [planShift, setPlanShift] = useState('');
+  const { sections } = useClassSections();
 
   const { data: years = [] } = useQuery({
     queryKey: ['academic-years'],
     queryFn: () => api.get('/academic/years').then((r) => r.data),
   });
+  // A study center has the one long-running year, so it is chosen for them.
+  const effectiveYearId = yearId || (seats ? years.find((y) => y.isActive)?._id : '') || '';
 
   function addComponent() {
     setComponents((prev) => [...prev, { label: '', amount: '', isOptional: false }]);
@@ -101,8 +112,17 @@ function NewStructureModal({ open, onOpenChange }) {
       api
         .post('/fee/structures', {
           name,
-          academicYearId: yearId,
+          academicYearId: effectiveYearId,
           dueDate: dueDate || undefined,
+          ...(seats && planKind
+            ? {
+                plan: {
+                  kind: planKind,
+                  durationDays: planKind === 'day_pass' ? 1 : Number(planDays),
+                  ...(planKind === 'shift_plan' && planShift ? { sectionId: planShift } : {}),
+                },
+              }
+            : {}),
           components: components.map((c) => ({
             label: c.label,
             amount: Number(c.amount),
@@ -116,6 +136,7 @@ function NewStructureModal({ open, onOpenChange }) {
       setName('');
       setYearId('');
       setDueDate('');
+      setPlanKind('');
       setComponents([{ label: '', amount: '', isOptional: false }]);
       setError('');
     },
@@ -142,28 +163,82 @@ function NewStructureModal({ open, onOpenChange }) {
             onChange={(e) => setName(e.target.value)}
             required
           />
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">{t('fee.structures.academicYear')}</label>
-            <select
-              value={yearId}
-              onChange={(e) => setYearId(e.target.value)}
-              required
-              className={selectCls}
-            >
-              <option value="">{t('fee.structures.selectYearPlaceholder')}</option>
-              {years.map((y) => (
-                <option key={y._id} value={y._id}>
-                  {y.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <Input
-            label={t('fee.structures.dueDateOptional')}
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-          />
+          {!seats && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium">{t('fee.structures.academicYear')}</label>
+              <select
+                value={yearId}
+                onChange={(e) => setYearId(e.target.value)}
+                required
+                className={selectCls}
+              >
+                <option value="">{t('fee.structures.selectYearPlaceholder')}</option>
+                {years.map((y) => (
+                  <option key={y._id} value={y._id}>
+                    {y.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {seats && (
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium" htmlFor="plan-kind">
+                  {t('studyCenter.plan.type')}
+                </label>
+                <select
+                  id="plan-kind"
+                  value={planKind}
+                  onChange={(e) => setPlanKind(e.target.value)}
+                  className={selectCls}
+                >
+                  <option value="">{t('studyCenter.plan.regular')}</option>
+                  <option value="day_pass">{t('studyCenter.plan.dayPass')}</option>
+                  <option value="shift_plan">{t('studyCenter.plan.shiftPlan')}</option>
+                </select>
+              </div>
+              {planKind === 'shift_plan' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    id="plan-days"
+                    type="number"
+                    min="1"
+                    max="366"
+                    label={t('studyCenter.plan.days')}
+                    value={planDays}
+                    onChange={(e) => setPlanDays(e.target.value)}
+                  />
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium" htmlFor="plan-shift">
+                      {t('studyCenter.plan.shift')}
+                    </label>
+                    <select
+                      id="plan-shift"
+                      value={planShift}
+                      onChange={(e) => setPlanShift(e.target.value)}
+                      className={selectCls}
+                    >
+                      <option value="">{t('studyCenter.plan.anyShift')}</option>
+                      {sections.map((s) => (
+                        <option key={s._id} value={s._id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {!(seats && planKind) && (
+            <Input
+              label={t('fee.structures.dueDateOptional')}
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
+          )}
 
           <ComponentRows
             components={components}
