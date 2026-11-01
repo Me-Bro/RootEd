@@ -12,6 +12,8 @@ import { Timetable } from '../models/Timetable.js';
 import { TimetablePublish } from '../models/TimetablePublish.js';
 import { FeeAssignment } from '../models/FeeAssignment.js';
 import { FeePayment } from '../models/FeePayment.js';
+import { Class } from '../models/Class.js';
+import { Section } from '../models/Section.js';
 import { Student } from '../models/Student.js';
 import { Subject } from '../models/Subject.js';
 import { filterVisibleTimetableEntries } from '../utils/timetableVisibility.js';
@@ -77,10 +79,19 @@ router.get('/profile', async (req, res, next) => {
         ).lean()
       : null;
 
+    // "Grade 5-A": the class name and section, for the student home header.
+    const tenantId = req.tenant._id;
+    const section = student?.sectionId
+      ? await Section.findOne({ _id: student.sectionId, tenantId }).lean()
+      : null;
+    const klass = section ? await Class.findOne({ _id: section.classId, tenantId }).lean() : null;
+    const sectionLabel = section ? [klass?.name, section.name].filter(Boolean).join('-') : null;
+
     res.json({
       isStudent: Boolean(req.subjects?.studentId),
       isStaff: Boolean(req.subjects?.staffId),
       student,
+      sectionLabel,
     });
   } catch (err) {
     next(err);

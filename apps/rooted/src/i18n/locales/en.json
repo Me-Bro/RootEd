@@ -290,7 +290,9 @@
     "columnIp": "IP",
     "columnTime": "Time",
     "student": {
-      "greeting": "Hello, {{name}}",
+      "greetingMorning": "Good morning, {{name}}",
+      "greetingAfternoon": "Good afternoon, {{name}}",
+      "greetingEvening": "Good evening, {{name}}",
       "notLinked": "Your account isn't linked to a student record yet. Contact your school administrator.",
       "attendanceLabel": "Attendance",
       "averageScoreLabel": "Average score",
