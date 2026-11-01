@@ -21,6 +21,14 @@ const studentSchema = new mongoose.Schema(
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     sectionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Section' },
+    // Ten digits, normalized by indianMobileSchema. Contact for the learner
+    // themselves (parentContacts[].phone is a guardian's). Not unique: families
+    // share a phone. Cleared by account deletion and by the walk-in erase action.
+    phone: { type: String, trim: true },
+    // A study-center visitor who buys a day pass is a Student too, so fees and
+    // attendance need no second person model. Written only by the walk-in route;
+    // legacy rows have no value, so readers filter with $ne, never equality.
+    kind: { type: String, enum: ['member', 'walk_in'], default: 'member' },
     dateOfBirth: { type: Date },
     gender: { type: String, enum: ['male', 'female', 'other'] },
     parentContacts: [
@@ -48,6 +56,13 @@ const studentSchema = new mongoose.Schema(
 studentSchema.plugin(tenantScopePlugin);
 studentSchema.index({ tenantId: 1, admissionNo: 1 }, { unique: true });
 studentSchema.index({ tenantId: 1, sectionId: 1 });
+studentSchema.index({ tenantId: 1, phone: 1 });
+// One walk-in per phone, so two desks registering the same visitor at once
+// cannot both succeed. Members are excluded: a family shares a phone.
+studentSchema.index(
+  { tenantId: 1, kind: 1, phone: 1 },
+  { unique: true, partialFilterExpression: { kind: 'walk_in', phone: { $type: 'string' } } }
+);
 // partialFilterExpression, not sparse. A *compound* sparse index still indexes
 // documents where any indexed field is present — tenantId always is — so
 // `sparse` would treat every roster student without a linked account as

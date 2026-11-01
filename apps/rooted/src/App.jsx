@@ -21,6 +21,7 @@ import TermsPage from './pages/legal/TermsPage.jsx';
 import AccountDeletionPage from './pages/legal/AccountDeletionPage.jsx';
 import MembersPage from './pages/tenant/MembersPage.jsx';
 import JoinPolicyPage from './pages/tenant/JoinPolicyPage.jsx';
+import CentreSettingsPage from './pages/tenant/CentreSettingsPage.jsx';
 import AppShell from './components/layout/AppShell.jsx';
 import DashboardPage from './pages/admin/DashboardPage.jsx';
 import TenantsPage from './pages/admin/TenantsPage.jsx';
@@ -538,6 +539,14 @@ function AppRoutes() {
           element={
             <RequirePermission permission="tenant:admin">
               <JoinPolicyPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/tenant/centre"
+          element={
+            <RequirePermission permission="tenant:admin">
+              <CentreSettingsPage />
             </RequirePermission>
           }
         />

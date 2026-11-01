@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Check, Circle } from 'lucide-react';
-import { isModuleEnabled } from '@rooted/shared/utils';
+import { hasSeats, isModuleEnabled } from '@rooted/shared/utils';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/Card.jsx';
@@ -23,27 +23,37 @@ export default function SetupChecklist() {
   const { user } = useAuth();
   const isAdmin = (user?.permissions ?? []).includes('tenant:admin');
   const staffEnabled = isModuleEnabled(user, 'staff');
+  // A study center has no terms, subjects or teaching assignments to set up.
+  const seats = hasSeats(user?.orgType);
 
   const years = useSetupQuery('years', '/academic/years', undefined, isAdmin);
-  const terms = useSetupQuery('terms', '/academic/terms', undefined, isAdmin);
+  const terms = useSetupQuery('terms', '/academic/terms', undefined, isAdmin && !seats);
   const classes = useSetupQuery('classes', '/academic/classes', { includeSections: true }, isAdmin);
-  const subjects = useSetupQuery('subjects', '/academic/subjects', undefined, isAdmin);
+  const subjects = useSetupQuery('subjects', '/academic/subjects', undefined, isAdmin && !seats);
   const staff = useSetupQuery('staff', '/staff/members', { limit: 1 }, isAdmin && staffEnabled);
-  const assignments = useSetupQuery('teaching', '/academic/subject-teachers', undefined, isAdmin);
+  const assignments = useSetupQuery(
+    'teaching',
+    '/academic/subject-teachers',
+    undefined,
+    isAdmin && !seats
+  );
   const students = useSetupQuery('students', '/academic/students', { limit: 1 }, isAdmin);
 
-  const required = [years, terms, classes, subjects, assignments, students];
+  const required = seats
+    ? [years, classes, students]
+    : [years, terms, classes, subjects, assignments, students];
   if (!isAdmin || [...required, ...(staffEnabled ? [staff] : [])].some((q) => !q.isSuccess)) {
     return null;
   }
 
   const steps = setupSteps({
+    seats,
     years: years.data,
-    terms: terms.data,
+    terms: terms.data ?? [],
     classes: classes.data,
-    subjects: subjects.data,
+    subjects: subjects.data ?? [],
     staffTotal: staffEnabled ? staff.data.total : undefined,
-    assignments: assignments.data,
+    assignments: assignments.data ?? [],
     studentsTotal: students.data.total,
   });
   const doneCount = steps.filter((s) => s.done).length;

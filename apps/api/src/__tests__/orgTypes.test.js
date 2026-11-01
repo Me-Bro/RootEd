@@ -1,4 +1,4 @@
-import { isModuleEnabled, resolveOrgTerm, isBatchOrgType } from '@rooted/shared/utils';
+import { isModuleEnabled, resolveOrgTerm, isBatchOrgType, hasSeats } from '@rooted/shared/utils';
 
 test.each([
   ['school', 'inventory', true],
@@ -55,4 +55,16 @@ test.each([
   ['nonexistent_type', false],
 ])('isBatchOrgType(%s) -> %s', (orgType, expected) => {
   expect(isBatchOrgType(orgType)).toBe(expected);
+});
+
+test.each([
+  ['study_center', true],
+  ['school', false],
+  ['college', false],
+  ['tuition_center', false],
+  ['coaching_center', false],
+  ['nonexistent_type', false],
+  [undefined, false],
+])('hasSeats(%s) -> %s', (orgType, expected) => {
+  expect(hasSeats(orgType)).toBe(expected);
 });

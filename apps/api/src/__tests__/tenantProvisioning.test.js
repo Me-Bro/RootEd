@@ -2,6 +2,7 @@ import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import mongoose from 'mongoose';
 import { User } from '../models/User.js';
 import { Role } from '../models/Role.js';
+import { AcademicYear } from '../models/AcademicYear.js';
 import { TenantMembership } from '../models/TenantMembership.js';
 import { createTenant } from '../services/tenant.service.js';
 import { getActiveTenantsForUser } from '../services/auth.service.js';
@@ -139,5 +140,45 @@ test('an existing user added to a second tenant keeps their credentials and gain
   const tenants = await getActiveTenantsForUser(after._id);
   expect(tenants.map((t) => t._id).sort()).toEqual(
     [first._id.toString(), second._id.toString()].sort()
+  );
+});
+
+describe('study-center provisioning', () => {
+  // adminPassword is given so no invite token is stored (that would need Redis).
+  const provision = (orgType, subdomain) =>
+    createTenant({
+      ...base,
+      orgType,
+      name: subdomain,
+      subdomain,
+      adminEmail: `${subdomain}@test.local`,
+      adminPassword: 'Irrelevant-but-valid-1',
+    });
+
+  test('gets a front_desk role and one active "Ongoing" academic year', async () => {
+    const tenant = await provision('study_center', 'prov-study');
+
+    const roles = await Role.find({ tenantId: tenant._id }).lean();
+    const frontDesk = roles.find((r) => r.templateKey === 'front_desk');
+    expect(frontDesk.permissions).toEqual(
+      expect.arrayContaining(['students:write', 'attendance:write', 'fees:collect'])
+    );
+    expect(frontDesk.permissions).not.toContain('fees:write');
+    expect(frontDesk.permissions).not.toContain('tenant:admin');
+
+    const years = await AcademicYear.find({ tenantId: tenant._id }).lean();
+    expect(years).toHaveLength(1);
+    expect(years[0]).toMatchObject({ name: 'Ongoing', isActive: true });
+  });
+
+  test.each(['school', 'college', 'tuition_center', 'coaching_center'])(
+    'a %s gets neither the front_desk role nor an academic year',
+    async (orgType) => {
+      const tenant = await provision(orgType, `prov-${orgType.replace('_', '-')}`);
+
+      const roles = await Role.find({ tenantId: tenant._id }).lean();
+      expect(roles.map((r) => r.templateKey)).not.toContain('front_desk');
+      expect(await AcademicYear.countDocuments({ tenantId: tenant._id })).toBe(0);
+    }
   );
 });

@@ -59,6 +59,12 @@ export const ORG_TYPE_CONFIG = {
 
 export const ORG_TYPES = Object.keys(ORG_TYPE_CONFIG);
 
+// A study center has no school year, but fee plans and discounts need an academic
+// year to hang from, so one long-running year is created for it. Nothing reads a
+// year's start or end date for logic.
+export const ONGOING_YEAR_NAME = 'Ongoing';
+export const ONGOING_YEAR_SPAN_DAYS = 3650;
+
 export const TENANT_STATUS = ['active', 'suspended', 'archived'];
 
 export const SYSTEM_ROLES = ['super_admin', 'support_agent'];

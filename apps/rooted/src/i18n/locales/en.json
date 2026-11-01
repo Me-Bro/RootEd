@@ -39,6 +39,7 @@
     "organization": "Organization",
     "members": "Members",
     "joinPolicy": "Joining",
+    "centreSettings": "Centre settings",
     "accountSettings": "Account settings",
     "subjects": "Subjects"
   },
@@ -1883,6 +1884,23 @@
     "noRequests": "No requests waiting.",
     "approve": "Approve",
     "reject": "Reject"
+  },
+  "centre": {
+    "title": "Centre settings",
+    "description": "When the centre is open, and who may give a discount at the desk.",
+    "hours": "Opening hours",
+    "openTime": "Opens at",
+    "closeTime": "Closes at",
+    "open24h": "Open 24 hours",
+    "discountPolicy": "Who can apply a discount",
+    "policy_owner": "Only the owner",
+    "policyHint_owner": "Only an administrator can apply a discount. The front desk cannot.",
+    "policy_desk": "The front desk too",
+    "policyHint_desk": "Anyone who takes payments can pick a discount you have set up.",
+    "policy_staff": "Anyone who manages fees",
+    "policyHint_staff": "Everyone with fee management access, as before.",
+    "saved": "Settings saved.",
+    "saveFailed": "Could not save the settings."
   },
   "joinPolicy": {
     "title": "Joining",

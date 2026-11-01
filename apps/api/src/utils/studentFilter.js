@@ -1,4 +1,5 @@
-import { isBatchOrgType } from '@rooted/shared/utils';
+import { hasSeats, isBatchOrgType } from '@rooted/shared/utils';
+import { normalizeIndianMobile } from '@rooted/shared/schemas';
 
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -16,7 +17,21 @@ export function buildStudentFilter(tenantId, query = {}, opts = {}) {
   const search = query.search?.trim();
   if (search) {
     const pattern = new RegExp(escapeRegex(search), 'i');
-    filter.$or = ['firstName', 'lastName', 'admissionNo'].map((field) => ({ [field]: pattern }));
+    // The desk finds a visitor by typing part of their number; schools never
+    // collect a learner phone, so only study centers search it.
+    const fields = ['firstName', 'lastName', 'admissionNo'];
+    if (hasSeats(opts.orgType)) fields.push('phone');
+    filter.$or = fields.map((field) => ({ [field]: pattern }));
+  }
+
+  if (query.phone) filter.phone = normalizeIndianMobile(query.phone);
+
+  // Walk-ins exist only in study centers. There the list hides them unless asked
+  // (`kind=walk_in` for only them, `kind=all` for everyone). $ne, not equality:
+  // rows written before `kind` existed have no value and are members.
+  if (hasSeats(opts.orgType)) {
+    if (query.kind === 'walk_in') filter.kind = 'walk_in';
+    else if (query.kind !== 'all') filter.kind = { $ne: 'walk_in' };
   }
 
   if (query.sectionId && isBatchOrgType(opts.orgType) && opts.enrolledStudentIds) {

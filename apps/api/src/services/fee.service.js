@@ -130,13 +130,22 @@ export async function resolveStudentIdsForStructure(structure, tenantId) {
   if (!autoAssignSupported(structure.applicableTo, structure.classId)) return [];
 
   if (structure.applicableTo === 'all') {
-    const students = await Student.find({ tenantId, status: 'active' }, '_id').lean();
+    // Walk-ins buy through a sale, never through a structure's auto-assignment.
+    const students = await Student.find(
+      { tenantId, status: 'active', kind: { $ne: 'walk_in' } },
+      '_id'
+    ).lean();
     return students.map((s) => s._id);
   }
 
   const sections = await Section.find({ tenantId, classId: structure.classId }, '_id').lean();
   const students = await Student.find(
-    { tenantId, sectionId: { $in: sections.map((s) => s._id) }, status: 'active' },
+    {
+      tenantId,
+      sectionId: { $in: sections.map((s) => s._id) },
+      status: 'active',
+      kind: { $ne: 'walk_in' },
+    },
     '_id'
   ).lean();
   return students.map((s) => s._id);

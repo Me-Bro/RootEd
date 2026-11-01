@@ -26,3 +26,10 @@ export function resolveOrgTerm(orgType, key) {
 export function isBatchOrgType(orgType) {
   return resolveConfig(orgType).terms.classLevel === 'Batch';
 }
+
+// True only for study centers, where the seat is the product: seats, walk-ins,
+// plans and check-in all gate on this, not on isBatchOrgType (which tuition and
+// coaching centers also satisfy). An unknown orgType falls back to school.
+export function hasSeats(orgType) {
+  return orgType === 'study_center';
+}
