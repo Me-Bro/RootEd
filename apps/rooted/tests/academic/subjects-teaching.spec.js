@@ -51,34 +51,46 @@ test.describe('Subjects page', () => {
   });
 });
 
-test.describe('Teaching page', () => {
+test.describe('Teachers dialog on the Subjects page', () => {
   test.use({ storageState: AUTH_STATES.tenant_admin });
 
-  test('admin assigns a teacher to a subject and it persists', async ({ page }) => {
-    await page.goto('/academic/teaching');
-    await expect(page.getByTestId('teaching-row-SCI5')).toHaveCount(0);
+  test('admin assigns one teacher to every section of a subject and clears it again', async ({
+    page,
+  }) => {
+    await page.goto('/academic/subjects');
+    await page.getByTestId('subject-row-SCI5').getByRole('button', { name: 'Teachers' }).click();
+    const dialog = page.getByRole('dialog');
+    const sectionA = dialog.getByLabel('Teacher for Grade 5 - A');
+    const sectionB = dialog.getByLabel('Teacher for Grade 5 - B');
+    // The seed leaves Science unassigned.
+    await expect(sectionA).toHaveValue('');
+    await expect(sectionB).toHaveValue('');
 
-    await page.getByLabel('Section').click();
-    await page.getByRole('option').first().click();
-    await page.getByLabel('Term').click();
-    await page.getByRole('option').first().click();
+    await dialog.getByLabel('Same teacher for all sections').selectOption({ label: 'Alice Smith' });
+    await expect(sectionA).not.toHaveValue('');
+    await expect(sectionB).not.toHaveValue('');
+    const chosen = await sectionA.inputValue();
+    expect(await sectionB.inputValue()).toBe(chosen);
 
-    const picker = page.getByLabel('Teacher for Science');
-    await expect(picker).toBeVisible();
-    await picker.selectOption({ index: 1 });
-    await expect(picker).not.toHaveValue('');
-    const chosen = await picker.inputValue();
-
+    // It persists, and reads back as the year's teacher.
     await page.reload();
-    await page.getByLabel('Section').click();
-    await page.getByRole('option').first().click();
-    await page.getByLabel('Term').click();
-    await page.getByRole('option').first().click();
-    await expect(page.getByLabel('Teacher for Science')).toHaveValue(chosen);
+    await page.getByTestId('subject-row-SCI5').getByRole('button', { name: 'Teachers' }).click();
+    await expect(page.getByRole('dialog').getByLabel('Teacher for Grade 5 - A')).toHaveValue(
+      chosen
+    );
 
-    // clean up: unassign again
-    await page.getByLabel('Teacher for Science').selectOption('');
-    await expect(page.getByLabel('Teacher for Science')).toHaveValue('');
+    // clean up: unassign both sections
+    const again = page.getByRole('dialog');
+    await again.getByLabel('Teacher for Grade 5 - A').selectOption('');
+    await expect(again.getByLabel('Teacher for Grade 5 - A')).toHaveValue('');
+    await again.getByLabel('Teacher for Grade 5 - B').selectOption('');
+    await expect(again.getByLabel('Teacher for Grade 5 - B')).toHaveValue('');
+  });
+
+  test('the old Teaching address lands on Subjects', async ({ page }) => {
+    await page.goto('/academic/teaching');
+    await expect(page).toHaveURL(/\/academic\/subjects$/);
+    await expect(page.getByRole('heading', { name: 'Subjects' })).toBeVisible();
   });
 });
 

@@ -48,6 +48,6 @@ test('the staff step is left out when staffTotal is unknown (staff module off)',
 test('every step links to the page that completes it', () => {
   const to = Object.fromEntries(setupSteps(empty).map((s) => [s.key, s.to]));
   assert.equal(to.terms, '/academic/years');
-  assert.equal(to.teaching, '/academic/teaching');
+  assert.equal(to.teaching, '/academic/subjects');
   assert.equal(to.students, '/academic/students');
 });

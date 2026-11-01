@@ -25,6 +25,7 @@ export const subjectTeacherSchema = z.object({
 export const subjectTeacherQuerySchema = z.object({
   sectionId: objectId.optional(),
   termId: objectId.optional(),
+  subjectId: objectId.optional(),
 });
 
 export const teachingLoadQuerySchema = z.object({

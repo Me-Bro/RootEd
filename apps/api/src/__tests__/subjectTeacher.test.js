@@ -6,6 +6,7 @@ import { User } from '../models/User.js';
 import { TenantMembership } from '../models/TenantMembership.js';
 import { SubjectTeacher } from '../models/SubjectTeacher.js';
 import { assertTeacher } from '../services/subjectTeacher.service.js';
+import { subjectTeacherQuerySchema } from '@rooted/shared/schemas';
 
 let mongod;
 let tenant;
@@ -88,4 +89,14 @@ test('one teacher per module, batch and run', async () => {
   await expect(
     SubjectTeacher.create({ ...row, sectionId: id(), teacherId: id() })
   ).resolves.toBeDefined();
+});
+
+test('the assignment list can be filtered by subject, and still by section and term alone', () => {
+  const id = new mongoose.Types.ObjectId().toString();
+  expect(subjectTeacherQuerySchema.parse({ subjectId: id })).toEqual({ subjectId: id });
+  expect(subjectTeacherQuerySchema.parse({ sectionId: id, termId: id })).toEqual({
+    sectionId: id,
+    termId: id,
+  });
+  expect(() => subjectTeacherQuerySchema.parse({ subjectId: 'nope' })).toThrow();
 });

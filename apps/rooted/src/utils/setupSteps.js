@@ -19,7 +19,7 @@ export function setupSteps({
     },
     { key: 'subjects', done: subjects.length > 0, to: '/academic/subjects' },
     ...(staffTotal === undefined ? [] : [{ key: 'staff', done: staffTotal > 0, to: '/staff' }]),
-    { key: 'teaching', done: assignments.length > 0, to: '/academic/teaching' },
+    { key: 'teaching', done: assignments.length > 0, to: '/academic/subjects' },
     { key: 'students', done: studentsTotal > 0, to: '/academic/students' },
   ];
 }
