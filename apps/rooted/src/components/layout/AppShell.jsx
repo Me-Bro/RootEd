@@ -133,8 +133,15 @@ function getNavGroups(t, orgType) {
           icon: Users,
           permission: 'students:read',
         },
-        // Study center only: the chairs, who holds them per shift, and the
-        // learner's own seat.
+        // Study center only: the front desk, the chairs, who holds them per shift,
+        // and the learner's own seat.
+        {
+          to: '/desk',
+          label: t('nav.desk'),
+          icon: Armchair,
+          permission: 'attendance:write',
+          seatsOnly: true,
+        },
         {
           to: '/academic/seat-map',
           label: t('nav.seatMap'),

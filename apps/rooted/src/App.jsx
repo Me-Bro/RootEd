@@ -24,6 +24,7 @@ import JoinPolicyPage from './pages/tenant/JoinPolicyPage.jsx';
 import CentreSettingsPage from './pages/tenant/CentreSettingsPage.jsx';
 import SeatsPage from './pages/academic/SeatsPage.jsx';
 import SellPage from './pages/fee/SellPage.jsx';
+import FrontDeskPage from './pages/academic/FrontDeskPage.jsx';
 import DiscountsPage from './pages/fee/DiscountsPage.jsx';
 import SeatMapPage from './pages/academic/SeatMapPage.jsx';
 import MySeatPage from './pages/me/MySeatPage.jsx';
@@ -544,6 +545,14 @@ function AppRoutes() {
           element={
             <RequirePermission permission="tenant:admin">
               <JoinPolicyPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/desk"
+          element={
+            <RequirePermission permission="attendance:write">
+              <FrontDeskPage />
             </RequirePermission>
           }
         />

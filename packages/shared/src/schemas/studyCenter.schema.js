@@ -100,3 +100,12 @@ export const sectionTimesSchema = z
     message: 'End time must be later than start time',
     path: ['endTime'],
   });
+
+// ── Check-in ────────────────────────────────────────────────────────────────
+
+// The seat is optional: left out, the server picks the first free one.
+export const checkInSchema = z
+  .object({ studentId: objectId, seatId: objectId.optional() })
+  .strict();
+
+export const freeSeatsQuerySchema = z.object({ studentId: objectId });
