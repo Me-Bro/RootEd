@@ -40,6 +40,7 @@ const { Class } = await import('../models/Class.js');
 const { Section } = await import('../models/Section.js');
 const { Enrollment } = await import('../models/Enrollment.js');
 const { Seat } = await import('../models/Seat.js');
+const { Visit } = await import('../models/Visit.js');
 const { FeeStructure } = await import('../models/FeeStructure.js');
 const { FeeAssignment } = await import('../models/FeeAssignment.js');
 const { SeatAllocation } = await import('../models/SeatAllocation.js');
@@ -697,7 +698,7 @@ describe('GET /me/seat', () => {
   test('a learner sees only their own shifts and seats, ordered by start time', async () => {
     const res = await call('get', '/me/seat', 'learner1');
     expect(res.status).toBe(200);
-    expect(Object.keys(res.body).sort()).toEqual(['nextDue', 'plan', 'shifts']);
+    expect(Object.keys(res.body).sort()).toEqual(['centre', 'nextDue', 'plan', 'shifts', 'visits']);
     // No plan sold yet: both are null, not an error.
     expect(res.body.plan).toBeNull();
     expect(res.body.nextDue).toBeNull();
@@ -751,6 +752,40 @@ describe('GET /me/seat', () => {
     // Another learner never sees it.
     expect((await call('get', '/me/seat', 'learner2')).body.plan).toBeNull();
     await FeeAssignment.deleteMany({ tenantId: tenants.study._id });
+  });
+
+  test('shows this month’s visits and time on seat, and the centre’s hours, only for the caller', async () => {
+    const seat = await Seat.findOne({ tenantId: tenants.study._id, label: 'A-1' }).lean();
+    const recorder = await User.findOne({}).lean();
+    const mk = (studentId, minutesAgo, minutes) =>
+      Visit.create({
+        tenantId: tenants.study._id,
+        studentId,
+        seatId: seat._id,
+        inAt: new Date(Date.now() - minutesAgo * 60 * 1000),
+        outAt: new Date(Date.now() - (minutesAgo - minutes) * 60 * 1000),
+        recordedBy: recorder._id,
+      });
+    // Two short visits an hour or so ago (still this month unless the clock just
+    // rolled over midnight on the 1st), and a visit by another learner.
+    await mk(ctx.m1._id, 90, 30);
+    await mk(ctx.m1._id, 50, 20);
+    await mk(ctx.m2._id, 70, 40);
+
+    const res = await call('get', '/me/seat', 'learner1');
+    expect(res.status).toBe(200);
+    expect(Object.keys(res.body.visits).sort()).toEqual(['count', 'minutes', 'month']);
+    expect(res.body.visits.count).toBe(2);
+    expect(res.body.visits.minutes).toBe(50);
+    expect(res.body.visits.month).toMatch(/^\d{4}-\d{2}$/);
+    expect(res.body.centre).toEqual({ openTime: '06:00', closeTime: '22:00', open24h: false });
+
+    // The other learner's visit is not in these numbers.
+    expect((await call('get', '/me/seat', 'learner2')).body.visits).toMatchObject({
+      count: 1,
+      minutes: 40,
+    });
+    await Visit.deleteMany({ tenantId: tenants.study._id });
   });
 
   test('a learner with no seat gets seat: null for each shift (EH2a)', async () => {

@@ -13,6 +13,8 @@ import { TimetablePublish } from '../models/TimetablePublish.js';
 import { FeeAssignment } from '../models/FeeAssignment.js';
 import { FeeStructure } from '../models/FeeStructure.js';
 import { summarizePlan } from '../utils/planSummary.js';
+import { myMonth } from '../services/studyReports.service.js';
+import { resolveCentreSettings } from '../utils/centreSettings.js';
 import { isModuleEnabled } from '@rooted/shared/utils';
 import { FeePayment } from '../models/FeePayment.js';
 import { Class } from '../models/Class.js';
@@ -362,7 +364,20 @@ router.get(
         }));
       }
 
-      res.json({ shifts, plan, nextDue });
+      // This month's time on seat, and when the centre is open. Counts and minutes
+      // only: never another learner's visits.
+      const [visits, centre] = [
+        await myMonth(req.tenant, studentId),
+        resolveCentreSettings(req.tenant),
+      ];
+
+      res.json({
+        shifts,
+        plan,
+        nextDue,
+        visits,
+        centre: { openTime: centre.openTime, closeTime: centre.closeTime, open24h: centre.open24h },
+      });
     } catch (err) {
       next(err);
     }

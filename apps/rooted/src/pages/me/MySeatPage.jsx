@@ -5,6 +5,7 @@ import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
 import ShiftSeats from '../../components/study/ShiftSeats.jsx';
 import { formatCurrency, formatDate } from '../../utils/intl.js';
+import { splitMinutes } from '../../utils/studyCenter.js';
 
 // The learner's own shifts and seats. Plan validity, amount due and visits join
 // this page in later phases; the endpoint's answer only ever concerns the caller.
@@ -30,6 +31,37 @@ export default function MySeatPage() {
           )}
         </CardContent>
       </Card>
+
+      {!isLoading && data?.visits && (
+        <Card data-testid="my-visits">
+          <CardContent className="flex flex-col gap-1 pt-4 text-sm">
+            <p>
+              {t('studyCenter.mySeat.visitsThisMonth', {
+                count: data.visits.count,
+                time: (() => {
+                  const { hours, minutes } = splitMinutes(data.visits.minutes);
+                  if (hours && minutes) {
+                    return t('studyCenter.reports.hoursMinutes', { hours, minutes });
+                  }
+                  return hours
+                    ? t('studyCenter.reports.hoursOnly', { hours })
+                    : t('studyCenter.reports.minutesOnly', { minutes });
+                })(),
+              })}
+            </p>
+            {data.centre && (
+              <p className="text-muted-foreground" data-testid="my-open-hours">
+                {data.centre.open24h
+                  ? t('studyCenter.mySeat.open24h')
+                  : t('studyCenter.mySeat.openHours', {
+                      open: data.centre.openTime,
+                      close: data.centre.closeTime,
+                    })}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* A learner with no plan and nothing owing sees no plan line at all. */}
       {!isLoading && (data?.plan || data?.nextDue) && (

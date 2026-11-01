@@ -109,3 +109,18 @@ export const checkInSchema = z
   .strict();
 
 export const freeSeatsQuerySchema = z.object({ studentId: objectId });
+
+// ── Reports ─────────────────────────────────────────────────────────────────
+
+const dayString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
+
+export const monthQuerySchema = z.object({
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Use YYYY-MM'),
+});
+export const dateQuerySchema = z.object({ date: dayString });
+export const dayRangeQuerySchema = z
+  .object({ from: dayString.optional(), to: dayString.optional() })
+  .refine((v) => !v.from || !v.to || v.to >= v.from, {
+    message: 'The end must not be before the start',
+    path: ['to'],
+  });

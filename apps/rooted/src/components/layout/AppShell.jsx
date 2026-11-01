@@ -143,6 +143,13 @@ function getNavGroups(t, orgType) {
           seatsOnly: true,
         },
         {
+          to: '/academic/study-center-reports',
+          label: t('nav.studyReports'),
+          icon: BarChart2,
+          permission: 'attendance:read',
+          seatsOnly: true,
+        },
+        {
           to: '/academic/seat-map',
           label: t('nav.seatMap'),
           icon: Armchair,
