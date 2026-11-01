@@ -54,7 +54,8 @@ import { Timetable } from '../models/Timetable.js';
 import { Assignment } from '../models/Assignment.js';
 import { SubjectTeacher } from '../models/SubjectTeacher.js';
 import { assertRefs } from '../services/training.service.js';
-import { assertTeacher } from '../services/subjectTeacher.service.js';
+import { assertTeacher, ensureAssignments } from '../services/subjectTeacher.service.js';
+import { logger } from '../utils/logger.js';
 import { loadTeachingLoad } from '../services/teachingLoad.service.js';
 import { TimetablePublish } from '../models/TimetablePublish.js';
 import { AttendanceRecord } from '../models/AttendanceRecord.js';
@@ -1110,6 +1111,22 @@ router.post(
   }
 );
 
+// A saved slot also records who teaches the subject to the section (see ensureAssignments).
+// The slot is already saved, so a failure here is logged, never returned.
+async function recordTeaching(entry) {
+  try {
+    await ensureAssignments({
+      tenantId: entry.tenantId,
+      academicYearId: entry.academicYearId,
+      sectionId: entry.sectionId,
+      subjectId: entry.subjectId,
+      teacherId: entry.teacherId,
+    });
+  } catch (err) {
+    logger.warn({ err }, 'could not record the teacher assignment for a timetable slot');
+  }
+}
+
 router.post(
   '/timetable',
   requirePermission('tenant:admin'),
@@ -1130,6 +1147,7 @@ router.post(
         after: entry.toObject(),
         ip: req.ip,
       });
+      await recordTeaching(entry);
 
       res.status(201).json(entry);
     } catch (err) {
@@ -1164,6 +1182,7 @@ router.put(
         after: entry.toObject(),
         ip: req.ip,
       });
+      await recordTeaching(entry);
 
       res.json(entry);
     } catch (err) {

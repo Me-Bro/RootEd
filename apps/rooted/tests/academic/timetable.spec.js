@@ -66,6 +66,24 @@ test.describe('Timetable page', () => {
     await expect(page.getByText('11:15–12:00')).toBeVisible();
   });
 
+  test("choosing a subject starts from the section's assigned teacher", async ({ page }) => {
+    const { academicYear, section } = getTestIds();
+    await selectYearAndSection(page, academicYear._id, section._id);
+
+    // Seeded: Alice Smith is assigned Mathematics for section A. Nothing is saved here.
+    const row = page.locator('tbody tr').nth(5);
+    await row.getByRole('button', { name: '+ Add' }).first().click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+
+    await page.getByLabel('Subject').click();
+    await page.getByRole('option', { name: 'Mathematics' }).click();
+
+    await expect(page.getByLabel('Teacher')).toContainText('Alice Smith');
+    await expect(page.getByText('Pre-filled from the subject’s teacher')).toBeVisible();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('dialog')).not.toBeVisible();
+  });
+
   test('adding a conflicting teacher in another section is rejected with 409', async ({ page }) => {
     const { academicYear, sectionB } = getTestIds();
     await selectYearAndSection(page, academicYear._id, sectionB._id);
