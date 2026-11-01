@@ -15,6 +15,7 @@ import OnboardingPage from './pages/org/OnboardingPage.jsx';
 import CreateOrgPage from './pages/org/CreateOrgPage.jsx';
 import JoinOrgPage from './pages/org/JoinOrgPage.jsx';
 import AccountSettingsPage from './pages/account/AccountSettingsPage.jsx';
+import HelpPage from './pages/help/HelpPage.jsx';
 import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage.jsx';
 import TermsPage from './pages/legal/TermsPage.jsx';
 import AccountDeletionPage from './pages/legal/AccountDeletionPage.jsx';
@@ -523,6 +524,7 @@ function AppRoutes() {
         {/* Account settings are personal, not tenant-scoped — every signed-in
             user has them regardless of role. */}
         <Route path="/settings/account" element={<AccountSettingsPage />} />
+        <Route path="/help" element={<HelpPage />} />
         <Route
           path="/tenant/members"
           element={

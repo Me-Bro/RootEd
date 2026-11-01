@@ -145,6 +145,98 @@
     },
     "done": "Done"
   },
+  "help": {
+    "title": "Help",
+    "description": "Short answers to “How do I…?” for the tasks you can do here.",
+    "drawerDescription": "Steps for common tasks.",
+    "button": "Help",
+    "open": "Open this page",
+    "onThisPage": "On this page",
+    "otherTopics": "Other topics",
+    "allTopics": "All topics",
+    "seeAll": "See all help topics",
+    "empty": "There are no help topics for your role yet.",
+    "groups": {
+      "setup": "Set up your school",
+      "daily": "Day to day"
+    },
+    "topics": {
+      "addYear": {
+        "title": "Create an academic year",
+        "step1": "Open Academic Years and click New Year.",
+        "step2": "Enter the name and the start and end dates, then save.",
+        "step3": "Make sure it is the active year: the timetable, teaching and My classes all follow it."
+      },
+      "addTerm": {
+        "title": "Add a term",
+        "step1": "On the year's card, click Add Term.",
+        "step2": "Enter the term's name and dates. Grades and report cards are entered per term."
+      },
+      "addClass": {
+        "title": "Create a class and a section",
+        "step1": "Open Classes & Sections and click New Class.",
+        "step2": "Name the class and save.",
+        "step3": "On the class, add a section such as A. Students, attendance and grades are organised by section."
+      },
+      "addSubject": {
+        "title": "Add a subject",
+        "step1": "Open Subjects and click Add subject.",
+        "step2": "Enter the name and the code.",
+        "step3": "Choose a class, or leave it as All classes for a subject taught everywhere."
+      },
+      "addStaff": {
+        "title": "Add a teacher or staff member",
+        "step1": "Open Staff Directory and click Add Staff.",
+        "step2": "Fill in Basic Info and Contact.",
+        "step3": "Pick a Login role such as Teacher so they get an email link to set a password. Choose No login yet to add them without one.",
+        "step4": "Added them without a login? Open their record and click Create login in the Login card."
+      },
+      "assignTeacher": {
+        "title": "Choose who teaches a subject",
+        "step1": "Open Subjects and click Teachers on the subject's row.",
+        "step2": "Pick a teacher for each section, or use Same teacher for all sections.",
+        "step3": "It saves as you choose and applies to the whole academic year.",
+        "step4": "A teacher marked (no login yet) cannot be picked. Give them a login from their Staff record first."
+      },
+      "buildTimetable": {
+        "title": "Build the timetable",
+        "step1": "Open Timetable and choose a section.",
+        "step2": "Click an empty period.",
+        "step3": "Choose the subject and the teacher, then click Add. The teacher assigned to that subject is filled in for you."
+      },
+      "addStudent": {
+        "title": "Add students",
+        "step1": "Open Students and click Add Student, or Import CSV to add many at once.",
+        "step2": "Fill in the details and choose the section.",
+        "step3": "Save. The student appears in that section's roster."
+      },
+      "studentLogin": {
+        "title": "Let a student sign in",
+        "step1": "Open the student's record from Students.",
+        "step2": "In the Login card, click Create login.",
+        "step3": "They get an email link to set a password. The badge in the roster shows when they can sign in."
+      },
+      "myClasses": {
+        "title": "See my classes",
+        "step1": "Open My classes, or look at the cards on your dashboard.",
+        "step2": "Each class has Attendance, Grades and Students buttons that open with that class already chosen."
+      },
+      "takeAttendance": {
+        "title": "Take attendance",
+        "step1": "Open Attendance, or use the Attendance button on My classes.",
+        "step2": "Choose the class and the date.",
+        "step3": "Mark each student Present or Absent. Mark rest present fills in the others.",
+        "step4": "Click Save."
+      },
+      "enterGrades": {
+        "title": "Enter grades",
+        "step1": "Open Grades, or use the Grades button on My classes.",
+        "step2": "Choose the class, the subject and the term.",
+        "step3": "Type each student's marks, then click Save Grades.",
+        "step4": "Publish them when they are final, if you have permission."
+      }
+    }
+  },
   "dashboard": {
     "setup": {
       "title": "Set up your school",
