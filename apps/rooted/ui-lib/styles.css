@@ -1,0 +1,3 @@
+/* Design-system stylesheet: the app's own tokens and Tailwind setup, nothing else. */
+@import '../src/index.css';
+@source '../src/components/ui';

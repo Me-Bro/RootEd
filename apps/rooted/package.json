@@ -4,9 +4,11 @@
   "version": "0.0.0",
   "license": "MIT",
   "type": "module",
+  "types": "dist-ui/index.d.ts",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:ui-lib": "vite build --config vite.lib.config.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "test:e2e": "node node_modules/@playwright/test/cli.js test --project=e2e",
