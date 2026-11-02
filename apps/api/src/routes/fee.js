@@ -24,7 +24,7 @@ import {
 } from '../services/fee.service.js';
 import { sellPlan } from '../services/sale.service.js';
 import { entitlementFor } from '../services/entitlement.service.js';
-import { dayPassSales } from '../services/studyReports.service.js';
+import { dayPassSales, expiringPlans } from '../services/studyReports.service.js';
 import { resolveCentreSettings } from '../utils/centreSettings.js';
 import { canApplyAdHocDiscount } from '../utils/discountPolicy.js';
 import { summarizeFeeCollection } from '../utils/feeCollectionSummary.js';
@@ -50,6 +50,7 @@ import {
   saleSchema,
   entitlementQuerySchema,
   dayRangeQuerySchema,
+  expiringQuerySchema,
 } from '@rooted/shared/schemas';
 import { hasSeats } from '@rooted/shared/utils';
 
@@ -827,6 +828,20 @@ router.get(
     try {
       const range = dayRangeQuerySchema.parse(req.query);
       res.json(await dayPassSales(req.tenant, range));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// Members whose plan ends soon (or just ended) and who have not renewed.
+router.get(
+  '/reports/expiring-plans',
+  requireSeatsOrg,
+  requirePermission('fees:read'),
+  async (req, res, next) => {
+    try {
+      res.json(await expiringPlans(req.tenant, expiringQuerySchema.parse(req.query)));
     } catch (err) {
       next(err);
     }

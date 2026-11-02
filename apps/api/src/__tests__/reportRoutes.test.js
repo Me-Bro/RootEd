@@ -471,3 +471,97 @@ describe('GET /fee/reports/day-pass-sales', () => {
     expect((await get('/fee/reports/day-pass-sales', 'tuitionOwner', 'tuition')).status).toBe(403);
   });
 });
+
+describe('GET /fee/reports/expiring-plans', () => {
+  // Other describes leave assignments on the shared learners, so every assertion looks
+  // only at the "Exp" learners made here.
+  const endOf = (day) => `${day}T23:59:59.999+05:30`;
+  const mine = (res) => res.body.plans.filter((p) => p.firstName.startsWith('Exp'));
+  const names = (res) => mine(res).map((p) => p.firstName);
+
+  beforeAll(async () => {
+    const make = async (name, extra = {}) =>
+      mkStudent(tenants.study, `E-${name}`, `Exp${name}`, extra);
+    const sold = (student, status, day, extra = {}) =>
+      assignment(student, status, '2026-04-01T00:00:00Z', endOf(day), extra);
+
+    await sold(await make('Soon', { phone: '9811111111' }), 'paid', '2026-05-22');
+    await sold(await make('Today'), 'waived', '2026-05-20');
+    await sold(await make('Lapsed'), 'paid', '2026-05-16');
+    await sold(await make('Ancient'), 'paid', '2026-05-01');
+    await sold(await make('Far'), 'paid', '2026-06-20');
+
+    const renewed = await make('Renewed');
+    await sold(renewed, 'paid', '2026-05-21');
+    await sold(renewed, 'paid', '2026-06-20');
+    const owing = await make('Owing');
+    await sold(owing, 'paid', '2026-05-21');
+    await sold(owing, 'unpaid', '2026-06-20');
+
+    await sold(await make('Visitor', { kind: 'walk_in' }), 'paid', '2026-05-21');
+    await sold(await make('Left', { status: 'withdrawn' }), 'paid', '2026-05-21');
+    await sold(await make('Retired'), 'paid', '2026-05-21', {
+      feeStructureId: (
+        await FeeStructure.create({
+          tenantId: tenants.study._id,
+          name: 'Old plan',
+          academicYearId: ctx.monthly.academicYearId,
+          components: [{ label: 'Old', amount: 900 }],
+          plan: { kind: 'shift_plan', durationDays: 30 },
+          isActive: false,
+        })
+      )._id,
+    });
+  });
+
+  test('members ending within 3 days or lapsed within a week, soonest first, with contact and plan', async () => {
+    const res = await get('/fee/reports/expiring-plans', 'owner');
+    expect(res.status).toBe(200);
+    expect(res.body.days).toBe(3);
+    expect(names(res)).toEqual(['ExpLapsed', 'ExpToday', 'ExpRetired', 'ExpSoon']);
+
+    const soon = mine(res).find((p) => p.firstName === 'ExpSoon');
+    expect(soon).toMatchObject({
+      name: 'ExpSoon Study',
+      phone: '9811111111',
+      planName: 'Monthly',
+      state: 'expiring',
+      daysLeft: 2,
+      renewable: true,
+      renewFrom: '2026-05-22T18:30:00.000Z',
+    });
+    const lapsed = mine(res).find((p) => p.firstName === 'ExpLapsed');
+    expect(lapsed).toMatchObject({ state: 'lapsed', daysLeft: -4, renewFrom: null });
+  });
+
+  test('renewed, owing, walk-in, withdrawn and long-gone members are not listed', async () => {
+    const res = await get('/fee/reports/expiring-plans?days=30', 'owner');
+    const listed = names(res);
+    for (const left of ['Renewed', 'Owing', 'Visitor', 'Left', 'Ancient']) {
+      expect(listed).not.toContain(`Exp${left}`);
+    }
+    expect(listed).not.toContain('ExpFar'); // 31 days out, one past the widest window
+  });
+
+  test('a plan taken off sale is listed but cannot be renewed with one tap', async () => {
+    const res = await get('/fee/reports/expiring-plans', 'owner');
+    expect(mine(res).find((p) => p.firstName === 'ExpRetired').renewable).toBe(false);
+  });
+
+  test('days narrows the window; a bad value is rejected', async () => {
+    expect(names(await get('/fee/reports/expiring-plans?days=1', 'owner'))).toEqual([
+      'ExpLapsed',
+      'ExpToday',
+      'ExpRetired', // ends tomorrow
+    ]);
+    expect((await get('/fee/reports/expiring-plans?days=0', 'owner')).status).toBe(400);
+    expect((await get('/fee/reports/expiring-plans?days=abc', 'owner')).status).toBe(400);
+  });
+
+  test('the front desk may read it, a teacher may not, and it is tenant-scoped', async () => {
+    expect((await get('/fee/reports/expiring-plans', 'desk')).status).toBe(200);
+    expect((await get('/fee/reports/expiring-plans', 'teacher')).status).toBe(403);
+    expect((await get('/fee/reports/expiring-plans', 'owner2', 'study2')).body.plans).toEqual([]);
+    expect((await get('/fee/reports/expiring-plans', 'tuitionOwner', 'tuition')).status).toBe(403);
+  });
+});

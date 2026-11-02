@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
@@ -28,8 +28,12 @@ export default function SellPage() {
   const queryClient = useQueryClient();
   const permissions = user?.permissions ?? [];
 
-  const [learner, setLearner] = useState(null);
-  const [planId, setPlanId] = useState('');
+  // The desk hands over a learner (Sell a plan) or a learner, plan and start date
+  // (Renew on the expiring list). `renewFrom` is set only for a plan still running.
+  const handoff = useLocation().state;
+  const [learner, setLearner] = useState(handoff?.learner ?? null);
+  const [planId, setPlanId] = useState(handoff?.feeStructureId ?? '');
+  const [renewFrom, setRenewFrom] = useState(handoff?.renewFrom ?? null);
   const [discountId, setDiscountId] = useState('');
   const [method, setMethod] = useState('cash');
   const [error, setError] = useState('');
@@ -72,6 +76,7 @@ export default function SellPage() {
           feeStructureId: planId,
           paymentMethod: method,
           ...(discountId ? { discountId } : {}),
+          ...(renewFrom ? { startDate: renewFrom } : {}),
         })
         .then((r) => r.data),
     onSuccess: (data) => {
@@ -79,8 +84,10 @@ export default function SellPage() {
       setDone({ ...data, learner, plan });
       setLearner(null);
       setPlanId('');
+      setRenewFrom(null);
       setDiscountId('');
       queryClient.invalidateQueries({ queryKey: ['entitlement'] });
+      queryClient.invalidateQueries({ queryKey: ['expiring-plans'] });
       queryClient.invalidateQueries({ queryKey: ['fee-assignments'] });
     },
     onError: (err) => setError(apiError(err, t('studyCenter.sell.failed'))),
@@ -151,6 +158,7 @@ export default function SellPage() {
               value={learner}
               onChange={(l) => {
                 setLearner(l);
+                setRenewFrom(null); // the start date belonged to the previous learner
                 setDone(null);
               }}
               allowWalkIn
@@ -204,6 +212,12 @@ export default function SellPage() {
               </SelectItem>
             ))}
           </SelectField>
+
+          {renewFrom && (
+            <p className="text-sm text-muted-foreground" data-testid="sale-starts-on">
+              {t('studyCenter.sell.startsOn', { date: formatDate(renewFrom) })}
+            </p>
+          )}
 
           {plan && (
             <p className="text-sm" data-testid="sale-price">

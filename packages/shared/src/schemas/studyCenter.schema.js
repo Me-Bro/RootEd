@@ -118,6 +118,10 @@ export const monthQuerySchema = z.object({
   month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Use YYYY-MM'),
 });
 export const dateQuerySchema = z.object({ date: dayString });
+// How many days ahead "expiring soon" looks (plans that ended in the last week show too).
+export const expiringQuerySchema = z.object({
+  days: z.coerce.number().int().min(1).max(30).default(3),
+});
 export const dayRangeQuerySchema = z
   .object({ from: dayString.optional(), to: dayString.optional() })
   .refine((v) => !v.from || !v.to || v.to >= v.from, {
