@@ -75,7 +75,7 @@ export default function OrgSwitcher() {
           <div
             role="menu"
             onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
-            className="absolute right-0 z-50 mt-1 w-64 rounded-lg border border-border bg-card p-1 shadow-lg"
+            className="fixed inset-x-2 z-50 mt-1 sm:absolute sm:inset-x-auto sm:right-0 sm:w-64 rounded-lg border border-border bg-card p-1 shadow-lg"
           >
             <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
               {t('org.yourOrganizations')}
