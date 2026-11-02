@@ -11,6 +11,7 @@ import { Badge } from '../../components/ui/Badge.jsx';
 import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
 import LearnerPicker from '../../components/study/LearnerPicker.jsx';
+import ExpiringPlans from '../../components/study/ExpiringPlans.jsx';
 import { formatDate } from '../../utils/intl.js';
 import { apiError } from '../../utils/studyCenter.js';
 
@@ -25,6 +26,7 @@ export default function FrontDeskPage() {
   const location = useLocation();
   const queryClient = useQueryClient();
   const canSeeFees = (user?.permissions ?? []).includes('fees:read');
+  const canSell = (user?.permissions ?? []).includes('fees:collect');
 
   const [learner, setLearner] = useState(location.state?.learner ?? null);
   const [seatId, setSeatId] = useState('');
@@ -133,6 +135,8 @@ export default function FrontDeskPage() {
           </CardContent>
         </Card>
       )}
+
+      {canSeeFees && <ExpiringPlans canRenew={canSell} />}
 
       <Card>
         <CardContent className="flex flex-col gap-4 pt-4">

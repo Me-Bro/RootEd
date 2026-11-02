@@ -11,6 +11,8 @@ import { fullName as nameOf } from '../utils/fullName.js';
 
 const fullName = (person) => nameOf(person, '—');
 import {
+  LAPSED_DAYS,
+  expiringPlans as classifyExpiring,
   groupSalesByDay,
   hoursPerLearner,
   nextMonth,
@@ -96,6 +98,65 @@ export async function noShowsOn(tenant, date) {
   }));
   rows.sort((a, b) => a.name.localeCompare(b.name));
   return { date, noShows: rows };
+}
+
+/**
+ * Members whose plan ends within `days` days, or ended in the last week, with no
+ * renewal. Walk-ins and inactive learners are left out: a day pass is meant to end.
+ */
+export async function expiringPlans(tenant, { days = 3 } = {}, now = new Date()) {
+  const tenantId = tenant._id;
+  const since = zonedMidnight(
+    addDaysToDayString(dayStringInTz(now, tenant.timezone), -LAPSED_DAYS),
+    tenant.timezone
+  );
+  // Everything ending on or after `since`, future renewals included, so a member who
+  // has already renewed is judged by the newer assignment and not listed.
+  const assignments = await FeeAssignment.find(
+    { tenantId, coversTo: { $gte: since } },
+    'studentId feeStructureId status coversTo'
+  ).lean();
+
+  const rows = classifyExpiring({ assignments, now, timezone: tenant.timezone, days });
+  if (!rows.length) return { days, plans: [] };
+
+  const [members, structures] = await Promise.all([
+    Student.find(
+      {
+        tenantId,
+        _id: { $in: rows.map((r) => r.studentId) },
+        kind: { $ne: 'walk_in' },
+        status: 'active',
+      },
+      'firstName lastName phone'
+    ).lean(),
+    FeeStructure.find(
+      { tenantId, _id: { $in: rows.map((r) => r.feeStructureId) } },
+      'name isActive'
+    ).lean(),
+  ]);
+  const byId = new Map(members.map((m) => [String(m._id), m]));
+  const planById = new Map(structures.map((s) => [String(s._id), s]));
+
+  return {
+    days,
+    plans: rows
+      .filter((r) => byId.has(String(r.studentId)))
+      .map((r) => {
+        const member = byId.get(String(r.studentId));
+        const plan = planById.get(String(r.feeStructureId));
+        return {
+          ...r,
+          firstName: member.firstName,
+          lastName: member.lastName,
+          name: fullName(member),
+          phone: member.phone ?? null,
+          planName: plan?.name ?? null,
+          // A plan taken off sale can still be shown, but cannot be renewed with one tap.
+          renewable: Boolean(plan) && plan.isActive !== false,
+        };
+      }),
+  };
 }
 
 /** Day pass sales per day (count and money), refunds left out. */

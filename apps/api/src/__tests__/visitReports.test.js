@@ -1,4 +1,5 @@
 import {
+  expiringPlans,
   groupSalesByDay,
   hoursPerLearner,
   nextMonth,
@@ -232,5 +233,82 @@ describe('groupSalesByDay', () => {
 
   test('no payments gives no days', () => {
     expect(groupSalesByDay({ payments: [], timezone: 'Asia/Kolkata' })).toEqual([]);
+  });
+});
+
+describe('expiringPlans', () => {
+  const now = d('2026-05-20T10:00:00Z'); // 15:30 IST on 20 May
+  const timezone = 'Asia/Kolkata';
+  // coversTo is the last millisecond of the last covered day on the centre's clock.
+  const endOf = (day) => new Date(Date.parse(`${day}T23:59:59.999+05:30`));
+  const plan = (studentId, status, lastDay, extra = {}) => ({
+    studentId,
+    status,
+    feeStructureId: 'f1',
+    coversTo: endOf(lastDay),
+    ...extra,
+  });
+  const run = (assignments, extra = {}) =>
+    expiringPlans({ assignments, now, timezone, ...extra }).map((r) => [
+      r.studentId,
+      r.state,
+      r.daysLeft,
+    ]);
+
+  test('lists plans ending within the window, lapsed ones first, with days left', () => {
+    const rows = run([
+      plan('soon', 'paid', '2026-05-22'),
+      plan('today', 'waived', '2026-05-20'),
+      plan('lapsed', 'paid', '2026-05-16'),
+      plan('far', 'paid', '2026-06-20'),
+    ]);
+    expect(rows).toEqual([
+      ['lapsed', 'lapsed', -4],
+      ['today', 'expiring', 0],
+      ['soon', 'expiring', 2],
+    ]);
+  });
+
+  test('the window edges: days ahead is inclusive, a week back is inclusive', () => {
+    expect(run([plan('a', 'paid', '2026-05-23')]).length).toBe(1); // +3
+    expect(run([plan('a', 'paid', '2026-05-24')]).length).toBe(0); // +4
+    expect(run([plan('a', 'paid', '2026-05-24')], { days: 5 }).length).toBe(1);
+    expect(run([plan('a', 'paid', '2026-05-13')]).length).toBe(1); // -7
+    expect(run([plan('a', 'paid', '2026-05-12')]).length).toBe(0); // -8
+  });
+
+  test('a member with a later plan has renewed and is not listed', () => {
+    expect(run([plan('a', 'paid', '2026-05-21'), plan('a', 'paid', '2026-06-20')]).length).toBe(0);
+  });
+
+  test('a later unpaid renewal is a collection matter, not a second sale', () => {
+    expect(run([plan('a', 'paid', '2026-05-21'), plan('a', 'unpaid', '2026-06-20')]).length).toBe(
+      0
+    );
+    expect(run([plan('a', 'partial', '2026-05-21')]).length).toBe(0);
+  });
+
+  test('a renewal starts the day after an expiring plan, and today for a lapsed one', () => {
+    const [lapsed, soon] = expiringPlans({
+      assignments: [plan('lapsed', 'paid', '2026-05-16'), plan('soon', 'paid', '2026-05-22')],
+      now,
+      timezone,
+    });
+    expect(soon.renewFrom.toISOString()).toBe('2026-05-22T18:30:00.000Z'); // 23 May 00:00 IST
+    expect(lapsed.renewFrom).toBeNull();
+  });
+
+  test('uses the centre’s calendar: 00:30 IST on the 21st is still the 21st', () => {
+    const early = d('2026-05-20T19:00:00Z'); // 00:30 IST on 21 May
+    const r = expiringPlans({
+      assignments: [plan('a', 'paid', '2026-05-21')],
+      now: early,
+      timezone,
+    });
+    expect(r[0].daysLeft).toBe(0);
+  });
+
+  test('an assignment with no coverage (a school fee) is ignored', () => {
+    expect(run([{ studentId: 'a', status: 'paid' }])).toEqual([]);
   });
 });

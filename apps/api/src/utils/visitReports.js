@@ -98,6 +98,49 @@ export function noShows({ members, assignments, visits, dayStart, dayEnd }) {
   return rows;
 }
 
+// How long after its end a plan still shows as "lapsed" on the expiring list.
+export const LAPSED_DAYS = 7;
+
+const dayNumber = (day) => Date.parse(day) / 86_400_000;
+
+/**
+ * Members whose plan ends soon or just ended, and who have not renewed. Each member
+ * is judged by their latest-ending assignment: if it is paid (or waived) and ends
+ * within [today - lapsedDays, today + days] on the centre's calendar, they are listed.
+ * A later unpaid or partial assignment means they already renewed (the balance is a
+ * collection matter, not a second sale), so they are left off. `daysLeft` is 0 on the
+ * last covered day and negative once lapsed. `renewFrom` is when a renewal should
+ * start (null once lapsed: start today). Soonest first.
+ */
+export function expiringPlans({ assignments, now, timezone, days = 3, lapsedDays = LAPSED_DAYS }) {
+  const latest = new Map();
+  for (const a of assignments) {
+    if (!a.coversTo) continue;
+    const key = String(a.studentId);
+    const best = latest.get(key);
+    if (!best || new Date(a.coversTo) > new Date(best.coversTo)) latest.set(key, a);
+  }
+
+  const today = dayNumber(dayStringInTz(now, timezone));
+  const rows = [];
+  for (const a of latest.values()) {
+    if (!PAID.has(a.status)) continue;
+    const daysLeft = dayNumber(dayStringInTz(new Date(a.coversTo), timezone)) - today;
+    if (daysLeft > days || daysLeft < -lapsedDays) continue;
+    rows.push({
+      studentId: a.studentId,
+      feeStructureId: a.feeStructureId,
+      coversTo: new Date(a.coversTo),
+      daysLeft,
+      state: daysLeft < 0 ? 'lapsed' : 'expiring',
+      // `coversTo` is the last millisecond covered, so +1ms is the next day's start: a
+      // renewal begins there and loses no paid days. A lapsed member renews from today.
+      renewFrom: daysLeft < 0 ? null : new Date(new Date(a.coversTo).getTime() + 1),
+    });
+  }
+  return rows.sort((a, b) => a.daysLeft - b.daysLeft);
+}
+
 /** Day pass payments grouped by day on the centre's clock: { day, count, revenue }. */
 export function groupSalesByDay({ payments, timezone }) {
   const days = new Map();
