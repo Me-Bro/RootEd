@@ -6,8 +6,9 @@ import { logger } from '../utils/logger.js';
 import { Student } from '../models/Student.js';
 import { Section } from '../models/Section.js';
 import { AppError } from '../middleware/errorHandler.js';
-import { recordPayment } from './fee.service.js';
+import { recordPayment, refundPayment } from './fee.service.js';
 import { coverageFor } from '../utils/planCoverage.js';
+import { dayStringInTz } from '../utils/dayKey.js';
 import { pickStandingDiscount } from '../utils/discountPolicy.js';
 import {
   calculateMandatoryTotal,
@@ -131,6 +132,55 @@ export async function sellPlan({
     await FeeAssignment.deleteOne({ _id: assignment._id, tenantId });
     throw err;
   }
+}
+
+/**
+ * Undoes a sale made by mistake: refunds its payments, then removes the assignment so
+ * the learner's plan, the expiring list and the defaulters list all forget it (a
+ * refund alone leaves an unpaid assignment behind). The audit log keeps the record.
+ *
+ * The owner may undo any plan sale. Anyone else may undo only a sale they took
+ * themselves, on the centre's current day: that covers a slip at the desk, not a
+ * rewrite of last week's takings.
+ */
+export async function voidSale({
+  tenant,
+  assignmentId,
+  reason,
+  actorId,
+  isAdmin,
+  now = new Date(),
+}) {
+  const tenantId = tenant._id;
+
+  const assignment = await FeeAssignment.findOne({ _id: assignmentId, tenantId }).lean();
+  if (!assignment) throw new AppError('Sale not found', 404);
+  if (!assignment.coversFrom || !assignment.coversTo) {
+    throw new AppError('This is not a plan sale', 422);
+  }
+
+  const live = await FeePayment.find({ tenantId, assignmentId, refunded: { $ne: true } }).lean();
+
+  if (!isAdmin) {
+    const sameDay =
+      dayStringInTz(assignment.createdAt, tenant.timezone) === dayStringInTz(now, tenant.timezone);
+    // A free (fully discounted) sale has no payment; the person who waived it took it.
+    const takers = live.length ? live.map((p) => p.collectedBy) : [assignment.waivedBy];
+    const mine = takers.every((id) => id && String(id) === String(actorId));
+    if (!sameDay || !mine) throw new AppError('Only the owner can undo this sale', 403);
+  }
+
+  for (const payment of live) {
+    await refundPayment({
+      paymentId: payment._id,
+      tenantId,
+      reason: `Sale undone: ${reason}`,
+      actorId,
+    });
+  }
+  await FeeAssignment.deleteOne({ _id: assignmentId, tenantId });
+
+  return { assignment, refundedPaymentIds: live.map((p) => p._id) };
 }
 
 async function chooseDiscount({

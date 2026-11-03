@@ -722,3 +722,110 @@ describe('the existing discount route follows the tenant’s policy', () => {
     expect(accountant.body.discountAmount).toBe(100);
   });
 });
+
+describe('POST /fee/sales/:id/void', () => {
+  const sell = async (who, student) => {
+    const res = await call('post', '/fee/sales', who, {
+      studentId: String(student._id),
+      feeStructureId: ctx.monthly._id,
+      paymentMethod: 'cash',
+    });
+    expect(res.status).toBe(201);
+    return res.body.assignment._id;
+  };
+  const voidIt = (who, id, body = { reason: 'wrong learner' }, tenant) =>
+    call('post', `/fee/sales/${id}/void`, who, body, tenant);
+  const entitlement = async (student) =>
+    (await call('get', `/fee/entitlement?studentId=${student._id}`, 'owner')).body.status;
+
+  test('the desk undoes its own sale today: payment refunded, plan gone, audited', async () => {
+    const student = await mkStudent(tenants.study, 'V-1', 'Voidone');
+    const id = await sell('desk', student);
+    expect(await entitlement(student)).toBe('valid');
+
+    const res = await voidIt('desk', id);
+    expect(res.status).toBe(200);
+    expect(res.body.refundedPaymentIds).toHaveLength(1);
+
+    expect(await FeeAssignment.countDocuments({ _id: id })).toBe(0);
+    const payments = await FeePayment.find({
+      tenantId: tenants.study._id,
+      studentId: student._id,
+    }).lean();
+    expect(payments).toHaveLength(1);
+    expect(payments[0]).toMatchObject({
+      refunded: true,
+      refundReason: 'Sale undone: wrong learner',
+    });
+    expect(await entitlement(student)).toBe('none');
+    expect(auditLog).toHaveBeenCalledWith(expect.objectContaining({ action: 'feeSale.void' }));
+
+    // Gone means gone: a second attempt finds nothing.
+    expect((await voidIt('desk', id)).status).toBe(404);
+  });
+
+  test('a reason is required', async () => {
+    const student = await mkStudent(tenants.study, 'V-2', 'Voidtwo');
+    const id = await sell('desk', student);
+    expect((await voidIt('desk', id, {})).status).toBe(400);
+    expect((await voidIt('desk', id, { reason: '  ' })).status).toBe(400);
+    expect(await FeeAssignment.countDocuments({ _id: id })).toBe(1);
+  });
+
+  test('the desk cannot undo the owner’s sale or an older one; the owner can undo either', async () => {
+    const student = await mkStudent(tenants.study, 'V-3', 'Voidthree');
+    const ownerSale = await sell('owner', student);
+    expect((await voidIt('desk', ownerSale)).status).toBe(403);
+
+    const deskSale = await sell('desk', student);
+    await FeeAssignment.collection.updateOne(
+      { _id: new mongoose.Types.ObjectId(deskSale) },
+      { $set: { createdAt: new Date(Date.now() - 3 * 86_400_000) } }
+    );
+    expect((await voidIt('desk', deskSale)).status).toBe(403);
+
+    expect((await voidIt('owner', deskSale)).status).toBe(200);
+    expect((await voidIt('owner', ownerSale)).status).toBe(200);
+    expect(
+      await FeeAssignment.countDocuments({ tenantId: tenants.study._id, studentId: student._id })
+    ).toBe(0);
+  });
+
+  test('without fees:collect, or from another centre, it is refused', async () => {
+    const student = await mkStudent(tenants.study, 'V-4', 'Voidfour');
+    const id = await sell('desk', student);
+    expect((await voidIt('teacher', id)).status).toBe(403);
+    expect((await voidIt('owner2', id, undefined, 'study2')).status).toBe(404);
+    expect((await voidIt('desk', 'not-an-id')).status).toBe(404);
+    expect(await FeeAssignment.countDocuments({ _id: id })).toBe(1);
+  });
+
+  test('a fee that is not a plan sale cannot be voided', async () => {
+    const student = await mkStudent(tenants.study, 'V-5', 'Voidfive');
+    const a = await FeeAssignment.create({
+      tenantId: tenants.study._id,
+      studentId: student._id,
+      feeStructureId: ctx.regular._id,
+      academicYearId: ctx.year._id,
+      totalAmount: 50,
+    });
+    expect((await voidIt('owner', a._id)).status).toBe(422);
+  });
+
+  test('a member who was refunded earlier is cleaned up by the owner', async () => {
+    const student = await mkStudent(tenants.study, 'V-6', 'Voidsix');
+    const id = await sell('desk', student);
+    const payment = await FeePayment.findOne({
+      tenantId: tenants.study._id,
+      assignmentId: id,
+    }).lean();
+    expect((await call('post', `/fee/payments/${payment._id}/refund`, 'owner', {})).status).toBe(
+      200
+    );
+    // The refund left an unpaid plan behind. The desk cannot sweep it; the owner can.
+    expect(await entitlement(student)).toBe('unpaid');
+    expect((await voidIt('desk', id)).status).toBe(403);
+    expect((await voidIt('owner', id)).status).toBe(200);
+    expect(await entitlement(student)).toBe('none');
+  });
+});

@@ -22,7 +22,7 @@ import {
   applyDiscountToAssignment,
   refundPayment,
 } from '../services/fee.service.js';
-import { sellPlan } from '../services/sale.service.js';
+import { sellPlan, voidSale } from '../services/sale.service.js';
 import { entitlementFor } from '../services/entitlement.service.js';
 import { dayPassSales, expiringPlans } from '../services/studyReports.service.js';
 import { resolveCentreSettings } from '../utils/centreSettings.js';
@@ -48,6 +48,7 @@ import {
   waiveFeeAssignmentSchema,
   refundFeePaymentSchema,
   saleSchema,
+  voidSaleSchema,
   entitlementQuerySchema,
   dayRangeQuerySchema,
   expiringQuerySchema,
@@ -813,6 +814,41 @@ router.post(
 
       const receiptUrl = payment?.receiptPdfKey ? await getSignedUrl(payment.receiptPdfKey) : null;
       res.status(201).json({ assignment, payment, receiptUrl, discountAmount });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// Undo a sale made by mistake. fees:collect gets in; voidSale decides whether this
+// caller may undo this sale (owner: any; desk: their own, today).
+router.post(
+  '/sales/:id/void',
+  requireSeatsOrg,
+  requirePermission('fees:collect'),
+  validate(voidSaleSchema),
+  async (req, res, next) => {
+    try {
+      if (!/^[0-9a-f]{24}$/i.test(req.params.id))
+        return res.status(404).json({ error: 'Not found' });
+      const tenantId = req.tenant._id;
+      const { assignment, refundedPaymentIds } = await voidSale({
+        tenant: req.tenant,
+        assignmentId: req.params.id,
+        reason: req.body.reason,
+        actorId: req.user.sub,
+        isAdmin: await userHasPermission(req, 'tenant:admin'),
+      });
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'feeSale.void',
+        target: { model: 'FeeAssignment', id: assignment._id },
+        before: assignment,
+        after: { reason: req.body.reason, refundedPaymentIds },
+        ip: req.ip,
+      });
+      res.json({ voided: true, refundedPaymentIds });
     } catch (err) {
       next(err);
     }
