@@ -149,6 +149,9 @@ export const saleSchema = z
   })
   .strict();
 
+// Undo a sale made by mistake (wrong learner or plan). The reason is kept in the audit log.
+export const voidSaleSchema = z.object({ reason: z.string().trim().min(1).max(200) }).strict();
+
 export const entitlementQuerySchema = z.object({ studentId: objectId });
 
 export const applyFeeDiscountSchema = z.object({
