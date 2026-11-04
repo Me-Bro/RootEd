@@ -704,6 +704,10 @@
         "batch": "Batch",
         "noBatch": "No batch yet",
         "email": "Email (optional, gives a login)",
+        "college": "College",
+        "branch": "Branch",
+        "graduationYear": "Graduation year",
+        "skills": "Skills (comma separated)",
         "submit": "Add student"
       },
       "import": {

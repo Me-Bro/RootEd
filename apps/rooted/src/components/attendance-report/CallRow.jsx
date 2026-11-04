@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Phone, ChevronRight } from 'lucide-react';
+import { Phone, MessageCircle, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { waLink } from '@rooted/shared/utils';
 import { cn } from '../../lib/utils.js';
 
 function initials(firstName, lastName) {
@@ -8,14 +9,16 @@ function initials(firstName, lastName) {
 }
 
 /**
- * One roster row. Defaulters get an actionable Call chip (or "Add contact"
- * when there's no guardian phone on file, so the tap is never a dead end);
+ * One roster row. Defaulters get an actionable Call chip and, when the primary
+ * guardian has a WhatsApp number, a WhatsApp chip (or "Add contact" when
+ * there's neither on file, so the tap is never a dead end);
  * everyone else just shows their attendance, no call action to take.
  */
 export default function CallRow({ student, onCall }) {
   const { t } = useTranslation();
   const { firstName, lastName, admissionNo, presentCount, totalCount, pct, isDefaulter } = student;
   const hasPhone = Boolean(student.guardianPhone);
+  const whatsappUrl = waLink(student.guardianWhatsapp);
 
   return (
     <div className={cn('flex items-center gap-3 p-3', isDefaulter && 'bg-destructive/5')}>
@@ -41,15 +44,30 @@ export default function CallRow({ student, onCall }) {
       </div>
 
       {isDefaulter ? (
-        hasPhone ? (
-          <button
-            type="button"
-            onClick={() => onCall(student)}
-            className="flex shrink-0 items-center gap-1 rounded-full bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20"
-          >
-            <Phone size={13} />
-            {t('academic.attendanceReport.call')}
-          </button>
+        hasPhone || whatsappUrl ? (
+          <div className="flex shrink-0 items-center gap-1.5">
+            {hasPhone && (
+              <button
+                type="button"
+                onClick={() => onCall(student)}
+                className="flex items-center gap-1 rounded-full bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive hover:bg-destructive/20"
+              >
+                <Phone size={13} />
+                {t('academic.attendanceReport.call')}
+              </button>
+            )}
+            {whatsappUrl && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-400"
+              >
+                <MessageCircle size={13} />
+                {t('academic.attendanceReport.whatsapp')}
+              </a>
+            )}
+          </div>
         ) : (
           <Link
             to={`/academic/students/${student.studentId}`}
