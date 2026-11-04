@@ -2,6 +2,7 @@ import { useDeferredValue, useState } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Upload, UserPlus } from 'lucide-react';
+import { studentGroupFor } from '@rooted/shared/utils';
 import api from '@/lib/api.js';
 import { useAuth } from '@/contexts/useAuth.js';
 import { hasPermission } from '@/lib/access.js';
@@ -43,21 +44,40 @@ function useBatches() {
 function AddStudent({ batches, onDone }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const { user } = useAuth();
+  // The API accepts college fields only from a college, so only a college is asked.
+  const isCollege = studentGroupFor(user?.orgType) === 'college';
   const [form, setForm] = useState({
     admissionNo: '',
     firstName: '',
     lastName: '',
     sectionId: '',
     email: '',
+    college: '',
+    branch: '',
+    graduationYear: '',
+    skills: '',
   });
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
   const add = useMutation({
     mutationFn: async () => {
-      const { email, sectionId, ...rest } = form;
+      const { email, sectionId, college, branch, graduationYear, skills, ...rest } = form;
+      const skillList = skills
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean);
       const { data: student } = await api.post('/academic/students', {
         ...rest,
         ...(sectionId ? { sectionId } : {}),
+        ...(isCollege
+          ? {
+              ...(college.trim() ? { college: college.trim() } : {}),
+              ...(branch.trim() ? { branch: branch.trim() } : {}),
+              ...(graduationYear.trim() ? { graduationYear: graduationYear.trim() } : {}),
+              ...(skillList.length ? { skills: skillList } : {}),
+            }
+          : {}),
       });
       if (email) await api.post(`/academic/students/${student._id}/account`, { email });
     },
@@ -117,6 +137,31 @@ function AddStudent({ batches, onDone }) {
             value={form.email}
             onChange={set('email')}
           />
+          {isCollege && (
+            <>
+              <Input
+                label={t('people.students.add.college')}
+                value={form.college}
+                onChange={set('college')}
+              />
+              <Input
+                label={t('people.students.add.branch')}
+                value={form.branch}
+                onChange={set('branch')}
+              />
+              <Input
+                type="number"
+                label={t('people.students.add.graduationYear')}
+                value={form.graduationYear}
+                onChange={set('graduationYear')}
+              />
+              <Input
+                label={t('people.students.add.skills')}
+                value={form.skills}
+                onChange={set('skills')}
+              />
+            </>
+          )}
           <div className="flex items-end">
             <Button type="submit" disabled={add.isPending}>
               {t('people.students.add.submit')}
@@ -259,6 +304,11 @@ function StudentRow({ student, canWrite, canSuspend }) {
       <TableCell>
         <div className="font-medium">{name}</div>
         <div className="text-xs text-muted-foreground">{student.admissionNo}</div>
+        {(student.branch || student.graduationYear) && (
+          <div className="text-xs text-muted-foreground">
+            {[student.branch, student.graduationYear].filter(Boolean).join(' · ')}
+          </div>
+        )}
       </TableCell>
       {canWrite && (
         <TableCell>

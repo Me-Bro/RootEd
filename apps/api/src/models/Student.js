@@ -1,10 +1,18 @@
 import mongoose from 'mongoose';
+import {
+  BLOOD_GROUPS,
+  DOCUMENT_KINDS,
+  STUDENT_CATEGORIES,
+  STUDENT_STATUSES,
+} from '@rooted/shared/schemas';
 import { tenantScopePlugin } from './plugins/tenantScope.js';
 
 const documentSchema = new mongoose.Schema(
   {
     name: String,
     key: String,
+    // Absent on files saved before types existed; readers treat that as 'other'.
+    kind: { type: String, enum: DOCUMENT_KINDS },
     uploadedAt: { type: Date, default: Date.now },
   },
   { _id: false }
@@ -31,14 +39,60 @@ const studentSchema = new mongoose.Schema(
     kind: { type: String, enum: ['member', 'walk_in'], default: 'member' },
     dateOfBirth: { type: Date },
     gender: { type: String, enum: ['male', 'female', 'other'] },
+    // "Same as phone" is a flag, not a copied number, so the WhatsApp number
+    // follows the phone when it changes (see resolveWhatsapp in @rooted/shared).
+    whatsappNumber: { type: String, trim: true },
+    whatsappSameAsPhone: { type: Boolean },
+    // Rows from before isPrimary existed have none flagged: the first listed
+    // guardian is then the primary (primaryContact in @rooted/shared).
     parentContacts: [
       {
         name: { type: String },
         phone: { type: String },
         relation: { type: String },
+        email: { type: String },
+        whatsappNumber: { type: String },
+        whatsappSameAsPhone: { type: Boolean },
+        isPrimary: { type: Boolean },
+        isEmergency: { type: Boolean },
       },
     ],
-    status: { type: String, enum: ['active', 'graduated', 'withdrawn'], default: 'active' },
+    address: {
+      line1: { type: String },
+      line2: { type: String },
+      city: { type: String },
+      state: { type: String },
+      pincode: { type: String },
+    },
+    admissionDate: { type: Date },
+    status: { type: String, enum: STUDENT_STATUSES, default: 'active' },
+    // Why and when the status last changed. The reason is cleared when the
+    // student goes back to active; the date is written server-side only.
+    statusReason: { type: String },
+    statusChangedAt: { type: Date },
+    bloodGroup: { type: String, enum: BLOOD_GROUPS },
+    allergies: { type: String },
+    medicalNotes: { type: String },
+    // The full Aadhaar number, encrypted per tenant (encryptField). select:false
+    // keeps it out of every read, lean and populate included, so a route has to
+    // ask for it by name. Only the last four digits are ever shown.
+    aadhaarEnc: { type: String, select: false },
+    aadhaarLast4: { type: String },
+    // Extra fields by org type (studentGroupFor in @rooted/shared): the API only
+    // accepts the group that matches the tenant.
+    previousSchool: { type: String },
+    tcNumber: { type: String },
+    motherTongue: { type: String },
+    nationality: { type: String },
+    transportRoute: { type: String },
+    transportStop: { type: String },
+    category: { type: String, enum: STUDENT_CATEGORIES },
+    examTarget: { type: String },
+    joiningSource: { type: String },
+    college: { type: String },
+    branch: { type: String },
+    graduationYear: { type: Number },
+    skills: { type: [String], default: undefined },
     photoKey: { type: String },
     // Whether the student agreed to share their resume and scores with
     // employers. Written only by PUT /training/students/:id/consent — never by

@@ -20,6 +20,8 @@ import ClassGrid from '../../components/students/ClassGrid.jsx';
 import SetupGap from '../../components/academic/SetupGap.jsx';
 import RosterInfiniteList from '../../components/students/RosterInfiniteList.jsx';
 import CreateSectionDialog from '../../components/students/CreateSectionDialog.jsx';
+import StudentExtraFields from '../../components/students/StudentExtraFields.jsx';
+import { formFromStudent, studentPayload } from '../../components/students/studentForm.js';
 import { useAuth } from '../../contexts/useAuth.js';
 
 const LAST_SECTION_KEY = 'students:lastSectionId';
@@ -28,32 +30,27 @@ const NEW_SECTION = '__new__';
 
 function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCreateSection }) {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const orgType = user?.orgType;
   const queryClient = useQueryClient();
   const [showCreateSection, setShowCreateSection] = useState(false);
-  const [form, setForm] = useState({
-    admissionNo: '',
-    firstName: '',
-    lastName: '',
-    sectionId: '',
-    dateOfBirth: '',
-    gender: '',
-  });
+  const [form, setForm] = useState(() => formFromStudent({}, orgType));
   const [error, setError] = useState('');
 
   const mutation = useMutation({
-    mutationFn: (data) => api.post('/academic/students', data).then((r) => r.data),
+    mutationFn: (data) =>
+      api
+        .post('/academic/students', studentPayload(data, { mode: 'create', orgType }))
+        .then((r) => r.data),
     onSuccess: (student) => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
-      onAdded(`${student.firstName} ${student.lastName}`);
-      onOpenChange(false);
-      setForm({
-        admissionNo: '',
-        firstName: '',
-        lastName: '',
-        sectionId: '',
-        dateOfBirth: '',
-        gender: '',
+      onAdded({
+        name: `${student.firstName} ${student.lastName}`,
+        email: student.account?.email,
+        loginError: student.loginError,
       });
+      onOpenChange(false);
+      setForm(formFromStudent({}, orgType));
       setError('');
     },
     onError: (err) => setError(err.response?.data?.error || t('academic.students.addFailed')),
@@ -99,8 +96,11 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
             required
           />
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">{t('academic.students.section')}</label>
+            <label htmlFor="student-section" className="text-sm font-medium">
+              {t('academic.students.section')}
+            </label>
             <select
+              id="student-section"
               value={form.sectionId}
               onChange={(e) =>
                 e.target.value === NEW_SECTION ? setShowCreateSection(true) : update('sectionId')(e)
@@ -127,14 +127,32 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
             onChange={update('dateOfBirth')}
           />
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">{t('academic.students.gender')}</label>
-            <select value={form.gender} onChange={update('gender')} className={selectCls}>
+            <label htmlFor="student-gender" className="text-sm font-medium">
+              {t('academic.students.gender')}
+            </label>
+            <select
+              id="student-gender"
+              value={form.gender}
+              onChange={update('gender')}
+              className={selectCls}
+            >
               <option value="">{t('academic.students.selectPlaceholder')}</option>
               <option value="male">{t('academic.students.male')}</option>
               <option value="female">{t('academic.students.female')}</option>
               <option value="other">{t('academic.students.other')}</option>
             </select>
           </div>
+          <div className="flex flex-col gap-1">
+            <Input
+              id="student-email"
+              type="email"
+              label={t('academic.studentForm.studentEmail')}
+              value={form.email}
+              onChange={update('email')}
+            />
+            <p className="text-xs text-muted-foreground">{t('academic.studentForm.emailHint')}</p>
+          </div>
+          <StudentExtraFields form={form} setForm={setForm} orgType={orgType} />
           {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
         <DialogFooter>
@@ -202,7 +220,7 @@ export default function StudentsPage() {
   const { user } = useAuth();
   const canCreateSection = (user?.permissions ?? []).includes('tenant:admin');
   const [showAdd, setShowAdd] = useState(false);
-  const [addedName, setAddedName] = useState('');
+  const [added, setAdded] = useState(null);
   const [addSectionFor, setAddSectionFor] = useState(null); // classId | null
   const [importResult, setImportResult] = useState(null);
   const [searchInput, setSearchInput] = useState('');
@@ -335,9 +353,16 @@ export default function StudentsPage() {
         }
       />
 
-      {addedName && (
+      {added && (
         <p role="status" className="rounded-lg border border-border bg-card px-4 py-3 text-sm">
-          {t('academic.students.addedNext', { name: addedName })}
+          {added.email
+            ? t('academic.students.addedWithLogin', { name: added.name, email: added.email })
+            : added.loginError
+              ? t('academic.students.addedNoLogin', {
+                  name: added.name,
+                  reason: added.loginError,
+                })
+              : t('academic.students.addedNext', { name: added.name })}
         </p>
       )}
 
@@ -379,7 +404,7 @@ export default function StudentsPage() {
       <AddStudentModal
         open={showAdd}
         onOpenChange={setShowAdd}
-        onAdded={setAddedName}
+        onAdded={setAdded}
         sections={sections}
         classes={classes}
         canCreateSection={canCreateSection}

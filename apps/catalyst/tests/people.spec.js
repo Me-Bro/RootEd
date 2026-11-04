@@ -267,3 +267,89 @@ test.describe('people waiting to join', () => {
     await expect(page.getByTestId('join-requests')).toHaveCount(0);
   });
 });
+
+// The seeded tenant is a `school`, so a college is simulated by answering
+// /auth/me as one. The API's own college rules are covered by its Jest suite.
+test.describe('college student fields', () => {
+  test.use({ storageState: AUTH_STATES.tenant_admin });
+
+  const asCollege = (page) =>
+    page.route('**/auth/me', async (route) => {
+      const response = await route.fetch();
+      const json = await response.json();
+      await route.fulfill({ response, json: { ...json, orgType: 'college' } });
+    });
+
+  test('a college is asked for college, branch, graduation year and skills, and sends them', async ({
+    page,
+  }) => {
+    await asCollege(page);
+    let sent;
+    await page.route('**/academic/students', async (route) => {
+      if (route.request().method() !== 'POST') return route.fallback();
+      sent = route.request().postDataJSON();
+      return route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ _id: 'x', ...sent }),
+      });
+    });
+
+    await page.goto('/people/students');
+    await page.getByRole('button', { name: 'Add student' }).click();
+    const form = page.getByRole('form', { name: 'Add a student' });
+    await form.getByLabel('Admission no.').fill('COL-001');
+    await form.getByLabel('First name').fill('Col');
+    await form.getByLabel('Last name').fill('Lege');
+    await form.getByLabel('College', { exact: true }).fill('ABC Institute');
+    await form.getByLabel('Branch').fill('CSE');
+    await form.getByLabel('Graduation year').fill('2027');
+    await form.getByLabel('Skills (comma separated)').fill('SQL, React ,');
+    await form.getByRole('button', { name: 'Add student' }).click();
+
+    await expect
+      .poll(() => sent)
+      .toMatchObject({
+        admissionNo: 'COL-001',
+        college: 'ABC Institute',
+        branch: 'CSE',
+        graduationYear: '2027',
+        skills: ['SQL', 'React'],
+      });
+  });
+
+  test('a school is not asked for them', async ({ page }) => {
+    await page.goto('/people/students');
+    await page.getByRole('button', { name: 'Add student' }).click();
+    const form = page.getByRole('form', { name: 'Add a student' });
+    await expect(form.getByLabel('Branch')).toHaveCount(0);
+  });
+
+  test('the list shows branch and graduation year under the admission number', async ({ page }) => {
+    await asCollege(page);
+    await page.route('**/academic/students?*', async (route) => {
+      if (route.request().method() !== 'GET') return route.fallback();
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          students: [
+            {
+              _id: 'a1',
+              admissionNo: 'COL-777',
+              firstName: 'Show',
+              lastName: 'Branch',
+              branch: 'ECE',
+              graduationYear: 2026,
+            },
+          ],
+          total: 1,
+          page: 1,
+          pages: 1,
+        }),
+      });
+    });
+    await page.goto('/people/students');
+    await expect(row(page, 'COL-777')).toContainText('ECE · 2026');
+  });
+});

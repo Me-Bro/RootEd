@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { hasSeats } from '@rooted/shared/utils';
+import { DOCUMENT_KINDS } from '@rooted/shared/schemas';
 import StudentSeatsPanel from '../../components/study/StudentSeatsPanel.jsx';
 import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
@@ -23,6 +24,9 @@ import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
 import { studentLoginState } from '../../utils/loginState.js';
+import StudentExtraFields from '../../components/students/StudentExtraFields.jsx';
+import StudentProfileDetails from '../../components/students/StudentProfileDetails.jsx';
+import { formFromStudent, studentPayload } from '../../components/students/studentForm.js';
 
 const selectCls =
   'h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
@@ -45,27 +49,20 @@ const STATUS_TRANSITIONS = {
 
 function EditStudentModal({ open, onOpenChange, student, sections }) {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const orgType = user?.orgType;
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({
-    firstName: student.firstName,
-    lastName: student.lastName,
-    sectionId: student.sectionId || '',
-    dateOfBirth: student.dateOfBirth ? student.dateOfBirth.slice(0, 10) : '',
-    gender: student.gender || '',
-    parentContacts: student.parentContacts?.length ? student.parentContacts : [],
-  });
+  const [form, setForm] = useState(() => formFromStudent(student, orgType));
   const [error, setError] = useState('');
 
   const mutation = useMutation({
-    mutationFn: (data) => {
-      const payload = {
-        ...data,
-        sectionId: data.sectionId || undefined,
-        dateOfBirth: data.dateOfBirth || undefined,
-        gender: data.gender || undefined,
-      };
-      return api.patch(`/academic/students/${student._id}`, payload).then((r) => r.data);
-    },
+    mutationFn: (data) =>
+      api
+        .patch(
+          `/academic/students/${student._id}`,
+          studentPayload(data, { mode: 'update', orgType })
+        )
+        .then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['student', student._id] });
       queryClient.invalidateQueries({ queryKey: ['students'] });
@@ -78,30 +75,6 @@ function EditStudentModal({ open, onOpenChange, student, sections }) {
 
   function update(field) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
-  }
-
-  function updateContact(index, field) {
-    return (e) =>
-      setForm((f) => ({
-        ...f,
-        parentContacts: f.parentContacts.map((c, i) =>
-          i === index ? { ...c, [field]: e.target.value } : c
-        ),
-      }));
-  }
-
-  function addContact() {
-    setForm((f) => ({
-      ...f,
-      parentContacts: [...f.parentContacts, { name: '', phone: '', relation: '' }],
-    }));
-  }
-
-  function removeContact(index) {
-    setForm((f) => ({
-      ...f,
-      parentContacts: f.parentContacts.filter((_, i) => i !== index),
-    }));
   }
 
   return (
@@ -131,8 +104,15 @@ function EditStudentModal({ open, onOpenChange, student, sections }) {
             required
           />
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">{t('academic.students.section')}</label>
-            <select value={form.sectionId} onChange={update('sectionId')} className={selectCls}>
+            <label htmlFor="student-section" className="text-sm font-medium">
+              {t('academic.students.section')}
+            </label>
+            <select
+              id="student-section"
+              value={form.sectionId}
+              onChange={update('sectionId')}
+              className={selectCls}
+            >
               <option value="">{t('academic.students.selectSection')}</option>
               {sections.map((s) => (
                 <option key={s._id} value={s._id}>
@@ -148,8 +128,15 @@ function EditStudentModal({ open, onOpenChange, student, sections }) {
             onChange={update('dateOfBirth')}
           />
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">{t('academic.students.gender')}</label>
-            <select value={form.gender} onChange={update('gender')} className={selectCls}>
+            <label htmlFor="student-gender" className="text-sm font-medium">
+              {t('academic.students.gender')}
+            </label>
+            <select
+              id="student-gender"
+              value={form.gender}
+              onChange={update('gender')}
+              className={selectCls}
+            >
               <option value="">{t('academic.students.selectPlaceholder')}</option>
               <option value="male">{t('academic.students.male')}</option>
               <option value="female">{t('academic.students.female')}</option>
@@ -157,44 +144,7 @@ function EditStudentModal({ open, onOpenChange, student, sections }) {
             </select>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">
-                {t('academic.studentDetail.parentGuardianContacts')}
-              </label>
-              <Button type="button" variant="outline" size="sm" onClick={addContact}>
-                {t('academic.studentDetail.addContact')}
-              </Button>
-            </div>
-            {form.parentContacts.map((c, i) => (
-              <div key={i} className="flex flex-col gap-2 rounded-lg border border-border p-3">
-                <Input
-                  label={t('common.name')}
-                  value={c.name}
-                  onChange={updateContact(i, 'name')}
-                />
-                <Input
-                  label={t('academic.studentDetail.phone')}
-                  value={c.phone}
-                  onChange={updateContact(i, 'phone')}
-                />
-                <Input
-                  label={t('academic.studentDetail.relation')}
-                  value={c.relation}
-                  onChange={updateContact(i, 'relation')}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeContact(i)}
-                  className="self-end text-destructive"
-                >
-                  {t('academic.studentDetail.remove')}
-                </Button>
-              </div>
-            ))}
-          </div>
+          <StudentExtraFields form={form} setForm={setForm} orgType={orgType} student={student} />
 
           {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
@@ -215,10 +165,17 @@ function StatusChangeDialog({ open, onOpenChange, studentId, targetStatus, label
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
+  const [reason, setReason] = useState('');
 
   const mutation = useMutation({
     mutationFn: () =>
-      api.patch(`/academic/students/${studentId}`, { status: targetStatus }).then((r) => r.data),
+      api
+        .patch(`/academic/students/${studentId}`, {
+          status: targetStatus,
+          // A reason belongs to leaving, not to coming back.
+          ...(targetStatus !== 'active' && reason.trim() ? { statusReason: reason.trim() } : {}),
+        })
+        .then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['student', studentId] });
       queryClient.invalidateQueries({ queryKey: ['students'] });
@@ -238,6 +195,15 @@ function StatusChangeDialog({ open, onOpenChange, studentId, targetStatus, label
         <p className="text-sm text-muted-foreground">
           {t('academic.studentDetail.statusChangeDescription')} <strong>{targetStatus}</strong>.
         </p>
+        {targetStatus !== 'active' && (
+          <Input
+            id="status-reason"
+            label={t('academic.studentForm.statusReason')}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            maxLength={200}
+          />
+        )}
         {error && <p className="text-sm text-destructive">{error}</p>}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -445,12 +411,14 @@ function DocumentsPanel({ student, canWrite }) {
   const queryClient = useQueryClient();
   const fileRef = useRef(null);
   const [error, setError] = useState('');
+  const [kind, setKind] = useState('other');
 
   const uploadMutation = useMutation({
     mutationFn: (file) => {
       const fd = new FormData();
       fd.append('file', file);
       fd.append('name', file.name);
+      fd.append('kind', kind);
       return api
         .post(`/academic/students/${student._id}/documents`, fd, {
           headers: { 'Content-Type': 'multipart/form-data' },
@@ -482,7 +450,14 @@ function DocumentsPanel({ student, canWrite }) {
       {student.documents?.length > 0 ? (
         student.documents.map((doc, i) => (
           <div key={i} className="flex items-center justify-between text-sm">
-            <span>{doc.name}</span>
+            <span>
+              {doc.name}
+              {doc.kind && doc.kind !== 'other' && (
+                <span className="ml-2 text-xs text-muted-foreground">
+                  {t(`academic.studentForm.documentKinds.${doc.kind}`)}
+                </span>
+              )}
+            </span>
             <Button variant="outline" size="sm" onClick={() => download(i)}>
               {t('academic.studentDetail.download')}
             </Button>
@@ -493,6 +468,18 @@ function DocumentsPanel({ student, canWrite }) {
       )}
       {canWrite && (
         <>
+          <select
+            aria-label={t('academic.studentForm.documentType')}
+            value={kind}
+            onChange={(e) => setKind(e.target.value)}
+            className={`${selectCls} mt-1 self-start sm:w-auto`}
+          >
+            {DOCUMENT_KINDS.map((k) => (
+              <option key={k} value={k}>
+                {t(`academic.studentForm.documentKinds.${k}`)}
+              </option>
+            ))}
+          </select>
           <input
             ref={fileRef}
             type="file"
@@ -681,18 +668,19 @@ export default function StudentDetailPage() {
           ))}
       </div>
 
-      {student.parentContacts?.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <h2 className="text-sm font-semibold">
-            {t('academic.studentDetail.parentGuardianContacts')}
-          </h2>
-          {student.parentContacts.map((c, i) => (
-            <p key={i} className="text-sm text-muted-foreground">
-              {c.name} — {c.phone} ({c.relation})
-            </p>
-          ))}
-        </div>
+      {(student.statusReason || (student.status !== 'active' && student.statusChangedAt)) && (
+        <p className="text-sm text-muted-foreground">
+          {student.statusChangedAt &&
+            t('academic.studentForm.statusSince', {
+              status: student.status,
+              date: new Date(student.statusChangedAt).toLocaleDateString(),
+            })}
+          {student.statusReason &&
+            ` ${t('academic.studentForm.statusReasonShown', { reason: student.statusReason })}`}
+        </p>
       )}
+
+      <StudentProfileDetails student={student} orgType={user?.orgType} canWrite={canWrite} />
 
       <div className="grid gap-6 sm:grid-cols-2">
         {permissions.includes('attendance:read') && (

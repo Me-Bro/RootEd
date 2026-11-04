@@ -70,3 +70,45 @@ test('matches ObjectId-like entityId/studentId by string equality', () => {
   const result = computeAttendanceStats(objIdStudents, records, 75);
   expect(result.students[0]).toMatchObject({ presentCount: 1, totalCount: 1, pct: 100 });
 });
+
+describe('guardian contact on the report', () => {
+  const one = (parentContacts) =>
+    computeAttendanceStats([{ _id: 's1', parentContacts }], [], 75).students[0];
+
+  test('uses the primary guardian, not just the first listed', () => {
+    const row = one([
+      { name: 'Mother', phone: '9876543210' },
+      { name: 'Father', phone: '9876543211', isPrimary: true },
+    ]);
+    expect(row.guardianPhone).toBe('9876543211');
+  });
+
+  test('falls back to the first guardian when none is flagged (rows from before the flag)', () => {
+    expect(
+      one([
+        { name: 'A', phone: '9876543210' },
+        { name: 'B', phone: '9876543211' },
+      ]).guardianPhone
+    ).toBe('9876543210');
+  });
+
+  test('guardianWhatsapp is the primary guardian number, or their phone when "same as phone"', () => {
+    expect(
+      one([{ name: 'A', phone: '9876543210', whatsappNumber: '9876543299', isPrimary: true }])
+        .guardianWhatsapp
+    ).toBe('9876543299');
+    expect(
+      one([{ name: 'A', phone: '9876543210', whatsappSameAsPhone: true, isPrimary: true }])
+        .guardianWhatsapp
+    ).toBe('9876543210');
+  });
+
+  test('both are null when there is no guardian, or no number to use', () => {
+    expect(one([])).toMatchObject({ guardianPhone: null, guardianWhatsapp: null });
+    expect(one(undefined)).toMatchObject({ guardianPhone: null, guardianWhatsapp: null });
+    expect(one([{ name: 'A', email: 'a@b.co' }])).toMatchObject({
+      guardianPhone: null,
+      guardianWhatsapp: null,
+    });
+  });
+});

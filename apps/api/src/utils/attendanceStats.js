@@ -1,3 +1,5 @@
+import { primaryContact, resolveWhatsapp } from '@rooted/shared/utils';
+
 const PRESENT_STATUSES = new Set(['present', 'late']);
 
 /**
@@ -28,16 +30,18 @@ export function computeAttendanceStats(students, records, thresholdPct) {
   const studentStats = students.map((student) => {
     const studentId = String(student._id);
     const { presentCount, totalCount } = byStudent.get(studentId);
+    const guardian = primaryContact(student.parentContacts);
     const pct = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : null;
     return {
       studentId,
       firstName: student.firstName,
       lastName: student.lastName,
       admissionNo: student.admissionNo,
-      // Guardian phone for report/call-chip consumers — already on the
-      // Student document (Student.find() has no restrictive projection), so
-      // no query change is needed to surface it here.
-      guardianPhone: student.parentContacts?.[0]?.phone ?? null,
+      // The primary guardian (else the first listed), for report/call-chip
+      // consumers. The roster query has no restrictive projection, so the
+      // contacts are already on the Student document.
+      guardianPhone: guardian?.phone ?? null,
+      guardianWhatsapp: resolveWhatsapp(guardian),
       presentCount,
       totalCount,
       pct,
