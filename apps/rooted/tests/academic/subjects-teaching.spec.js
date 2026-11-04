@@ -51,6 +51,22 @@ test.describe('Subjects page', () => {
   });
 });
 
+test.describe('Teacher column on the Subjects page', () => {
+  test.use({ storageState: AUTH_STATES.tenant_admin });
+
+  // Seeded: Alice teaches Maths to section A, Bob to section B; Science is unassigned.
+  test('lists the teachers of each subject, and says when nobody is assigned', async ({ page }) => {
+    await page.goto('/academic/subjects');
+    await expect(page.getByRole('columnheader', { name: 'Teacher' })).toBeVisible();
+    await expect(page.getByTestId('subject-row-MATH5').getByTestId('subject-teachers')).toHaveText(
+      'Alice Smith, Bob Jones'
+    );
+    await expect(page.getByTestId('subject-row-SCI5').getByTestId('subject-teachers')).toHaveText(
+      'Not assigned'
+    );
+  });
+});
+
 test.describe('Teachers dialog on the Subjects page', () => {
   test.use({ storageState: AUTH_STATES.tenant_admin });
 
@@ -72,6 +88,12 @@ test.describe('Teachers dialog on the Subjects page', () => {
     const chosen = await sectionA.inputValue();
     expect(await sectionB.inputValue()).toBe(chosen);
 
+    // The table behind the dialog follows the change, without a reload.
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('subject-row-SCI5').getByTestId('subject-teachers')).toHaveText(
+      'Alice Smith'
+    );
+
     // It persists, and reads back as the year's teacher.
     await page.reload();
     await page.getByTestId('subject-row-SCI5').getByRole('button', { name: 'Teachers' }).click();
@@ -85,6 +107,10 @@ test.describe('Teachers dialog on the Subjects page', () => {
     await expect(again.getByLabel('Teacher for Grade 5 - A')).toHaveValue('');
     await again.getByLabel('Teacher for Grade 5 - B').selectOption('');
     await expect(again.getByLabel('Teacher for Grade 5 - B')).toHaveValue('');
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('subject-row-SCI5').getByTestId('subject-teachers')).toHaveText(
+      'Not assigned'
+    );
   });
 
   test('the old Teaching address lands on Subjects', async ({ page }) => {

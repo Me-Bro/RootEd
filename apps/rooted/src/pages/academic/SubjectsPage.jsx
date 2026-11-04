@@ -23,6 +23,8 @@ import {
   TableRow,
 } from '../../components/ui/table.jsx';
 import SubjectTeachersDialog from '../../components/academic/SubjectTeachersDialog.jsx';
+import { teacherNamesOfSubject, teacherSummary } from '../../utils/yearAssignment.js';
+import { useTeachers } from '../../hooks/useTeachers.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
 
@@ -119,6 +121,27 @@ function SubjectDialog({ open, subject, classes, onClose }) {
   );
 }
 
+// The names of a subject's teachers: the first two, then "+N more", or "Not assigned".
+function SubjectTeachersCell({ names: all, loading }) {
+  const { t } = useTranslation();
+  if (loading) return <span className="text-muted-foreground">—</span>;
+  const { names, more } = teacherSummary(all);
+  if (names.length === 0) {
+    return <span className="text-muted-foreground">{t('academic.teaching.notAssigned')}</span>;
+  }
+  return (
+    <>
+      {names.join(', ')}
+      {more > 0 && (
+        <span className="text-muted-foreground">
+          {' '}
+          {t('academic.subjects.moreTeachers', { count: more })}
+        </span>
+      )}
+    </>
+  );
+}
+
 export default function SubjectsPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -145,6 +168,27 @@ export default function SubjectsPage() {
     queryFn: () => api.get('/academic/classes').then((r) => r.data),
   });
   const classNames = new Map(classes.map((c) => [c._id, c.name]));
+
+  // The Teacher column: who teaches each subject this academic year. The same
+  // queries as the Teachers dialog, so they share its cache.
+  const { data: years = EMPTY_ARRAY } = useQuery({
+    queryKey: ['academic-years'],
+    queryFn: () => api.get('/academic/years').then((r) => r.data),
+  });
+  const activeYearId = years.find((y) => y.isActive)?._id ?? '';
+  const { data: terms = EMPTY_ARRAY } = useQuery({
+    queryKey: ['terms', activeYearId],
+    queryFn: () => api.get(`/academic/terms?yearId=${activeYearId}`).then((r) => r.data),
+    enabled: Boolean(activeYearId),
+  });
+  const termIds = [...terms]
+    .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
+    .map((term) => term._id);
+  const { nameById, isSuccess: staffLoaded } = useTeachers();
+  const { data: assignments = EMPTY_ARRAY, isLoading: assignmentsLoading } = useQuery({
+    queryKey: ['subject-teachers', 'all'],
+    queryFn: () => api.get('/academic/subject-teachers').then((r) => r.data),
+  });
   // Reached from a class's "Subjects and teachers" link: that class's subjects, plus
   // the ones with no class, which apply to every class.
   const shown = classFilter
@@ -199,6 +243,7 @@ export default function SubjectsPage() {
               <TableHead>{t('common.name')}</TableHead>
               <TableHead>{t('academic.subjects.code')}</TableHead>
               <TableHead>{t('academic.subjects.class')}</TableHead>
+              <TableHead>{t('academic.subjects.teacher')}</TableHead>
               {canWrite && (
                 <TableHead>
                   <span className="sr-only">{t('common.actions')}</span>
@@ -213,6 +258,12 @@ export default function SubjectsPage() {
                 <TableCell>{s.code}</TableCell>
                 <TableCell>
                   {classNames.get(s.classId) ?? t('academic.subjects.anyClass')}
+                </TableCell>
+                <TableCell data-testid="subject-teachers">
+                  <SubjectTeachersCell
+                    names={teacherNamesOfSubject(assignments, s._id, termIds, nameById)}
+                    loading={assignmentsLoading || !staffLoaded}
+                  />
                 </TableCell>
                 {canWrite && (
                   <TableCell>
