@@ -204,7 +204,7 @@
         "step1": "Open Subjects and click Teachers on the subject's row.",
         "step2": "Pick a teacher for each section, or use Same teacher for all sections.",
         "step3": "It saves as you choose and applies to the whole academic year.",
-        "step4": "A teacher marked (no login yet) cannot be picked. Give them a login from their Staff record first."
+        "step4": "A teacher marked (no login yet) can be picked, but sees the class only after you give them a login from their Staff record."
       },
       "buildTimetable": {
         "title": "Build the timetable",

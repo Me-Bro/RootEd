@@ -82,9 +82,9 @@ export default function SubjectTeachersDialog({ subject, onClose }) {
   const teacherOptions = (
     <>
       {staff.map((m) => (
-        // Only someone who can sign in may be assigned (the server refuses anyone else),
-        // so a staff member without a login is listed but not selectable.
-        <option key={m._id} value={m.userId} disabled={m.login === 'none'}>
+        // A staff member without a login can be assigned too; the hint tells the admin they
+        // will not see the class until they get one.
+        <option key={m._id} value={m.userId}>
           {m.login === 'none'
             ? t('academic.subjects.noLoginName', { name: `${m.firstName} ${m.lastName}` })
             : `${m.firstName} ${m.lastName}`}
