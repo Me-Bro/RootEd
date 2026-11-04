@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import api, { setAccessToken, setLogoutHandler, clearCsrfToken } from '../lib/api.js';
 import { AuthContext } from './auth-context.js';
 
 export function AuthProvider({ children }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [accessToken, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -64,63 +66,83 @@ export function AuthProvider({ children }) {
     return data;
   }, []);
 
-  const login = useCallback(async (email, password, totpCode) => {
-    const { data } = await api.post('/auth/login', {
-      email,
-      password,
-      ...(totpCode ? { totpCode } : {}),
-    });
-    setAccessToken(data.accessToken);
-    setToken(data.accessToken);
-    try {
-      const meRes = await api.get('/auth/me');
-      setUser(meRes.data);
-    } catch {
-      setUser({ email });
-    }
-    return data;
-  }, []);
+  const login = useCallback(
+    async (email, password, totpCode) => {
+      const { data } = await api.post('/auth/login', {
+        email,
+        password,
+        ...(totpCode ? { totpCode } : {}),
+      });
+      setAccessToken(data.accessToken);
+      setToken(data.accessToken);
+      // A different person (or tenant) must not see the last one's cached lists.
+      queryClient.clear();
+      try {
+        const meRes = await api.get('/auth/me');
+        setUser(meRes.data);
+      } catch {
+        setUser({ email });
+      }
+      return data;
+    },
+    [queryClient]
+  );
 
-  const loginWithGoogle = useCallback(async (idToken, totpCode) => {
-    const { data } = await api.post('/auth/google', {
-      idToken,
-      ...(totpCode ? { totpCode } : {}),
-    });
-    setAccessToken(data.accessToken);
-    setToken(data.accessToken);
-    try {
-      const meRes = await api.get('/auth/me');
-      setUser(meRes.data);
-    } catch {
-      setUser(null);
-    }
-    return data;
-  }, []);
+  const loginWithGoogle = useCallback(
+    async (idToken, totpCode) => {
+      const { data } = await api.post('/auth/google', {
+        idToken,
+        ...(totpCode ? { totpCode } : {}),
+      });
+      setAccessToken(data.accessToken);
+      setToken(data.accessToken);
+      queryClient.clear();
+      try {
+        const meRes = await api.get('/auth/me');
+        setUser(meRes.data);
+      } catch {
+        setUser(null);
+      }
+      return data;
+    },
+    [queryClient]
+  );
 
   // Called from the tenant-picker screen when a general-portal user belongs
   // to more than one tenant — reissues the access token (and refresh cookie)
   // with a tenantId claim (see POST /auth/select-tenant).
-  const selectTenant = useCallback(async (tenantId) => {
-    const { data } = await api.post('/auth/select-tenant', { tenantId });
-    setAccessToken(data.accessToken);
-    setToken(data.accessToken);
-    const meRes = await api.get('/auth/me');
-    setUser(meRes.data);
-    return meRes.data;
-  }, []);
+  const selectTenant = useCallback(
+    async (tenantId) => {
+      const { data } = await api.post('/auth/select-tenant', { tenantId });
+      setAccessToken(data.accessToken);
+      setToken(data.accessToken);
+      // Every cached list (classes, subjects, students...) belongs to the tenant just
+      // left. Left in place, a form opened right after the switch offers the old
+      // tenant's rows, and saving one links the new tenant's data to them.
+      queryClient.clear();
+      const meRes = await api.get('/auth/me');
+      setUser(meRes.data);
+      return meRes.data;
+    },
+    [queryClient]
+  );
 
   // Used by the impersonation callback: an access token issued out-of-band by
   // POST /admin/tenants/:id/impersonate, landing on a fresh page load on the
   // tenant's own subdomain (no refresh cookie there, so the mount-time refresh
   // effect above will fail harmlessly before this resolves).
-  const loginWithToken = useCallback(async (token) => {
-    setAccessToken(token);
-    setToken(token);
-    const meRes = await api.get('/auth/me');
-    setUser(meRes.data);
-    setLoading(false);
-    return meRes.data;
-  }, []);
+  const loginWithToken = useCallback(
+    async (token) => {
+      setAccessToken(token);
+      setToken(token);
+      queryClient.clear();
+      const meRes = await api.get('/auth/me');
+      setUser(meRes.data);
+      setLoading(false);
+      return meRes.data;
+    },
+    [queryClient]
+  );
 
   return (
     <AuthContext.Provider

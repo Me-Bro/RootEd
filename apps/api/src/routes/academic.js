@@ -309,12 +309,21 @@ router.patch('/sections/:id', requirePermission('tenant:admin'), async (req, res
 
 // ── Subjects ──────────────────────────────────────────────────────────────────
 
+// A subject's class is optional, but when given it must be this tenant's own. Without
+// the check a client could link a subject to another tenant's class, which then
+// shows as a bare id in this tenant's forms.
+const classBelongs = async (tenantId, classId) =>
+  !classId || Boolean(await Class.findOne({ _id: classId, tenantId }, '_id').lean());
+
 router.post(
   '/subjects',
   requirePermission('tenant:admin'),
   validate(createSubjectSchema),
   async (req, res, next) => {
     try {
+      if (!(await classBelongs(req.tenant._id, req.body.classId))) {
+        return res.status(404).json({ error: 'Class not found' });
+      }
       const subject = await Subject.create({ tenantId: req.tenant._id, ...req.body });
       res.status(201).json(subject);
     } catch (err) {
@@ -340,6 +349,9 @@ router.patch(
   validate(updateSubjectSchema),
   async (req, res, next) => {
     try {
+      if (!(await classBelongs(req.tenant._id, req.body.classId))) {
+        return res.status(404).json({ error: 'Class not found' });
+      }
       const subject = await Subject.findOneAndUpdate(
         { _id: req.params.id, tenantId: req.tenant._id },
         { $set: req.body },
