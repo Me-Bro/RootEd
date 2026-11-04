@@ -952,6 +952,8 @@
       "pickTeacher": "शिक्षक चुनें…",
       "teacherForSection": "{{section}} के शिक्षक",
       "noSections": "इस विषय की कक्षा में अभी कोई सेक्शन नहीं है।",
+      "teacher": "शिक्षक",
+      "moreTeachers": "+{{count}} और",
       "noLoginName": "{{name}} (अभी लॉगिन नहीं)"
     },
     "teaching": {

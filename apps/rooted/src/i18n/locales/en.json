@@ -952,6 +952,8 @@
       "pickTeacher": "Choose a teacher…",
       "teacherForSection": "Teacher for {{section}}",
       "noSections": "This subject's class has no sections yet.",
+      "teacher": "Teacher",
+      "moreTeachers": "+{{count}} more",
       "noLoginName": "{{name}} (no login yet)"
     },
     "teaching": {
