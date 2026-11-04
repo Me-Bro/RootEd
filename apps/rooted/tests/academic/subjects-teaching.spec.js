@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { AUTH_STATES } from '../fixtures/auth.js';
+import { createTestApiClient } from '../fixtures/data.js';
 
 // Subjects (add / edit / delete) and teacher assignment are admin-only writes.
 // Every test cleans up after itself so the seeded MATH5/ENG5/SCI5 stay as the
@@ -111,6 +112,50 @@ test.describe('Teachers dialog on the Subjects page', () => {
     await expect(page.getByTestId('subject-row-SCI5').getByTestId('subject-teachers')).toHaveText(
       'Not assigned'
     );
+  });
+
+  test('a staff member with no login yet can be assigned', async ({ page, request }) => {
+    const adminClient = await createTestApiClient(request, 'tenant_admin');
+    const stamp = Date.now();
+    const lastName = `Teacher${stamp}`;
+    // No role chosen, so this is the role-less invited stub a "No login" staff record leaves.
+    const created = await adminClient.post('/staff/members', {
+      email: `nologin-${stamp}@testschool.local`,
+      firstName: 'Nologin',
+      lastName,
+    });
+    expect(created.ok()).toBe(true);
+    const staff = await created.json();
+
+    try {
+      await page.goto('/academic/subjects');
+      await page.getByTestId('subject-row-SCI5').getByRole('button', { name: 'Teachers' }).click();
+      const dialog = page.getByRole('dialog');
+      await dialog
+        .getByLabel('Same teacher for all sections')
+        .selectOption({ label: `Nologin ${lastName} (no login yet)` });
+      await expect(dialog.getByLabel('Teacher for Grade 5 - A')).not.toHaveValue('');
+      await expect(dialog.getByLabel('Teacher for Grade 5 - B')).not.toHaveValue('');
+
+      await page.keyboard.press('Escape');
+      await expect(page.getByTestId('subject-row-SCI5').getByTestId('subject-teachers')).toHaveText(
+        `Nologin ${lastName}`
+      );
+
+      // clean up: unassign both sections
+      await page.getByTestId('subject-row-SCI5').getByRole('button', { name: 'Teachers' }).click();
+      const again = page.getByRole('dialog');
+      await again.getByLabel('Teacher for Grade 5 - A').selectOption('');
+      await expect(again.getByLabel('Teacher for Grade 5 - A')).toHaveValue('');
+      await again.getByLabel('Teacher for Grade 5 - B').selectOption('');
+      await expect(again.getByLabel('Teacher for Grade 5 - B')).toHaveValue('');
+      await page.keyboard.press('Escape');
+      await expect(page.getByTestId('subject-row-SCI5').getByTestId('subject-teachers')).toHaveText(
+        'Not assigned'
+      );
+    } finally {
+      await adminClient.patch(`/staff/members/${staff._id}`, { employmentStatus: 'resigned' });
+    }
   });
 
   test('the old Teaching address lands on Subjects', async ({ page }) => {

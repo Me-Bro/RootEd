@@ -4,6 +4,7 @@ import { Tenant } from '../models/Tenant.js';
 import { Role } from '../models/Role.js';
 import { User } from '../models/User.js';
 import { TenantMembership } from '../models/TenantMembership.js';
+import { StaffMember } from '../models/StaffMember.js';
 import { SubjectTeacher } from '../models/SubjectTeacher.js';
 import { assertTeacher } from '../services/subjectTeacher.service.js';
 import { subjectTeacherQuerySchema } from '@rooted/shared/schemas';
@@ -75,6 +76,40 @@ test('a member of another college is rejected', async () => {
 
 test('an invited or removed member is rejected', async () => {
   const user = await member(tenant, [teacherRole], 'invited');
+  await expect(assertTeacher(tenant._id, user._id)).rejects.toMatchObject({ status: 404 });
+});
+
+// A staff member added without a login has an account (the role-less invited stub) but no
+// active membership. They can still be put on a subject; they see it once they get a login.
+async function staffWithoutLogin(t, employmentStatus = 'active') {
+  const user = await member(t, [], 'invited');
+  await StaffMember.create({
+    tenantId: t._id,
+    userId: user._id,
+    firstName: 'No',
+    lastName: 'Login',
+    employmentStatus,
+  });
+  return user;
+}
+
+test('a staff member with no login yet is accepted as a teacher', async () => {
+  const user = await staffWithoutLogin(tenant);
+  await expect(assertTeacher(tenant._id, user._id)).resolves.toBeUndefined();
+});
+
+test('a staff member who has left is rejected', async () => {
+  const user = await staffWithoutLogin(tenant, 'resigned');
+  await expect(assertTeacher(tenant._id, user._id)).rejects.toMatchObject({ status: 404 });
+});
+
+test('a staff member of another college is rejected', async () => {
+  const user = await staffWithoutLogin(tenant);
+  await expect(assertTeacher(other._id, user._id)).rejects.toMatchObject({ status: 404 });
+});
+
+test('an account that is not on the staff list is still rejected without a role', async () => {
+  const user = await member(tenant, [], 'invited');
   await expect(assertTeacher(tenant._id, user._id)).rejects.toMatchObject({ status: 404 });
 });
 

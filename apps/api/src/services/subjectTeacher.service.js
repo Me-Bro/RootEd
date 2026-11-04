@@ -1,15 +1,19 @@
 import { TenantMembership } from '../models/TenantMembership.js';
 import { Role } from '../models/Role.js';
+import { StaffMember } from '../models/StaffMember.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { SubjectTeacher } from '../models/SubjectTeacher.js';
 import { Term } from '../models/Term.js';
 
 /**
  * A teacher is an active member of this college holding any role but the
- * student one. teacherId in a request is only an ObjectId, so without this an
- * admin could name a user from another college, or a student.
+ * student one, or an active staff member of this college who has an account but no
+ * login yet (they see their classes once they get one). teacherId in a request is only
+ * an ObjectId, so without this an admin could name a user from another college, or a
+ * student.
  */
 export async function assertTeacher(tenantId, userId) {
+  if (await StaffMember.exists({ tenantId, userId, employmentStatus: 'active' })) return;
   const membership = await TenantMembership.findOne(
     { tenantId, userId, status: 'active' },
     'roleIds'
