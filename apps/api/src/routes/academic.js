@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import mongoose from 'mongoose';
+import { z } from 'zod';
 import multer from 'multer';
 import { parse } from 'csv-parse/sync';
 import { Queue } from 'bullmq';
@@ -25,7 +26,9 @@ import {
   subjectTeacherSchema,
   subjectTeacherQuerySchema,
   teachingLoadQuerySchema,
-  indianMobileSchema,
+  DOCUMENT_KINDS,
+  studentCreateSchemaFor,
+  studentUpdateSchemaFor,
   sectionTimesSchema,
 } from '@rooted/shared/schemas';
 import { scoreToLetter, isBatchOrgType, isModuleEnabled } from '@rooted/shared/utils';
@@ -58,6 +61,8 @@ import { SubjectTeacher } from '../models/SubjectTeacher.js';
 import { assertRefs } from '../services/training.service.js';
 import { assertTeacher, ensureAssignments } from '../services/subjectTeacher.service.js';
 import { logger } from '../utils/logger.js';
+import { encryptField, decryptField } from '../utils/fieldEncryption.js';
+import { mapImportRow } from '../utils/studentImport.js';
 import { loadTeachingLoad } from '../services/teachingLoad.service.js';
 import { endAllocationsFor } from '../services/seat.service.js';
 import { TimetablePublish } from '../models/TimetablePublish.js';
@@ -488,35 +493,80 @@ async function ensureEnrollment(tenantId, student) {
   );
 }
 
+// Validates a student body against the schema for this tenant's org type (so a
+// school cannot write a coaching center's fields). The 400 carries the first
+// issue's text, which is what a form shows.
+function parseStudentBody(schemaFor, req, res) {
+  const result = schemaFor(req.tenant.orgType).safeParse(req.body);
+  if (result.success) return result.data;
+  res.status(400).json({
+    error: result.error.issues[0].message,
+    details: result.error.flatten().fieldErrors,
+  });
+  return null;
+}
+
+const sectionExists = (tenantId, sectionId) =>
+  Section.findOne({ _id: sectionId, tenantId }, '_id').lean();
+
 router.post('/students', requirePermission('students:write'), async (req, res, next) => {
   try {
-    const { admissionNo, firstName, lastName, sectionId, dateOfBirth, gender, parentContacts } =
-      req.body;
+    const body = parseStudentBody(studentCreateSchemaFor, req, res);
+    if (!body) return;
     const tenantId = req.tenant._id;
+    const { email, aadhaar, ...fields } = body;
 
-    let phone;
-    if (req.body.phone) {
-      const parsed = indianMobileSchema.safeParse(req.body.phone);
-      if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
-      phone = parsed.data;
-    }
-
-    const existing = await Student.findOne({ tenantId, admissionNo });
+    const existing = await Student.findOne({ tenantId, admissionNo: fields.admissionNo });
     if (existing) return res.status(409).json({ error: 'Admission number already exists' });
 
-    const student = await Student.create({
-      tenantId,
-      admissionNo,
-      firstName,
-      lastName,
-      sectionId,
-      dateOfBirth,
-      gender,
-      parentContacts,
-      phone,
-    });
+    // Without this a caller could point a student at another tenant's section.
+    if (fields.sectionId && !(await sectionExists(tenantId, fields.sectionId))) {
+      return res.status(404).json({ error: 'Section not found' });
+    }
+    if (aadhaar) {
+      fields.aadhaarEnc = encryptField(aadhaar, tenantId);
+      fields.aadhaarLast4 = aadhaar.slice(-4);
+    }
+
+    const student = await Student.create({ tenantId, ...fields });
     await ensureEnrollment(tenantId, student);
-    res.status(201).json(student);
+
+    if (aadhaar) {
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'student.aadhaar_set',
+        target: { model: 'Student', id: student._id },
+        ip: req.ip,
+      });
+    }
+
+    const out = student.toObject();
+    delete out.aadhaarEnc;
+
+    // A login is a nicety, never a reason to lose the student just saved: if it
+    // cannot be made, say why next to the created record.
+    if (email) {
+      try {
+        const studentRole = await Role.findOne({ tenantId, templateKey: 'student' }, '_id').lean();
+        if (!studentRole) {
+          out.loginError = 'No student role in this organization';
+        } else {
+          const { user, reason } = await provisionStudentAccount({
+            tenant: req.tenant,
+            student,
+            email,
+            studentRoleId: studentRole._id,
+          });
+          if (user) out.account = { email, status: user.status };
+          else out.loginError = reason;
+        }
+      } catch (err) {
+        logger.warn({ err, studentId: student._id }, 'student login could not be created');
+        out.loginError = 'the login could not be created';
+      }
+    }
+    res.status(201).json(out);
   } catch (err) {
     next(err);
   }
@@ -581,6 +631,9 @@ router.get('/students', requirePermission('students:read'), async (req, res, nex
       const accounts = await accountsFor(tenantId, students);
       for (const student of students)
         student.account = accounts.get(String(student.userId)) ?? null;
+    } else {
+      // The last four Aadhaar digits go to those who may edit the student too.
+      for (const student of students) delete student.aadhaarLast4;
     }
 
     res.json({ students, total, page, pages: Math.ceil(total / limit) });
@@ -596,6 +649,8 @@ router.get('/students/:id', requirePermission('students:read'), async (req, res,
     if (await userHasPermission(req, 'students:write')) {
       const accounts = await accountsFor(req.tenant._id, [student]);
       student.account = accounts.get(String(student.userId)) ?? null;
+    } else {
+      delete student.aadhaarLast4;
     }
     res.json(student);
   } catch (err) {
@@ -603,42 +658,105 @@ router.get('/students/:id', requirePermission('students:read'), async (req, res,
   }
 });
 
+// The full Aadhaar number. Everything else shows only the last four digits, so
+// this is the one place it is decrypted: it needs students:write, every read is
+// audited (who and which student, never the number), and the response is not
+// cached anywhere.
+router.get('/students/:id/aadhaar', requirePermission('students:write'), async (req, res, next) => {
+  try {
+    const tenantId = req.tenant._id;
+    const student = await Student.findOne({ _id: req.params.id, tenantId })
+      .select('+aadhaarEnc')
+      .lean();
+    if (!student?.aadhaarEnc) return res.status(404).json({ error: 'No Aadhaar saved' });
+
+    await auditLog({
+      actorId: req.user.sub,
+      tenantId: tenantId.toString(),
+      action: 'student.aadhaar_revealed',
+      target: { model: 'Student', id: student._id },
+      ip: req.ip,
+    });
+    res.set('Cache-Control', 'no-store');
+    res.json({ aadhaar: decryptField(student.aadhaarEnc, tenantId) });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.patch('/students/:id', requirePermission('students:write'), async (req, res, next) => {
   try {
-    // Placement consent has its own route and permission (PUT
-    // /training/students/:id/consent) so it carries who recorded it and when.
-    // Dotted paths ("placementConsent.granted") reach the same field, so strip
-    // every key that starts with it, not just the exact name.
-    //
-    // `kind` is written only by the walk-in route: a member must not be turned
-    // into a walk-in (which the learner list hides) by a stray PATCH.
-    const body = Object.fromEntries(
-      Object.entries(req.body).filter(
-        ([key]) =>
-          key !== 'placementConsent' && !key.startsWith('placementConsent.') && key !== 'kind'
-      )
-    );
+    // The schema is a whitelist: identity and ownership (admissionNo, userId,
+    // tenantId, kind) and fields with their own route (placementConsent) are
+    // not in it, so they cannot be written here, dotted paths included.
+    const body = parseStudentBody(studentUpdateSchemaFor, req, res);
+    if (!body) return;
+    const tenantId = req.tenant._id;
 
-    // An empty phone clears it; anything else must be a real mobile number.
-    const update = { $set: body };
-    if ('phone' in body) {
-      if (body.phone) {
-        const parsed = indianMobileSchema.safeParse(body.phone);
-        if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
-        body.phone = parsed.data;
-      } else {
-        delete body.phone;
-        update.$unset = { phone: '' };
-      }
+    const current = await Student.findOne(
+      { _id: req.params.id, tenantId },
+      'status phone whatsappSameAsPhone'
+    ).lean();
+    if (!current) return res.status(404).json({ error: 'Not found' });
+
+    // The schema cannot see what is already stored, so the flag is checked here
+    // against the record as it will be after this patch.
+    const phoneAfter = 'phone' in body ? body.phone : current.phone;
+    const sameAfter =
+      'whatsappSameAsPhone' in body ? body.whatsappSameAsPhone : current.whatsappSameAsPhone;
+    if (sameAfter && !phoneAfter)
+      return res.status(400).json({ error: 'Add a phone number first' });
+
+    const { aadhaar, statusReason, ...rest } = body;
+    if (rest.sectionId && !(await sectionExists(tenantId, rest.sectionId))) {
+      return res.status(404).json({ error: 'Section not found' });
     }
 
-    const student = await Student.findOneAndUpdate(
-      { _id: req.params.id, tenantId: req.tenant._id },
-      update,
-      { new: true }
-    );
+    // A blank clears the field; anything else sets it.
+    const set = {};
+    const unset = {};
+    for (const [key, value] of Object.entries(rest)) {
+      if (value === '') unset[key] = '';
+      else set[key] = value;
+    }
+
+    if (aadhaar === '') {
+      unset.aadhaarEnc = '';
+      unset.aadhaarLast4 = '';
+    } else if (aadhaar) {
+      set.aadhaarEnc = encryptField(aadhaar, tenantId);
+      set.aadhaarLast4 = aadhaar.slice(-4);
+    }
+
+    // The date moves only on a real change, and a reason belongs to a non-active
+    // status: it is dropped on return to active, or when the status changes and
+    // no new reason comes with it.
+    const statusChanged = Boolean(body.status) && body.status !== current.status;
+    if (statusChanged) set.statusChangedAt = new Date();
+    if ((body.status ?? current.status) === 'active') unset.statusReason = '';
+    else if (statusReason) set.statusReason = statusReason;
+    else if (statusChanged || statusReason === '') unset.statusReason = '';
+
+    const update = {};
+    if (Object.keys(set).length) update.$set = set;
+    if (Object.keys(unset).length) update.$unset = unset;
+
+    const student = await Student.findOneAndUpdate({ _id: req.params.id, tenantId }, update, {
+      new: true,
+    });
     if (!student) return res.status(404).json({ error: 'Not found' });
-    if (body.sectionId) await ensureEnrollment(req.tenant._id, student);
+    if (set.sectionId) await ensureEnrollment(tenantId, student);
+
+    // Setting or clearing the number is recorded too (never its value).
+    if (aadhaar !== undefined) {
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: aadhaar ? 'student.aadhaar_set' : 'student.aadhaar_cleared',
+        target: { model: 'Student', id: student._id },
+        ip: req.ip,
+      });
+    }
     res.json(student);
   } catch (err) {
     next(err);
@@ -766,6 +884,11 @@ router.post(
   async (req, res, next) => {
     try {
       if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+      const kind = z
+        .enum(DOCUMENT_KINDS)
+        .default('other')
+        .safeParse(req.body?.kind || undefined);
+      if (!kind.success) return res.status(400).json({ error: 'Unknown document type' });
       const tenantId = req.tenant._id;
       const student = await Student.findOne({ _id: req.params.id, tenantId });
       if (!student) return res.status(404).json({ error: 'Not found' });
@@ -776,6 +899,7 @@ router.post(
       student.documents.push({
         name: req.body.name || req.file.originalname,
         key,
+        kind: kind.data,
         uploadedAt: new Date(),
       });
       await student.save();
@@ -849,22 +973,15 @@ router.post(
 
       for (const row of records) {
         try {
-          const {
-            admissionNo,
-            firstName,
-            lastName,
-            sectionId: sectionName,
-            dateOfBirth,
-            gender,
-            email,
-          } = row;
-
-          if (!admissionNo || !firstName || !lastName) {
-            errors.push({ row, reason: 'Missing required fields' });
+          // Validated by the same schema as the Add Student form (see mapImportRow).
+          const mapped = mapImportRow(row, req.tenant.orgType);
+          if (!mapped.ok) {
+            errors.push({ row, reason: mapped.reason });
             continue;
           }
+          const { fields, email, sectionName } = mapped;
 
-          const existing = await Student.findOne({ tenantId, admissionNo });
+          const existing = await Student.findOne({ tenantId, admissionNo: fields.admissionNo });
           if (existing) {
             skipped++;
             continue;
@@ -878,12 +995,8 @@ router.post(
 
           const student = await Student.create({
             tenantId,
-            admissionNo,
-            firstName,
-            lastName,
+            ...fields,
             sectionId: resolvedSectionId,
-            dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
-            gender: gender || undefined,
           });
           await ensureEnrollment(tenantId, student);
           created++;
@@ -897,7 +1010,7 @@ router.post(
               const { user, reason } = await provisionStudentAccount({
                 tenant: req.tenant,
                 student,
-                email: String(email).trim().toLowerCase(),
+                email,
                 studentRoleId: studentRole._id,
               });
               if (user) accountsProvisioned++;

@@ -559,7 +559,7 @@ describe('placement consent', () => {
       firstName: 'Asha',
       placementConsent: { granted: true, recordedBy: String(users.teacher._id) },
     });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(400);
     const stored = await Student.findOne({ _id: fx.s1._id, tenantId: tenants.A._id }).lean();
     expect(stored.placementConsent?.granted).toBeUndefined();
   });
@@ -568,7 +568,7 @@ describe('placement consent', () => {
     const res = await callAcademic('patch', `/students/${fx.s1._id}`, 'tenant_admin', {
       'placementConsent.granted': true,
     });
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(400);
     const stored = await Student.findOne({ _id: fx.s1._id, tenantId: tenants.A._id }).lean();
     expect(stored.placementConsent?.granted).toBeUndefined();
   });

@@ -3,6 +3,7 @@ import { JOIN_CODE_PREFIX } from '../constants/index.js';
 export * from './grading.js';
 export * from './orgTypes.js';
 export * from './placement.js';
+export * from './student.js';
 
 /**
  * Normalises a typed join code to its stored form: uppercased, separators and

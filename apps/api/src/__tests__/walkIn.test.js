@@ -311,10 +311,11 @@ describe('student list and edit in a study center', () => {
       kind: 'walk_in',
       firstName: 'Still',
     });
-    expect(res.status).toBe(200);
+    // Rejected whole, not partly applied: `kind` is not an editable field.
+    expect(res.status).toBe(400);
     const after = await Student.findById(member._id).lean();
     expect(after.kind).toBe('member');
-    expect(after.firstName).toBe('Still');
+    expect(after.firstName).toBe('Stay');
   });
 
   test('a PATCH validates and normalizes the phone, and an empty phone clears it', async () => {

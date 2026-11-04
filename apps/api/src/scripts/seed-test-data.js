@@ -461,6 +461,15 @@ async function run() {
       { upsert: true, new: true, ...BYPASS_SC }
     ).lean();
     studyMembers[userKey] = student;
+    if (userKey === 'studyMember1') {
+      // Batch-group profile fields (exam target, how they found the centre) for
+      // the learner-profile spec. Fields only.
+      await Student.updateOne(
+        { _id: student._id, tenantId: studyTenantId },
+        { $set: { examTarget: 'UPSC', joiningSource: 'Referral' } },
+        BYPASS_SC
+      );
+    }
     for (const shift of Object.values(studyShifts)) {
       await Enrollment.findOneAndUpdate(
         { tenantId: studyTenantId, studentId: student._id, sectionId: shift._id },
@@ -857,6 +866,56 @@ async function run() {
     students.push(student);
   }
   const activeStudents = students.filter((s) => s.status === 'active');
+
+  // A fully filled profile for the student-profile e2e specs: contact and WhatsApp,
+  // two guardians (one primary, one for emergencies), address, health, school
+  // fields, a status reason and an Aadhaar. Only fields are set (never an id or a
+  // count), and on a student no other spec reads: Student12, the graduated one.
+  const PROFILE_AADHAAR = '234567890124';
+  await Student.findOneAndUpdate(
+    { tenantId, admissionNo: '2025-TEST-012' },
+    {
+      $set: {
+        phone: '9000000012',
+        whatsappSameAsPhone: true,
+        admissionDate: new Date('2019-04-01'),
+        address: {
+          line1: '12 Station Road',
+          city: 'Pune',
+          state: 'Maharashtra',
+          pincode: '411001',
+        },
+        bloodGroup: 'B+',
+        allergies: 'Dust',
+        medicalNotes: 'Carries an inhaler',
+        category: 'general',
+        previousSchool: 'St Mary High School',
+        statusReason: 'Completed the final year',
+        statusChangedAt: new Date('2025-03-31'),
+        aadhaarEnc: encryptField(PROFILE_AADHAAR, tenantId),
+        aadhaarLast4: PROFILE_AADHAAR.slice(-4),
+        parentContacts: [
+          {
+            name: 'Meera Test',
+            relation: 'mother',
+            phone: '9000000112',
+            email: 'meera.test@example.com',
+            whatsappNumber: '9000000212',
+            isPrimary: true,
+          },
+          {
+            name: 'Anil Test',
+            relation: 'uncle',
+            phone: '9000000312',
+            whatsappSameAsPhone: true,
+            isEmergency: true,
+          },
+        ],
+      },
+    },
+    { _bypassTenantScope: true }
+  );
+  const profileStudent = students.find((st) => st.admissionNo === '2025-TEST-012');
 
   // Links the 'student' test login to Student1 Test, so /me/* self-service
   // e2e coverage has real seeded attendance/grades/fee data to assert against
@@ -2417,6 +2476,12 @@ async function run() {
       admissionNo: s.admissionNo,
       status: s.status,
     })),
+    // The fully filled profile above, with the full Aadhaar so a spec can assert it.
+    profileStudent: {
+      _id: profileStudent._id.toString(),
+      admissionNo: profileStudent.admissionNo,
+      aadhaar: PROFILE_AADHAAR,
+    },
     feeAssignments: feeAssignments.map((a) => ({
       _id: a._id.toString(),
       studentId: a.studentId.toString(),
