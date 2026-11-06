@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -5,22 +6,57 @@ import { Check, Circle } from 'lucide-react';
 import { hasSeats, isModuleEnabled } from '@rooted/shared/utils';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/Card.jsx';
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../ui/Card.jsx';
+import { Button } from '../ui/Button.jsx';
 import { setupSteps } from '../../utils/setupSteps.js';
 
 const get = (url, params) => api.get(url, { params }).then((r) => r.data);
+
+// Per user and tenant, per device. localStorage can be unavailable (private mode): then the
+// card just comes back next visit.
+const dismissKey = (userId, tenantId) => `setup-checklist-dismissed:${userId}:${tenantId}`;
+
+function readDismissed(key) {
+  try {
+    return localStorage.getItem(key) === '1';
+  } catch {
+    return false;
+  }
+}
 
 function useSetupQuery(key, url, params, enabled) {
   return useQuery({ queryKey: ['setup', key], queryFn: () => get(url, params), enabled });
 }
 
 /**
- * What a new school (or study center) still has to set up, in order, for tenant admins. Hidden once every
- * step is done. A failed or slow query hides the card: it is a nudge, never a blocker.
+ * What a new school (or study center) still has to set up, in order, for tenant admins. Once every
+ * step is done it collapses to one line the admin can expand again; "Dismiss" hides it for good on
+ * this device. A failed or slow query hides the card: it is a nudge, never a blocker.
  */
 export default function SetupChecklist() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const storageKey = dismissKey(user?._id, user?.tenantId);
+  const [dismissedKey, setDismissedKey] = useState(() =>
+    readDismissed(storageKey) ? storageKey : null
+  );
+  const [expanded, setExpanded] = useState(false);
+  const dismissed = dismissedKey === storageKey;
+  const dismiss = () => {
+    setDismissedKey(storageKey);
+    try {
+      localStorage.setItem(storageKey, '1');
+    } catch {
+      // not persisted; hidden until the next visit
+    }
+  };
   const isAdmin = (user?.permissions ?? []).includes('tenant:admin');
   const staffEnabled = isModuleEnabled(user, 'staff');
   const feeEnabled = isModuleEnabled(user, 'fee');
@@ -58,47 +94,68 @@ export default function SetupChecklist() {
     planCount: feeEnabled ? plans.data?.filter((f) => f.plan).length : undefined,
   });
   const doneCount = steps.filter((s) => s.done).length;
-  if (doneCount === steps.length) return null;
+  if (dismissed) return null;
+  const complete = doneCount === steps.length;
+  const open = !complete || expanded;
 
   return (
     <Card data-testid="setup-checklist">
       <CardHeader>
         <CardTitle role="heading" aria-level={2}>
-          {t(seats ? 'dashboard.setup.titleCentre' : 'dashboard.setup.title')}
+          {complete
+            ? t('dashboard.setup.complete')
+            : t(seats ? 'dashboard.setup.titleCentre' : 'dashboard.setup.title')}
         </CardTitle>
         <CardDescription>
           {t('dashboard.setup.progress', { done: doneCount, total: steps.length })}
         </CardDescription>
+        <CardAction className="flex gap-1">
+          {complete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-expanded={open}
+              onClick={() => setExpanded((e) => !e)}
+            >
+              {t(open ? 'dashboard.setup.hide' : 'dashboard.setup.show')}
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={dismiss}>
+            {t('dashboard.setup.dismiss')}
+          </Button>
+        </CardAction>
       </CardHeader>
-      <CardContent>
-        <ol className="flex flex-col gap-3">
-          {steps.map(({ key, done, to }) => (
-            <li key={key} className="flex items-start gap-2 text-sm">
-              {done ? (
-                <Check className="mt-0.5 size-4 text-primary" aria-hidden="true" />
-              ) : (
-                <Circle className="mt-0.5 size-4 text-muted-foreground" aria-hidden="true" />
-              )}
-              <div>
-                <span className={done ? 'text-muted-foreground line-through' : 'font-medium'}>
-                  {t(`dashboard.setup.${key}.title`)}
-                </span>
-                <span className="sr-only">
-                  {done ? t('dashboard.setup.done') : t('dashboard.setup.todo')}
-                </span>
-                {!done && (
-                  <p className="text-xs text-muted-foreground">
-                    {t(`dashboard.setup.${key}.hint`)}{' '}
-                    <Link to={to} className="font-medium text-foreground underline">
-                      {t('dashboard.setup.open')}
-                    </Link>
-                  </p>
+      {open && (
+        <CardContent>
+          <ol className="flex flex-col gap-3">
+            {steps.map(({ key, done, to }) => (
+              <li key={key} className="flex items-start gap-2 text-sm">
+                {done ? (
+                  <Check className="mt-0.5 size-4 text-primary" aria-hidden="true" />
+                ) : (
+                  <Circle className="mt-0.5 size-4 text-muted-foreground" aria-hidden="true" />
                 )}
-              </div>
-            </li>
-          ))}
-        </ol>
-      </CardContent>
+                <div>
+                  <span className={done ? 'text-muted-foreground line-through' : 'font-medium'}>
+                    {t(`dashboard.setup.${key}.title`)}
+                  </span>
+                  <span className="sr-only">
+                    {done ? t('dashboard.setup.done') : t('dashboard.setup.todo')}
+                  </span>
+                  {!done && (
+                    <p className="text-xs text-muted-foreground">
+                      {t(`dashboard.setup.${key}.hint`)}{' '}
+                      <Link to={to} className="font-medium text-foreground underline">
+                        {t('dashboard.setup.open')}
+                      </Link>
+                    </p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </CardContent>
+      )}
     </Card>
   );
 }

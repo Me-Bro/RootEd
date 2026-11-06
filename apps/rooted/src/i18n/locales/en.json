@@ -249,6 +249,10 @@
     "setup": {
       "title": "Set up your school",
       "titleCentre": "Set up your centre",
+      "complete": "Setup complete",
+      "show": "Show steps",
+      "hide": "Hide steps",
+      "dismiss": "Dismiss",
       "progress": "{{done}} of {{total}} steps done",
       "open": "Open",
       "done": "Done",
