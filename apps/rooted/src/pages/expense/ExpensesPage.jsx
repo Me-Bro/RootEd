@@ -306,6 +306,7 @@ export default function ExpensesPage() {
       toast.success(t('expense.entries.approveSuccess'));
       queryClient.invalidateQueries({ queryKey: ['expense-entries'] });
     },
+    onError: (err) => toast.error(err.response?.data?.error || t('expense.entries.approveFailed')),
   });
 
   const pendingTotal = entries.reduce((sum, e) => sum + (e.amount ?? 0), 0);

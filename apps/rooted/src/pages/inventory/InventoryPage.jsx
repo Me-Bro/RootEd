@@ -660,6 +660,8 @@ function RequisitionsTab() {
       toast.success(t('inventory.items.reqApproveSuccess'));
       queryClient.invalidateQueries({ queryKey: ['inventory-requisitions'] });
     },
+    onError: (err) =>
+      toast.error(err.response?.data?.error || t('inventory.items.reqApproveFailed')),
   });
 
   return (
