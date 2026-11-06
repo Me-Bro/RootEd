@@ -394,6 +394,7 @@
       "feeCollected": "Fee collected",
       "avgScore": "Avg exam score",
       "staffPresent": "Staff present",
+      "staffPresentMeta": "{{present}} of {{total}} staff",
       "attendanceTrend": "Attendance trend",
       "period7d": "7D",
       "period30d": "30D",

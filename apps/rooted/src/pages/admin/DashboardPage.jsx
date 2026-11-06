@@ -379,6 +379,14 @@ function PrincipalDashboard() {
       api.get('/staff/attendance', { params: { date: selectedDate } }).then((r) => r.data),
   });
 
+  const { data: totalStaff } = useQuery({
+    queryKey: ['staff', 'members', 'active-count'],
+    queryFn: () =>
+      api
+        .get('/staff/members', { params: { limit: 1, status: 'active' } })
+        .then((r) => r.data.total ?? 0),
+  });
+
   const { data: pendingLeave } = useQuery({
     queryKey: ['staff', 'leave-requests', 'pending-summary'],
     queryFn: async () => {
@@ -425,7 +433,10 @@ function PrincipalDashboard() {
   const staffPresentCount = staffAttendance.filter((r) =>
     ['present', 'late'].includes(r.status)
   ).length;
-  const staffPct = pct(staffPresentCount, staffAttendance.length);
+  // Denominator is every active staff member, so unmarked staff count against the
+  // figure instead of inflating it; fall back to marked records if the count failed.
+  const staffTotal = totalStaff ?? staffAttendance.length;
+  const staffPct = pct(staffPresentCount, staffTotal);
 
   const attentionItems = [
     {
@@ -562,6 +573,14 @@ function PrincipalDashboard() {
           <KpiCard
             label={t('dashboard.principal.staffPresent')}
             valueLabel={staffPct !== null ? `${staffPct}%` : '—'}
+            meta={
+              staffTotal
+                ? t('dashboard.principal.staffPresentMeta', {
+                    present: staffPresentCount,
+                    total: staffTotal,
+                  })
+                : undefined
+            }
             percent={staffPct ?? 0}
             tone={tone(staffPct)}
             onTap={() => navigate('/dashboard/staff')}

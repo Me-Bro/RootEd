@@ -17,6 +17,7 @@ import {
   generateBulkSalarySlipSchema,
   markSalarySlipPaidSchema,
   payrollExportQuerySchema,
+  attendanceQuerySchema,
 } from '@rooted/shared/schemas';
 import { authenticate } from '../middleware/authenticate.js';
 import {
@@ -1188,12 +1189,14 @@ router.post('/attendance', requirePermission('attendance:write'), async (req, re
 
 router.get('/attendance', requirePermission('attendance:read'), async (req, res, next) => {
   try {
+    const query = attendanceQuerySchema.parse(req.query);
     const filter = { tenantId: req.tenant._id, entityType: 'staff' };
     if (req.query.staffId) filter.entityId = req.query.staffId;
-    if (req.query.from || req.query.to) {
+    if (query.date) filter.date = query.date;
+    if (query.from || query.to) {
       filter.date = {};
-      if (req.query.from) filter.date.$gte = new Date(req.query.from);
-      if (req.query.to) filter.date.$lte = new Date(req.query.to);
+      if (query.from) filter.date.$gte = query.from;
+      if (query.to) filter.date.$lte = query.to;
     }
 
     const records = await AttendanceRecord.find(filter).sort({ date: -1 }).lean();
