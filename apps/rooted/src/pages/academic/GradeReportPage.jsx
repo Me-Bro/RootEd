@@ -146,7 +146,7 @@ export default function GradeReportPage() {
         <DropdownMenu>
           <Chip>
             {currentSection
-              ? `${currentSection.className}-${currentSection.name}`
+              ? `${currentClass.name} - ${currentSection.name}`
               : t('academic.students.section')}
           </Chip>
           <DropdownMenuContent align="start">
