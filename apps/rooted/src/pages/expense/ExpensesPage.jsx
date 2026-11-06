@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import api from '../../lib/api.js';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
@@ -220,6 +221,7 @@ function RejectModal({ open, onOpenChange, entryId }) {
     mutationFn: () =>
       api.patch(`/expense/entries/${entryId}/reject`, { comment }).then((r) => r.data),
     onSuccess: () => {
+      toast.success(t('expense.entries.rejectSuccess'));
       queryClient.invalidateQueries({ queryKey: ['expense-entries'] });
       onOpenChange(false);
       setComment('');
@@ -300,7 +302,10 @@ export default function ExpensesPage() {
 
   const approveMutation = useMutation({
     mutationFn: (id) => api.patch(`/expense/entries/${id}/approve`).then((r) => r.data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expense-entries'] }),
+    onSuccess: () => {
+      toast.success(t('expense.entries.approveSuccess'));
+      queryClient.invalidateQueries({ queryKey: ['expense-entries'] });
+    },
   });
 
   const pendingTotal = entries.reduce((sum, e) => sum + (e.amount ?? 0), 0);

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import api from '../../lib/api.js';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
@@ -655,7 +656,10 @@ function RequisitionsTab() {
 
   const approveMutation = useMutation({
     mutationFn: (id) => api.patch(`/inventory/requisitions/${id}/approve`).then((r) => r.data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['inventory-requisitions'] }),
+    onSuccess: () => {
+      toast.success(t('inventory.items.reqApproveSuccess'));
+      queryClient.invalidateQueries({ queryKey: ['inventory-requisitions'] });
+    },
   });
 
   return (
