@@ -33,9 +33,9 @@ function SelectField({ id, label, value, onChange, children }) {
 // mounted so their values are kept while closed.
 function More({ title, children }) {
   return (
-    <details className="rounded-lg border border-border">
+    <details className="rounded-lg border border-border sm:col-span-2">
       <summary className="cursor-pointer px-3 py-2 text-sm font-medium">{title}</summary>
-      <div className="flex flex-col gap-3 px-3 pb-3">{children}</div>
+      <div className="grid gap-3 px-3 pb-3 sm:grid-cols-2">{children}</div>
     </details>
   );
 }
@@ -67,7 +67,10 @@ export default function StudentExtraFields({ form, setForm, orgType, student }) 
 
   return (
     <>
-      <fieldset aria-label={f('contactSection')} className="flex flex-col gap-3">
+      <fieldset
+        aria-label={f('contactSection')}
+        className="grid gap-3 sm:col-span-2 sm:grid-cols-2"
+      >
         <Input
           id="student-mobile"
           type="tel"
@@ -99,7 +102,7 @@ export default function StudentExtraFields({ form, setForm, orgType, student }) 
         onChange={set('admissionDate')}
       />
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 sm:col-span-2">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">
             {t('academic.studentDetail.parentGuardianContacts')}
@@ -119,7 +122,7 @@ export default function StudentExtraFields({ form, setForm, orgType, student }) 
             <fieldset
               key={i}
               aria-label={f('guardianN', { n: i + 1 })}
-              className="flex flex-col gap-2 rounded-lg border border-border p-3"
+              className="grid gap-2 rounded-lg border border-border p-3 sm:grid-cols-2"
             >
               <Input
                 id={id('name')}
@@ -178,7 +181,7 @@ export default function StudentExtraFields({ form, setForm, orgType, student }) 
                 variant="ghost"
                 size="sm"
                 onClick={() => setContacts((list) => list.filter((_, j) => j !== i))}
-                className="self-end text-destructive"
+                className="justify-self-end text-destructive sm:col-span-2"
               >
                 {t('academic.studentDetail.remove')}
               </Button>
@@ -278,7 +281,7 @@ export default function StudentExtraFields({ form, setForm, orgType, student }) 
             />
           )
         )}
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 sm:col-span-2">
           <Input
             id="student-aadhaar"
             label={f('aadhaar')}
