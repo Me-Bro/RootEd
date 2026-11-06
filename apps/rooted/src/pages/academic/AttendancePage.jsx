@@ -162,7 +162,7 @@ export default function AttendancePage() {
 
           <div className="flex flex-wrap items-center justify-between gap-2">
             <FilterChips value={filter} onChange={setFilter} counts={counts} />
-            <SortMenu value={sortBy} onChange={setSortBy} />
+            <SortMenu value={sortBy} onChange={setSortBy} hasRollNo={rows.some((r) => r.rollNo)} />
           </div>
 
           <div className="rounded-lg border border-border bg-card p-3">
@@ -204,6 +204,14 @@ export default function AttendancePage() {
                     {r.firstName} {r.lastName}
                   </p>
                   <p className="flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+                    {r.rollNo && (
+                      <>
+                        <span className="font-medium">
+                          {t('academic.attendance.rollShort', { rollNo: r.rollNo })}
+                        </span>
+                        <span>·</span>
+                      </>
+                    )}
                     <span className="font-mono">{r.admissionNo}</span>
                     <span>·</span>
                     <PctBadge pct={r.pct} />

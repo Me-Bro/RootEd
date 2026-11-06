@@ -21,6 +21,13 @@ function storageKey(sectionId, date) {
 const SORTERS = {
   name: (a, b) => `${a.lastName}${a.firstName}`.localeCompare(`${b.lastName}${b.firstName}`),
   admissionNo: (a, b) => a.admissionNo.localeCompare(b.admissionNo),
+  // numeric: "2" before "10". No roll number sorts last, like a missing pct.
+  rollNo: (a, b) => {
+    if (!a.rollNo && !b.rollNo) return 0;
+    if (!a.rollNo) return 1;
+    if (!b.rollNo) return -1;
+    return a.rollNo.localeCompare(b.rollNo, undefined, { numeric: true });
+  },
   attendancePct: (a, b) => {
     if (a.pct == null && b.pct == null) return 0;
     if (a.pct == null) return 1; // no history sorts last, never read as a false 0%
@@ -33,7 +40,7 @@ export function useAttendanceRoster({ sectionId, date }) {
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all'); // 'all' | 'unmarked' | 'atRisk'
-  const [sortBy, setSortBy] = useState('name'); // 'name' | 'admissionNo' | 'attendancePct'
+  const [sortBy, setSortBy] = useState('name'); // 'name' | 'admissionNo' | 'rollNo' | 'attendancePct'
   const [statusMap, setStatusMap] = useState({}); // { [studentId]: { status, note? } }
   const [guardOpen, setGuardOpen] = useState(false);
   const [bulkUndo, setBulkUndo] = useState(null); // { studentIds: string[] } | null

@@ -37,6 +37,7 @@ export function computeAttendanceStats(students, records, thresholdPct) {
       firstName: student.firstName,
       lastName: student.lastName,
       admissionNo: student.admissionNo,
+      rollNo: student.rollNo,
       // The primary guardian (else the first listed), for report/call-chip
       // consumers. The roster query has no restrictive projection, so the
       // contacts are already on the Student document.

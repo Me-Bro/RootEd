@@ -29,7 +29,7 @@ function whatsappFields(value) {
  * the Add Student form uses, so an import cannot store what the form would refuse.
  *
  * Columns: admissionNo, firstName, lastName (required); sectionId (a section
- * *name*, resolved by the route), dateOfBirth, gender, email (becomes a login,
+ * *name*, resolved by the route), rollNo (schools only), dateOfBirth, gender, email (becomes a login,
  * so it is returned apart from the fields), phone, whatsapp, admissionDate, city,
  * pincode, and guardianName / guardianPhone / guardianRelation / guardianEmail /
  * guardianWhatsapp (the older parentName / parentPhone / parentRelation work
@@ -61,6 +61,9 @@ export function mapImportRow(row, orgType) {
     admissionDate: get('admissionDate'),
     ...whatsappFields(get('whatsapp')),
   };
+
+  // Only a school's schema knows this key (it is strict), so a blank is left out.
+  if (get('rollNo')) body.rollNo = get('rollNo');
 
   const city = get('city');
   const pincode = get('pincode');

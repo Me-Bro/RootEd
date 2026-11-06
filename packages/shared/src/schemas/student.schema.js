@@ -111,6 +111,9 @@ const addressSchema = z
 // allowed for a tenant.
 const GROUP_SHAPES = {
   school: (f) => ({
+    // Per class and changes on promotion, unlike admissionNo. A string ("A-12"
+    // exists) and deliberately not unique: promotions reshuffle a whole class.
+    rollNo: f(text(20)),
     previousSchool: f(text(150)),
     tcNumber: f(text(50)),
     motherTongue: f(text(50)),

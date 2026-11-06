@@ -94,6 +94,16 @@ export default function StudentExtraFields({ form, setForm, orgType, student }) 
         />
       </fieldset>
 
+      {/* A day-to-day field (attendance, marks), so it is not tucked into "Other details". */}
+      {groupFields.some((field) => field.key === 'rollNo') && (
+        <Input
+          id="student-rollNo"
+          label={f('fields.rollNo')}
+          value={form.rollNo}
+          onChange={set('rollNo')}
+        />
+      )}
+
       <Input
         id="student-admission-date"
         type="date"
@@ -254,33 +264,35 @@ export default function StudentExtraFields({ form, setForm, orgType, student }) 
       </More>
 
       <More title={f('otherSection')}>
-        {groupFields.map((field) =>
-          field.options ? (
-            <SelectField
-              key={field.key}
-              id={`student-${field.key}`}
-              label={f(`fields.${field.key}`)}
-              value={form[field.key]}
-              onChange={set(field.key)}
-            >
-              <option value="">{t('academic.students.selectPlaceholder')}</option>
-              {field.options.map((o) => (
-                <option key={o} value={o}>
-                  {f(`categories.${o}`)}
-                </option>
-              ))}
-            </SelectField>
-          ) : (
-            <Input
-              key={field.key}
-              id={`student-${field.key}`}
-              type={field.type === 'number' ? 'number' : 'text'}
-              label={f(`fields.${field.key}`)}
-              value={form[field.key]}
-              onChange={set(field.key)}
-            />
-          )
-        )}
+        {groupFields
+          .filter((field) => field.key !== 'rollNo')
+          .map((field) =>
+            field.options ? (
+              <SelectField
+                key={field.key}
+                id={`student-${field.key}`}
+                label={f(`fields.${field.key}`)}
+                value={form[field.key]}
+                onChange={set(field.key)}
+              >
+                <option value="">{t('academic.students.selectPlaceholder')}</option>
+                {field.options.map((o) => (
+                  <option key={o} value={o}>
+                    {f(`categories.${o}`)}
+                  </option>
+                ))}
+              </SelectField>
+            ) : (
+              <Input
+                key={field.key}
+                id={`student-${field.key}`}
+                type={field.type === 'number' ? 'number' : 'text'}
+                label={f(`fields.${field.key}`)}
+                value={form[field.key]}
+                onChange={set(field.key)}
+              />
+            )
+          )}
         <div className="flex flex-col gap-1.5 sm:col-span-2">
           <Input
             id="student-aadhaar"

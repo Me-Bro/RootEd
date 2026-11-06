@@ -616,6 +616,7 @@
       "medicalNotes": "Medical notes",
       "otherSection": "Other details",
       "fields": {
+        "rollNo": "Roll number",
         "previousSchool": "Previous school",
         "tcNumber": "Transfer certificate no.",
         "motherTongue": "Mother tongue",
@@ -754,8 +755,10 @@
       "sort": {
         "name": "Name (A–Z)",
         "admissionNo": "Admission no.",
+        "rollNo": "Roll no.",
         "attendancePct": "Attendance % (low→high)"
-      }
+      },
+      "rollShort": "Roll {{rollNo}}"
     },
     "attendanceReport": {
       "title": "Attendance Report",
