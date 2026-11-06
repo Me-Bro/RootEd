@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useDeferredValue } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api.js';
 
 const EMPTY_ARRAY = [];
@@ -38,6 +40,7 @@ const SORTERS = {
 
 export function useAttendanceRoster({ sectionId, date }) {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all'); // 'all' | 'unmarked' | 'atRisk'
   const [sortBy, setSortBy] = useState('name'); // 'name' | 'admissionNo' | 'rollNo' | 'attendancePct'
@@ -196,7 +199,8 @@ export function useAttendanceRoster({ sectionId, date }) {
             })),
         })
         .then((r) => r.data),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      toast.success(t('academic.attendance.saved', { count: data.saved }));
       sessionStorage.removeItem(storageKey(sectionId, date));
       queryClient.invalidateQueries({ queryKey: ['attendance', sectionId, date] });
     },

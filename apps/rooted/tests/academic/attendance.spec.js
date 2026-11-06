@@ -110,6 +110,7 @@ test.describe('Attendance page', () => {
 
     await page.getByRole('button', { name: /^Save ·/ }).click();
     await expect(page.getByText(/Failed to save attendance/)).not.toBeVisible();
+    await expect(page.getByText(/Attendance saved — \d+ marked/)).toBeVisible();
   });
 
   test('"View Report" link navigates to the attendance report page', async ({ page }) => {
