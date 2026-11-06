@@ -2,6 +2,7 @@ import { useState, useMemo, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Badge } from '../../components/ui/Badge.jsx';
@@ -41,6 +42,7 @@ function RejectModal({ open, onOpenChange, requestId, onSuccess }) {
     mutationFn: () =>
       api.patch(`/staff/leave-requests/${requestId}/reject`, { comment }).then((r) => r.data),
     onSuccess: () => {
+      toast.success(t('staff.leaves.rejectSuccess'));
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
       onOpenChange(false);
       setComment('');
@@ -403,6 +405,7 @@ export default function LeaveRequestsPage() {
   const approveMutation = useMutation({
     mutationFn: (id) => api.patch(`/staff/leave-requests/${id}/approve`).then((r) => r.data),
     onSuccess: () => {
+      toast.success(t('staff.leaves.approveSuccess'));
       queryClient.invalidateQueries({ queryKey: ['leave-requests'] });
       setProcessedCount((c) => c + 1);
       setQueueError('');
