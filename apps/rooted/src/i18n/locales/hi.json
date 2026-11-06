@@ -1167,6 +1167,7 @@
       "generatingSlipsFor_other": "{{count}} स्टाफ सदस्यों के लिए पर्चियां बनाई जा रही हैं…",
       "slipsGenerated_one": "{{count}} पर्ची बनाई गई।",
       "slipsGenerated_other": "{{count}} पर्चियां बनाई गईं।",
+      "generationPartial": "पर्चियां बनीं: {{succeeded}}, विफल: {{failed}}।",
       "failedCount": "{{count}} विफल:",
       "jobFailed": "जॉब विफल हो गया।",
       "timedOut": "जॉब की प्रतीक्षा में समय समाप्त हो गया।",

@@ -98,7 +98,17 @@ function GenerateAllPanel({ jobId, staffCount, month, year }) {
   const { state, result, progress, error, timedOut } = useJobPolling(
     jobId ? `/staff/salary-slips/status/${jobId}` : null,
     {
-      onSettled: () => queryClient.invalidateQueries({ queryKey: ['salary-slips', month, year] }),
+      onSettled: (data) => {
+        queryClient.invalidateQueries({ queryKey: ['salary-slips', month, year] });
+        if (data.state === 'failed') {
+          toast.error(t('staff.salary.jobFailed'));
+          return;
+        }
+        const succeeded = data.result?.succeeded?.length ?? 0;
+        const failed = data.result?.failed?.length ?? 0;
+        if (failed > 0) toast.warning(t('staff.salary.generationPartial', { succeeded, failed }));
+        else toast.success(t('staff.salary.slipsGenerated', { count: succeeded }));
+      },
     }
   );
 

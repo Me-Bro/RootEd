@@ -1167,6 +1167,7 @@
       "generatingSlipsFor_other": "generating slips for {{count}} staff members…",
       "slipsGenerated_one": "{{count}} slip generated.",
       "slipsGenerated_other": "{{count}} slips generated.",
+      "generationPartial": "Slips generated: {{succeeded}}, failed: {{failed}}.",
       "failedCount": "{{count}} failed:",
       "jobFailed": "Job failed.",
       "timedOut": "Timed out waiting for the job.",
