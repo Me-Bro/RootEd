@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Badge } from '../../components/ui/Badge.jsx';
@@ -173,6 +174,7 @@ export default function SalaryPage() {
         .post('/staff/salary-slips/generate-all', { month: Number(month), year: Number(year) })
         .then((r) => r.data),
     onSuccess: (data) => {
+      toast.success(t('staff.salary.generationStarted', { count: data.staffCount }));
       setGenJob({ jobId: data.jobId, staffCount: data.staffCount });
       setGenError('');
     },

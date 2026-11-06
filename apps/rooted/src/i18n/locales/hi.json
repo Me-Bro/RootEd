@@ -1171,6 +1171,8 @@
       "jobFailed": "जॉब विफल हो गया।",
       "timedOut": "जॉब की प्रतीक्षा में समय समाप्त हो गया।",
       "generateFailed": "जनरेशन शुरू करने में विफल",
+      "generationStarted_one": "{{count}} स्टाफ सदस्य के लिए वेतन पर्चियां बनाना शुरू हुआ।",
+      "generationStarted_other": "{{count}} स्टाफ सदस्यों के लिए वेतन पर्चियां बनाना शुरू हुआ।",
       "loadFailed": "वेतन पर्चियां लोड करने में विफल",
       "columnStaffName": "स्टाफ का नाम",
       "columnGrossEarnings": "सकल आय",

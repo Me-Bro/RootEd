@@ -1171,6 +1171,8 @@
       "jobFailed": "Job failed.",
       "timedOut": "Timed out waiting for the job.",
       "generateFailed": "Failed to start generation",
+      "generationStarted_one": "Payroll generation started for {{count}} staff member.",
+      "generationStarted_other": "Payroll generation started for {{count}} staff members.",
       "loadFailed": "Failed to load salary slips",
       "columnStaffName": "Staff Name",
       "columnGrossEarnings": "Gross Earnings",
