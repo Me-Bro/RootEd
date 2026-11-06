@@ -17,6 +17,13 @@ describe('mapImportRow', () => {
     expect(out.email).toBeUndefined();
   });
 
+  test('rollNo column maps for a school; blank is ignored; other org types reject it', () => {
+    expect(map({ rollNo: '12' }).fields.rollNo).toBe('12');
+    expect(map({ rollNo: '' }).fields).not.toHaveProperty('rollNo');
+    expect(map({ rollNo: '' }, 'college').ok).toBe(true);
+    expect(map({ rollNo: '12' }, 'college').ok).toBe(false);
+  });
+
   test('requires admissionNo, firstName and lastName', () => {
     for (const key of Object.keys(base)) {
       const out = mapImportRow({ ...base, [key]: '' }, 'school');

@@ -251,6 +251,14 @@ describe('org-type field groups', () => {
     expect(update('school').safeParse(batch).success).toBe(false);
   });
 
+  test('rollNo is a school-only optional field, clearable on update', () => {
+    expect(create('school').safeParse(base).success).toBe(true);
+    expect(create('school').safeParse({ ...base, rollNo: 'A-12' }).success).toBe(true);
+    expect(create('school').safeParse({ ...base, rollNo: 'x'.repeat(21) }).success).toBe(false);
+    expect(create('college').safeParse({ ...base, rollNo: '12' }).success).toBe(false);
+    expect(update('school').parse({ rollNo: '' })).toEqual({ rollNo: '' });
+  });
+
   test('an unknown org type falls back to the school group', () => {
     expect(create('mystery').safeParse({ ...base, ...school }).success).toBe(true);
     expect(studentGroupFor('mystery')).toBe('school');

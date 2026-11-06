@@ -61,6 +61,7 @@ export default function MarkRow({ student, score, letterGrade, focused, onSelect
           {student.firstName} {student.lastName}
         </p>
         <p className="truncate text-xs text-muted-foreground">
+          {student.rollNo && `${t('academic.attendance.rollShort', { rollNo: student.rollNo })} · `}
           {student.admissionNo}
           {focused && (
             <span className="ml-1.5 font-medium text-primary">{t('academic.grades.typing')}</span>

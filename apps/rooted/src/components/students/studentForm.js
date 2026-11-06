@@ -6,6 +6,7 @@ import { studentGroupFor } from '@rooted/shared/utils';
 // @rooted/shared), which rejects a field outside the tenant's group.
 export const GROUP_FIELDS = {
   school: [
+    { key: 'rollNo' },
     { key: 'previousSchool' },
     { key: 'tcNumber' },
     { key: 'motherTongue' },

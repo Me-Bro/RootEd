@@ -616,6 +616,7 @@
       "medicalNotes": "चिकित्सा संबंधी टिप्पणी",
       "otherSection": "अन्य विवरण",
       "fields": {
+        "rollNo": "रोल नंबर",
         "previousSchool": "पिछला स्कूल",
         "tcNumber": "स्थानांतरण प्रमाणपत्र क्र.",
         "motherTongue": "मातृभाषा",
@@ -754,8 +755,10 @@
       "sort": {
         "name": "नाम (A–Z)",
         "admissionNo": "प्रवेश क्रमांक",
+        "rollNo": "रोल नं.",
         "attendancePct": "उपस्थिति % (कम→अधिक)"
-      }
+      },
+      "rollShort": "रोल {{rollNo}}"
     },
     "attendanceReport": {
       "title": "उपस्थिति रिपोर्ट",

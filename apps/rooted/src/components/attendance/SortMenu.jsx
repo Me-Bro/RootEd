@@ -8,11 +8,12 @@ import {
   DropdownMenuRadioItem,
 } from '../ui/dropdown-menu.jsx';
 
-const OPTION_KEYS = ['name', 'admissionNo', 'attendancePct'];
+const OPTION_KEYS = ['name', 'admissionNo', 'rollNo', 'attendancePct'];
 
-export default function SortMenu({ value, onChange }) {
+// Roll number is a school-only field, so the option shows only once a student has one.
+export default function SortMenu({ value, onChange, hasRollNo }) {
   const { t } = useTranslation();
-  const OPTIONS = OPTION_KEYS.map((key) => ({
+  const OPTIONS = OPTION_KEYS.filter((key) => key !== 'rollNo' || hasRollNo).map((key) => ({
     key,
     label: t(`academic.attendance.sort.${key}`),
   }));

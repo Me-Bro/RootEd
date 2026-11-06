@@ -130,7 +130,10 @@ export default function RosterInfiniteList({ sectionId, search }) {
               <p className="truncate text-sm font-medium">
                 {s.firstName} {s.lastName}
               </p>
-              <p className="font-mono text-xs text-muted-foreground">{s.admissionNo}</p>
+              <p className="text-xs text-muted-foreground">
+                {s.rollNo && `${t('academic.attendance.rollShort', { rollNo: s.rollNo })} · `}
+                <span className="font-mono">{s.admissionNo}</span>
+              </p>
             </div>
             {s.account !== undefined && studentLoginState(s.account) !== 'active' && (
               <LoginBadge state={studentLoginState(s.account)} />

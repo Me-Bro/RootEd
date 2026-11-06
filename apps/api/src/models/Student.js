@@ -80,6 +80,7 @@ const studentSchema = new mongoose.Schema(
     aadhaarLast4: { type: String },
     // Extra fields by org type (studentGroupFor in @rooted/shared): the API only
     // accepts the group that matches the tenant.
+    rollNo: { type: String },
     previousSchool: { type: String },
     tcNumber: { type: String },
     motherTongue: { type: String },
