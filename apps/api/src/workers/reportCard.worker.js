@@ -80,12 +80,17 @@ async function loadReportCardData(tenantId, termId, sectionId) {
 
 function drawFooter(doc, pageNum, pageCount) {
   const bottom = doc.page.height - doc.page.margins.bottom + 10;
+  // The footer sits inside the bottom margin; pdfkit starts a new page for any
+  // text below maxY (height - margins.bottom), so zero it while drawing.
+  const savedBottom = doc.page.margins.bottom;
+  doc.page.margins.bottom = 0;
   doc
     .fontSize(7)
     .fillColor('gray')
     .text(GRADING_SCALE_LEGEND, 50, bottom, { width: 340 })
     .text(`Page ${pageNum} of ${pageCount}`, 400, bottom, { width: 140, align: 'right' })
     .fillColor('black');
+  doc.page.margins.bottom = savedBottom;
 }
 
 function drawSignatureLines(doc) {
