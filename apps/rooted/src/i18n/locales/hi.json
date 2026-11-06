@@ -394,6 +394,7 @@
       "feeCollected": "एकत्रित शुल्क",
       "avgScore": "औसत परीक्षा स्कोर",
       "staffPresent": "उपस्थित स्टाफ",
+      "staffPresentMeta": "{{total}} में से {{present}} स्टाफ",
       "attendanceTrend": "उपस्थिति रुझान",
       "period7d": "7 दिन",
       "period30d": "30 दिन",

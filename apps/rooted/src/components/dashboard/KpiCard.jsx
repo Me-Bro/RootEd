@@ -11,11 +11,12 @@ const TONE_INDICATOR = {
 // A KPI card doubles as the "exact number" and the "colour-coded glance"
 // from the mock's two separate sections — one Progress bar tinted by tone
 // gets both jobs done instead of duplicating the same 4 numbers twice.
-export default function KpiCard({ label, valueLabel, percent, tone = 'good', onTap }) {
+export default function KpiCard({ label, valueLabel, meta, percent, tone = 'good', onTap }) {
   const content = (
     <CardContent className="pt-4">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-xl font-bold text-foreground">{valueLabel}</p>
+      {meta && <p className="text-xs text-muted-foreground">{meta}</p>}
       <Progress value={percent} className="mt-2">
         <ProgressTrack>
           <ProgressIndicator className={cn(TONE_INDICATOR[tone] ?? TONE_INDICATOR.good)} />
