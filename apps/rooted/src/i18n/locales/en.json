@@ -728,6 +728,7 @@
       "noActiveStudents": "No active students in this section.",
       "markedOfTotal": "Marked {{marked}} of {{total}}",
       "noMatch": "No student matches '{{query}}'",
+      "saved": "Attendance saved — {{count}} marked.",
       "saveFailed": "Failed to save attendance — nothing was lost, tap Save to retry.",
       "markRestPresent": "Mark rest present",
       "saveOfTotal": "Save · {{marked}} of {{total}}",
