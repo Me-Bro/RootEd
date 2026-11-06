@@ -65,7 +65,7 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t('academic.students.addStudent')}</DialogTitle>
         </DialogHeader>
@@ -75,7 +75,7 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
             e.preventDefault();
             mutation.mutate(form);
           }}
-          className="flex flex-col gap-4"
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2"
         >
           <Input
             label={t('academic.students.admissionNo')}
@@ -142,7 +142,7 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
               <option value="other">{t('academic.students.other')}</option>
             </select>
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 sm:col-span-2">
             <Input
               id="student-email"
               type="email"
@@ -153,7 +153,7 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
             <p className="text-xs text-muted-foreground">{t('academic.studentForm.emailHint')}</p>
           </div>
           <StudentExtraFields form={form} setForm={setForm} orgType={orgType} />
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p className="text-sm text-destructive sm:col-span-2">{error}</p>}
         </form>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
