@@ -142,14 +142,12 @@ export default function SetupChecklist() {
                   <span className="sr-only">
                     {done ? t('dashboard.setup.done') : t('dashboard.setup.todo')}
                   </span>
-                  {!done && (
-                    <p className="text-xs text-muted-foreground">
-                      {t(`dashboard.setup.${key}.hint`)}{' '}
-                      <Link to={to} className="font-medium text-foreground underline">
-                        {t('dashboard.setup.open')}
-                      </Link>
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {!done && <>{t(`dashboard.setup.${key}.hint`)} </>}
+                    <Link to={to} className="font-medium text-foreground underline">
+                      {t('dashboard.setup.open')}
+                    </Link>
+                  </p>
                 </div>
               </li>
             ))}
