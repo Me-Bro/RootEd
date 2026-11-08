@@ -12,7 +12,7 @@ const STATUS_VARIANT = { paid: 'success', partial: 'warning', unpaid: 'danger', 
 export default function MyFeesPage() {
   const { t } = useTranslation();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['me', 'fees'],
     queryFn: () => api.get('/me/fees').then((r) => r.data),
   });
@@ -20,15 +20,15 @@ export default function MyFeesPage() {
   const assignments = data?.assignments ?? [];
   const payments = data?.payments ?? [];
 
-  const totalDue = assignments.reduce((sum, a) => sum + a.totalAmount - (a.discountAmount || 0), 0);
-  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-  const balance = totalDue - totalPaid;
+  const totalPaid = assignments.reduce((sum, a) => sum + a.paidAmount, 0);
+  const balance = assignments.reduce((sum, a) => sum + a.balanceDue, 0);
+  const totalDue = totalPaid + balance;
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader title={t('fee.myFees.title')} />
 
-      {!isLoading && (
+      {!isLoading && !isError && (
         <Card>
           <CardContent className="grid grid-cols-1 gap-3 pt-4 sm:grid-cols-3">
             <p className="text-sm">
@@ -57,6 +57,8 @@ export default function MyFeesPage() {
             t('common.status'),
           ]}
           isLoading={isLoading}
+          isError={isError}
+          onRetry={refetch}
           isEmpty={!isLoading && assignments.length === 0}
           emptyMessage={t('fee.myFees.noAssignments')}
         >
@@ -86,6 +88,8 @@ export default function MyFeesPage() {
             t('fee.myFees.columnReceipt'),
           ]}
           isLoading={isLoading}
+          isError={isError}
+          onRetry={refetch}
           isEmpty={!isLoading && payments.length === 0}
           emptyMessage={t('fee.myFees.noPayments')}
         >

@@ -74,17 +74,25 @@ function NewExpenseModal({ open, onOpenChange, costCenters }) {
         })
         .then((r) => r.data);
 
+      // The entry is saved by now. A failed upload must not fail the whole
+      // mutation, or the form stays open and a second submit duplicates it.
+      let attachmentFailed = false;
       if (file) {
         const fd = new FormData();
         fd.append('file', file);
-        await api.post(`/expense/entries/${entry._id}/attachments`, fd, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        try {
+          await api.post(`/expense/entries/${entry._id}/attachments`, fd, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+        } catch {
+          attachmentFailed = true;
+        }
       }
 
-      return entry;
+      return { entry, attachmentFailed };
     },
-    onSuccess: () => {
+    onSuccess: ({ attachmentFailed }) => {
+      if (attachmentFailed) toast.warning(t('expense.entries.attachmentFailed'));
       queryClient.invalidateQueries({ queryKey: ['expense-entries'] });
       onOpenChange(false);
       setForm({

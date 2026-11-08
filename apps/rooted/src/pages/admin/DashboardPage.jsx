@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { isSelfScoped } from '@rooted/shared/constants';
 import { hasSeats, isModuleEnabled } from '@rooted/shared/utils';
 import api from '../../lib/api.js';
-import { formatDate } from '../../utils/intl.js';
+import { formatDate, localDay } from '../../utils/intl.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
@@ -233,7 +233,12 @@ function StudentDashboard() {
     queryFn: () => api.get('/me/grades').then((r) => r.data),
     enabled: isStudent && academicEnabled && !seats,
   });
-  const { data: fees, isLoading: loadingFees } = useQuery({
+  const {
+    data: fees,
+    isLoading: loadingFees,
+    isError: feesError,
+    refetch: refetchFees,
+  } = useQuery({
     queryKey: ['me', 'fees', 'dashboard'],
     queryFn: () => api.get('/me/fees').then((r) => r.data),
     enabled: isStudent && feeEnabled,
@@ -287,7 +292,15 @@ function StudentDashboard() {
         {academicEnabled && !seats && (
           <GradesCard grades={grades} loading={loadingGrades} onOpenSubject={setSubject} />
         )}
-        {feeEnabled && <FeeCard fees={fees} now={now} loading={loadingFees} />}
+        {feeEnabled && (
+          <FeeCard
+            fees={fees}
+            now={now}
+            loading={loadingFees}
+            error={feesError}
+            onRetry={refetchFees}
+          />
+        )}
       </div>
       <SubjectSheet subject={subject} grades={grades} onClose={() => setSubject(null)} />
 
@@ -320,7 +333,7 @@ function StudentDashboard() {
 }
 
 function todayParam() {
-  return new Date().toISOString().slice(0, 10);
+  return localDay();
 }
 
 function pct(numerator, denominator) {

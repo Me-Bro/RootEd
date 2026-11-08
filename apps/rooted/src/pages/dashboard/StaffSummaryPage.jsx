@@ -2,13 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import api from '../../lib/api.js';
-import { formatDate } from '../../utils/intl.js';
+import { formatDate, localDay } from '../../utils/intl.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
 
 function todayParam() {
-  return new Date().toISOString().slice(0, 10);
+  return localDay();
 }
 
 export default function StaffSummaryPage() {

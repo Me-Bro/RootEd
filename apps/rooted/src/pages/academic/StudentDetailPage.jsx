@@ -27,6 +27,7 @@ import { studentLoginState } from '../../utils/loginState.js';
 import StudentExtraFields from '../../components/students/StudentExtraFields.jsx';
 import StudentProfileDetails from '../../components/students/StudentProfileDetails.jsx';
 import { formFromStudent, studentPayload } from '../../components/students/studentForm.js';
+import { formatCurrency } from '../../utils/intl.js';
 
 const selectCls =
   'h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
@@ -296,26 +297,22 @@ function FeeSummary({ studentId }) {
     queryKey: ['student-fee-assignments', studentId],
     queryFn: () => api.get(`/fee/assignments?studentId=${studentId}`).then((r) => r.data),
   });
-  const { data: payments = [], isLoading: loadingPayments } = useQuery({
-    queryKey: ['student-fee-payments', studentId],
-    queryFn: () => api.get(`/fee/payments?studentId=${studentId}`).then((r) => r.data),
-  });
-
-  if (loadingAssignments || loadingPayments)
+  if (loadingAssignments)
     return (
       <p className="text-sm text-muted-foreground">{t('academic.studentDetail.loadingFees')}</p>
     );
 
-  const totalDue = assignments.reduce((sum, a) => sum + a.totalAmount - (a.discountAmount || 0), 0);
-  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-  const balance = totalDue - totalPaid;
+  // Refunds excluded and late fees included by the server; a waived fee owes nothing.
+  const totalPaid = assignments.reduce((sum, a) => sum + a.paidAmount, 0);
+  const balance = assignments.reduce((sum, a) => sum + a.balanceDue, 0);
+  const totalDue = totalPaid + balance;
 
   return (
     <div className="flex flex-col gap-1 text-sm">
-      <p>{t('academic.studentDetail.totalDue', { amount: totalDue })}</p>
-      <p>{t('academic.studentDetail.totalPaid', { amount: totalPaid })}</p>
+      <p>{t('academic.studentDetail.totalDue', { amount: formatCurrency(totalDue) })}</p>
+      <p>{t('academic.studentDetail.totalPaid', { amount: formatCurrency(totalPaid) })}</p>
       <p className={balance > 0 ? 'text-destructive font-medium' : 'text-emerald-600'}>
-        {t('academic.studentDetail.balance', { amount: balance })}
+        {t('academic.studentDetail.balance', { amount: formatCurrency(balance) })}
       </p>
     </div>
   );

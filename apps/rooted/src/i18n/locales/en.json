@@ -64,6 +64,8 @@
     "authenticatorCode": "Authenticator Code",
     "sixDigitCode": "6-digit code",
     "loginFailed": "Login failed",
+    "emailOrUsername": "Email or username",
+    "sessionExpired": "Your session expired. Sign in again to continue where you left off.",
     "needsTotp": "Please enter your TOTP code",
     "orContinueWith": "or continue with",
     "verifyCode": "Verify",
@@ -151,7 +153,21 @@
       "thursday": "Thursday",
       "friday": "Friday"
     },
-    "done": "Done"
+    "done": "Done",
+    "loadFailed": "Could not load this. Check your connection and try again.",
+    "serverError": "The server had a problem. Try again in a moment.",
+    "retry": "Retry",
+    "offline": "You are offline. Nothing will load or save until you reconnect.",
+    "goToDashboard": "Go to dashboard",
+    "reload": "Reload",
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "This address does not exist. It may be an old or mistyped link.",
+    "noAccessTitle": "You do not have access to this page",
+    "noAccessBody": "Your role does not include it. Ask your administrator if you need it.",
+    "moduleOffTitle": "This feature is turned off",
+    "moduleOffBody": "It is not turned on for your organization. Ask your administrator.",
+    "crashTitle": "Something went wrong",
+    "crashBody": "This page hit an error. Reload to try again. The rest of the app still works."
   },
   "help": {
     "title": "Help",
@@ -828,7 +844,13 @@
       "backspaceAria": "Backspace",
       "digitAria": "Digit {{digit}}",
       "nextStudent": "Next student ›",
-      "keyboardHint": "Type a mark · Enter next · A absent · Backspace delete · ↑↓ move"
+      "keyboardHint": "Type a mark · Enter next · A absent · Backspace delete · ↑↓ move",
+      "unsavedChanges": "Unsaved marks. They are kept on this device until you tap Save.",
+      "absentNotSaved_one": "{{count}} student marked AB is not saved and will show as blank next time.",
+      "absentNotSaved_other": "{{count}} students marked AB are not saved and will show as blank next time.",
+      "lockConfirmTitle": "Lock and publish these grades?",
+      "lockUnsavedWarning": "You have unsaved marks: save them first, or they will not be published.",
+      "lockFailed": "Could not lock the grades. Try again."
     },
     "gradeReport": {
       "title": "Grade Report",
@@ -1142,7 +1164,8 @@
       "reasonLabel": "Reason",
       "balanceAfterLabel": "Balance after",
       "notTracked": "Not tracked",
-      "balanceAfterValue": "{{left}} of {{total}} {{type}} days left"
+      "balanceAfterValue": "{{left}} of {{total}} {{type}} days left",
+      "balanceOverValue": "{{over}} days over the {{total}}-day {{type}} allowance"
     },
     "salary": {
       "title": "Salary Slips",
@@ -1358,6 +1381,7 @@
   "expense": {
     "entries": {
       "createFailed": "Failed to create expense",
+      "attachmentFailed": "Expense saved, but the receipt did not upload. Do not submit it again.",
       "newExpense": "New Expense",
       "titleLabel": "Title",
       "categoryLabel": "Category",

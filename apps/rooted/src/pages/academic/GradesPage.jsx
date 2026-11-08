@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -24,8 +24,24 @@ import { useMarkEntryKeys } from '../../hooks/useMarkEntryKeys.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import DockedKeypad from '../../components/grades/DockedKeypad.jsx';
 import MarkRow from '../../components/grades/MarkRow.jsx';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '../../components/ui/alert-dialog.jsx';
 
 const EMPTY_ARRAY = [];
+
+// Marks not yet saved live in sessionStorage per scope, like attendance does, so
+// switching section/term/subject or leaving the page and coming back keeps them.
+function draftKey(scopeKey) {
+  return `grades:${scopeKey}`;
+}
 
 const CHIP_TRIGGER_CLASS =
   'flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium';
@@ -70,6 +86,7 @@ export default function GradesPage() {
   const [focusedId, setFocusedId] = useState(null);
   const [draft, setDraft] = useState('');
   const [importResult, setImportResult] = useState(null);
+  const [confirmLock, setConfirmLock] = useState(false);
   const fileRef = useRef(null);
 
   const { classes, sections, isLoading: classesLoading } = useClassSections();
@@ -174,10 +191,15 @@ export default function GradesPage() {
     if (studentsLoading || gradesLoading || !studentsFetched || !gradesFetched) return;
     if (initializedKeyRef.current === scopeKey) return;
 
-    const map = {};
-    for (const g of existingGrades) {
-      const sid = g.studentId?._id ?? g.studentId;
-      if (typeof g.score === 'number') map[sid] = g.score;
+    const saved = sessionStorage.getItem(draftKey(scopeKey));
+    let map = {};
+    if (saved) {
+      map = JSON.parse(saved);
+    } else {
+      for (const g of existingGrades) {
+        const sid = g.studentId?._id ?? g.studentId;
+        if (typeof g.score === 'number') map[sid] = g.score;
+      }
     }
     setScoreMap(map);
     setFocusedId(firstUnmarkedId(students, map));
@@ -193,12 +215,31 @@ export default function GradesPage() {
     existingGrades,
   ]);
 
+  const serverScores = useMemo(() => {
+    const map = {};
+    for (const g of existingGrades) {
+      if (typeof g.score === 'number') map[g.studentId?._id ?? g.studentId] = g.score;
+    }
+    return map;
+  }, [existingGrades]);
+  // AB (null) is never sent, so it alone does not make the page unsaved.
+  const dirty = Object.entries(scoreMap).some(([sid, v]) => v !== null && serverScores[sid] !== v);
+
+  useEffect(() => {
+    if (!scopeKey || initializedKeyRef.current !== scopeKey) return;
+    if (dirty) sessionStorage.setItem(draftKey(scopeKey), JSON.stringify(scoreMap));
+    else sessionStorage.removeItem(draftKey(scopeKey));
+  }, [scoreMap, scopeKey, dirty]);
+
   const selectedTerm = terms.find((t) => t._id === termId);
   const selectedSubject = subjects.find((s) => s._id === subjectId);
 
   const saveMutation = useMutation({
     mutationFn: (grades) => api.post('/academic/grades', { grades }).then((r) => r.data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: gradesKey }),
+    onSuccess: () => {
+      sessionStorage.removeItem(draftKey(scopeKey));
+      queryClient.invalidateQueries({ queryKey: gradesKey });
+    },
   });
 
   const lockMutation = useMutation({
@@ -206,10 +247,12 @@ export default function GradesPage() {
       api
         .post(`/academic/grades/${action}`, { sectionId, subjectId, termId, assessmentType })
         .then((r) => r.data),
-    onSuccess: () =>
+    onSuccess: () => {
+      setConfirmLock(false);
       queryClient.invalidateQueries({
         queryKey: ['grade-lock', sectionId, subjectId, termId, assessmentType],
-      }),
+      });
+    },
   });
 
   const importMutation = useMutation({
@@ -232,6 +275,7 @@ export default function GradesPage() {
       // existingGrades refetch — an import can change scores the current
       // in-memory scoreMap doesn't know about.
       initializedKeyRef.current = null;
+      sessionStorage.removeItem(draftKey(scopeKey));
       queryClient.invalidateQueries({ queryKey: gradesKey });
       setImportResult(result);
     },
@@ -324,6 +368,7 @@ export default function GradesPage() {
   }
 
   const enteredCount = Object.keys(scoreMap).length;
+  const absentCount = Object.values(scoreMap).filter((v) => v === null).length;
   const numericScores = Object.values(scoreMap).filter((v) => typeof v === 'number');
   const liveAverage = numericScores.length
     ? Math.round(numericScores.reduce((a, b) => a + b, 0) / numericScores.length)
@@ -523,8 +568,20 @@ export default function GradesPage() {
             <p className="text-center text-sm text-green-600">{t('academic.grades.gradesSaved')}</p>
           )}
           {saveMutation.isError && (
-            <p className="text-center text-sm text-destructive">
+            <p role="alert" className="text-center text-sm text-destructive">
               {t('academic.grades.saveFailed')}
+            </p>
+          )}
+          {!locked && dirty && !saveMutation.isPending && (
+            <p className="text-center text-xs text-amber-700 dark:text-amber-300">
+              {t('academic.grades.unsavedChanges')}
+            </p>
+          )}
+          {/* ponytail: the Grade model has no absent flag, so AB is a blank on the
+              server. Persisting it needs a model field and reports that skip it. */}
+          {!locked && absentCount > 0 && (
+            <p className="text-center text-xs text-muted-foreground">
+              {t('academic.grades.absentNotSaved', { count: absentCount })}
             </p>
           )}
 
@@ -558,7 +615,11 @@ export default function GradesPage() {
             {canPublish && (
               <Button
                 variant="outline"
-                onClick={() => lockMutation.mutate(locked ? 'unlock' : 'lock')}
+                onClick={() => {
+                  if (locked) return lockMutation.mutate('unlock');
+                  lockMutation.reset();
+                  setConfirmLock(true);
+                }}
                 disabled={lockMutation.isPending}
               >
                 {locked ? t('academic.grades.unlockGrades') : t('academic.grades.lockGrades')}
@@ -578,6 +639,32 @@ export default function GradesPage() {
           </div>
         </div>
       )}
+
+      <AlertDialog open={confirmLock} onOpenChange={(open) => !open && setConfirmLock(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('academic.grades.lockConfirmTitle')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {scopeLabel}. {t('academic.grades.lockHint')}
+              {dirty && ` ${t('academic.grades.lockUnsavedWarning')}`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {lockMutation.isError && (
+            <p role="alert" className="text-sm text-destructive">
+              {t('academic.grades.lockFailed')}
+            </p>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => lockMutation.mutate('lock')}
+              disabled={lockMutation.isPending}
+            >
+              {t('academic.grades.lockGrades')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -116,7 +116,7 @@ api.interceptors.response.use(
       } catch {
         isRefreshing = false;
         setAccessToken(null);
-        if (_onLogout) _onLogout();
+        if (_onLogout) _onLogout({ expired: true });
         return Promise.reject(err);
       }
     }

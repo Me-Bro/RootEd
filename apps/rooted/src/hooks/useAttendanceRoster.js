@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo, useRef, useDeferredValue } from 'react';
+import { useState, useEffect, useMemo, useRef, useDeferredValue, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import api from '../lib/api.js';
+import { localDay } from '../utils/intl.js';
 
 const EMPTY_ARRAY = [];
 
@@ -13,7 +14,7 @@ function previousSchoolDay(dateStr) {
   do {
     d.setDate(d.getDate() - 1);
   } while (d.getDay() === 0 || d.getDay() === 6);
-  return d.toISOString().slice(0, 10);
+  return localDay(d);
 }
 
 function storageKey(sectionId, date) {
@@ -183,6 +184,10 @@ export function useAttendanceRoster({ sectionId, date }) {
     setBulkUndo(null);
   }
 
+  // The toast timing out keeps the bulk marks; only Undo reverts them. Stable so
+  // the toast's timer is not restarted on every render.
+  const dismissBulkUndo = useCallback(() => setBulkUndo(null), []);
+
   const saveMutation = useMutation({
     mutationFn: () =>
       api
@@ -202,6 +207,7 @@ export function useAttendanceRoster({ sectionId, date }) {
     onSuccess: (data) => {
       toast.success(t('academic.attendance.saved', { count: data.saved }));
       sessionStorage.removeItem(storageKey(sectionId, date));
+      setBulkUndo(null);
       queryClient.invalidateQueries({ queryKey: ['attendance', sectionId, date] });
     },
   });
@@ -235,6 +241,7 @@ export function useAttendanceRoster({ sectionId, date }) {
     setStatus,
     markRestPresent,
     undoBulk,
+    dismissBulkUndo,
     handleSaveTap,
     saveMutation,
   };

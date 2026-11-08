@@ -7,7 +7,12 @@ import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.js
 export default function MyGradesPage() {
   const { t } = useTranslation();
 
-  const { data: grades = [], isLoading } = useQuery({
+  const {
+    data: grades = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['me', 'grades'],
     queryFn: () => api.get('/me/grades').then((r) => r.data),
   });
@@ -24,6 +29,8 @@ export default function MyGradesPage() {
           t('academic.studentDetail.columnGrade'),
         ]}
         isLoading={isLoading}
+        isError={isError}
+        onRetry={refetch}
         isEmpty={!isLoading && grades.length === 0}
         emptyMessage={t('academic.studentDetail.noGradesYet')}
       >

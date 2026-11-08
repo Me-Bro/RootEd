@@ -18,6 +18,7 @@ import {
   resolveStudentIdsForStructure,
   recordPayment,
   getDefaulters,
+  withBalances,
   initiateOnlinePayment,
   applyDiscountToAssignment,
   refundPayment,
@@ -350,7 +351,7 @@ router.get('/structures/:id/summary', requirePermission('fees:read'), async (req
     const assignmentIds = assignments.map((a) => a._id);
 
     const paymentAgg = await FeePayment.aggregate([
-      { $match: { tenantId, assignmentId: { $in: assignmentIds } } },
+      { $match: { tenantId, assignmentId: { $in: assignmentIds }, refunded: { $ne: true } } },
       { $group: { _id: null, collectedAmount: { $sum: '$amount' } } },
     ]);
     const collectedAmount = paymentAgg[0]?.collectedAmount || 0;
@@ -394,7 +395,7 @@ router.get('/assignments', requirePermission('fees:read'), async (req, res, next
       .populate('academicYearId', 'name')
       .lean();
 
-    res.json(assignments);
+    res.json(await withBalances(req.tenant._id, assignments));
   } catch (err) {
     next(err);
   }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/useAuth.js';
 import LandingView from '../../components/marketing/LandingView.jsx';
 import LoginDialog from '../../components/auth/LoginDialog.jsx';
@@ -16,8 +16,12 @@ import { LanguageSwitcherTrigger } from '../../components/ui/LanguageSwitcher.js
  */
 export default function HomePage() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { accessToken, loading: authLoading, logout } = useAuth();
-  const [loginOpen, setLoginOpen] = useState(false);
+  // null = not touched yet: /login opens the sign-in dialog by itself, since
+  // every "sign in again" link and redirect in the app lands here.
+  const [loginToggled, setLoginOpen] = useState(null);
+  const loginOpen = loginToggled ?? (pathname === '/login' && !accessToken);
 
   if (authLoading) return null;
 

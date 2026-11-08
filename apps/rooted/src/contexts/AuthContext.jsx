@@ -9,7 +9,11 @@ export function AuthProvider({ children }) {
   const [accessToken, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const logout = useCallback(async () => {
+  // `expired` is set only by the API client when a refresh fails. Also used
+  // directly as an onClick handler, so anything else (an event) means a
+  // deliberate sign-out.
+  const logout = useCallback(async (opts) => {
+    const expired = opts?.expired === true;
     try {
       await api.post('/auth/logout');
     } catch {
@@ -19,6 +23,14 @@ export function AuthProvider({ children }) {
     setToken(null);
     setUser(null);
     clearCsrfToken();
+    if (expired) {
+      // Send them back to where they were once they sign in again.
+      const here = window.location.pathname + window.location.search;
+      const next =
+        here === '/' || here.startsWith('/login') ? '' : `&next=${encodeURIComponent(here)}`;
+      window.location.href = `/login?expired=1${next}`;
+      return;
+    }
     window.location.href = '/login';
   }, []);
 
@@ -69,7 +81,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(
     async (email, password, totpCode) => {
       const { data } = await api.post('/auth/login', {
-        email,
+        identifier: email,
         password,
         ...(totpCode ? { totpCode } : {}),
       });

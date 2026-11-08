@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { LoadError } from '@/components/ui/LoadError';
 
 /**
  * The below-`md` counterpart to DataTable. A table with 6+ columns of
@@ -16,6 +17,8 @@ export function RecordList({
   children,
   isLoading = false,
   isEmpty = false,
+  isError = false,
+  onRetry,
   emptyMessage,
   rows = 4,
 }) {
@@ -31,6 +34,14 @@ export function RecordList({
           </li>
         ))}
       </ul>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-lg border border-border p-6 md:hidden">
+        <LoadError onRetry={onRetry} />
+      </div>
     );
   }
 
