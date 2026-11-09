@@ -17,6 +17,7 @@ import { myMonth } from '../services/studyReports.service.js';
 import { resolveCentreSettings } from '../utils/centreSettings.js';
 import { isModuleEnabled } from '@rooted/shared/utils';
 import { FeePayment } from '../models/FeePayment.js';
+import { withBalances } from '../services/fee.service.js';
 import { Class } from '../models/Class.js';
 import { Section } from '../models/Section.js';
 import { Student } from '../models/Student.js';
@@ -303,7 +304,7 @@ router.get(
         FeePayment.find({ tenantId, studentId }, '-notes').sort({ paymentDate: -1 }).lean(),
       ]);
 
-      res.json({ assignments, payments });
+      res.json({ assignments: await withBalances(tenantId, assignments), payments });
     } catch (err) {
       next(err);
     }

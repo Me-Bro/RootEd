@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, Zap } from 'lucide-react';
 import { Button } from '../../components/ui/Button.jsx';
+import { localDay } from '../../utils/intl.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
@@ -49,7 +50,7 @@ function PctBadge({ pct }) {
 export default function AttendancePage() {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() => localDay());
   const [sectionId, setSectionId] = useState(() => searchParams.get('sectionId') || '');
   const [moreSheetFor, setMoreSheetFor] = useState(null); // studentId | null
 
@@ -77,6 +78,7 @@ export default function AttendancePage() {
     setStatus,
     markRestPresent,
     undoBulk,
+    dismissBulkUndo,
     handleSaveTap,
     saveMutation,
   } = useAttendanceRoster({ sectionId, date });
@@ -128,6 +130,7 @@ export default function AttendancePage() {
         <input
           type="date"
           value={date}
+          max={localDay()}
           onChange={(e) => setDate(e.target.value)}
           className="h-9 rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
         />
@@ -245,7 +248,7 @@ export default function AttendancePage() {
               <BulkUndoToast
                 count={bulkUndo.studentIds.length}
                 onUndo={undoBulk}
-                onExpire={undoBulk}
+                onExpire={dismissBulkUndo}
               />
             </div>
           )}

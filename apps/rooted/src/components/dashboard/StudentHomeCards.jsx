@@ -16,6 +16,7 @@ import { Progress } from '../ui/progress.jsx';
 import { RecordListItem } from '../ui/RecordList.jsx';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../ui/sheet.jsx';
 import { Skeleton } from '../ui/skeleton.jsx';
+import { LoadError } from '../ui/LoadError.jsx';
 import { formatCurrency, formatDate } from '../../utils/intl.js';
 import {
   absentRun,
@@ -372,7 +373,7 @@ export function GradesCard({ grades, loading, onOpenSubject }) {
   );
 }
 
-export function FeeCard({ fees, now, loading }) {
+export function FeeCard({ fees, now, loading, error, onRetry }) {
   const { t } = useTranslation();
   const title = t('dashboard.student.feeBalanceLabel');
   if (loading) {
@@ -382,11 +383,18 @@ export function FeeCard({ fees, now, loading }) {
       </Block>
     );
   }
+  // Never "Paid up" because the request failed.
+  if (error) {
+    return (
+      <Block title={title}>
+        <LoadError onRetry={onRetry} />
+      </Block>
+    );
+  }
 
   const assignments = fees?.assignments ?? [];
   const payments = fees?.payments ?? [];
-  const due = assignments.reduce((sum, a) => sum + a.totalAmount - (a.discountAmount || 0), 0);
-  const balance = due - payments.reduce((sum, p) => sum + p.amount, 0);
+  const balance = assignments.reduce((sum, a) => sum + a.balanceDue, 0);
   const open = assignments.filter((a) => a.status === 'unpaid' || a.status === 'partial');
   const dueDates = open
     .map((a) => a.dueDate)

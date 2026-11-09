@@ -1,3 +1,11 @@
+import { format } from 'date-fns';
+
+// The calendar day on this device, as YYYY-MM-DD. `toISOString()` gives the UTC day,
+// which in IST is yesterday until 05:30.
+export function localDay(date = new Date()) {
+  return format(date, 'yyyy-MM-dd');
+}
+
 export function formatCurrency(amount, currency = 'INR', locale = 'en-IN') {
   return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount);
 }

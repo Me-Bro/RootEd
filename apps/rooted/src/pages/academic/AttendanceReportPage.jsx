@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown } from 'lucide-react';
 import api from '../../lib/api.js';
+import { localDay } from '../../utils/intl.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
@@ -24,7 +25,7 @@ import ShareSummaryCard from '../../components/attendance-report/ShareSummaryCar
 const EMPTY_ARRAY = [];
 
 function isoDate(d) {
-  return d.toISOString().slice(0, 10);
+  return localDay(d);
 }
 
 function defaultFrom() {

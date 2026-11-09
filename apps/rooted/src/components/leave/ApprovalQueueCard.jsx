@@ -86,14 +86,26 @@ export default function ApprovalQueueCard({ request, balance, onApprove, onRejec
           </div>
           <div className="flex justify-between gap-3">
             <dt className="text-muted-foreground">{t('staff.leaves.balanceAfterLabel')}</dt>
-            <dd className="text-right font-medium">
+            <dd
+              className={
+                remainingAfter < 0
+                  ? 'text-right font-medium text-destructive'
+                  : 'text-right font-medium'
+              }
+            >
               {remainingAfter === null
                 ? t('staff.leaves.notTracked')
-                : t('staff.leaves.balanceAfterValue', {
-                    left: Math.max(remainingAfter, 0),
-                    total: matchedBalance.total,
-                    type: leaveType.name ?? '',
-                  })}
+                : remainingAfter < 0
+                  ? t('staff.leaves.balanceOverValue', {
+                      over: -remainingAfter,
+                      total: matchedBalance.total,
+                      type: leaveType.name ?? '',
+                    })
+                  : t('staff.leaves.balanceAfterValue', {
+                      left: remainingAfter,
+                      total: matchedBalance.total,
+                      type: leaveType.name ?? '',
+                    })}
             </dd>
           </div>
         </dl>

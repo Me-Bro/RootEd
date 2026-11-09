@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { Outlet } from 'react-router-dom';
+import { useState, useEffect, useRef, useSyncExternalStore } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
+import * as Sentry from '@sentry/react';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -47,6 +48,16 @@ import { cn } from '../../lib/utils.js';
 import api from '../../lib/api.js';
 import OrgSwitcher from './OrgSwitcher.jsx';
 import HelpDrawer from '../help/HelpDrawer.jsx';
+import { RouteStatus } from './RouteStatus.jsx';
+
+function subscribeOnline(callback) {
+  window.addEventListener('online', callback);
+  window.addEventListener('offline', callback);
+  return () => {
+    window.removeEventListener('online', callback);
+    window.removeEventListener('offline', callback);
+  };
+}
 
 // A study center sells seats, not lessons: these pages do not apply to it. The
 // routes still work if opened by URL; only the nav entry is withheld.
@@ -428,6 +439,8 @@ export default function AppShell() {
   const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { pathname } = useLocation();
+  const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine);
   const isSuperAdmin = user?.systemRole === 'super_admin';
   const isImpersonating = Boolean(user?.impersonatedTenantId);
   const permissions = user?.permissions ?? [];
@@ -485,6 +498,14 @@ export default function AppShell() {
       </Sheet>
 
       <div className="flex h-full min-w-0 min-h-0 flex-1 flex-col">
+        {!online && (
+          <div
+            role="status"
+            className="bg-amber-500/15 px-6 py-2 text-sm text-amber-800 dark:text-amber-300"
+          >
+            {t('common.offline')}
+          </div>
+        )}
         {isImpersonating && (
           <div className="flex items-center justify-between gap-3 bg-amber-500/15 px-6 py-2 text-sm text-amber-800 dark:text-amber-300">
             <span>{t('auth.impersonating')}</span>
@@ -523,7 +544,10 @@ export default function AppShell() {
         </header>
 
         <main className="flex-1 overflow-auto p-6 pb-20 md:pb-6">
-          <Outlet />
+          {/* Keyed by path so navigating away from a crashed page recovers. */}
+          <Sentry.ErrorBoundary key={pathname} fallback={<RouteStatus kind="crash" />}>
+            <Outlet />
+          </Sentry.ErrorBoundary>
         </main>
       </div>
 

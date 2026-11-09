@@ -2,12 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import api from '../../lib/api.js';
+import { localDay } from '../../utils/intl.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
 import { Progress, ProgressTrack, ProgressIndicator } from '../../components/ui/progress.jsx';
 
 function todayParam() {
-  return new Date().toISOString().slice(0, 10);
+  return localDay();
 }
 
 export default function AcademicSummaryPage() {

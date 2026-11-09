@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { LoadError } from '@/components/ui/LoadError';
 
 export { TableRow, TableCell } from '@/components/ui/table';
 
@@ -29,6 +30,9 @@ export function DataTable({
   children,
   isLoading = false,
   isEmpty = false,
+  // A failed load is not an empty list: never show "No records" for it.
+  isError = false,
+  onRetry,
   emptyMessage,
   className,
 }) {
@@ -52,6 +56,12 @@ export function DataTable({
         <TableBody>
           {isLoading ? (
             <TableSkeleton cols={headers.length} />
+          ) : isError ? (
+            <TableRow className="hover:bg-transparent">
+              <TableCell colSpan={headers.length} className="h-32">
+                <LoadError onRetry={onRetry} />
+              </TableCell>
+            </TableRow>
           ) : isEmpty ? (
             <TableRow className="hover:bg-transparent">
               <TableCell

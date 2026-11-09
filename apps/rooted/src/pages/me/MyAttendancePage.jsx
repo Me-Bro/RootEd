@@ -9,7 +9,12 @@ import { formatDate } from '../../utils/intl.js';
 export default function MyAttendancePage() {
   const { t } = useTranslation();
 
-  const { data: records = [], isLoading } = useQuery({
+  const {
+    data: records = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['me', 'attendance'],
     queryFn: () => api.get('/me/attendance').then((r) => r.data),
   });
@@ -21,7 +26,7 @@ export default function MyAttendancePage() {
     <div className="flex flex-col gap-6">
       <PageHeader title={t('academic.myAttendance.title')} />
 
-      {!isLoading && pct !== null && (
+      {!isLoading && !isError && pct !== null && (
         <p className="text-sm text-muted-foreground">
           {t('academic.studentDetail.presentDaysSummary', {
             pct,
@@ -34,6 +39,8 @@ export default function MyAttendancePage() {
       <DataTable
         headers={[t('academic.myAttendance.columnDate'), t('common.status')]}
         isLoading={isLoading}
+        isError={isError}
+        onRetry={refetch}
         isEmpty={!isLoading && records.length === 0}
         emptyMessage={t('academic.studentDetail.noAttendanceRecords')}
       >

@@ -69,6 +69,7 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
         .then((r) => r.data),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['fee-assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['fee-defaulters'] });
       setPaymentSuccess(true);
       if (data.receiptUrl) setReceiptUrl(data.receiptUrl);
     },
@@ -161,7 +162,7 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
               <br />
               {t('fee.collection.totalDueLabel')}{' '}
               <strong className="text-foreground">
-                {formatCurrency((assignment?.totalAmount ?? 0) - (assignment?.discountAmount || 0))}
+                {formatCurrency(assignment?.balanceDue ?? 0)}
               </strong>
             </div>
             <Input
@@ -171,6 +172,8 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
               onChange={update('amount')}
               required
               min="1"
+              max={assignment?.balanceDue || undefined}
+              placeholder={assignment?.balanceDue ? String(assignment.balanceDue) : undefined}
             />
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium">{t('fee.collection.paymentMethod')}</label>
@@ -367,7 +370,12 @@ function AssignmentsTab() {
     queryFn: () => api.get('/academic/years').then((r) => r.data),
   });
 
-  const { data: assignments = [], isLoading } = useQuery({
+  const {
+    data: assignments = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['fee-assignments', yearId],
     queryFn: () => {
       const params = new URLSearchParams();
@@ -409,6 +417,8 @@ function AssignmentsTab() {
 
       <RecordList
         isLoading={isLoading}
+        isError={isError}
+        onRetry={refetch}
         isEmpty={filtered.length === 0}
         emptyMessage={t('fee.collection.noAssignmentsFound')}
       >
@@ -453,6 +463,8 @@ function AssignmentsTab() {
           t('fee.collection.tableAction'),
         ]}
         isLoading={isLoading}
+        isError={isError}
+        onRetry={refetch}
         isEmpty={filtered.length === 0}
         emptyMessage={t('fee.collection.noAssignmentsFound')}
       >
@@ -579,7 +591,12 @@ function PaymentsTab() {
   const [to, setTo] = useState('');
   const [refundFor, setRefundFor] = useState(null);
 
-  const { data: payments = [], isLoading } = useQuery({
+  const {
+    data: payments = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['fee-payments', from, to],
     queryFn: () => {
       const params = new URLSearchParams();
@@ -603,6 +620,8 @@ function PaymentsTab() {
 
       <RecordList
         isLoading={isLoading}
+        isError={isError}
+        onRetry={refetch}
         isEmpty={payments.length === 0}
         emptyMessage={t('fee.collection.noPaymentsFound')}
       >
@@ -647,6 +666,8 @@ function PaymentsTab() {
           t('fee.collection.tableRefund'),
         ]}
         isLoading={isLoading}
+        isError={isError}
+        onRetry={refetch}
         isEmpty={payments.length === 0}
         emptyMessage={t('fee.collection.noPaymentsFound')}
       >
@@ -703,7 +724,12 @@ function DefaultersTab() {
   // NOTE: GET /fee/defaulters is unpaginated (414 rows / ~430KB at current
   // scale) — known limitation, not fixed by this pass. Flagged for a future
   // pagination pass rather than silently ignored (see spec §5).
-  const { data: defaulters = [], isLoading } = useQuery({
+  const {
+    data: defaulters = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ['fee-defaulters', yearId],
     queryFn: () => {
       const params = new URLSearchParams();
@@ -714,14 +740,11 @@ function DefaultersTab() {
 
   // Worst-overdue first — the longest-outstanding cases should surface first.
   const sorted = [...defaulters].sort((a, b) => b.daysOverdue - a.daysOverdue);
-  const totalOutstanding = sorted.reduce(
-    (sum, d) => sum + (d.totalAmount - (d.discountAmount || 0)),
-    0
-  );
+  const totalOutstanding = sorted.reduce((sum, d) => sum + d.balanceDue, 0);
 
   return (
     <div className="flex flex-col gap-4">
-      {!isLoading && (
+      {!isLoading && !isError && (
         <p className="text-sm text-muted-foreground">
           {t('fee.collection.outstandingSummary', {
             count: sorted.length,
@@ -747,6 +770,8 @@ function DefaultersTab() {
 
       <RecordList
         isLoading={isLoading}
+        isError={isError}
+        onRetry={refetch}
         isEmpty={sorted.length === 0}
         emptyMessage={t('fee.collection.nothingOutstanding')}
       >
@@ -754,9 +779,7 @@ function DefaultersTab() {
           <RecordListItem
             key={d._id}
             title={`${d.studentId?.firstName ?? ''} ${d.studentId?.lastName ?? ''}`.trim()}
-            meta={`${d.studentId?.admissionNo ?? '—'} · ${formatCurrency(
-              d.totalAmount - (d.discountAmount || 0)
-            )}${d.dueDate ? ` · ${new Date(d.dueDate).toLocaleDateString()}` : ''}`}
+            meta={`${d.studentId?.admissionNo ?? '—'} · ${formatCurrency(d.balanceDue)}${d.dueDate ? ` · ${new Date(d.dueDate).toLocaleDateString()}` : ''}`}
             trailing={
               <>
                 <Badge variant={statusVariant(d.status)}>{d.status}</Badge>
@@ -778,6 +801,8 @@ function DefaultersTab() {
           t('fee.collection.tableDaysOverdue'),
         ]}
         isLoading={isLoading}
+        isError={isError}
+        onRetry={refetch}
         isEmpty={sorted.length === 0}
         emptyMessage={t('fee.collection.nothingOutstanding')}
       >
@@ -789,9 +814,7 @@ function DefaultersTab() {
             <TableCell className="px-4 py-3 text-muted-foreground">
               {d.studentId?.admissionNo}
             </TableCell>
-            <TableCell className="px-4 py-3">
-              {formatCurrency(d.totalAmount - (d.discountAmount || 0))}
-            </TableCell>
+            <TableCell className="px-4 py-3">{formatCurrency(d.balanceDue)}</TableCell>
             <TableCell className="px-4 py-3">
               <Badge variant={statusVariant(d.status)}>{d.status}</Badge>
             </TableCell>

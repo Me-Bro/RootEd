@@ -1,5 +1,7 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import i18n from './i18n/index.js';
 import { isModuleEnabled } from '@rooted/shared/utils';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { useAuth } from './contexts/useAuth.js';
@@ -70,14 +72,36 @@ import InventoryPage from './pages/inventory/InventoryPage.jsx';
 import DepreciationPage from './pages/inventory/DepreciationPage.jsx';
 import SetupWizardPage from './pages/tenant/SetupWizardPage.jsx';
 import { Toaster } from './components/ui/sonner.jsx';
+import { RouteStatus } from './components/layout/RouteStatus.jsx';
 import './index.css';
 
-const queryClient = new QueryClient();
+// A failed load must never pass for an empty list. Pages that handle their own
+// errors still do; this catches the rest. Only network failures and 5xx: a 403
+// or 404 is often an expected answer that the page already explains. One toast
+// id, so a page with ten failing queries shows one message.
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (err) => {
+      const status = err?.response?.status;
+      if (status && status < 500) return;
+      toast.error(i18n.t(status ? 'common.serverError' : 'common.loadFailed'), {
+        id: 'query-load-failed',
+      });
+    },
+  }),
+});
+
+// Where a signed-out visitor is sent: the sign-in page, with a way back here.
+function LoginRedirect() {
+  const { pathname, search } = useLocation();
+  const next = encodeURIComponent(pathname + search);
+  return <Navigate to={`/login?next=${next}`} replace />;
+}
 
 function ProtectedRoute({ children }) {
   const { accessToken, user, loading } = useAuth();
   if (loading) return null;
-  if (!accessToken) return <Navigate to="/login" replace />;
+  if (!accessToken) return <LoginRedirect />;
   // Render nothing rather than redirecting when the user has not loaded yet —
   // AuthContext drops the token outright if /auth/me fails, so this is a
   // brief in-flight state, not a stuck one.
@@ -108,7 +132,7 @@ function ProtectedRoute({ children }) {
 function PortalRoute({ children }) {
   const { accessToken, user, loading } = useAuth();
   if (loading) return null;
-  if (!accessToken) return <Navigate to="/login" replace />;
+  if (!accessToken) return <LoginRedirect />;
   if (!user) return null;
   return children;
 }
@@ -116,14 +140,14 @@ function PortalRoute({ children }) {
 function RequireSystemRole({ roles, children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
-  if (!roles.includes(user?.systemRole)) return <Navigate to="/dashboard" replace />;
+  if (!roles.includes(user?.systemRole)) return <RouteStatus kind="noAccess" />;
   return children;
 }
 
 function RequireModuleEnabled({ moduleName, children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
-  if (!isModuleEnabled(user, moduleName)) return <Navigate to="/dashboard" replace />;
+  if (!isModuleEnabled(user, moduleName)) return <RouteStatus kind="moduleOff" />;
   return children;
 }
 
@@ -137,7 +161,7 @@ function RequirePermission({ permission, children }) {
   // (see GET /auth/me) — a bare super_admin token with no impersonation claim
   // gets none, so it must not be special-cased here.
   const allowed = (user?.permissions ?? []).includes(permission);
-  if (!allowed) return <Navigate to="/dashboard" replace />;
+  if (!allowed) return <RouteStatus kind="noAccess" />;
   return children;
 }
 
@@ -614,6 +638,7 @@ function AppRoutes() {
           }
         />
         <Route path="/setup" element={<SetupWizardPage />} />
+        <Route path="*" element={<RouteStatus kind="notFound" />} />
       </Route>
     </Routes>
   );

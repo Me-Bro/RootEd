@@ -53,7 +53,9 @@ test.describe('Members administration — without roles:write', () => {
     // In the teacher describe, not the tenant_admin one: an admin is correctly
     // *not* redirected, so this asserted nothing where it first sat.
     await page.goto('/tenant/join-policy');
-    await page.waitForURL('**/dashboard', { timeout: 15_000 });
+    await expect(page.getByText('You do not have access to this page')).toBeVisible({
+      timeout: 15_000,
+    });
     // The join code is never served to them either — GET /tenant/join-policy
     // is behind tenant:admin and answers 403.
     await expect(page.locator('p.font-mono')).toBeHidden();
@@ -61,11 +63,12 @@ test.describe('Members administration — without roles:write', () => {
 
   test('a teacher cannot reach the members page at all', async ({ page }) => {
     // roles:read gates the route, and the teacher template does not carry it.
-    // waitForURL, not toHaveURL: the guard can only decide once /auth/me has
-    // resolved the caller's permissions, so the redirect happens after the
-    // initial navigation settles.
+    // The guard can only decide once /auth/me has resolved the caller's
+    // permissions, so wait for the message rather than asserting at once.
     await page.goto('/tenant/members');
-    await page.waitForURL('**/dashboard', { timeout: 15_000 });
+    await expect(page.getByText('You do not have access to this page')).toBeVisible({
+      timeout: 15_000,
+    });
   });
 });
 

@@ -92,11 +92,15 @@ test.describe('Student self-service portal', () => {
 
   test('a student cannot reach tenant-wide roster or roll pages', async ({ page }) => {
     await page.goto('/academic/students');
-    await page.waitForURL('**/dashboard', { timeout: 15_000 });
+    await expect(page.getByText('You do not have access to this page')).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test('a student cannot reach the tenant-wide grades entry page', async ({ page }) => {
     await page.goto('/academic/grades');
-    await page.waitForURL('**/dashboard', { timeout: 15_000 });
+    await expect(page.getByText('You do not have access to this page')).toBeVisible({
+      timeout: 15_000,
+    });
   });
 });

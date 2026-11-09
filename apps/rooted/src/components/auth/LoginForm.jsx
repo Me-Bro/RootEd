@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Input } from '../ui/Input.jsx';
@@ -10,6 +10,8 @@ export default function LoginForm() {
   const { t } = useTranslation();
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sessionExpired = searchParams.get('expired') === '1';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [totpCode, setTotpCode] = useState('');
@@ -22,7 +24,10 @@ export default function LoginForm() {
   const [pendingGoogleToken, setPendingGoogleToken] = useState(null);
 
   function goToDestination(data) {
-    navigate(data.tenants?.length > 1 ? '/select-tenant' : '/dashboard');
+    if (data.tenants?.length > 1) return navigate('/select-tenant');
+    // Only a same-site path: `//host` or a full URL would be an open redirect.
+    const next = searchParams.get('next');
+    navigate(next && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard');
   }
 
   function handleAuthError(err) {
@@ -91,14 +96,21 @@ export default function LoginForm() {
   return (
     <div className="flex flex-col gap-4">
       <GoogleSignInButton onCredential={handleGoogleCredential} />
+      {sessionExpired && (
+        <p role="status" className="rounded-lg bg-muted px-3 py-2 text-sm">
+          {t('auth.sessionExpired')}
+        </p>
+      )}
       <form onSubmit={handleSubmit} aria-label="Login form" className="flex flex-col gap-4">
         <Input
-          label={t('auth.email')}
-          type="email"
+          label={t('auth.emailOrUsername')}
+          type="text"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          autoComplete="email"
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
         />
         <div className="flex flex-col gap-1">
           <Input
@@ -129,7 +141,11 @@ export default function LoginForm() {
             placeholder={t('auth.sixDigitCode')}
           />
         )}
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
         <Button type="submit" disabled={loading} size="lg" className="w-full mt-1">
           {loading ? t('auth.signingIn') : t('auth.signIn')}
         </Button>

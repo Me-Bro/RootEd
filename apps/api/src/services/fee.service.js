@@ -390,6 +390,29 @@ export async function refundPayment({ paymentId, tenantId, reason, actorId }) {
   return payment;
 }
 
+// What each assignment has been paid so far (refunds excluded) and what is still
+// owed, so a client never has to work out a balance from the assignment alone.
+export async function withBalances(tenantId, assignments) {
+  if (assignments.length === 0) return assignments;
+  const paid = await FeePayment.aggregate([
+    {
+      $match: {
+        tenantId,
+        assignmentId: { $in: assignments.map((a) => a._id) },
+        refunded: { $ne: true },
+      },
+    },
+    { $group: { _id: '$assignmentId', total: { $sum: '$amount' } } },
+  ]);
+  const paidById = new Map(paid.map((p) => [String(p._id), p.total]));
+  return assignments.map((a) => {
+    const paidAmount = paidById.get(String(a._id)) ?? 0;
+    const balanceDue =
+      a.status === 'waived' ? 0 : Math.max(calculateEffectiveTotal(a) - paidAmount, 0);
+    return { ...a, paidAmount, balanceDue };
+  });
+}
+
 export async function getDefaulters(tenantId, academicYearId) {
   const today = new Date();
   const filter = {
@@ -404,7 +427,7 @@ export async function getDefaulters(tenantId, academicYearId) {
     .populate('feeStructureId', 'name')
     .lean();
 
-  return assignments.map((a) => ({
+  return (await withBalances(tenantId, assignments)).map((a) => ({
     ...a,
     daysOverdue: Math.floor((today - new Date(a.dueDate)) / (1000 * 60 * 60 * 24)),
     overdueInstallments: (a.installments || []).filter(
