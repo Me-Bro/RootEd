@@ -6,6 +6,7 @@
     "requestLogs": "रिक्वेस्ट लॉग्स",
     "flags": "फ़ीचर फ़्लैग्स",
     "feedback": "प्रतिक्रिया",
+    "platformUsers": "उपयोगकर्ता",
     "academicYears": "शैक्षणिक वर्ष",
     "classesSections": "कक्षाएं और अनुभाग",
     "students": "छात्र",
@@ -1707,6 +1708,27 @@
       "loadFailed": "प्रतिक्रिया लोड करने में विफल",
       "noneFound": "अभी तक कोई प्रतिक्रिया नहीं",
       "changeStatusLabel": "{{name}} के लिए स्थिति बदलें"
+    },
+    "users": {
+      "searchLabel": "उपयोगकर्ता खोजें",
+      "searchPlaceholder": "ईमेल, यूज़रनेम या नाम",
+      "search": "खोजें",
+      "filterLabel": "दिखाएं",
+      "unverifiedOnly": "असत्यापित ईमेल",
+      "allUsers": "सभी उपयोगकर्ता",
+      "tableUser": "उपयोगकर्ता",
+      "tableEmailVerified": "ईमेल सत्यापित",
+      "tableRegistered": "पंजीकरण",
+      "yes": "हाँ",
+      "no": "नहीं",
+      "resend": "ईमेल फिर भेजें",
+      "verify": "सत्यापित करें",
+      "verifyConfirm": "क्या {{email}} को ईमेल लिंक क्लिक किए बिना सत्यापित मानें?",
+      "resent": "सत्यापन ईमेल भेज दिया गया।",
+      "verified": "ईमेल सत्यापित कर दिया गया।",
+      "actionFailed": "यह कार्य पूरा नहीं हो सका।",
+      "loadFailed": "उपयोगकर्ता लोड करने में विफल",
+      "noneFound": "कोई उपयोगकर्ता नहीं मिला"
     }
   },
   "landing": {

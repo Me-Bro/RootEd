@@ -6,6 +6,7 @@
     "requestLogs": "Request Logs",
     "flags": "Feature Flags",
     "feedback": "Feedback",
+    "platformUsers": "Users",
     "academicYears": "Academic Years",
     "classesSections": "Classes & Sections",
     "students": "Students",
@@ -1707,6 +1708,27 @@
       "loadFailed": "Failed to load feedback",
       "noneFound": "No feedback submitted yet",
       "changeStatusLabel": "Change status for {{name}}"
+    },
+    "users": {
+      "searchLabel": "Search users",
+      "searchPlaceholder": "Email, username or name",
+      "search": "Search",
+      "filterLabel": "Show",
+      "unverifiedOnly": "Unverified email",
+      "allUsers": "All users",
+      "tableUser": "User",
+      "tableEmailVerified": "Email verified",
+      "tableRegistered": "Registered",
+      "yes": "Yes",
+      "no": "No",
+      "resend": "Resend email",
+      "verify": "Mark verified",
+      "verifyConfirm": "Mark {{email}} as verified without them clicking the email link?",
+      "resent": "Verification email sent.",
+      "verified": "Email marked as verified.",
+      "actionFailed": "Could not complete that action.",
+      "loadFailed": "Failed to load users",
+      "noneFound": "No users found"
     }
   },
   "landing": {

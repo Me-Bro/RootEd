@@ -95,6 +95,7 @@ function getNavGroups(t, orgType) {
         { to: '/audit', label: t('nav.audit'), icon: ScrollText },
         { to: '/request-logs', label: t('nav.requestLogs'), icon: Activity },
         { to: '/flags', label: t('nav.flags'), icon: ToggleLeft },
+        { to: '/users', label: t('nav.platformUsers'), icon: Users },
         { to: '/feedback', label: t('nav.feedback'), icon: MessageSquare },
       ],
     },
