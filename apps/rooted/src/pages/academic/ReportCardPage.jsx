@@ -20,6 +20,7 @@ import {
 import ProgressRing from '../../components/report-cards/ProgressRing.jsx';
 import { useClassSections } from '../../hooks/useClassSections.js';
 import { useAuth } from '../../contexts/useAuth.js';
+import { formatDateTime } from '../../utils/intl.js';
 
 const EMPTY_ARRAY = [];
 const POLL_INTERVAL_MS = 3000;
@@ -420,7 +421,7 @@ export default function ReportCardPage() {
                 <tbody className="divide-y divide-border">
                   {historyQuery.data.map((b) => (
                     <tr key={b._id} className="bg-card">
-                      <td className="px-4 py-3">{new Date(b.createdAt).toLocaleString()}</td>
+                      <td className="px-4 py-3">{formatDateTime(b.createdAt)}</td>
                       <td className="px-4 py-3">
                         <Badge variant={statusBadgeVariant(b.status)}>{b.status}</Badge>
                       </td>

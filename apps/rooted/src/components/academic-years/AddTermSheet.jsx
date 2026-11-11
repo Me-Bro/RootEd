@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { Button } from '../ui/Button.jsx';
 import { Input } from '../ui/Input.jsx';
+import { formatDate } from '../../utils/intl.js';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '../ui/sheet.jsx';
 
 const EMPTY_FORM = { name: '', startDate: '', endDate: '' };
@@ -22,10 +23,6 @@ function findOverlap(form, existingTerms) {
       rangesOverlap(start, end, new Date(t.startDate), new Date(t.endDate))
     ) ?? null
   );
-}
-
-function formatDate(value) {
-  return new Date(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 }
 
 // POST /academic/terms has no server-side overlap check (see spec §2), so

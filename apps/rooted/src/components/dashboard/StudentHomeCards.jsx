@@ -17,7 +17,7 @@ import { RecordListItem } from '../ui/RecordList.jsx';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../ui/sheet.jsx';
 import { Skeleton } from '../ui/skeleton.jsx';
 import { LoadError } from '../ui/LoadError.jsx';
-import { formatCurrency, formatDate } from '../../utils/intl.js';
+import { formatCurrency, formatDate, formatMonth, formatWeekday } from '../../utils/intl.js';
 import {
   absentRun,
   currentAndNext,
@@ -77,7 +77,6 @@ function LoadingRows({ rows = 3 }) {
   );
 }
 
-const shortDate = (date) => formatDate(date, 'en-IN', { day: 'numeric', month: 'short' });
 const assessmentName = (g) => (g.assessmentType ?? 'final').replace('_', ' ');
 
 function Marks({ grade }) {
@@ -119,7 +118,7 @@ export function NowNextCard({ timetable, now }) {
         {nextDay && (
           <p className="text-xs text-muted-foreground">
             {t('dashboard.student.nextClassesOn', {
-              day: formatDate(nextDay, 'en-IN', { weekday: 'long' }),
+              day: formatWeekday(nextDay),
             })}
           </p>
         )}
@@ -177,7 +176,7 @@ export function ScheduleCard({ timetable, now, gradedSubjects, onOpenSubject }) 
           description={
             nextDay
               ? t('dashboard.student.nextClassesOn', {
-                  day: formatDate(nextDay, 'en-IN', { weekday: 'long' }),
+                  day: formatWeekday(nextDay),
                 })
               : undefined
           }
@@ -195,7 +194,7 @@ export function ScheduleCard({ timetable, now, gradedSubjects, onOpenSubject }) 
       ? () => onOpenSubject({ id, name: p.subjectId.name })
       : undefined;
   };
-  const day = formatDate(now, 'en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+  const day = formatDate(now);
 
   return (
     <Block
@@ -250,7 +249,7 @@ export function AttendanceCard({ records, now, loading }) {
     );
   }
 
-  const month = formatDate(now, 'en-IN', { month: 'long' });
+  const month = formatMonth(now);
   const m = monthSummary(records, now);
   if (!m.days) {
     return (
@@ -267,8 +266,8 @@ export function AttendanceCard({ records, now, loading }) {
   const run = absentRun(records);
   const dates = [
     m.absent > 0 &&
-      t('dashboard.student.absentOn', { dates: m.absentDates.map(shortDate).join(', ') }),
-    m.late > 0 && t('dashboard.student.lateOn', { dates: m.lateDates.map(shortDate).join(', ') }),
+      t('dashboard.student.absentOn', { dates: m.absentDates.map(formatDate).join(', ') }),
+    m.late > 0 && t('dashboard.student.lateOn', { dates: m.lateDates.map(formatDate).join(', ') }),
   ]
     .filter(Boolean)
     .join(' · ');
@@ -361,7 +360,7 @@ export function GradesCard({ grades, loading, onOpenSubject }) {
             meta={
               <>
                 <span className="capitalize">{assessmentName(g)}</span>
-                {g.publishedAt && ` · ${shortDate(g.publishedAt)}`}
+                {g.publishedAt && ` · ${formatDate(g.publishedAt)}`}
               </>
             }
             trailing={<Marks grade={g} />}
@@ -457,7 +456,7 @@ export function SubjectSheet({ subject, grades, onClose }) {
               title={<span className="capitalize">{assessmentName(g)}</span>}
               meta={
                 g.publishedAt &&
-                t('dashboard.student.publishedOn', { date: shortDate(g.publishedAt) })
+                t('dashboard.student.publishedOn', { date: formatDate(g.publishedAt) })
               }
               trailing={<Marks grade={g} />}
             />

@@ -1,9 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Badge } from '../ui/Badge.jsx';
-
-function formatDate(value) {
-  return new Date(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-}
+import { formatDate } from '../../utils/intl.js';
 
 // Presentational only — isCurrent is computed by the caller (pure date-range
 // math against `term.startDate`/`endDate`, no new field on the term itself).

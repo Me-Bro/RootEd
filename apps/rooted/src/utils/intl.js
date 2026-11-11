@@ -10,12 +10,44 @@ export function formatCurrency(amount, currency = 'INR', locale = 'en-IN') {
   return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount);
 }
 
-export function formatDate(
-  date,
-  locale = 'en-IN',
-  options = { day: '2-digit', month: 'short', year: 'numeric' }
-) {
-  return new Intl.DateTimeFormat(locale, options).format(new Date(date));
+const pad = (n) => String(n).padStart(2, '0');
+
+// Every date the UI shows is DD-MM-YYYY (local calendar day), whatever the browser locale.
+// Empty or unparseable input gives '' so callers can fall back to a dash.
+export function formatDate(date) {
+  if (!date) return '';
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return '';
+  return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`;
+}
+
+// 12-hour clock with AM/PM, e.g. "02:30 PM".
+export function formatTime(date) {
+  if (!date) return '';
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })
+    .format(d)
+    .toUpperCase();
+}
+
+// e.g. "11-11-2026, 02:30 PM"
+export function formatDateTime(date) {
+  const d = formatDate(date);
+  return d ? `${d}, ${formatTime(date)}` : '';
+}
+
+// A weekday name or a month name on its own is a label, not a date, so it stays a word.
+export function formatWeekday(date) {
+  return new Intl.DateTimeFormat('en-IN', { weekday: 'long' }).format(new Date(date));
+}
+
+export function formatMonth(date) {
+  return new Intl.DateTimeFormat('en-IN', { month: 'long' }).format(new Date(date));
 }
 
 export function formatNumber(n, locale = 'en-IN') {

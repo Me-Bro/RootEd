@@ -6,6 +6,7 @@ import api from '../../lib/api.js';
 import { Badge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
 import { groupFieldsFor } from './studentForm.js';
+import { formatDate } from '../../utils/intl.js';
 
 function WhatsappLink({ entity }) {
   const { t } = useTranslation();
@@ -73,8 +74,6 @@ function Row({ label, children }) {
   );
 }
 
-const formatDate = (value) => (value ? new Date(value).toLocaleDateString() : null);
-
 /**
  * What the profile page knows about a student beyond name, section and status:
  * contact, admission, address, health, the org-type extras and guardians.
@@ -127,7 +126,7 @@ export default function StudentProfileDetails({ student, orgType, canWrite }) {
           <Row label={f('whatsapp')}>
             <WhatsappLink entity={student} />
           </Row>
-          <Row label={f('admissionDate')}>{formatDate(student.admissionDate)}</Row>
+          <Row label={f('admissionDate')}>{formatDate(student.admissionDate) || null}</Row>
           <Row label={f('addressSection')}>{fullAddress}</Row>
           <Row label={f('bloodGroup')}>{student.bloodGroup}</Row>
           <Row label={f('allergies')}>{student.allergies}</Row>

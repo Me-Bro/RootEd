@@ -18,6 +18,7 @@ import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.js
 import { RecordList, RecordListItem } from '../../components/ui/RecordList.jsx';
 import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
 import AttentionStrip from '../../components/inventory/AttentionStrip.jsx';
+import { formatDate } from '../../utils/intl.js';
 
 const TAB_IDS = ['items', 'movements', 'requisitions', 'lowStock'];
 
@@ -550,9 +551,7 @@ function MovementsTab({ type, onTypeChange, openOnly, onOpenOnlyChange }) {
             title={m.itemId?.name}
             meta={`${t('inventory.items.tableQty')} ${m.quantity} · ${
               m.issuedTo?.entityType ? `${m.issuedTo.entityType}: ${m.issuedTo.entityId}` : '—'
-            } · ${new Date(m.createdAt).toLocaleDateString()}${
-              m.dueDate ? ` · ${new Date(m.dueDate).toLocaleDateString()}` : ''
-            }`}
+            } · ${formatDate(m.createdAt)}${m.dueDate ? ` · ${formatDate(m.dueDate)}` : ''}`}
             trailing={
               <>
                 <Badge variant={movementVariant(m.movementType)}>{m.movementType}</Badge>
@@ -607,7 +606,7 @@ function MovementsTab({ type, onTypeChange, openOnly, onOpenOnlyChange }) {
               {m.issuedTo?.entityType ? `${m.issuedTo.entityType}: ${m.issuedTo.entityId}` : '—'}
             </TableCell>
             <TableCell className="px-4 py-3 text-muted-foreground">
-              {m.dueDate ? new Date(m.dueDate).toLocaleDateString() : '—'}
+              {m.dueDate ? formatDate(m.dueDate) : '—'}
             </TableCell>
             <TableCell className="px-4 py-3">
               {m.returnedAt ? (
@@ -619,7 +618,7 @@ function MovementsTab({ type, onTypeChange, openOnly, onOpenOnlyChange }) {
               )}
             </TableCell>
             <TableCell className="px-4 py-3 text-muted-foreground">
-              {new Date(m.createdAt).toLocaleDateString()}
+              {formatDate(m.createdAt)}
             </TableCell>
             <TableCell className="px-4 py-3">
               {m.movementType === 'issue' && !m.returnedAt && (

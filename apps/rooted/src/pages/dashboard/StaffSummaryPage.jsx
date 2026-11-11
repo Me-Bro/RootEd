@@ -101,8 +101,7 @@ export default function StaffSummaryPage() {
               </TableCell>
               <TableCell className="text-muted-foreground">{req.leaveTypeId?.name}</TableCell>
               <TableCell className="text-muted-foreground">
-                {formatDate(req.fromDate, 'en-IN', { day: '2-digit', month: 'short' })} –{' '}
-                {formatDate(req.toDate, 'en-IN', { day: '2-digit', month: 'short' })}
+                {formatDate(req.fromDate)} – {formatDate(req.toDate)}
               </TableCell>
               <TableCell className="text-muted-foreground">{req.totalDays}</TableCell>
             </TableRow>

@@ -10,6 +10,7 @@ import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../../components/ui/Card.jsx';
+import { formatDate } from '../../utils/intl.js';
 
 const planOptions = ['starter', 'growth', 'pro', 'enterprise'];
 
@@ -216,9 +217,7 @@ export default function TenantsPage() {
                   <td className="px-4 py-3">
                     <Badge variant={statusVariant(tenant.status)}>{tenant.status}</Badge>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">
-                    {new Date(tenant.createdAt).toLocaleDateString()}
-                  </td>
+                  <td className="px-4 py-3 text-gray-500">{formatDate(tenant.createdAt)}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       {tenant.status === 'active' && (

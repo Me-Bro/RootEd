@@ -121,6 +121,9 @@
     "resetRequested": "If that email exists, a reset link has been sent."
   },
   "common": {
+    "dateInvalid": "Enter a valid date as DD-MM-YYYY",
+    "dateMin": "Date must be on or after {{date}}",
+    "dateMax": "Date must be on or before {{date}}",
     "loginState": {
       "none": "No login yet",
       "pending": "Waiting for password",

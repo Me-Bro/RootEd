@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '../../components/ui/dialog.jsx';
-import { formatCurrency } from '../../utils/intl.js';
+import { formatCurrency, formatDate } from '../../utils/intl.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
 import { RecordList, RecordListItem } from '../../components/ui/RecordList.jsx';
@@ -428,7 +428,7 @@ function AssignmentsTab() {
             title={`${a.studentId?.firstName ?? ''} ${a.studentId?.lastName ?? ''}`.trim()}
             meta={`${a.studentId?.admissionNo ?? '—'} · ${a.feeStructureId?.name ?? '—'} · ${formatCurrency(
               a.totalAmount ?? 0
-            )}${a.dueDate ? ` · ${new Date(a.dueDate).toLocaleDateString()}` : ''}`}
+            )}${a.dueDate ? ` · ${formatDate(a.dueDate)}` : ''}`}
             trailing={<Badge variant={statusVariant(a.status)}>{a.status}</Badge>}
             footer={
               a.status !== 'paid' &&
@@ -487,7 +487,7 @@ function AssignmentsTab() {
               <Badge variant={statusVariant(a.status)}>{a.status}</Badge>
             </TableCell>
             <TableCell className="px-4 py-3 text-muted-foreground">
-              {a.dueDate ? new Date(a.dueDate).toLocaleDateString() : '—'}
+              {a.dueDate ? formatDate(a.dueDate) : '—'}
             </TableCell>
             <TableCell className="px-4 py-3">
               {a.status !== 'paid' && a.status !== 'waived' && (
@@ -630,7 +630,7 @@ function PaymentsTab() {
             key={p._id}
             title={`${p.studentId?.firstName ?? ''} ${p.studentId?.lastName ?? ''}`.trim()}
             meta={`${p.receiptNumber} · ${formatCurrency(p.amount ?? 0)} · ${p.paymentMethod}${
-              p.paymentDate ? ` · ${new Date(p.paymentDate).toLocaleDateString()}` : ''
+              p.paymentDate ? ` · ${formatDate(p.paymentDate)}` : ''
             }`}
             trailing={
               p.refunded ? (
@@ -680,7 +680,7 @@ function PaymentsTab() {
             <TableCell className="px-4 py-3">{formatCurrency(p.amount ?? 0)}</TableCell>
             <TableCell className="px-4 py-3 capitalize">{p.paymentMethod}</TableCell>
             <TableCell className="px-4 py-3 text-muted-foreground">
-              {p.paymentDate ? new Date(p.paymentDate).toLocaleDateString() : '—'}
+              {p.paymentDate ? formatDate(p.paymentDate) : '—'}
             </TableCell>
             <TableCell className="px-4 py-3 text-muted-foreground">
               {p.collectedBy?.email}
@@ -779,7 +779,7 @@ function DefaultersTab() {
           <RecordListItem
             key={d._id}
             title={`${d.studentId?.firstName ?? ''} ${d.studentId?.lastName ?? ''}`.trim()}
-            meta={`${d.studentId?.admissionNo ?? '—'} · ${formatCurrency(d.balanceDue)}${d.dueDate ? ` · ${new Date(d.dueDate).toLocaleDateString()}` : ''}`}
+            meta={`${d.studentId?.admissionNo ?? '—'} · ${formatCurrency(d.balanceDue)}${d.dueDate ? ` · ${formatDate(d.dueDate)}` : ''}`}
             trailing={
               <>
                 <Badge variant={statusVariant(d.status)}>{d.status}</Badge>
@@ -819,7 +819,7 @@ function DefaultersTab() {
               <Badge variant={statusVariant(d.status)}>{d.status}</Badge>
             </TableCell>
             <TableCell className="px-4 py-3 text-muted-foreground">
-              {d.dueDate ? new Date(d.dueDate).toLocaleDateString() : '—'}
+              {d.dueDate ? formatDate(d.dueDate) : '—'}
             </TableCell>
             <TableCell className="px-4 py-3 text-destructive font-medium">
               {d.daysOverdue}

@@ -27,7 +27,7 @@ import { studentLoginState } from '../../utils/loginState.js';
 import StudentExtraFields from '../../components/students/StudentExtraFields.jsx';
 import StudentProfileDetails from '../../components/students/StudentProfileDetails.jsx';
 import { formFromStudent, studentPayload } from '../../components/students/studentForm.js';
-import { formatCurrency } from '../../utils/intl.js';
+import { formatCurrency, formatDate } from '../../utils/intl.js';
 
 const selectCls =
   'h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
@@ -246,7 +246,7 @@ function AttendanceSummary({ studentId }) {
       </p>
       {records.slice(0, 5).map((r) => (
         <div key={r._id} className="flex justify-between text-sm text-muted-foreground">
-          <span>{new Date(r.date).toLocaleDateString()}</span>
+          <span>{formatDate(r.date)}</span>
           <Badge variant={r.status === 'present' ? 'success' : 'danger'}>{r.status}</Badge>
         </div>
       ))}
@@ -670,7 +670,7 @@ export default function StudentDetailPage() {
           {student.statusChangedAt &&
             t('academic.studentForm.statusSince', {
               status: student.status,
-              date: new Date(student.statusChangedAt).toLocaleDateString(),
+              date: formatDate(student.statusChangedAt),
             })}
           {student.statusReason &&
             ` ${t('academic.studentForm.statusReasonShown', { reason: student.statusReason })}`}

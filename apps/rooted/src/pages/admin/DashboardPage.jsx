@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { isSelfScoped } from '@rooted/shared/constants';
 import { hasSeats, isModuleEnabled } from '@rooted/shared/utils';
 import api from '../../lib/api.js';
-import { formatDate, localDay } from '../../utils/intl.js';
+import { formatDate, formatDateTime, localDay } from '../../utils/intl.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
@@ -113,15 +113,7 @@ function SuperAdminDashboard() {
               </TableCell>
               <TableCell className="text-muted-foreground">{log.ip ?? '—'}</TableCell>
               <TableCell className="text-muted-foreground">
-                {log.at
-                  ? formatDate(log.at, 'en-IN', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })
-                  : '—'}
+                {log.at ? formatDateTime(log.at) : '—'}
               </TableCell>
             </TableRow>
           ))}
@@ -268,12 +260,7 @@ function StudentDashboard() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title={t(`dashboard.student.${greetingKey(now)}`, { name: student?.firstName ?? '' })}
-        description={[
-          profile.sectionLabel,
-          formatDate(now, 'en-IN', { weekday: 'long', day: 'numeric', month: 'long' }),
-        ]
-          .filter(Boolean)
-          .join(' · ')}
+        description={[profile.sectionLabel, formatDate(now)].filter(Boolean).join(' · ')}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -471,7 +458,7 @@ function PrincipalDashboard() {
       labelKey: 'dashboard.principal.pendingLeaveLabel',
       meta: pendingLeave?.oldest
         ? t('dashboard.principal.pendingLeaveMeta', {
-            date: formatDate(pendingLeave.oldest, 'en-IN', { day: '2-digit', month: 'short' }),
+            date: formatDate(pendingLeave.oldest),
           })
         : undefined,
       onTap: () => navigate('/dashboard/staff'),
@@ -519,11 +506,7 @@ function PrincipalDashboard() {
           <p className="text-sm text-muted-foreground">
             {t('dashboard.principal.subtitle', {
               school: tenant?.name ?? '',
-              date: formatDate(selectedDate, 'en-IN', {
-                weekday: 'short',
-                day: '2-digit',
-                month: 'short',
-              }),
+              date: formatDate(selectedDate),
             })}
           </p>
         </div>

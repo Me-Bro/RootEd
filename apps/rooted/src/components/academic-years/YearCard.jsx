@@ -5,14 +5,7 @@ import { Badge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
 import { cn } from '../../lib/utils.js';
 import TermRow from './TermRow.jsx';
-
-function formatDate(value) {
-  return new Date(value).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
+import { formatDate } from '../../utils/intl.js';
 
 // Pure date-range check — the term containing today is "current". No new
 // field on the term, computed fresh on every render.

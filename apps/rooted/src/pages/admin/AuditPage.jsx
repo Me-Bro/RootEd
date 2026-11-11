@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
 import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
+import { formatDateTime } from '../../utils/intl.js';
 
 export default function AuditPage() {
   const { t } = useTranslation();
@@ -113,7 +114,7 @@ export default function AuditPage() {
                 {l.target?.model ?? '—'}
               </TableCell>
               <TableCell className="px-4 py-3 text-muted-foreground">
-                {new Date(l.at).toLocaleString()}
+                {formatDateTime(l.at)}
               </TableCell>
             </TableRow>
           ))}

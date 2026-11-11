@@ -12,10 +12,10 @@ import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
 import LearnerPicker from '../../components/study/LearnerPicker.jsx';
 import ExpiringPlans from '../../components/study/ExpiringPlans.jsx';
-import { formatDate } from '../../utils/intl.js';
+import { formatTime } from '../../utils/intl.js';
 import { apiError } from '../../utils/studyCenter.js';
 
-const time = (value) => formatDate(value, 'en-IN', { hour: '2-digit', minute: '2-digit' });
+const time = formatTime;
 // The front desk: find or register a learner, put them on a seat, take them off it.
 // Who is in right now is the list below. A plan that is unpaid, expired or missing
 // warns here and never stops a check-in; after closing time only an owner can check
