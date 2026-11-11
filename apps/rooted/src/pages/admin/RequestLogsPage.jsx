@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
+import { formatDateTime } from '../../utils/intl.js';
 
 const EMPTY_FILTERS = { tenantId: '', module: '', ip: '', userEmail: '', statusCode: '' };
 
@@ -126,7 +127,7 @@ export default function RequestLogsPage() {
                     <td className="px-4 py-3 text-gray-500">{log.durationMs} ms</td>
                     <td className="px-4 py-3 text-gray-500">{log.ip ?? '—'}</td>
                     <td className="px-4 py-3 text-gray-500">{log.userEmail ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-500">{new Date(log.at).toLocaleString()}</td>
+                    <td className="px-4 py-3 text-gray-500">{formatDateTime(log.at)}</td>
                   </tr>
                 ))}
               </tbody>

@@ -6,6 +6,7 @@ import { ChevronDown } from 'lucide-react';
 import api from '../../lib/api.js';
 import { localDay } from '../../utils/intl.js';
 import { Button } from '../../components/ui/Button.jsx';
+import { DateInput } from '../../components/ui/DateInput.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
 import {
@@ -166,9 +167,8 @@ export default function AttendanceReportPage() {
           <label className="sr-only" htmlFor="attendance-report-from">
             {t('academic.attendanceReport.from')}
           </label>
-          <input
+          <DateInput
             id="attendance-report-from"
-            type="date"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
             className="w-[124px] border-none bg-transparent text-xs outline-none"
@@ -179,9 +179,8 @@ export default function AttendanceReportPage() {
           <label className="sr-only" htmlFor="attendance-report-to">
             {t('academic.attendanceReport.to')}
           </label>
-          <input
+          <DateInput
             id="attendance-report-to"
-            type="date"
             value={to}
             onChange={(e) => setTo(e.target.value)}
             className="w-[124px] border-none bg-transparent text-xs outline-none"

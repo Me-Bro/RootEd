@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -21,6 +21,7 @@ import { RecordList, RecordListItem } from '../../components/ui/RecordList.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
 import { Progress } from '../../components/ui/progress.jsx';
 import ApprovalQueueCard from '../../components/leave/ApprovalQueueCard.jsx';
+import { formatDate as fmtDate } from '../../utils/intl.js';
 
 const selectCls =
   'h-9 rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
@@ -90,7 +91,7 @@ function ApplyLeaveModal({ open, onOpenChange, staffId, leaveTypes }) {
   const queryClient = useQueryClient();
   const [error, setError] = useState('');
 
-  const { register, handleSubmit, reset } = useForm({
+  const { register, handleSubmit, reset, control } = useForm({
     defaultValues: { leaveTypeId: '', fromDate: '', toDate: '', reason: '' },
   });
 
@@ -126,15 +127,19 @@ function ApplyLeaveModal({ open, onOpenChange, staffId, leaveTypes }) {
                 ))}
               </select>
             </div>
-            <Input
-              label={t('staff.leaves.from')}
-              type="date"
-              {...register('fromDate', { required: true })}
+            <Controller
+              name="fromDate"
+              control={control}
+              rules={{ required: true }}
+              render={({ field }) => (
+                <Input label={t('staff.leaves.from')} type="date" {...field} />
+              )}
             />
-            <Input
-              label={t('staff.leaves.to')}
-              type="date"
-              {...register('toDate', { required: true })}
+            <Controller
+              name="toDate"
+              control={control}
+              rules={{ required: true }}
+              render={({ field }) => <Input label={t('staff.leaves.to')} type="date" {...field} />}
             />
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium">{t('staff.leaves.reasonOptional')}</label>
@@ -422,8 +427,7 @@ export default function LeaveRequestsPage() {
   });
 
   function formatDate(d) {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString();
+    return fmtDate(d) || '—';
   }
 
   return (

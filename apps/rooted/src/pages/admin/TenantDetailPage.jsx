@@ -10,6 +10,7 @@ import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
+import { formatDateTime } from '../../utils/intl.js';
 
 const PLAN_OPTIONS = ['starter', 'growth', 'pro', 'enterprise'];
 
@@ -57,7 +58,7 @@ function OverviewTab({ tenant }) {
       <InfoRow label={t('admin.tenantDetail.currencyLabel')} value={tenant.currency} />
       <InfoRow
         label={t('admin.tenantDetail.createdLabel')}
-        value={new Date(tenant.createdAt).toLocaleString()}
+        value={formatDateTime(tenant.createdAt)}
       />
     </div>
   );
@@ -149,7 +150,7 @@ function AuditTab({ tenantId }) {
               <td className="px-4 py-3 font-mono text-xs">{l.action}</td>
               <td className="px-4 py-3 text-gray-500">{l.actorId}</td>
               <td className="px-4 py-3 text-gray-500">{l.target?.model ?? '—'}</td>
-              <td className="px-4 py-3 text-gray-500">{new Date(l.at).toLocaleString()}</td>
+              <td className="px-4 py-3 text-gray-500">{formatDateTime(l.at)}</td>
             </tr>
           ))}
           {!data?.logs?.length && (

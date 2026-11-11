@@ -17,6 +17,7 @@ import {
   DialogFooter,
 } from '../../components/ui/dialog.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
+import { formatDate } from '../../utils/intl.js';
 
 const selectCls =
   'h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
@@ -416,13 +417,13 @@ export default function StaffDetailPage() {
             <p>{t('staff.detail.addressLabel', { value: staff.address || '—' })}</p>
             <p>
               {t('staff.detail.dateOfBirthLabel', {
-                value: staff.dateOfBirth ? new Date(staff.dateOfBirth).toLocaleDateString() : '—',
+                value: staff.dateOfBirth ? formatDate(staff.dateOfBirth) : '—',
               })}
             </p>
             <p>{t('staff.detail.genderLabel', { value: staff.gender || '—' })}</p>
             <p>
               {t('staff.detail.joiningDateLabel', {
-                value: staff.joiningDate ? new Date(staff.joiningDate).toLocaleDateString() : '—',
+                value: staff.joiningDate ? formatDate(staff.joiningDate) : '—',
               })}
             </p>
             {canWrite && (

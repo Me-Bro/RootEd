@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronDown, Zap } from 'lucide-react';
 import { Button } from '../../components/ui/Button.jsx';
 import { localDay } from '../../utils/intl.js';
+import { DateInput } from '../../components/ui/DateInput.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
@@ -127,8 +128,7 @@ export default function AttendancePage() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <input
-          type="date"
+        <DateInput
           value={date}
           max={localDay()}
           onChange={(e) => setDate(e.target.value)}

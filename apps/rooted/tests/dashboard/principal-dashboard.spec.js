@@ -110,7 +110,9 @@ test.describe('Principal Dashboard', () => {
     // spec's edge-case table.
     const farPastDate = new Date();
     farPastDate.setDate(farPastDate.getDate() - 90);
-    await page.locator('input[type="date"]').fill(farPastDate.toISOString().slice(0, 10));
+    await page
+      .locator('input[placeholder="DD-MM-YYYY"]')
+      .fill(farPastDate.toISOString().slice(0, 10));
     await page.waitForLoadState('networkidle');
 
     await expect(page.getByText('Viewing a past day')).toBeVisible();

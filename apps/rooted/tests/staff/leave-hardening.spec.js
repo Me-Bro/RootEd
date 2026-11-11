@@ -27,8 +27,8 @@ test.describe('Leave request hardening', () => {
       const dialog = page.getByRole('dialog');
       await expect(dialog).toBeVisible();
       await dialog.locator('select').selectOption({ index: 1 });
-      await dialog.locator('input[type="date"]').first().fill(daysFromNow(30));
-      await dialog.locator('input[type="date"]').last().fill(daysFromNow(31));
+      await dialog.locator('input[placeholder="DD-MM-YYYY"]').first().fill(daysFromNow(30));
+      await dialog.locator('input[placeholder="DD-MM-YYYY"]').last().fill(daysFromNow(31));
       await dialog.getByRole('button', { name: 'Submit' }).click();
 
       await expect(dialog).not.toBeVisible({ timeout: 8_000 });

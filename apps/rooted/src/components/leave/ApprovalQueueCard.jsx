@@ -4,15 +4,7 @@ import { Card, CardContent } from '../ui/Card.jsx';
 import { Badge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
 import { Avatar, AvatarFallback } from '../ui/avatar.jsx';
-
-function formatDate(d) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-}
+import { formatDate } from '../../utils/intl.js';
 
 function initials(firstName, lastName) {
   const value = `${firstName?.[0] ?? ''}${lastName?.[0] ?? ''}`.toUpperCase();
@@ -76,7 +68,7 @@ export default function ApprovalQueueCard({ request, balance, onApprove, onRejec
           <div className="flex justify-between gap-3">
             <dt className="text-muted-foreground">{t('staff.leaves.datesLabel')}</dt>
             <dd className="text-right font-medium">
-              {formatDate(request.fromDate)} – {formatDate(request.toDate)} (
+              {formatDate(request.fromDate) || '—'} – {formatDate(request.toDate) || '—'} (
               {t('staff.leaves.dayCount', { count: request.totalDays })})
             </dd>
           </div>

@@ -4,17 +4,20 @@ import { Input as InputPrimitive } from '@base-ui/react/input';
 
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
+import { DateInput } from '@/components/ui/DateInput';
 
 function Input({ className, type, label, id, error, ...props }) {
   const inputId = id ?? (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
   const isPassword = type === 'password';
+  // Date fields are typed as DD-MM-YYYY; the native picker follows the browser locale.
+  const Control = type === 'date' ? DateInput : InputPrimitive;
   const [revealed, setRevealed] = useState(false);
 
   return (
     <div className="flex flex-col gap-1.5">
       {label && <Label htmlFor={inputId}>{label}</Label>}
       <div className="relative">
-        <InputPrimitive
+        <Control
           id={inputId}
           type={isPassword && revealed ? 'text' : type}
           data-slot="input"

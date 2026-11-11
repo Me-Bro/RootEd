@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '../../components/ui/dialog.jsx';
+import { formatDateTime } from '../../utils/intl.js';
 
 function NewFlagModal({ open, onOpenChange }) {
   const { t } = useTranslation();
@@ -150,7 +151,7 @@ export default function FlagsPage() {
                   </Badge>
                 </TableCell>
                 <TableCell className="px-4 py-3 text-muted-foreground">
-                  {flag.updatedAt ? new Date(flag.updatedAt).toLocaleString() : '—'}
+                  {flag.updatedAt ? formatDateTime(flag.updatedAt) : '—'}
                 </TableCell>
                 <TableCell className="px-4 py-3">
                   <Button

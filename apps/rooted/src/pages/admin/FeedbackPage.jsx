@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
 import { SelectField, SelectItem } from '../../components/ui/SelectField.jsx';
+import { formatDateTime } from '../../utils/intl.js';
 
 const STATUSES = ['new', 'in_progress', 'resolved'];
 const STATUS_BADGE_VARIANT = { new: 'default', in_progress: 'warning', resolved: 'success' };
@@ -116,7 +117,7 @@ export default function FeedbackPage() {
                 </Badge>
               </TableCell>
               <TableCell className="px-4 py-3 text-muted-foreground">
-                {new Date(f.createdAt).toLocaleString()}
+                {formatDateTime(f.createdAt)}
               </TableCell>
               <TableCell className="px-4 py-3">
                 <SelectField

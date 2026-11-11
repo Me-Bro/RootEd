@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
@@ -37,7 +37,7 @@ function AddStaffModal({ open, onOpenChange, onAdded }) {
   const [step, setStep] = useState(0);
   const [error, setError] = useState('');
 
-  const { register, handleSubmit, getValues, setValue } = useForm({
+  const { register, handleSubmit, getValues, setValue, control } = useForm({
     defaultValues: {
       email: '',
       firstName: '',
@@ -141,10 +141,12 @@ function AddStaffModal({ open, onOpenChange, onAdded }) {
               <Input label={t('staff.directory.employeeId')} {...register('employeeId')} />
               <Input label={t('staff.directory.designation')} {...register('designation')} />
               <Input label={t('staff.directory.department')} {...register('department')} />
-              <Input
-                label={t('staff.directory.joiningDate')}
-                type="date"
-                {...register('joiningDate')}
+              <Controller
+                name="joiningDate"
+                control={control}
+                render={({ field }) => (
+                  <Input label={t('staff.directory.joiningDate')} type="date" {...field} />
+                )}
               />
             </div>
           )}
@@ -153,10 +155,12 @@ function AddStaffModal({ open, onOpenChange, onAdded }) {
             <div className="flex flex-col gap-4">
               <Input label={t('staff.directory.phone')} {...register('phone')} />
               <Input label={t('staff.directory.address')} {...register('address')} />
-              <Input
-                label={t('staff.directory.dateOfBirth')}
-                type="date"
-                {...register('dateOfBirth')}
+              <Controller
+                name="dateOfBirth"
+                control={control}
+                render={({ field }) => (
+                  <Input label={t('staff.directory.dateOfBirth')} type="date" {...field} />
+                )}
               />
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium">{t('staff.directory.gender')}</label>
