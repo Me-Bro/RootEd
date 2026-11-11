@@ -7,6 +7,7 @@ import {
   DEFAULT_PLAN,
   ALL_MODULES,
   ENQUIRY_STATUSES,
+  USER_STATUS,
 } from '@rooted/shared/constants';
 import { authenticate, requireSystemRole } from '../middleware/authenticate.js';
 import { AppError } from '../middleware/errorHandler.js';
@@ -16,6 +17,10 @@ import { RequestLog } from '../models/RequestLog.js';
 import { TenantMembership } from '../models/TenantMembership.js';
 import { Feedback } from '../models/Feedback.js';
 import { CollegeEnquiry } from '../models/CollegeEnquiry.js';
+import { User } from '../models/User.js';
+import { getPortalHost } from '../config/env.js';
+import { issueEmailVerification } from '../services/identity.service.js';
+import { sendEmailVerification } from '../services/email.service.js';
 import { feedbackStatusUpdateSchema, enquiryStatusUpdateSchema } from '@rooted/shared/schemas';
 import { buildFeedbackFilter } from '../utils/feedbackFilter.js';
 import { isValidFeedbackStatusTransition } from '../services/feedbackStatusTransitions.js';
@@ -466,6 +471,90 @@ router.patch('/enquiries/:id', async (req, res, next) => {
     await doc.save();
 
     res.json(doc);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Users: email verification support ───────────────────────────────────────
+// A self-registered user stuck at pending_verification has no membership, so
+// no tenant screen can reach them; this is the platform-level way to find them.
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+router.get('/users', async (req, res, next) => {
+  try {
+    const page = Math.max(1, Math.floor(Number(req.query.page)) || 1);
+    const limit = Math.min(100, Math.max(1, Math.floor(Number(req.query.limit)) || 20));
+    const filter = {};
+    if (USER_STATUS.includes(req.query.status)) filter.status = req.query.status;
+    if (req.query.unverified === '1') filter.emailVerified = { $ne: true };
+    const q = String(req.query.q ?? '')
+      .trim()
+      .slice(0, 100);
+    if (q) {
+      const rx = new RegExp(escapeRegex(q), 'i');
+      filter.$or = [{ email: rx }, { username: rx }, { firstName: rx }, { lastName: rx }];
+    }
+
+    const [users, total] = await Promise.all([
+      User.find(filter, 'email username firstName lastName status emailVerified createdAt')
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      User.countDocuments(filter),
+    ]);
+
+    res.json({ users, total, page, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+async function findUnverifiableUser(id) {
+  if (!mongoose.isValidObjectId(id)) throw new AppError('User not found', 404);
+  const user = await User.findById(id, 'email status emailVerified');
+  if (!user || user.status === 'deleted') throw new AppError('User not found', 404);
+  if (user.emailVerified) throw new AppError('Email is already verified', 400);
+  return user;
+}
+
+router.post('/users/:id/resend-verification', async (req, res, next) => {
+  try {
+    const user = await findUnverifiableUser(req.params.id);
+    const token = await issueEmailVerification(user._id);
+    await sendEmailVerification(
+      user.email,
+      `https://${getPortalHost(req.get('host'))}/verify-email?token=${token}`
+    );
+    await auditLog({
+      actorId: req.user.sub,
+      action: 'user.verification_resent',
+      target: { model: 'User', id: user._id },
+      ip: req.ip,
+    });
+    res.json({ message: 'Verification email sent' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/users/:id/verify-email', async (req, res, next) => {
+  try {
+    const user = await findUnverifiableUser(req.params.id);
+    user.emailVerified = true;
+    // Only the self-registration gate is lifted; a suspended user stays suspended.
+    if (user.status === 'pending_verification') user.status = 'active';
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
+    await auditLog({
+      actorId: req.user.sub,
+      action: 'user.email_verified_by_admin',
+      target: { model: 'User', id: user._id },
+      ip: req.ip,
+    });
+    res.json({ _id: user._id, status: user.status, emailVerified: true });
   } catch (err) {
     next(err);
   }

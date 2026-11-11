@@ -39,6 +39,7 @@ import AuditPage from './pages/admin/AuditPage.jsx';
 import RequestLogsPage from './pages/admin/RequestLogsPage.jsx';
 import FlagsPage from './pages/admin/FlagsPage.jsx';
 import FeedbackPage from './pages/admin/FeedbackPage.jsx';
+import UsersPage from './pages/admin/UsersPage.jsx';
 import AcademicYearsPage from './pages/academic/AcademicYearsPage.jsx';
 import ClassesSectionsPage from './pages/academic/ClassesSectionsPage.jsx';
 import StudentsPage from './pages/academic/StudentsPage.jsx';
@@ -253,6 +254,14 @@ function AppRoutes() {
           element={
             <RequireSystemRole roles={['super_admin']}>
               <FlagsPage />
+            </RequireSystemRole>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <RequireSystemRole roles={['super_admin']}>
+              <UsersPage />
             </RequireSystemRole>
           }
         />
