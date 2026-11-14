@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, Bell, CheckCircle2 } from 'lucide-react';
 import api from '../../lib/api.js';
-import { Button } from '../../components/ui/Button.jsx';
+import { Button, buttonVariants } from '../../components/ui/Button.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Card } from '../../components/ui/Card.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
@@ -89,6 +89,8 @@ export default function ReportCardPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const canGenerate = (user?.permissions ?? []).includes('grades:publish');
+  // The design (layout, logo, wording) is a school-wide setting, so only an admin sees the way in.
+  const canDesign = (user?.permissions ?? []).includes('tenant:admin');
   const [searchParams] = useSearchParams();
 
   const queryClient = useQueryClient();
@@ -267,6 +269,16 @@ export default function ReportCardPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title={t('academic.reportCards.title')}
+        action={
+          canDesign ? (
+            <Link
+              to="/tenant/report-card"
+              className={buttonVariants({ variant: 'outline', size: 'sm' })}
+            >
+              {t('academic.reportCards.designLink')}
+            </Link>
+          ) : undefined
+        }
         description={
           currentSection && currentTerm
             ? `${currentSection.className} - ${currentSection.name} · ${currentTerm.name}`

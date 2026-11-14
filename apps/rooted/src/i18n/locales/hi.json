@@ -941,6 +941,7 @@
       "starting": "शुरू हो रहा है…",
       "generating": "बन रहा है…",
       "generateButton": "रिपोर्ट कार्ड बनाएं",
+      "designLink": "डिज़ाइन बदलें",
       "noPermission": "आपको रिपोर्ट कार्ड बनाने की अनुमति नहीं है। एडमिन से",
       "noPermissionSuffix": "अनुमति मांगें।",
       "startFailed": "जनरेशन शुरू करने में विफल",
