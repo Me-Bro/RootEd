@@ -22,6 +22,12 @@ const schema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   EMAIL_FROM: z.string().default('noreply@rooted.app'),
+  // The mail provider's free-tier daily cap. Display-only: the email-log page
+  // shows usage against it; nothing throttles on it.
+  EMAIL_DAILY_LIMIT: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.coerce.number().int().positive().optional()
+  ),
   MASTER_ENCRYPTION_KEY: z.string().min(32),
   APP_DOMAIN: z.string().default('rooted.app'),
   // Optional single-label subdomain (e.g. "rooted") that should be treated as the

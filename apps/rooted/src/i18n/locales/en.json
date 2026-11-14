@@ -49,7 +49,8 @@
     "desk": "Front desk",
     "studyReports": "Reports",
     "accountSettings": "Account settings",
-    "subjects": "Subjects"
+    "subjects": "Subjects",
+    "emailLogs": "Email Logs"
   },
   "auth": {
     "login": "Login",
@@ -1729,6 +1730,50 @@
       "actionFailed": "Could not complete that action.",
       "loadFailed": "Failed to load users",
       "noneFound": "No users found"
+    },
+    "emailLogs": {
+      "statsFailed": "Failed to load email stats",
+      "loadFailed": "Failed to load email logs",
+      "noEntries": "No emails logged yet",
+      "lastDays": "Last {{count}} days",
+      "sentToday": "Sent today",
+      "failedToday": "Failed today",
+      "ofLimit": "{{pct}}% of {{limit}} daily limit",
+      "sentRange": "Sent, last {{count}} days",
+      "peak": "Peak {{day}}: {{count}}",
+      "failureRate": "Failure rate",
+      "failedRange": "{{failed}} failed · {{skipped}} not sent (no provider)",
+      "topReasons": "Failure reasons:",
+      "tableDay": "Day",
+      "statusSent": "Sent",
+      "statusFailed": "Failed",
+      "statusSkipped": "Skipped",
+      "tableVolume": "Volume",
+      "filterStatus": "Status",
+      "allStatuses": "All",
+      "filterKind": "Type",
+      "filterReason": "Reason",
+      "filterRecipient": "Recipient",
+      "tableAt": "Time",
+      "tableStatus": "Status",
+      "tableKind": "Type",
+      "tableTo": "To",
+      "tableProvider": "Provider",
+      "tableError": "Reason / error",
+      "status": {
+        "sent": "Sent",
+        "failed": "Failed",
+        "skipped": "Skipped"
+      },
+      "reason": {
+        "rate_limit": "Rate limit",
+        "auth": "Auth error",
+        "connection": "Connection",
+        "recipient_rejected": "Recipient rejected",
+        "not_configured": "Not configured",
+        "console_provider": "Console provider",
+        "other": "Other"
+      }
     }
   },
   "landing": {

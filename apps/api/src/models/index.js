@@ -42,6 +42,7 @@ export { Project } from './Project.js';
 export { PurchaseRequisition } from './PurchaseRequisition.js';
 export { ReportCardBatch } from './ReportCardBatch.js';
 export { RequestLog } from './RequestLog.js';
+export { EmailLog } from './EmailLog.js';
 export { Role } from './Role.js';
 export { Roadmap } from './Roadmap.js';
 export { RoadmapItem } from './RoadmapItem.js';

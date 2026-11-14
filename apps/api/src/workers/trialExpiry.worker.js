@@ -74,6 +74,7 @@ export function startTrialExpiryWorker() {
 
           for (const to of recipients) {
             await sendEmail({
+              kind: 'trial-expiry',
               to,
               subject: `Your RootEd trial for ${tenant.name} has ended`,
               html: `

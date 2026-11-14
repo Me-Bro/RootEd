@@ -142,6 +142,8 @@ Because `resolveTenant()` matches on `Host` minus `APP_DOMAIN`, local/dev hosts 
 
 **Monitoring DB:** `RequestLog` is stored on a second Mongoose connection (`config/monitoringDb.js`), in `MONITORING_MONGODB_URI` or, by default, `<MONGODB_URI db>_monitoring`. Not tenant-scoped.
 
+**Email log:** every send goes through `sendEmail()` (`services/email.service.js`), which writes one `EmailLog` row per attempt (`sent|failed|skipped`, template `kind`, classified `reason` such as `rate_limit`, provider error) to the monitoring DB, fire-and-forget, then rethrows the original error so callers are unchanged. Adapters return `{ messageId }` or `{ skipped }` (no transport/token, or the `console` provider), so unsent mail is never counted as sent. 90-day TTL. Super-admin only: `GET /admin/email-logs` and `GET /admin/email-logs/stats` (per IST day, failure reasons, peak day), UI at `/email-logs`. Optional `EMAIL_DAILY_LIMIT` (the provider's free-tier cap) is display-only, for the premium-plan decision.
+
 **Backups:** the `backup` service in `docker-compose.yml` (`ops/db-backup/`) runs a daily `mongodump` to Minio via cron; restore is manual (`restore.sh`). See `agent-home/db-backup-restore.md`.
 
 **Field encryption:** AES-256-GCM (`apps/api/src/utils/fieldEncryption.js`) for `StaffMember` PII (government ID, bank account, salary). Per-tenant DEK derived from `MASTER_ENCRYPTION_KEY` via HKDF-SHA256 (salt = tenantId, info = `'rooted-field-encryption'`). Transparent via Mongoose getters/setters — never decrypt/re-encrypt manually.
@@ -195,7 +197,7 @@ Catalyst `/no-access` reasons: `no-college` (no membership), `module` (college h
 | `apps/api/src/migrations/` | Ordered data migrations, run at boot via `utils/migrations.js` |
 | `apps/api/src/config/monitoringDb.js` | Second Mongo connection for `RequestLog` |
 | `apps/api/src/scripts/seed-test-data.js` | Deterministic seed for `rooted_test` (tenant `testschool`, 4 users, academic/staff/fee/inventory data); `--clean` wipes all collections first |
-| `apps/api/src/models/index.js` | Barrel of all 55 models — the list index tooling iterates |
+| `apps/api/src/models/index.js` | Barrel of all 56 models — the list index tooling iterates |
 | `apps/api/src/utils/indexDrift.js` | Read-only schema-vs-database index diff; boot logs a warning on drift |
 | `apps/api/src/scripts/migrate-sync-indexes.js` | Drops/recreates drifted indexes (`--dry-run`, `--model=`) |
 | `apps/api/src/scripts/seed-super-admin.js` | Bootstraps one `systemRole: super_admin` user against whatever `MONGODB_URI` is active |

@@ -14,6 +14,8 @@ import { AppError } from '../middleware/errorHandler.js';
 import { Tenant } from '../models/Tenant.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { RequestLog } from '../models/RequestLog.js';
+import { EmailLog } from '../models/EmailLog.js';
+import { getEmailStats } from '../services/emailLog.service.js';
 import { TenantMembership } from '../models/TenantMembership.js';
 import { Feedback } from '../models/Feedback.js';
 import { CollegeEnquiry } from '../models/CollegeEnquiry.js';
@@ -293,6 +295,47 @@ router.get('/request-logs', async (req, res, next) => {
         .limit(limit)
         .lean(),
       RequestLog.countDocuments(filter),
+    ]);
+
+    res.json({ logs, total, page, pages: Math.ceil(total / limit) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+const EMAIL_STATUSES = ['sent', 'failed', 'skipped'];
+
+router.get('/email-logs/stats', async (req, res, next) => {
+  try {
+    const days = Math.min(90, Math.max(1, Number(req.query.days) || 30));
+    res.json(await getEmailStats({ days }));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/email-logs', async (req, res, next) => {
+  try {
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = Math.min(100, Number(req.query.limit) || 50);
+    const filter = {};
+    if (EMAIL_STATUSES.includes(req.query.status)) filter.status = req.query.status;
+    if (req.query.kind) filter.kind = String(req.query.kind);
+    if (req.query.reason) filter.reason = String(req.query.reason);
+    if (req.query.to) filter.to = String(req.query.to);
+    if (req.query.from || req.query.until) {
+      filter.at = {};
+      if (req.query.from) filter.at.$gte = new Date(req.query.from);
+      if (req.query.until) filter.at.$lte = new Date(req.query.until);
+    }
+
+    const [logs, total] = await Promise.all([
+      EmailLog.find(filter)
+        .sort({ at: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      EmailLog.countDocuments(filter),
     ]);
 
     res.json({ logs, total, page, pages: Math.ceil(total / limit) });

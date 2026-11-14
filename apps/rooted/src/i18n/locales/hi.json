@@ -49,7 +49,8 @@
     "desk": "फ्रंट डेस्क",
     "studyReports": "रिपोर्ट",
     "accountSettings": "खाता सेटिंग्स",
-    "subjects": "विषय"
+    "subjects": "विषय",
+    "emailLogs": "ईमेल लॉग्स"
   },
   "auth": {
     "login": "लॉगिन",
@@ -1729,6 +1730,50 @@
       "actionFailed": "यह कार्य पूरा नहीं हो सका।",
       "loadFailed": "उपयोगकर्ता लोड करने में विफल",
       "noneFound": "कोई उपयोगकर्ता नहीं मिला"
+    },
+    "emailLogs": {
+      "statsFailed": "ईमेल आँकड़े लोड करने में विफल",
+      "loadFailed": "ईमेल लॉग्स लोड करने में विफल",
+      "noEntries": "अभी तक कोई ईमेल लॉग नहीं हुआ",
+      "lastDays": "पिछले {{count}} दिन",
+      "sentToday": "आज भेजे गए",
+      "failedToday": "आज विफल",
+      "ofLimit": "{{limit}} दैनिक सीमा का {{pct}}%",
+      "sentRange": "भेजे गए, पिछले {{count}} दिन",
+      "peak": "शीर्ष {{day}}: {{count}}",
+      "failureRate": "विफलता दर",
+      "failedRange": "{{failed}} विफल · {{skipped}} नहीं भेजे गए (कोई प्रदाता नहीं)",
+      "topReasons": "विफलता के कारण:",
+      "tableDay": "दिन",
+      "statusSent": "भेजे गए",
+      "statusFailed": "विफल",
+      "statusSkipped": "छोड़े गए",
+      "tableVolume": "मात्रा",
+      "filterStatus": "स्टेटस",
+      "allStatuses": "सभी",
+      "filterKind": "प्रकार",
+      "filterReason": "कारण",
+      "filterRecipient": "प्राप्तकर्ता",
+      "tableAt": "समय",
+      "tableStatus": "स्टेटस",
+      "tableKind": "प्रकार",
+      "tableTo": "प्रति",
+      "tableProvider": "प्रदाता",
+      "tableError": "कारण / त्रुटि",
+      "status": {
+        "sent": "भेजा गया",
+        "failed": "विफल",
+        "skipped": "छोड़ा गया"
+      },
+      "reason": {
+        "rate_limit": "दर सीमा",
+        "auth": "प्रमाणीकरण त्रुटि",
+        "connection": "कनेक्शन",
+        "recipient_rejected": "प्राप्तकर्ता अस्वीकृत",
+        "not_configured": "कॉन्फ़िगर नहीं",
+        "console_provider": "कंसोल प्रदाता",
+        "other": "अन्य"
+      }
     }
   },
   "landing": {

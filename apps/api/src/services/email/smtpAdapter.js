@@ -12,6 +12,7 @@ export function createSmtpTransport() {
 }
 
 export async function sendViaSmtp(transporter, { to, subject, html }) {
-  if (!transporter) return;
-  await transporter.sendMail({ from: env.EMAIL_FROM, to, subject, html });
+  if (!transporter) return { skipped: 'not_configured' };
+  const info = await transporter.sendMail({ from: env.EMAIL_FROM, to, subject, html });
+  return { messageId: info?.messageId };
 }
