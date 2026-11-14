@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { z } from 'zod';
 import { ORG_TYPES } from '@rooted/shared/constants';
 import { AuditLog } from '../models/AuditLog.js';
@@ -14,9 +15,12 @@ import {
   approveJoinRequestSchema,
   updateJoinPolicySchema,
   centreSettingsSchema,
+  reportCardSettingsSchema,
 } from '@rooted/shared/schemas';
 import { hasSeats } from '@rooted/shared/utils';
 import { resolveCentreSettings } from '../utils/centreSettings.js';
+import { resolveReportCardConfig } from '../utils/reportCardConfig.js';
+import { uploadBuffer, removeObject } from '../services/storage.service.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { validate } from '../middleware/validate.js';
 import { requirePermission, invalidatePermissions } from '../middleware/requirePermission.js';
@@ -42,6 +46,7 @@ import { blockToken } from '../services/auth.service.js';
 import { getTenantKey, decrypt } from '../utils/fieldEncryption.js';
 import { Tenant } from '../models/Tenant.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { logger } from '../utils/logger.js';
 
 const router = Router();
 
@@ -139,6 +144,8 @@ const settingsUpdateSchema = z.object({
   orgType: z.enum(ORG_TYPES).optional(),
   // Opening hours and who may discount, for study centers only.
   centre: centreSettingsSchema.optional(),
+  // Report card preset, branding text and signatories. The logo has its own route.
+  reportCard: reportCardSettingsSchema.optional(),
 });
 
 router.patch('/settings', requirePermission('tenant:admin'), async (req, res, next) => {
@@ -159,8 +166,14 @@ router.patch('/settings', requirePermission('tenant:admin'), async (req, res, ne
       }
     }
 
-    const { centre, ...rest } = updates;
+    const { centre, reportCard, ...rest } = updates;
     const $set = { ...rest };
+    // Written key by key, like centre, so saving the accent color keeps the preset.
+    if (reportCard) {
+      for (const [key, value] of Object.entries(reportCard)) {
+        $set[`settings.reportCard.${key}`] = value;
+      }
+    }
     if (centre) {
       if (!hasSeats(req.tenant.orgType)) {
         throw new AppError('Centre settings are only available for study centers', 400);
@@ -175,6 +188,113 @@ router.patch('/settings', requirePermission('tenant:admin'), async (req, res, ne
     const tenant = await Tenant.findByIdAndUpdate(req.tenant._id, { $set }, { new: true });
     if (!tenant) throw new AppError('Tenant not found', 404);
     res.json(tenant);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Report card logo ──────────────────────────────────────────────────────────
+
+const LOGO_MAX_BYTES = 500 * 1024;
+const logoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: LOGO_MAX_BYTES, files: 1 },
+}).single('logo');
+
+function receiveLogo(req, res, next) {
+  logoUpload(req, res, (err) => {
+    if (err?.code === 'LIMIT_FILE_SIZE') {
+      return next(new AppError('Logo must be 500 KB or smaller', 413));
+    }
+    if (err) return next(new AppError('Invalid upload', 400));
+    next();
+  });
+}
+
+// The declared mimetype is client-controlled, so the type comes from the bytes.
+function sniffLogo(buf) {
+  if (
+    buf.length >= 8 &&
+    buf.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+  ) {
+    return { ext: 'png', mime: 'image/png' };
+  }
+  if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
+    return { ext: 'jpg', mime: 'image/jpeg' };
+  }
+  return null;
+}
+
+// Best effort: an orphaned object is harmless, a failed upload response is not.
+async function dropLogoObject(tenantId, key) {
+  if (!key || !key.startsWith(`branding/${tenantId}/`)) return;
+  try {
+    await removeObject(key);
+  } catch (err) {
+    logger.warn({ err, key }, 'Could not remove old report card logo');
+  }
+}
+
+router.post(
+  '/report-card/logo',
+  requirePermission('tenant:admin'),
+  receiveLogo,
+  async (req, res, next) => {
+    try {
+      if (!req.file) throw new AppError('Attach a PNG or JPEG file in the "logo" field', 400);
+      const type = sniffLogo(req.file.buffer);
+      if (!type) throw new AppError('Logo must be a PNG or JPEG image', 400);
+
+      const tenantId = req.tenant._id.toString();
+      const previous = req.tenant.settings?.reportCard?.logoKey;
+      const key = `branding/${tenantId}/report-card-logo-${Date.now()}.${type.ext}`;
+      await uploadBuffer(key, req.file.buffer, type.mime);
+
+      const tenant = await Tenant.findByIdAndUpdate(
+        req.tenant._id,
+        { $set: { 'settings.reportCard.logoKey': key } },
+        { new: true }
+      ).lean();
+      await dropLogoObject(tenantId, previous);
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId,
+        action: 'report-card.logo_set',
+        target: { model: 'Tenant', id: tenantId },
+        before: { logoKey: previous ?? null },
+        after: { logoKey: key },
+        ip: req.ip,
+      });
+      res.json(resolveReportCardConfig(tenant));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.delete('/report-card/logo', requirePermission('tenant:admin'), async (req, res, next) => {
+  try {
+    const tenantId = req.tenant._id.toString();
+    const previous = req.tenant.settings?.reportCard?.logoKey;
+    if (!previous) return res.json(resolveReportCardConfig(req.tenant));
+
+    const tenant = await Tenant.findByIdAndUpdate(
+      req.tenant._id,
+      { $unset: { 'settings.reportCard.logoKey': '' } },
+      { new: true }
+    ).lean();
+    await dropLogoObject(tenantId, previous);
+
+    await auditLog({
+      actorId: req.user.sub,
+      tenantId,
+      action: 'report-card.logo_remove',
+      target: { model: 'Tenant', id: tenantId },
+      before: { logoKey: previous },
+      ip: req.ip,
+    });
+    res.json(resolveReportCardConfig(tenant));
   } catch (err) {
     next(err);
   }

@@ -42,6 +42,7 @@ const ROUTES = [
   { name: 'timetable', path: '/academic/timetable' },
   { name: 'my timetable', path: '/academic/my-timetable' },
   { name: 'report cards', path: '/academic/report-cards' },
+  { name: 'report card design', path: '/tenant/report-card' },
   { name: 'staff list', path: '/staff' },
   { name: 'staff detail', path: `/staff/${ids.staffMembers[0]._id}` },
   { name: 'leave requests', path: '/staff/leaves' },

@@ -99,7 +99,7 @@ export async function loginViaUi(page, email, password) {
   await dialog.getByLabel('Email').fill(email);
   // exact: the password field's "Show password" toggle would otherwise match too.
   await dialog.getByLabel('Password', { exact: true }).fill(password);
-  await dialog.getByRole('button', { name: 'Sign in' }).click();
+  await dialog.getByRole('button', { name: 'Sign in', exact: true }).click();
   await page.waitForURL('**/dashboard', { timeout: 15_000 });
 }
 
@@ -122,6 +122,14 @@ export async function loginViaUi(page, email, password) {
  * "Start free trial" is an `<a>`, and the language switcher has no `.btn`.
  */
 export async function openLoginDialog(page) {
+  // /login opens the dialog by itself (HomePage.jsx), and its overlay then blocks
+  // the CTA click, so only click when nothing is open yet.
+  const open = page.getByRole('dialog');
+  const alreadyOpen = await open.waitFor({ state: 'visible', timeout: 2_000 }).then(
+    () => true,
+    () => false
+  );
+  if (alreadyOpen) return open;
   await page
     .locator('.lp-nav .cta button.btn:visible, .m-sticky-cta button.btn:visible')
     .first()

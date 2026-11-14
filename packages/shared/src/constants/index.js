@@ -158,6 +158,9 @@ export const ASSESSMENT_TYPES = ['quiz', 'midterm', 'final', 'other', 'baseline'
 
 export const REPORT_CARD_EXCLUDED_ASSESSMENT_TYPES = ['baseline', 'mock_interview'];
 
+// Layouts a school can pick for its report cards; 'classic' is the original look.
+export const REPORT_CARD_PRESETS = ['classic', 'modern', 'compact'];
+
 // The single source of truth for module permissions. apps/api/src/models/Role.js
 // re-exports this and uses it as the Role schema's enum — do not redeclare the
 // list there.

@@ -11,6 +11,9 @@ const reportCardBatchSchema = new mongoose.Schema(
     status: { type: String, enum: ['queued', 'completed', 'failed'], default: 'queued' },
     s3Key: { type: String },
     error: { type: String },
+    // The resolved report card settings the PDF was drawn with, so a batch can be
+    // explained after the school changes its preset or logo.
+    config: { type: mongoose.Schema.Types.Mixed },
   },
   { timestamps: true }
 );

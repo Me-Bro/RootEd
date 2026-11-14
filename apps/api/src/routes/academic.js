@@ -4,6 +4,7 @@ import { z } from 'zod';
 import multer from 'multer';
 import { parse } from 'csv-parse/sync';
 import { Queue } from 'bullmq';
+import { rateLimit } from 'express-rate-limit';
 import {
   markAttendanceSchema,
   attendanceQuerySchema,
@@ -20,6 +21,7 @@ import {
   timetablePublishSchema,
   reportCardGenerateSchema,
   reportCardHistoryQuerySchema,
+  reportCardPreviewSchema,
   studentAccountSchema,
   createSubjectSchema,
   updateSubjectSchema,
@@ -48,6 +50,7 @@ import { Term } from '../models/Term.js';
 import { Class } from '../models/Class.js';
 import { Section } from '../models/Section.js';
 import { Subject } from '../models/Subject.js';
+import { env } from '../config/env.js';
 import { Student } from '../models/Student.js';
 import { Enrollment } from '../models/Enrollment.js';
 import { Role } from '../models/Role.js';
@@ -75,6 +78,10 @@ import { computeAttendanceStats } from '../utils/attendanceStats.js';
 import { computeGradeStats } from '../utils/gradeStats.js';
 import { bucketAttendanceTrend } from '../utils/attendanceTrend.js';
 import { findMatchingJob } from '../utils/reportCardJobs.js';
+import { resolveReportCardConfig } from '../utils/reportCardConfig.js';
+import { renderReportCardPdf } from '../utils/reportCardLayouts.js';
+import { buildPreviewInput } from '../utils/reportCardPreview.js';
+import { loadReportCardLogo } from '../services/reportCardLogo.service.js';
 import { filterVisibleTimetableEntries } from '../utils/timetableVisibility.js';
 import { auditLog } from '../services/audit.service.js';
 import { getSignedUrl, uploadBuffer } from '../services/storage.service.js';
@@ -2025,5 +2032,66 @@ router.get('/report-card/history', requirePermission('grades:read'), async (req,
     next(err);
   }
 });
+
+// One sample card, drawn synchronously from an unsaved draft laid over the saved
+// settings. Nothing is queued, stored or audited. Uses the saved logo (the draft
+// cannot carry one). Every request renders a PDF, hence the limiter.
+const reportCardPreviewLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: env.NODE_ENV === 'production' ? 30 : 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many previews, try again in a minute' },
+});
+
+router.post(
+  '/report-card/preview',
+  requirePermission('grades:publish'),
+  reportCardPreviewLimiter,
+  validate(reportCardPreviewSchema),
+  async (req, res, next) => {
+    try {
+      const { sectionId, config: draft } = req.body;
+      const tenantId = req.tenant._id;
+
+      let student = null;
+      let sectionLabel;
+      if (sectionId) {
+        const section = await Section.findOne({ _id: sectionId, tenantId })
+          .populate('classId', 'name')
+          .lean();
+        if (!section) return res.status(404).json({ error: 'Section not found' });
+        sectionLabel = section.classId?.name
+          ? `${section.classId.name} - ${section.name}`
+          : section.name;
+        student = await Student.findOne({ tenantId, sectionId, status: 'active' })
+          .sort({ admissionNo: 1 })
+          .select('firstName lastName admissionNo')
+          .lean();
+      }
+
+      const config = resolveReportCardConfig({
+        ...req.tenant,
+        settings: {
+          ...req.tenant.settings,
+          reportCard: { ...req.tenant.settings?.reportCard, ...draft },
+        },
+      });
+      const logo = await loadReportCardLogo(config.logoKey);
+
+      const pdf = await renderReportCardPdf(
+        buildPreviewInput({ student, sectionLabel, config, logo })
+      );
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'inline; filename="report-card-preview.pdf"',
+        'Cache-Control': 'no-store',
+      });
+      res.send(pdf);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 export default router;

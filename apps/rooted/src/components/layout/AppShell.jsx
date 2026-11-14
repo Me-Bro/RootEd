@@ -68,6 +68,7 @@ const STUDY_CENTER_HIDDEN = new Set([
   '/academic/grades',
   '/academic/grades/report',
   '/academic/report-cards',
+  '/tenant/report-card',
   '/me/timetable',
   '/me/grades',
 ]);
@@ -336,6 +337,12 @@ function getNavGroups(t, orgType) {
           to: '/tenant/join-policy',
           label: t('nav.joinPolicy'),
           icon: Settings2,
+          permission: 'tenant:admin',
+        },
+        {
+          to: '/tenant/report-card',
+          label: t('nav.reportCardSettings'),
+          icon: FileText,
           permission: 'tenant:admin',
         },
         {

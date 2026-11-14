@@ -1,5 +1,4 @@
 import { Worker } from 'bullmq';
-import PDFDocument from 'pdfkit';
 import { REPORT_CARD_EXCLUDED_ASSESSMENT_TYPES } from '@rooted/shared/constants';
 import { redis } from '../config/redis.js';
 import { logger } from '../utils/logger.js';
@@ -13,10 +12,11 @@ import { ReportCardBatch } from '../models/ReportCardBatch.js';
 import { computeGradeStats } from '../utils/gradeStats.js';
 import { computeAttendanceStats } from '../utils/attendanceStats.js';
 import { uploadBuffer, getSignedUrl } from '../services/storage.service.js';
+import { loadReportCardLogo } from '../services/reportCardLogo.service.js';
+import { resolveReportCardConfig } from '../utils/reportCardConfig.js';
+import { renderReportCardPdf } from '../utils/reportCardLayouts.js';
 
 const ATTENDANCE_THRESHOLD_PCT = 75;
-const GRADING_SCALE_LEGEND =
-  'Grading Scale:  A 90-100  ·  B 80-89  ·  C 70-79  ·  D 60-69  ·  F Below 60';
 
 async function loadReportCardData(tenantId, termId, sectionId) {
   const [section, term, tenant] = await Promise.all([
@@ -24,6 +24,9 @@ async function loadReportCardData(tenantId, termId, sectionId) {
     Term.findOne({ _id: termId, tenantId }).lean(),
     Tenant.findById(tenantId).lean(),
   ]);
+
+  const config = resolveReportCardConfig(tenant);
+  const logo = await loadReportCardLogo(config.logoKey);
 
   const students = await Student.find({ tenantId, sectionId, status: 'active' }).lean();
   const studentIds = students.map((s) => s._id);
@@ -70,6 +73,8 @@ async function loadReportCardData(tenantId, termId, sectionId) {
     section,
     term,
     tenant,
+    config,
+    logo,
     students,
     gradesByStudent,
     gradeStatsByStudent,
@@ -78,40 +83,12 @@ async function loadReportCardData(tenantId, termId, sectionId) {
   };
 }
 
-function drawFooter(doc, pageNum, pageCount) {
-  const bottom = doc.page.height - doc.page.margins.bottom + 10;
-  // The footer sits inside the bottom margin; pdfkit starts a new page for any
-  // text below maxY (height - margins.bottom), so zero it while drawing.
-  const savedBottom = doc.page.margins.bottom;
-  doc.page.margins.bottom = 0;
-  doc
-    .fontSize(7)
-    .fillColor('gray')
-    .text(GRADING_SCALE_LEGEND, 50, bottom, { width: 340 })
-    .text(`Page ${pageNum} of ${pageCount}`, 400, bottom, { width: 140, align: 'right' })
-    .fillColor('black');
-  doc.page.margins.bottom = savedBottom;
-}
-
-function drawSignatureLines(doc) {
-  const y = doc.y + 30;
-  doc
-    .fontSize(10)
-    .moveTo(80, y)
-    .lineTo(220, y)
-    .stroke()
-    .moveTo(340, y)
-    .lineTo(480, y)
-    .stroke()
-    .text('Class Teacher', 80, y + 5, { width: 140, align: 'center' })
-    .text('Principal', 340, y + 5, { width: 140, align: 'center' });
-}
-
 async function generateReportCardPdf(job, tenantId, termId, sectionId) {
   const {
     section,
     term,
-    tenant,
+    config,
+    logo,
     students,
     gradesByStudent,
     gradeStatsByStudent,
@@ -123,99 +100,22 @@ async function generateReportCardPdf(job, tenantId, termId, sectionId) {
     ? `${section.classId.name} - ${section.name}`
     : (section?.name ?? '—');
   const termLabel = term?.name ?? '—';
-  const schoolName = tenant?.name ?? 'Report Card';
 
-  // Real per-card progress for the mobile job-status screen (docs/mobile-ui/
-  // 09-report-cards-approved.html §1/§4) — a ring showing "13 of 21", not a spinner.
-  await job.updateProgress({ completed: 0, total: students.length });
-
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50, size: 'A4' });
-    const chunks = [];
-    doc.on('data', (chunk) => chunks.push(chunk));
-    doc.on('end', () => resolve(Buffer.concat(chunks)));
-    doc.on('error', reject);
-
-    // Wrapped in an async IIFE (rather than making the executor itself async)
-    // purely so each iteration can `await job.updateProgress(...)` between pages —
-    // pdfkit's own data/end/error events still drive resolve/reject above.
-    (async () => {
-      for (let i = 0; i < students.length; i++) {
-        const student = students[i];
-        if (i > 0) doc.addPage();
-
-        doc.fontSize(16).text(schoolName, { align: 'center' });
-        doc.fontSize(12).text('Report Card', { align: 'center' });
-        doc.moveDown(0.3);
-        doc
-          .fontSize(9)
-          .fillColor('gray')
-          .text(`${sectionLabel}  ·  ${termLabel}`, { align: 'center' });
-        doc.fillColor('black');
-        doc.moveDown(0.8);
-
-        doc.fontSize(12).text(`${student.firstName} ${student.lastName}`);
-        doc.fontSize(10).text(`Admission No: ${student.admissionNo}`);
-        doc.moveDown();
-
-        const studentGrades = gradesByStudent[student._id.toString()] || [];
-
-        const tableTop = doc.y;
-        doc.fontSize(10);
-        doc.text('Subject', 50, tableTop, { width: 150 });
-        doc.text('Score', 200, tableTop, { width: 60 });
-        doc.text('Grade', 260, tableTop, { width: 60 });
-        doc.text('Remarks', 320, tableTop, { width: 220 });
-        doc.moveDown(0.5);
-        doc.moveTo(50, doc.y).lineTo(540, doc.y).stroke();
-        doc.moveDown(0.5);
-
-        for (const g of studentGrades) {
-          const y = doc.y;
-          const letter = g.letterGrade || '—';
-          const subjectLabel = g.subjectId?.name ?? 'Unknown';
-          const assessmentLabel =
-            g.assessmentType && g.assessmentType !== 'final'
-              ? `${subjectLabel} (${g.assessmentType[0].toUpperCase()}${g.assessmentType.slice(1)})`
-              : subjectLabel;
-          doc.text(assessmentLabel, 50, y, { width: 150 });
-          doc.text(String(g.score ?? '—'), 200, y, { width: 60 });
-          doc.text(letter, 260, y, { width: 60 });
-          doc.text(g.remarks ?? '—', 320, y, { width: 220 });
-          doc.moveDown(0.5);
-        }
-
-        doc.moveDown(0.5);
-        doc.moveTo(50, doc.y).lineTo(540, doc.y).stroke();
-        doc.moveDown(0.5);
-
-        const stats = gradeStatsByStudent[student._id.toString()];
-        const attendance = attendanceByStudent[student._id.toString()];
-        const avg = stats?.score ?? '—';
-        const overallLetter = stats?.letterGrade ?? '—';
-        const rankLabel =
-          stats?.rank != null
-            ? `${stats.rank} of ${rankedCount}`
-            : 'Not ranked (no scored subjects)';
-        const attendanceLabel = attendance?.pct != null ? `${attendance.pct}%` : 'No records';
-
-        doc.fontSize(11);
-        doc.text(`Weighted Average: ${avg}   Overall Grade: ${overallLetter}`, { align: 'right' });
-        doc.text(`Class Rank: ${rankLabel}`, { align: 'right' });
-        doc.text(`Attendance: ${attendanceLabel}`, { align: 'right' });
-
-        drawSignatureLines(doc);
-        drawFooter(doc, i + 1, students.length);
-        await job.updateProgress({ completed: i + 1, total: students.length });
-      }
-
-      if (students.length === 0) {
-        doc.fontSize(12).text('No active students in this section.');
-      }
-
-      doc.end();
-    })().catch(reject);
+  const pdf = await renderReportCardPdf({
+    students,
+    sectionLabel,
+    termLabel,
+    gradesByStudent,
+    gradeStatsByStudent,
+    attendanceByStudent,
+    rankedCount,
+    config,
+    logo,
+    // Real per-card progress for the mobile job-status screen (docs/mobile-ui/
+    // 09-report-cards-approved.html §1/§4) — a ring showing "13 of 21", not a spinner.
+    onProgress: (progress) => job.updateProgress(progress),
   });
+  return { pdf, config };
 }
 
 export function startReportCardWorker() {
@@ -224,7 +124,12 @@ export function startReportCardWorker() {
     async (job) => {
       const { tenantId, termId, sectionId } = job.data;
 
-      const pdfBuffer = await generateReportCardPdf(job, tenantId, termId, sectionId);
+      const { pdf: pdfBuffer, config } = await generateReportCardPdf(
+        job,
+        tenantId,
+        termId,
+        sectionId
+      );
       const key = `report-cards/${tenantId}/${termId}/${sectionId}/${Date.now()}.pdf`;
 
       await uploadBuffer(key, pdfBuffer, 'application/pdf');
@@ -232,7 +137,7 @@ export function startReportCardWorker() {
 
       await ReportCardBatch.updateOne(
         { jobId: job.id, tenantId },
-        { $set: { status: 'completed', s3Key: key } }
+        { $set: { status: 'completed', s3Key: key, config } }
       );
 
       return { url };
