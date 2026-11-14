@@ -29,3 +29,16 @@ export function classifyEmailError(err) {
   if (code === '300' || code === '406' || (smtp >= 550 && smtp <= 554)) return 'recipient_rejected';
   return 'other';
 }
+
+/**
+ * Stricter than `recipient_rejected`: the provider says this address does not
+ * exist or is suppressed, not that mail was refused for a reason that could pass
+ * (552 mailbox full, 554 policy). Only these mark an address as bounced.
+ * Postmark 300 invalid email, 406 inactive recipient; SMTP 550 no such user,
+ * 551 not local, 553 bad mailbox name.
+ */
+export function isHardRecipientFailure(err) {
+  const code = String(err?.code ?? '');
+  const smtp = Number(err?.responseCode) || 0;
+  return code === '300' || code === '406' || smtp === 550 || smtp === 551 || smtp === 553;
+}

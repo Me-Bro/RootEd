@@ -6,7 +6,7 @@ import api from '@/lib/api.js';
 import { useAuth } from '@/contexts/useAuth.js';
 import { currentCollege, hasPermission } from '@/lib/access.js';
 import { pushToast } from '@/lib/toast.js';
-import { BADGE_VARIANT, memberLoginState, memberName } from '@/lib/people.js';
+import { BADGE_VARIANT, emailBounced, memberLoginState, memberName } from '@/lib/people.js';
 import { ConfirmAction } from '@/components/ConfirmAction.jsx';
 import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Button } from '@/components/ui/Button.jsx';
@@ -186,6 +186,11 @@ function MemberRow({ member, roles, canWrite, isSelf }) {
         <Badge variant={BADGE_VARIANT[state]} data-testid="login-state">
           {t(`people.state.${state}`)}
         </Badge>
+        {emailBounced(member.userId) && (
+          <Badge variant="danger" className="ml-1" data-testid="email-bounced">
+            {t('people.emailBounced')}
+          </Badge>
+        )}
       </TableCell>
       {canWrite && (
         <TableCell>

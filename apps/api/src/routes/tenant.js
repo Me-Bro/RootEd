@@ -319,7 +319,7 @@ router.get('/members', requirePermission('roles:read'), async (req, res, next) =
 
     const [members, total] = await Promise.all([
       TenantMembership.find(filter)
-        .populate('userId', 'email username firstName lastName status')
+        .populate('userId', 'email username firstName lastName status emailBouncedAt')
         .populate('roleIds', 'name templateKey')
         .sort({ createdAt: -1 })
         .skip((page - 1) * limit)

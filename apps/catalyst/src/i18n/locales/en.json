@@ -664,6 +664,7 @@
   },
   "people": {
     "linkSent": "Link sent",
+    "emailBounced": "Email bounced",
     "state": {
       "none": "No login",
       "pending": "Waiting for password",

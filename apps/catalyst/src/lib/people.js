@@ -12,6 +12,14 @@ export const BADGE_VARIANT = {
   suspended: 'danger',
 };
 
+/**
+ * The provider reported this login address as undeliverable. Separate from the
+ * login state on purpose: a waiting-for-password person with a dead address
+ * still needs the resend and suspend actions that state unlocks. Takes a student
+ * row's `account` or a member's populated `userId`.
+ */
+export const emailBounced = (user) => Boolean(user?.emailBouncedAt);
+
 /** From a student row's `account` (GET /academic/students, administrators only). */
 export function studentLoginState(account) {
   if (!account) return 'none';

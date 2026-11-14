@@ -590,7 +590,7 @@ async function accountsFor(tenantId, students) {
   const userIds = students.map((s) => s.userId).filter(Boolean);
   if (!userIds.length) return new Map();
   const [users, memberships] = await Promise.all([
-    User.find({ _id: { $in: userIds } }, 'email status').lean(),
+    User.find({ _id: { $in: userIds } }, 'email status emailBouncedAt').lean(),
     TenantMembership.find({ tenantId, userId: { $in: userIds } }, 'userId status').lean(),
   ]);
   const suspended = new Set(
@@ -601,6 +601,7 @@ async function accountsFor(tenantId, students) {
       String(u._id),
       {
         email: u.email,
+        emailBouncedAt: u.emailBouncedAt ?? null,
         status: suspended.has(String(u._id)) ? 'suspended' : u.status,
         membershipId: memberships.find((m) => String(m.userId) === String(u._id))?._id ?? null,
       },
