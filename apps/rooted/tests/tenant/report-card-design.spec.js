@@ -27,6 +27,17 @@ const DEFAULTS = {
   showAttendance: true,
 };
 
+// True when the canvas holds more than a blank white page.
+async function hasInk(canvas) {
+  return canvas.evaluate((el) => {
+    const { data } = el.getContext('2d').getImageData(0, 0, el.width, el.height);
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i] < 200 || data[i + 1] < 200 || data[i + 2] < 200) return true;
+    }
+    return false;
+  });
+}
+
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Report card design page', () => {
@@ -97,7 +108,10 @@ test.describe('Report card design page', () => {
     await expect(page.getByRole('alert')).toContainText('at least one signature');
   });
 
-  test('Preview returns a PDF built from the unsaved draft', async ({ page, context }) => {
+  test('Preview draws a PDF built from the unsaved draft inside the page', async ({
+    page,
+    context,
+  }) => {
     await page.goto('/tenant/report-card');
     await page.getByRole('radio', { name: /Compact/ }).check();
 
@@ -109,8 +123,15 @@ test.describe('Report card design page', () => {
     expect(response.headers()['content-type']).toContain('application/pdf');
     expect((await response.body()).subarray(0, 4).toString()).toBe('%PDF');
 
-    // The preview opens in its own tab; close it so it does not outlive the test.
-    for (const extra of context.pages().filter((p) => p !== page)) await extra.close();
+    // Drawn in a dialog, not opened as a tab or a blob: link: the Android app
+    // cannot open those ("No app on this device can open that link").
+    const canvas = page.getByRole('dialog').getByRole('img', { name: 'Report card preview' });
+    await expect(canvas).toBeVisible({ timeout: 15_000 });
+    expect(context.pages()).toHaveLength(1);
+    expect(await hasInk(canvas)).toBe(true);
+
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog')).toBeHidden();
 
     // Nothing was saved by previewing: a reload still shows the saved preset.
     await page.reload();
@@ -154,6 +175,31 @@ test.describe('Report card design page', () => {
     expect(
       batches.some((b) => b.jobId === String(jobId) && b.status === 'completed' && b.url)
     ).toBe(true);
+  });
+});
+
+test.describe('Report card design page — on a phone', () => {
+  test.use({
+    storageState: AUTH_STATES.tenant_admin,
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true,
+  });
+
+  test('Preview shows the card in the page, with no popup to hand to another app', async ({
+    page,
+    context,
+  }) => {
+    await page.goto('/tenant/report-card');
+    await page.getByRole('button', { name: 'Preview' }).click();
+
+    const canvas = page.getByRole('dialog').getByRole('img', { name: 'Report card preview' });
+    await expect(canvas).toBeVisible({ timeout: 15_000 });
+    expect(context.pages()).toHaveLength(1);
+    expect(await hasInk(canvas)).toBe(true);
+    // The card fits the phone's width: no sideways scrolling inside the dialog.
+    const box = await canvas.boundingBox();
+    expect(box.width).toBeLessThanOrEqual(390);
   });
 });
 
