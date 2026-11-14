@@ -665,6 +665,10 @@
   "people": {
     "linkSent": "Link sent",
     "emailBounced": "Email bounced",
+    "fixEmail": "Fix email",
+    "fixEmailFor": "Fix email for {{name}}",
+    "newEmailFor": "New email for {{name}}",
+    "emailFixed": "Email updated and link sent",
     "state": {
       "none": "No login",
       "pending": "Waiting for password",

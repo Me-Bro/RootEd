@@ -54,3 +54,8 @@ export const updateJoinPolicySchema = z.object({
   defaultRoleIds: z.array(objectId).optional(),
   codeExpiresAt: z.coerce.date().nullish(),
 });
+
+// Replacement login address for a person whose first one bounced.
+export const fixMemberEmailSchema = z
+  .object({ email: z.string().trim().toLowerCase().email() })
+  .strict();

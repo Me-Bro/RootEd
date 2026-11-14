@@ -11,6 +11,7 @@ import { downloadCsv } from '@/lib/csv.js';
 import { pushToast } from '@/lib/toast.js';
 import { BADGE_VARIANT, emailBounced, studentLoginState } from '@/lib/people.js';
 import { ConfirmAction } from '@/components/ConfirmAction.jsx';
+import { FixEmail } from '@/components/FixEmail.jsx';
 import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Button } from '@/components/ui/Button.jsx';
 import { Badge } from '@/components/ui/Badge.jsx';
@@ -370,6 +371,13 @@ function StudentRow({ student, canWrite, canSuspend }) {
             >
               {t('people.students.resend')}
             </Button>
+          )}
+          {canSuspend && state === 'pending' && emailBounced(student.account) && (
+            <FixEmail
+              membershipId={student.account.membershipId}
+              name={name}
+              onDone={() => refresh(qc)}
+            />
           )}
           {canSuspend && (state === 'active' || state === 'pending') && (
             <ConfirmAction

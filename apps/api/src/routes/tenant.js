@@ -9,6 +9,7 @@ import {
   createInviteSchema,
   updateMemberRolesSchema,
   addMemberSchema,
+  fixMemberEmailSchema,
   updateMemberStatusSchema,
   approveJoinRequestSchema,
   updateJoinPolicySchema,
@@ -30,7 +31,11 @@ import {
   formatJoinCode,
 } from '../services/joinRequest.service.js';
 import { sendTenantInvite } from '../services/email.service.js';
-import { provisionStaffAccount, sendClaimEmail } from '../services/identity.service.js';
+import {
+  provisionStaffAccount,
+  sendClaimEmail,
+  fixBouncedEmail,
+} from '../services/identity.service.js';
 import { markRead, getUnread, broadcastToRole } from '../services/notification.service.js';
 import { auditLog } from '../services/audit.service.js';
 import { blockToken } from '../services/auth.service.js';
@@ -525,6 +530,43 @@ router.post(
       });
 
       res.json({ message: 'Link sent' });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// The address typed for a never-signed-in person bounced: let an admin correct it
+// and send the claim link to the new one. See fixBouncedEmail for what it refuses.
+router.patch(
+  '/members/:id/email',
+  requirePermission('roles:write'),
+  validate(fixMemberEmailSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const membership = await TenantMembership.findOne({ _id: req.params.id, tenantId }).lean();
+      if (!membership || membership.status !== 'active')
+        throw new AppError('Member not found', 404);
+
+      const { email } = req.body;
+      const { user, previousEmail } = await fixBouncedEmail({
+        tenant: req.tenant,
+        membership,
+        email,
+      });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'member.email_fixed',
+        target: { model: 'TenantMembership', id: membership._id },
+        before: { email: previousEmail },
+        after: { email },
+        ip: req.ip,
+      });
+
+      res.json({ userId: user._id, email: user.email });
     } catch (err) {
       next(err);
     }
