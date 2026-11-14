@@ -288,3 +288,59 @@ export async function provisionStaffAccount({
   await sendClaimEmail({ tenant, user, email, enqueue });
   return { user, reason: null };
 }
+
+/**
+ * Replaces the login address of a person who has never signed in, after the
+ * provider reported the old one undeliverable, and mails a fresh claim link to
+ * the new one. Throws an AppError the route passes straight on.
+ *
+ * Deliberately narrow, because the new address receives a link that sets the
+ * account's password:
+ *  - only a `pending_claim` account (nobody holds credentials, so no one is
+ *    locked out), and only one whose address is flagged bounced;
+ *  - never a login that belongs to another organization too, since User is
+ *    shared across tenants and the other one would lose its claim address;
+ *  - the new address must be free: an existing account is never taken over.
+ * The conditional update repeats the first two checks, so a claim that lands
+ * between the read and the write wins.
+ */
+export async function fixBouncedEmail({ tenant, membership, email, enqueue = queueEmail }) {
+  const user = await User.findById(membership.userId, 'email status emailBouncedAt').lean();
+  if (!user) throw new AppError('Member not found', 404);
+  if (user.status !== 'pending_claim') {
+    throw new AppError('This person has already set a password and changes their own email', 409);
+  }
+  if (!user.emailBouncedAt) throw new AppError('This address has not bounced', 409);
+  if (email === user.email) throw new AppError('That is the address that bounced', 400);
+
+  const problem = await emailDomainProblem(email);
+  if (problem) throw new AppError(`That email address is not valid: ${problem}`, 422);
+
+  const elsewhere = await TenantMembership.exists({
+    userId: user._id,
+    tenantId: { $ne: tenant._id },
+  });
+  if (elsewhere) {
+    throw new AppError(
+      'This login is also used by another organization, so it cannot be edited here',
+      409
+    );
+  }
+
+  let updated;
+  try {
+    updated = await User.findOneAndUpdate(
+      { _id: user._id, status: 'pending_claim', emailBouncedAt: { $ne: null } },
+      { $set: { email }, $unset: { emailBouncedAt: 1, emailBounceReason: 1 } },
+      { new: true }
+    ).lean();
+  } catch (err) {
+    // Unique email index. Said without naming whose account holds it.
+    if (err.code === 11000) throw new AppError('That email address cannot be used', 409);
+    throw err;
+  }
+  if (!updated) throw new AppError('This login changed while you were editing it', 409);
+
+  await sendClaimEmail({ tenant, user: updated, email, enqueue });
+  return { user: updated, previousEmail: user.email };
+}

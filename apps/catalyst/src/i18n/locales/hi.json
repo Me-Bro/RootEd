@@ -665,6 +665,10 @@
   "people": {
     "linkSent": "लिंक भेज दिया गया",
     "emailBounced": "ईमेल बाउंस हुआ",
+    "fixEmail": "ईमेल ठीक करें",
+    "fixEmailFor": "{{name}} का ईमेल ठीक करें",
+    "newEmailFor": "{{name}} का नया ईमेल",
+    "emailFixed": "ईमेल बदला गया और लिंक भेज दिया गया",
     "state": {
       "none": "लॉगिन नहीं",
       "pending": "पासवर्ड की प्रतीक्षा",

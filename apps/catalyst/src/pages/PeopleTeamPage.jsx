@@ -8,6 +8,7 @@ import { currentCollege, hasPermission } from '@/lib/access.js';
 import { pushToast } from '@/lib/toast.js';
 import { BADGE_VARIANT, emailBounced, memberLoginState, memberName } from '@/lib/people.js';
 import { ConfirmAction } from '@/components/ConfirmAction.jsx';
+import { FixEmail } from '@/components/FixEmail.jsx';
 import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Button } from '@/components/ui/Button.jsx';
 import { Badge } from '@/components/ui/Badge.jsx';
@@ -206,6 +207,9 @@ function MemberRow({ member, roles, canWrite, isSelf }) {
                 >
                   {t('people.students.resend')}
                 </Button>
+              )}
+              {state === 'pending' && emailBounced(member.userId) && (
+                <FixEmail membershipId={member._id} name={name} onDone={() => refresh(qc)} />
               )}
               {state === 'suspended' ? (
                 <Button
