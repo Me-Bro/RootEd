@@ -6,6 +6,7 @@ import { Card, CardContent } from '../../components/ui/Card.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
+import PdfPreviewDialog from '../../components/report-cards/PdfPreviewDialog.jsx';
 import { apiError } from '../../utils/studyCenter.js';
 import {
   REPORT_CARD_PRESETS,
@@ -159,27 +160,26 @@ export default function ReportCardSettingsPage() {
     uploadLogo.mutate(file);
   };
 
-  // The tab is opened on the click itself: browsers block a window opened later,
-  // from inside the response handler.
+  // The PDF is drawn inside the page (PdfPreviewDialog) rather than opened in a
+  // tab: the Android app cannot open a blob: PDF link, and phones often have no
+  // PDF viewer.
+  const [previewData, setPreviewData] = useState(null);
   const preview = useMutation({
-    mutationFn: async ({ win }) => {
+    mutationFn: async () => {
       const built = buildPayload(form);
       if (!built.ok) throw new Error('signatories');
       const res = await api.post(
         '/academic/report-card/preview',
         { config: built.payload },
-        { responseType: 'blob' }
+        { responseType: 'arraybuffer' }
       );
-      return { blob: res.data, win };
+      return res.data;
     },
-    onSuccess: ({ blob, win }) => {
-      const url = URL.createObjectURL(blob);
-      if (win) win.location.href = url;
-      else setError(t('reportCardSettings.previewBlocked'));
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    onSuccess: (data) => {
+      setError('');
+      setPreviewData(data);
     },
-    onError: (err, { win }) => {
-      win?.close();
+    onError: (err) => {
       setError(
         err.message === 'signatories'
           ? t('reportCardSettings.signatoriesRequired')
@@ -396,7 +396,7 @@ export default function ReportCardSettingsPage() {
             <Button
               variant="outline"
               disabled={preview.isPending || settings.isLoading}
-              onClick={() => preview.mutate({ win: window.open('', '_blank') })}
+              onClick={() => preview.mutate()}
             >
               {preview.isPending
                 ? t('reportCardSettings.previewing')
@@ -405,6 +405,12 @@ export default function ReportCardSettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <PdfPreviewDialog
+        data={previewData}
+        title={t('reportCardSettings.previewTitle')}
+        onClose={() => setPreviewData(null)}
+      />
     </div>
   );
 }

@@ -2518,8 +2518,8 @@
     "showAttendance": "Attendance",
     "preview": "Preview",
     "previewing": "Preparing...",
+    "previewTitle": "Report card preview",
     "previewFailed": "Could not prepare the preview.",
-    "previewBlocked": "Your browser blocked the preview window. Allow pop-ups and try again.",
     "saved": "Report card design saved.",
     "saveFailed": "Could not save the report card design."
   },
