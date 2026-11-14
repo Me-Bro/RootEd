@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link2, Sparkles } from 'lucide-react';
+import { Link2, Sparkles, Check } from 'lucide-react';
 import './landing.css';
 import {
   HeroDesktopMotif,
@@ -9,18 +9,25 @@ import {
   StatementMobileMotif,
 } from './RootMotif.jsx';
 import ContactForm from './ContactForm.jsx';
+import PlayBadge from './PlayBadge.jsx';
+import { BrowserDashboard, PhonePreview, RolePanel } from './ProductFrames.jsx';
 import { brand } from '../../lib/brand.js';
 import {
   CONTACT_HREF,
   PARENT_SITE_HREF,
+  PLAY_STORE_URL,
+  PLAY_QR_SRC,
   MODULES,
-  WHY_ROOTED,
+  TRUST,
+  ROLES,
+  WHO,
+  ANDROID_POINTS,
   SECURITY,
+  FAQ,
   ABOUT_VALUES,
   PROCESS,
   MOBILE_FACTS,
   MOBILE_TAGS,
-  PREVIEW_ROLES,
   PREMIUM_FEATURES,
 } from './landingContent.js';
 
@@ -34,6 +41,95 @@ function useIsDesktop(breakpoint = 768) {
     return () => mql.removeEventListener('change', onChange);
   }, [query]);
   return isDesktop;
+}
+
+// Android visitors get the app as the primary action on the mobile page;
+// everyone else (iPhone, desktop-width browsers) gets the web sign-up.
+const IS_ANDROID = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
+
+function TrustStrip({ t }) {
+  return (
+    <section className="trust" aria-label={t('landing.trust.label')}>
+      <ul>
+        {TRUST.map((item) => (
+          <li key={item.key}>
+            <i>
+              <item.icon size={15} aria-hidden="true" />
+            </i>
+            {t(item.key)}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function RoleTabs({ t }) {
+  const [active, setActive] = useState(ROLES[0].id);
+  const uid = useId();
+  const role = ROLES.find((r) => r.id === active);
+
+  // Arrow keys move between tabs, per the ARIA tabs pattern.
+  const onKeyDown = (e) => {
+    const i = ROLES.findIndex((r) => r.id === active);
+    const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    const next = ROLES[(i + step + ROLES.length) % ROLES.length].id;
+    setActive(next);
+    document.getElementById(`${uid}-tab-${next}`)?.focus();
+  };
+
+  return (
+    <div className="roles">
+      <div className="tablist" role="tablist" onKeyDown={onKeyDown}>
+        {ROLES.map((r) => (
+          <button
+            key={r.id}
+            id={`${uid}-tab-${r.id}`}
+            type="button"
+            role="tab"
+            aria-selected={r.id === active}
+            aria-controls={`${uid}-panel`}
+            tabIndex={r.id === active ? 0 : -1}
+            onClick={() => setActive(r.id)}
+          >
+            {t(r.tabKey)}
+          </button>
+        ))}
+      </div>
+      <div
+        className="panel"
+        role="tabpanel"
+        id={`${uid}-panel`}
+        aria-labelledby={`${uid}-tab-${active}`}
+      >
+        <div>
+          <h3>{t(role.titleKey)}</h3>
+          <p>{t(role.bodyKey)}</p>
+          <ul>
+            {role.pointKeys.map((k) => (
+              <li key={k}>{t(k)}</li>
+            ))}
+          </ul>
+        </div>
+        <RolePanel id={role.id} t={t} />
+      </div>
+    </div>
+  );
+}
+
+function FaqList({ t, className }) {
+  return (
+    <div className={className}>
+      {FAQ.map((item, i) => (
+        <details key={item.id} open={i === 0}>
+          <summary>{t(item.qKey)}</summary>
+          <p>{t(item.aKey)}</p>
+        </details>
+      ))}
+    </div>
+  );
 }
 
 function DesktopLanding({
@@ -56,9 +152,12 @@ function DesktopLanding({
           RootEd
         </div>
         <div className="links">
-          <a href="#modules">{t('landing.nav.product')}</a>
-          <a href="#pricing">{t('landing.nav.pricing')}</a>
+          <a href="#roles">{t('landing.nav.product')}</a>
+          <a href="#who">{t('landing.nav.who')}</a>
+          {PLAY_STORE_URL && <a href="#android">{t('landing.nav.android')}</a>}
           <a href="#security">{t('landing.nav.security')}</a>
+          <a href="#pricing">{t('landing.nav.pricing')}</a>
+          <a href="#faq">{t('landing.nav.faq')}</a>
           {brand.showStory && <a href="#about">{t('landing.nav.about')}</a>}
           <a href="#contact">{t('landing.nav.contact')}</a>
         </div>
@@ -84,54 +183,57 @@ function DesktopLanding({
           top level (axe: landmark-banner-is-top-level,
           landmark-contentinfo-is-top-level). */}
       <main>
-        <section className="lp-hero motif-wrap">
+        <section className="lp-hero v2-hero motif-wrap">
           <HeroDesktopMotif
-            width={600}
-            height={600}
-            style={{ right: -80, top: -60, left: 'auto' }}
+            width={560}
+            height={560}
+            style={{ right: -120, top: -80, left: 'auto' }}
           />
-          <span className="badge dot">{t('landing.hero.badge')}</span>
-          {/* Split into two keys rather than using <Trans>, which this
-              codebase doesn't use anywhere — the accent clause is the tail of
-              the sentence in both languages. */}
-          <h1>
-            {t('landing.hero.titleMain')}{' '}
-            <span className="grad">{t('landing.hero.titleAccent')}</span>
-          </h1>
-          <p className="lead">{t('landing.hero.lead')}</p>
-          <div className="cta-row">
-            <button type="button" className="btn primary" onClick={onGetStartedClick}>
-              {t('landing.hero.ctaStart')}
-            </button>
-            <button type="button" className="btn secondary" onClick={handleLoginClick}>
-              {isAuthenticated ? loginLabel : t('landing.hero.ctaLogin')}
-            </button>
+          <div>
+            <span className="badge dot">{t('landing.hero.badge')}</span>
+            {/* Split into two keys rather than using <Trans>, which this
+                codebase doesn't use anywhere — the accent clause is the tail of
+                the sentence in both languages. */}
+            <h1>
+              {t('landing.hero.titleMain')}{' '}
+              <span className="grad">{t('landing.hero.titleAccent')}</span>
+            </h1>
+            <p className="lead">{t('landing.hero.lead')}</p>
+            <div className="cta-row">
+              <button type="button" className="btn primary" onClick={onGetStartedClick}>
+                {t('landing.hero.ctaStart')}
+              </button>
+              {PLAY_STORE_URL ? (
+                <PlayBadge t={t} className="on-light" />
+              ) : (
+                <button type="button" className="btn secondary" onClick={handleLoginClick}>
+                  {isAuthenticated ? loginLabel : t('landing.hero.ctaLogin')}
+                </button>
+              )}
+            </div>
+            <p className="fineprint">
+              {t('landing.hero.fineprint')}{' '}
+              <button type="button" className="btn-inline" onClick={handleLoginClick}>
+                {isAuthenticated ? loginLabel : t('landing.hero.fineprintLogin')}
+              </button>
+            </p>
           </div>
-          <p className="fineprint">
-            {t('landing.hero.fineprint')}{' '}
-            <button type="button" className="btn-inline" onClick={handleLoginClick}>
-              {isAuthenticated ? loginLabel : t('landing.hero.fineprintLogin')}
-            </button>
-          </p>
 
-          <div className="lp-mockframe">
-            <div className="bar">
-              <i></i>
-              <i></i>
-              <i></i>
-            </div>
-            <div className="placeholder">
-              <div className="role-pills">
-                {PREVIEW_ROLES.map((key, i) => (
-                  <span className={i === 0 ? 'badge solid' : 'badge'} key={key}>
-                    {t(key)}
-                  </span>
-                ))}
-              </div>
-              <b>{t('landing.preview.heading')}</b>
-              <p>{t('landing.preview.body')}</p>
-            </div>
+          <div className="v2-stage">
+            <BrowserDashboard t={t} />
+            {PLAY_STORE_URL && <PhonePreview t={t} compact />}
           </div>
+        </section>
+
+        <TrustStrip t={t} />
+
+        <section className="lp-section" id="roles">
+          <div className="section-head">
+            <span className="eyebrow">{t('landing.rolesSection.eyebrow')}</span>
+            <h2>{t('landing.rolesSection.heading')}</h2>
+            <p>{t('landing.rolesSection.lead')}</p>
+          </div>
+          <RoleTabs t={t} />
         </section>
 
         <section className="lp-section on-surface" id="modules">
@@ -160,7 +262,86 @@ function DesktopLanding({
           </div>
         </section>
 
-        <section className="lp-section on-surface" id="pricing">
+        <section className="lp-section" id="who">
+          <div className="section-head">
+            <span className="eyebrow">{t('landing.whoSection.eyebrow')}</span>
+            <h2>{t('landing.whoSection.heading')}</h2>
+            <p>{t('landing.whoSection.lead')}</p>
+          </div>
+          <div className="lp-grid cols-4">
+            {WHO.map((w) => (
+              <div className="lp-card" key={w.titleKey}>
+                <div className="icon">
+                  <w.icon size={22} />
+                </div>
+                <h3>{t(w.titleKey)}</h3>
+                <p>{t(w.bodyKey)}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {PLAY_STORE_URL && (
+          <section className="android" id="android">
+            <div className="in">
+              <div>
+                <span className="eyebrow">{t('landing.android.eyebrow')}</span>
+                <h2>{t('landing.android.heading')}</h2>
+                <p>{t('landing.android.lead')}</p>
+                <ul>
+                  {ANDROID_POINTS.map((k) => (
+                    <li key={k}>
+                      <Check size={16} aria-hidden="true" />
+                      {t(k)}
+                    </li>
+                  ))}
+                </ul>
+                <div className="get">
+                  <PlayBadge t={t} />
+                  <figure className="qr">
+                    <img
+                      src={PLAY_QR_SRC}
+                      width="104"
+                      height="104"
+                      alt={t('landing.android.qrAlt')}
+                      loading="lazy"
+                    />
+                    <figcaption>
+                      {t('landing.android.qrCaption')}
+                      <small>{t('landing.android.qrSub')}</small>
+                    </figcaption>
+                  </figure>
+                </div>
+              </div>
+              <div className="phones">
+                <PhonePreview t={t} />
+                <PhonePreview t={t} variant="roll" />
+              </div>
+            </div>
+          </section>
+        )}
+
+        <section className="lp-section on-surface" id="security">
+          <div className="section-head">
+            <span className="eyebrow">{t('landing.securitySection.eyebrow')}</span>
+            <h2>{t('landing.securitySection.heading')}</h2>
+            <p>{t('landing.securitySection.lead')}</p>
+          </div>
+          <div>
+            {SECURITY.map((s) => (
+              <div className="lp-security-row" key={s.num}>
+                <span className="num">{s.num}</span>
+                <div>
+                  <h3>{t(s.titleKey)}</h3>
+                  <p>{t(s.bodyKey)}</p>
+                  <span className="tech">{t(s.techKey)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="lp-section" id="pricing">
           <div className="section-head">
             <span className="eyebrow">{t('landing.pricingSection.eyebrow')}</span>
             <h2>{t('landing.pricingSection.heading')}</h2>
@@ -189,36 +370,6 @@ function DesktopLanding({
               {t('landing.pricingSection.cta')}
             </a>
           </p>
-        </section>
-
-        <section className="lp-section on-dark tight">
-          <div className="lp-values-row flush">
-            {WHY_ROOTED.map((w) => (
-              <div className="lp-value-chip on-dark-chip" key={w.titleKey}>
-                <h3>{t(w.titleKey)}</h3>
-                <p>{t(w.bodyKey)}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="lp-section on-surface" id="security">
-          <div className="section-head">
-            <span className="eyebrow">{t('landing.securitySection.eyebrow')}</span>
-            <h2>{t('landing.securitySection.heading')}</h2>
-            <p>{t('landing.securitySection.lead')}</p>
-          </div>
-          <div>
-            {SECURITY.map((s) => (
-              <div className="lp-security-row" key={s.num}>
-                <span className="num">{s.num}</span>
-                <div>
-                  <h3>{t(s.titleKey)}</h3>
-                  <p>{t(s.bodyKey)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
         </section>
 
         {brand.showStory && (
@@ -267,6 +418,14 @@ function DesktopLanding({
           </div>
         </section>
 
+        <section className="lp-section" id="faq">
+          <div className="section-head">
+            <span className="eyebrow">{t('landing.faqSection.eyebrow')}</span>
+            <h2>{t('landing.faqSection.heading')}</h2>
+          </div>
+          <FaqList t={t} className="faq" />
+        </section>
+
         <div className="lp-cta-band">
           <div>
             <h3>{t('landing.ctaBand.heading')}</h3>
@@ -279,6 +438,7 @@ function DesktopLanding({
             <button type="button" className="btn primary" onClick={onGetStartedClick}>
               {t('landing.nav.getStarted')}
             </button>
+            <PlayBadge t={t} />
           </div>
         </div>
       </main>
@@ -298,6 +458,7 @@ function DesktopLanding({
               <a href="#modules">{t('landing.footer.modules')}</a>
               <a href="#pricing">{t('landing.nav.pricing')}</a>
               <a href="#security">{t('landing.nav.security')}</a>
+              {PLAY_STORE_URL && <a href="#android">{t('landing.footer.androidApp')}</a>}
               <button type="button" onClick={handleLoginClick}>
                 {loginLabel}
               </button>
@@ -342,6 +503,8 @@ function MobileLanding({
 }) {
   const loginLabel = isAuthenticated ? t('landing.nav.dashboard') : t('landing.nav.login');
   const handleLoginClick = isAuthenticated ? onDashboardClick : onLoginClick;
+  // Play is the primary action only for Android visitors with a published app.
+  const appFirst = IS_ANDROID && !!PLAY_STORE_URL;
 
   return (
     <div className="lp-mobile-only m-page">
@@ -354,7 +517,7 @@ function MobileLanding({
       </nav>
 
       <main>
-        <section className="m-hero motif-wrap">
+        <section className="m-hero m-hero2 motif-wrap">
           <HeroMobileMotif
             width={480}
             height={480}
@@ -366,29 +529,46 @@ function MobileLanding({
             <span className="grad">{t('landing.mobile.titleAccent')}</span>
           </h1>
           <p>{t('landing.mobile.lead')}</p>
-          <button type="button" className="btn primary block" onClick={onGetStartedClick}>
-            {t('landing.hero.ctaStart')}
-          </button>
+          <div className="cta-col">
+            {appFirst && <PlayBadge t={t} />}
+            <button
+              type="button"
+              className={appFirst ? 'btn secondary block' : 'btn primary block'}
+              onClick={onGetStartedClick}
+            >
+              {appFirst ? t('landing.mobile.getStartedWeb') : t('landing.hero.ctaStart')}
+            </button>
+          </div>
           <span className="fineprint">
             {t('landing.mobile.fineprint')}{' '}
             <button type="button" className="btn-inline" onClick={handleLoginClick}>
               {isAuthenticated ? loginLabel : t('landing.hero.fineprintLogin')}
             </button>
           </span>
+          {PLAY_STORE_URL && (
+            <div className="peek">
+              <PhonePreview t={t} compact />
+            </div>
+          )}
         </section>
 
-        <section className="m-section on-dark">
-          <span className="eyebrow">{t('landing.mobile.whyEyebrow')}</span>
-          <h2>{t('landing.mobile.whyHeading')}</h2>
-          {MOBILE_FACTS.map((f) => (
-            <div className="m-fact" key={f.num}>
-              <span className="ic">{f.num}</span>
-              <div>
-                <h3>{t(f.titleKey)}</h3>
-                <p>{t(f.bodyKey)}</p>
-              </div>
-            </div>
+        <div className="m-chips" aria-label={t('landing.trust.label')}>
+          {TRUST.map((item) => (
+            <span key={item.key}>{t(item.key)}</span>
           ))}
+        </div>
+
+        <section className="m-section on-tint">
+          <span className="eyebrow">{t('landing.rolesSection.eyebrow')}</span>
+          <h2>{t('landing.mobile.rolesHeading')}</h2>
+          <div className="m-roles">
+            {ROLES.map((r) => (
+              <article key={r.id}>
+                <h3>{t(r.tabKey)}</h3>
+                <p>{t(r.titleKey)}</p>
+              </article>
+            ))}
+          </div>
         </section>
 
         <section className="m-section on-surface">
@@ -404,6 +584,42 @@ function MobileLanding({
               </div>
             ))}
           </div>
+        </section>
+
+        <section className="m-section on-surface flush-top">
+          <span className="eyebrow">{t('landing.whoSection.eyebrow')}</span>
+          <h2>{t('landing.mobile.whoHeading')}</h2>
+          <div className="m-who">
+            {WHO.map((w) => (
+              <div key={w.titleKey}>
+                <h3>{t(w.titleKey)}</h3>
+                <span>{t(w.bodyKey)}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {PLAY_STORE_URL && (
+          <section className="m-section on-dark m-app" id="android">
+            <span className="eyebrow">{t('landing.android.eyebrow')}</span>
+            <h2>{t('landing.android.heading')}</h2>
+            <p>{t('landing.mobile.appLead')}</p>
+            <PlayBadge t={t} />
+          </section>
+        )}
+
+        <section className="m-section on-surface">
+          <span className="eyebrow">{t('landing.securitySection.eyebrow')}</span>
+          <h2>{t('landing.mobile.whyHeading')}</h2>
+          {MOBILE_FACTS.map((f) => (
+            <div className="m-fact" key={f.num}>
+              <span className="ic">{f.num}</span>
+              <div>
+                <h3>{t(f.titleKey)}</h3>
+                <p>{t(f.bodyKey)}</p>
+              </div>
+            </div>
+          ))}
         </section>
 
         <section className="m-section on-tint" id="pricing">
@@ -474,6 +690,12 @@ function MobileLanding({
           </div>
         </section>
 
+        <section className="m-section on-surface m-faq flush-top" id="faq">
+          <span className="eyebrow">{t('landing.faqSection.eyebrow')}</span>
+          <h2>{t('landing.faqSection.mobileHeading')}</h2>
+          <FaqList t={t} />
+        </section>
+
         <div className="m-cta-band">
           <h3>{t('landing.mobile.ctaHeading')}</h3>
           <p>{t('landing.mobile.ctaSub')}</p>
@@ -508,6 +730,8 @@ function MobileLanding({
           <button type="button" className="btn primary sm" onClick={onLogoutClick}>
             {t('landing.nav.logout')}
           </button>
+        ) : appFirst ? (
+          <PlayBadge t={t} />
         ) : (
           <button type="button" className="btn primary sm" onClick={onGetStartedClick}>
             {t('landing.nav.getStarted')}
@@ -519,11 +743,10 @@ function MobileLanding({
 }
 
 /**
- * The approved landing page UI (docs/landing-page-mockup/{desktop,mobile}.html),
+ * The landing page UI (docs/landing-page-mockup/{desktop,mobile}-v2.html),
  * still no routing/redirect logic of its own — it mounts only the desktop or
  * mobile tree, switching at the same `md` (768px) breakpoint the rest of the
- * app uses (see `useIsDesktop` above), matching how the two mockups were
- * signed off as one responsive page while avoiding paying for both trees'
+ * app uses (see `useIsDesktop` above), avoiding paying for both trees'
  * DOM/assets on every load.
  *
  * Copy comes from the `landing` namespace in src/i18n/locales/{en,hi}.json;
@@ -540,6 +763,9 @@ function MobileLanding({
  * button calling `onLogoutClick`. `languageSwitcher` is a slot rendered into
  * the nav's right-hand cluster, keeping the language control in the same
  * top-right spot it occupies on the old login screen.
+ *
+ * Play badge, QR code and the Android band render only for brands with a
+ * `playStoreUrl` (lib/brand.js).
  */
 export default function LandingView({
   onLoginClick,
