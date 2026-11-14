@@ -3,7 +3,12 @@ import { test, expect } from '@playwright/test';
 import { hasPermission, currentCollege, homeRoute } from '../src/lib/access.js';
 import { fmtPct, fmtNum, fullName, matchesQuery, DASH } from '../src/lib/format.js';
 import { nextUp, scheduleLabel } from '../src/lib/roadmap.js';
-import { studentLoginState, memberLoginState, memberName } from '../src/lib/people.js';
+import {
+  studentLoginState,
+  memberLoginState,
+  memberName,
+  emailBounced,
+} from '../src/lib/people.js';
 
 const college = { _id: 'c1', name: 'Test School' };
 const member = (extra = {}) => ({
@@ -140,6 +145,13 @@ test.describe('people helpers', () => {
     expect(memberLoginState({ status: 'suspended', userId: { status: 'pending_claim' } })).toBe(
       'suspended'
     );
+  });
+
+  test('emailBounced is true only when the provider reported the address', () => {
+    expect(emailBounced({ emailBouncedAt: '2026-11-14T00:00:00.000Z' })).toBe(true);
+    expect(emailBounced({ emailBouncedAt: null })).toBe(false);
+    expect(emailBounced({})).toBe(false);
+    expect(emailBounced(undefined)).toBe(false);
   });
 
   test('a member is named by name, else by email', () => {

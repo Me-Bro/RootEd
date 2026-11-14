@@ -2,7 +2,8 @@ import { env } from '../config/env.js';
 import { createSmtpTransport, sendViaSmtp } from './email/smtpAdapter.js';
 import { sendViaPostmark } from './email/postmarkAdapter.js';
 import { sendViaConsole } from './email/consoleAdapter.js';
-import { classifyEmailError } from './email/classifyEmailError.js';
+import { classifyEmailError, isHardRecipientFailure } from './email/classifyEmailError.js';
+import { markBounced } from './emailBounce.service.js';
 import { EmailLog } from '../models/EmailLog.js';
 import { monitoringConnection } from '../config/monitoringDb.js';
 import { logger } from '../utils/logger.js';
@@ -57,6 +58,11 @@ export async function sendEmail({ to, subject, html, kind }) {
       errorCode: err?.code != null ? String(err.code) : undefined,
       errorMessage: String(err?.message ?? err).slice(0, 500),
     });
+    if (isHardRecipientFailure(err)) {
+      markBounced(to, err?.code ?? err?.responseCode).catch((e) =>
+        logger.warn({ err: e }, 'Failed to flag bounced address')
+      );
+    }
     throw err;
   }
 }

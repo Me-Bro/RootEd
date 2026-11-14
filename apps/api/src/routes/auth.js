@@ -659,6 +659,8 @@ router.post('/reset-password', async (req, res, next) => {
     // it, so a claimed or reset account does not also have to chase a separate
     // verification email.
     if (!user.emailVerified) user.emailVerified = true;
+    user.emailBouncedAt = undefined;
+    user.emailBounceReason = undefined;
     await user.save({ _bypassTenantScope: true });
 
     res.json({ message: 'Password reset successful' });
@@ -896,6 +898,8 @@ router.post(
       if (!user) throw new AppError('Invalid or expired verification link', 400);
 
       user.emailVerified = true;
+      user.emailBouncedAt = undefined;
+      user.emailBounceReason = undefined;
       if (user.status === 'pending_verification') user.status = 'active';
       user.emailVerificationToken = undefined;
       user.emailVerificationExpires = undefined;
@@ -1030,6 +1034,8 @@ router.post('/confirm-email', validate(confirmEmailChangeSchema), async (req, re
 
     user.email = user.pendingEmail;
     user.emailVerified = true;
+    user.emailBouncedAt = undefined;
+    user.emailBounceReason = undefined;
     user.pendingEmail = undefined;
     user.pendingEmailToken = undefined;
     user.pendingEmailExpires = undefined;

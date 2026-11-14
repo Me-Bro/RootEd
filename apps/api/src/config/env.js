@@ -82,6 +82,12 @@ const schema = z.object({
   // self-hosted/demo boxes with no mail provider; see consoleAdapter.js.
   EMAIL_PROVIDER: z.enum(['smtp', 'postmark', 'console']).default('smtp'),
   POSTMARK_API_TOKEN: z.string().optional(),
+  // Password half of the HTTP Basic credentials Postmark is given in the bounce
+  // webhook URL. Unset = the webhook rejects everything.
+  POSTMARK_WEBHOOK_SECRET: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().min(16).optional()
+  ),
   // Reject addresses whose domain has no MX/A record at registration, invite,
   // import and account-creation time. Off by default: seeds and e2e use
   // `.local`/`.example` domains that would all fail. Turn on in prod/staging.

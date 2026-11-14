@@ -5,6 +5,12 @@ const userSchema = new mongoose.Schema(
   {
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     emailVerified: { type: Boolean, default: false },
+    // Set when the provider says this address does not exist (sync rejection at
+    // send time, or a Postmark bounce webhook). Advisory: shown to the admin who
+    // typed the address. Cleared when the owner proves control of it (verifying,
+    // claiming, confirming an email change).
+    emailBouncedAt: { type: Date },
+    emailBounceReason: { type: String },
     emailVerificationToken: { type: String, select: false },
     emailVerificationExpires: { type: Date, select: false },
     // An email change is a two-phase confirm: the new address lands here and

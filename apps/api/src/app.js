@@ -36,6 +36,7 @@ import orgsRouter from './routes/orgs.js';
 import meRouter from './routes/me.js';
 import feedbackRouter from './routes/feedback.js';
 import enquiriesRouter from './routes/enquiries.js';
+import webhooksRouter from './routes/webhooks.js';
 
 const app = express();
 
@@ -135,6 +136,9 @@ app.use((req, res, next) => {
   if (path === '/auth/login' || path === '/auth/refresh' || path === '/auth/google') {
     return next();
   }
+  // Server-to-server callbacks (Postmark): no browser, no cookie, so no CSRF
+  // token. They authenticate with their own shared secret instead.
+  if (path.startsWith('/webhooks/')) return next();
   doubleCsrfProtection(req, res, next);
 });
 
@@ -184,6 +188,8 @@ app.use('/orgs', orgsRouter);
 app.use('/feedback', feedbackRouter);
 // Public too: a college asking for a proposal from the Career Catalyst landing page.
 app.use('/enquiries', enquiriesRouter);
+// Provider callbacks. Public and tenant-agnostic; each route checks its own secret.
+app.use('/webhooks', webhooksRouter);
 
 app.use(resolveTenant);
 

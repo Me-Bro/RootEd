@@ -9,7 +9,7 @@ import { hasPermission } from '@/lib/access.js';
 import { fullName } from '@/lib/format.js';
 import { downloadCsv } from '@/lib/csv.js';
 import { pushToast } from '@/lib/toast.js';
-import { BADGE_VARIANT, studentLoginState } from '@/lib/people.js';
+import { BADGE_VARIANT, emailBounced, studentLoginState } from '@/lib/people.js';
 import { ConfirmAction } from '@/components/ConfirmAction.jsx';
 import { PageHeader } from '@/components/ui/PageHeader.jsx';
 import { Button } from '@/components/ui/Button.jsx';
@@ -315,6 +315,11 @@ function StudentRow({ student, canWrite, canSuspend }) {
           <Badge variant={BADGE_VARIANT[state]} data-testid="login-state">
             {t(`people.state.${state}`)}
           </Badge>
+          {emailBounced(student.account) && (
+            <Badge variant="danger" className="ml-1" data-testid="email-bounced">
+              {t('people.emailBounced')}
+            </Badge>
+          )}
           {student.account?.email && (
             <div className="mt-1 text-xs text-muted-foreground">{student.account.email}</div>
           )}
