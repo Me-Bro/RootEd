@@ -1,0 +1,175 @@
+/* RootEd landing v2 — layered on landing.css (load after it). New pieces only:
+   product frames (real principal-dashboard data from
+   docs/mobile-ui/20-dashboard-approved.html), Google Play badge placeholder,
+   trust strip, role tabs (pure CSS), org-type cards, Android band, FAQ. */
+
+/* ── Google Play badge — PLACEHOLDER shape. Swap for Google's official badge
+   artwork (https://play.google.com/intl/en_us/badges/) before build. ──────── */
+.play {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: #000; color: #fff; border: 1px solid #a6a6a6;
+  border-radius: 10px; padding: 7px 16px 7px 12px; line-height: 1.1;
+}
+.play svg { width: 24px; height: 26px; flex: none; }
+.play small { display: block; font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; opacity: .85; }
+.play b { display: block; font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+.play.on-light { box-shadow: var(--shadow-sm); }
+
+/* ── Hero v2: copy left, product frames right ─────────────────────────────── */
+.v2-hero {
+  display: grid; grid-template-columns: 1fr 1.15fr; gap: 40px; align-items: center;
+  padding: 64px max(24px, calc((100% - var(--maxw)) / 2)) 56px;
+  background: radial-gradient(ellipse 70% 60% at 70% -10%, var(--brand-soft) 0%, transparent 65%);
+}
+.v2-hero h1 { font-size: 46px; line-height: 1.1; letter-spacing: -.025em; margin: 18px 0 16px; }
+.v2-hero h1 .grad { background: var(--brand-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.v2-hero p.lead { font-size: 18px; line-height: 1.55; color: var(--ink-2); margin: 0 0 26px; max-width: 520px; }
+.v2-hero .cta-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.v2-hero .fineprint { font-size: 12.5px; color: var(--ink-3); margin: 0; }
+.v2-stage { position: relative; padding: 0 0 150px 0; }
+.v2-stage .phone-mini { position: absolute; right: 18px; bottom: 0; }
+
+/* ── Product frames ───────────────────────────────────────────────────────── */
+.app {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg); overflow: hidden; font-size: 12px; color: var(--ink);
+}
+.app .bar { display: flex; align-items: center; gap: 6px; padding: 9px 14px; background: var(--surface-3); border-bottom: 1px solid var(--line); }
+.app .bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+.app .bar .url { margin-left: 10px; font-size: 10.5px; color: var(--ink-3); background: var(--surface); padding: 2px 12px; border-radius: 99px; }
+.app .body { display: grid; grid-template-columns: 124px 1fr; min-height: 330px; }
+.app .side { background: var(--surface-2); border-right: 1px solid var(--line); padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; }
+.app .side b { display: flex; align-items: center; gap: 6px; padding: 4px 8px 12px; font-size: 12.5px; }
+.app .side b img { width: 16px; height: 15px; }
+.app .side span { padding: 7px 10px; border-radius: 8px; color: var(--ink-3); font-weight: 500; }
+.app .side span.on { background: var(--brand-soft); color: var(--brand-ink); font-weight: 700; }
+.app .main { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.app .main h4 { margin: 0; font-size: 14.5px; letter-spacing: -.01em; }
+.app .main .sub { color: var(--ink-3); font-size: 11px; margin: 1px 0 0; }
+.att { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.att div { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.att b { display: block; font-size: 13px; }
+.att small { color: var(--ink-3); font-size: 10.5px; }
+.att .bad b { color: #b42318; } .att .warn b { color: var(--warn); }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.kpis div { background: var(--surface-2); border-radius: 10px; padding: 8px 10px; }
+.kpis small { display: block; color: var(--ink-3); font-size: 10px; }
+.kpis b { font-size: 16px; letter-spacing: -.01em; }
+.trend { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.trend .hd { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; color: var(--ink-3); }
+.trend .hd b { font-size: 15px; color: var(--ink); margin-right: 6px; }
+.bars { display: flex; align-items: flex-end; gap: 8px; height: 54px; margin-top: 8px; }
+.bars span { flex: 1; background: linear-gradient(180deg, #7e14ff, #1971c2); border-radius: 4px 4px 0 0; opacity: .85; }
+
+.phone-mini {
+  width: 176px; border-radius: 28px; background: #0b0d12; padding: 6px;
+  box-shadow: 0 24px 56px rgba(15,17,21,.28);
+}
+.phone-mini .scr { background: var(--surface); border-radius: 22px; padding: 12px 10px 10px; font-size: 9.5px; color: var(--ink); display: flex; flex-direction: column; gap: 7px; }
+.phone-mini h5 { margin: 0; font-size: 11.5px; } .phone-mini .sub { color: var(--ink-3); font-size: 8.5px; margin: 0; }
+.phone-mini .row { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; display: flex; justify-content: space-between; gap: 6px; }
+.phone-mini .row b { display: block; font-size: 10px; } .phone-mini .row small { color: var(--ink-3); font-size: 8.5px; }
+.phone-mini .k { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.phone-mini .k div { background: var(--surface-2); border-radius: 8px; padding: 5px 7px; }
+.phone-mini .k small { display: block; color: var(--ink-3); font-size: 8px; } .phone-mini .k b { font-size: 12.5px; }
+.phone-mini .tabbar { display: flex; justify-content: space-around; border-top: 1px solid var(--line); padding-top: 6px; color: var(--ink-4); font-size: 8px; }
+.phone-mini .tabbar .on { color: var(--brand-ink); font-weight: 700; }
+
+/* ── Trust strip ──────────────────────────────────────────────────────────── */
+.trust { background: var(--surface); border-block: 1px solid var(--line); }
+.trust ul { list-style: none; margin: 0 auto; padding: 18px 24px; max-width: var(--maxw); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.trust li { display: flex; align-items: center; gap: 9px; font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
+.trust li i { width: 26px; height: 26px; border-radius: 8px; background: var(--brand-soft); color: var(--brand-ink); display: grid; place-items: center; font-style: normal; font-size: 13px; }
+
+/* ── Role tabs (radio, no JS) ─────────────────────────────────────────────── */
+.roles { position: relative; }
+.roles > input { position: absolute; opacity: 0; pointer-events: none; }
+.tablist { display: flex; gap: 8px; margin-bottom: 22px; flex-wrap: wrap; }
+.tablist label { cursor: pointer; padding: 9px 18px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); font-weight: 600; font-size: 14px; color: var(--ink-2); }
+#r1:checked ~ .tablist [for=r1], #r2:checked ~ .tablist [for=r2],
+#r3:checked ~ .tablist [for=r3], #r4:checked ~ .tablist [for=r4] { background: var(--brand-grad); color: #fff; border-color: transparent; }
+#r1:focus-visible ~ .tablist [for=r1], #r2:focus-visible ~ .tablist [for=r2],
+#r3:focus-visible ~ .tablist [for=r3], #r4:focus-visible ~ .tablist [for=r4] { outline: 3px solid var(--brand-2); outline-offset: 2px; }
+.panel { display: none; grid-template-columns: 1fr 1fr; gap: 36px; align-items: center; }
+#r1:checked ~ .p1, #r2:checked ~ .p2, #r3:checked ~ .p3, #r4:checked ~ .p4 { display: grid; }
+.panel h3 { font-size: 24px; letter-spacing: -.015em; margin: 0 0 10px; }
+.panel p { color: var(--ink-2); line-height: 1.6; margin: 0 0 14px; font-size: 15px; }
+.panel ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.panel li { font-size: 14px; color: var(--ink-2); padding-left: 24px; position: relative; }
+.panel li::before { content: '✓'; position: absolute; left: 0; color: var(--safe); font-weight: 700; }
+.panel .app .main { min-height: 250px; }
+.roster { display: grid; gap: 6px; }
+.roster div { display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--line); border-radius: 9px; padding: 7px 10px; }
+.chip { font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 99px; }
+.chip.p { background: var(--safe-bg); color: var(--safe); } .chip.a { background: #fde8e6; color: #b42318; } .chip.l { background: var(--warn-bg); color: var(--warn); }
+
+/* ── Who it's for ─────────────────────────────────────────────────────────── */
+.lp-grid.cols-4 .lp-card h3 { font-size: 16px; }
+
+/* ── Android band ─────────────────────────────────────────────────────────── */
+.android { background: var(--ink); color: #e8eaee; }
+.android .in { max-width: var(--maxw); margin: 0 auto; padding: 64px 24px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center; }
+.android h2 { font-size: 32px; letter-spacing: -.02em; margin: 10px 0 12px; }
+.android p { color: #b7bcc4; line-height: 1.6; font-size: 16px; margin: 0 0 22px; max-width: 480px; }
+.android ul { list-style: none; margin: 0 0 26px; padding: 0; display: grid; gap: 10px; }
+.android li { padding-left: 26px; position: relative; font-size: 14.5px; color: #d6dae0; }
+.android li::before { content: '✓'; position: absolute; left: 0; color: var(--brand-2); font-weight: 700; }
+.android .eyebrow { color: var(--brand-2); }
+.android .phones { display: flex; justify-content: center; gap: 18px; }
+.android .phone-mini { width: 190px; } .android .phone-mini:nth-child(2) { margin-top: 36px; }
+.shot-note { font-size: 11px; color: #7d8592; text-align: center; margin-top: 12px; font-family: var(--mono); }
+
+/* ── Security (plain language first, technical line second) ───────────────── */
+.lp-security-row .tech { display: block; margin-top: 6px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-4); }
+
+/* ── FAQ ──────────────────────────────────────────────────────────────────── */
+.faq { max-width: 780px; }
+.faq details { border-bottom: 1px solid var(--line); padding: 4px 0; }
+.faq summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 0; font-weight: 600; font-size: 16px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: '+'; font-size: 22px; color: var(--brand); font-weight: 400; }
+.faq details[open] summary::after { content: '–'; }
+.faq p { margin: 0 0 16px; color: var(--ink-2); line-height: 1.6; font-size: 14.5px; }
+
+/* ── Mockup-only: marks where a real asset replaces a drawn one ───────────── */
+.todo-tag { display: inline-block; font-family: var(--mono); font-size: 10.5px; color: #e3c25c; background: #1a1710; border: 1px solid #6b5a1f; border-radius: 99px; padding: 2px 9px; }
+
+/* ── Mobile v2 additions ──────────────────────────────────────────────────── */
+.m-hero2 { padding: 34px 20px 8px; background: radial-gradient(ellipse 100% 60% at 50% -10%, var(--brand-soft) 0%, transparent 70%); }
+.m-hero2 h1 { font-size: 33px; line-height: 1.1; letter-spacing: -.025em; margin: 14px 0 10px; }
+.m-hero2 h1 .grad { background: var(--brand-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.m-hero2 p { font-size: 15px; color: var(--ink-2); line-height: 1.5; margin: 0 0 16px; }
+.m-hero2 .cta-col { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
+.m-hero2 .play { justify-content: center; }
+.m-hero2 .fineprint { display: block; text-align: center; font-size: 12px; color: var(--ink-3); margin-top: 10px; }
+.m-hero2 .peek { display: flex; justify-content: center; margin-top: 22px; height: 210px; overflow: hidden; }
+.m-hero2 .peek .phone-mini { width: 210px; border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+.m-chips { display: flex; gap: 8px; overflow-x: auto; padding: 14px 20px; scrollbar-width: none; background: var(--surface); border-bottom: 1px solid var(--line); }
+.m-chips::-webkit-scrollbar { display: none; }
+.m-chips span { flex: none; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 99px; background: var(--brand-soft); color: var(--brand-ink); }
+.m-roles { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -20px; padding: 4px 20px 10px; scrollbar-width: none; }
+.m-roles::-webkit-scrollbar { display: none; }
+.m-roles article { flex: 0 0 82%; scroll-snap-align: start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px; box-shadow: var(--shadow-sm); }
+.m-roles h3 { font-size: 16px; margin: 0 0 6px; } .m-roles p { font-size: 13px; color: var(--ink-3); line-height: 1.5; margin: 0 0 10px; }
+.m-roles .stat { font-size: 26px; font-weight: 700; letter-spacing: -.02em; } .m-roles .stat small { display: block; font-size: 11.5px; font-weight: 500; color: var(--ink-3); letter-spacing: 0; }
+.m-who { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.m-who div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px; }
+.m-who b { display: block; font-size: 14px; margin-bottom: 4px; } .m-who span { font-size: 12px; color: var(--ink-3); line-height: 1.4; }
+.m-app { text-align: center; }
+.m-app .play { margin: 6px auto 0; }
+.m-faq details { border-bottom: 1px solid var(--line); }
+.m-faq summary { cursor: pointer; list-style: none; padding: 14px 0; font-weight: 600; font-size: 14px; display: flex; justify-content: space-between; gap: 12px; }
+.m-faq summary::-webkit-details-marker { display: none; }
+.m-faq summary::after { content: '+'; color: var(--brand); font-size: 18px; }
+.m-faq details[open] summary::after { content: '–'; }
+.m-faq p { margin: 0 0 14px; font-size: 13px; color: var(--ink-2); line-height: 1.5; }
+.m-sticky-cta .play { flex: 1.4; padding: 5px 10px; border-radius: 99px; justify-content: center; }
+.m-sticky-cta .play svg { width: 18px; height: 20px; } .m-sticky-cta .play small { display: none; } .m-sticky-cta .play b { font-size: 13.5px; }
+
+/* ── QR (desktop Android band). Real build: static SVG of the Play URL with
+   &referrer=utm_source%3Dlanding_qr, hidden when brand.playStoreUrl is unset. */
+.android .get { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.qr { margin: 0; display: flex; align-items: center; gap: 12px; background: #fff; color: var(--ink); border-radius: 14px; padding: 10px 14px 10px 10px; }
+.qr img { flex: none; padding: 9px; background: #fff; box-sizing: content-box; image-rendering: pixelated; } /* padding = quiet zone; the PNG is edge-to-edge */
+.qr figcaption { font-size: 13px; font-weight: 600; line-height: 1.3; display: grid; gap: 4px; }
+.qr figcaption small { font-size: 11.5px; font-weight: 400; color: var(--ink-3); }

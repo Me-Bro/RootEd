@@ -8,6 +8,14 @@ import {
   MessageCircle,
   MessageSquare,
   CreditCard,
+  School,
+  BookOpen,
+  Armchair,
+  Languages,
+  Smartphone,
+  ShieldCheck,
+  IndianRupee,
+  Layers,
 } from 'lucide-react';
 import { brand } from '../../lib/brand.js';
 
@@ -28,6 +36,12 @@ import { brand } from '../../lib/brand.js';
 export const CONTACT_HREF = `mailto:${brand.contactEmail}?subject=RootEd%20inquiry`;
 
 export const PARENT_SITE_HREF = brand.parentSiteUrl;
+
+// The Android app is published under one company's Play account, so brands
+// without `playStoreUrl` hide every Play badge, the QR code and the Android
+// band rather than linking to an app that isn't theirs.
+export const PLAY_STORE_URL = brand.playStoreUrl;
+export const PLAY_QR_SRC = '/landing/qr-play.svg';
 
 export const PREMIUM_FEATURES = [
   {
@@ -80,22 +94,99 @@ export const MODULES = [
   },
 ];
 
-export const WHY_ROOTED = [
-  { titleKey: 'landing.why.multiTenant.title', bodyKey: 'landing.why.multiTenant.body' },
-  { titleKey: 'landing.why.rbac.title', bodyKey: 'landing.why.rbac.body' },
-  { titleKey: 'landing.why.i18n.title', bodyKey: 'landing.why.i18n.body' },
-  { titleKey: 'landing.why.workflows.title', bodyKey: 'landing.why.workflows.body' },
+// The strip under the hero: five one-line facts, each already true elsewhere
+// on the page.
+export const TRUST = [
+  { icon: IndianRupee, key: 'landing.trust.free' },
+  { icon: Languages, key: 'landing.trust.languages' },
+  { icon: Smartphone, key: 'landing.trust.platforms' },
+  { icon: Layers, key: 'landing.trust.roles' },
+  { icon: ShieldCheck, key: 'landing.trust.isolation' },
 ];
+
+// Role tabs. `id` picks the demo panel in ProductFrames.jsx.
+export const ROLES = [
+  {
+    id: 'principal',
+    tabKey: 'landing.roles.principal.tab',
+    titleKey: 'landing.roles.principal.title',
+    bodyKey: 'landing.roles.principal.body',
+    pointKeys: [
+      'landing.roles.principal.b1',
+      'landing.roles.principal.b2',
+      'landing.roles.principal.b3',
+    ],
+  },
+  {
+    id: 'teacher',
+    tabKey: 'landing.roles.teacher.tab',
+    titleKey: 'landing.roles.teacher.title',
+    bodyKey: 'landing.roles.teacher.body',
+    pointKeys: ['landing.roles.teacher.b1', 'landing.roles.teacher.b2', 'landing.roles.teacher.b3'],
+  },
+  {
+    id: 'accountant',
+    tabKey: 'landing.roles.accountant.tab',
+    titleKey: 'landing.roles.accountant.title',
+    bodyKey: 'landing.roles.accountant.body',
+    pointKeys: [
+      'landing.roles.accountant.b1',
+      'landing.roles.accountant.b2',
+      'landing.roles.accountant.b3',
+    ],
+  },
+  {
+    id: 'student',
+    tabKey: 'landing.roles.student.tab',
+    titleKey: 'landing.roles.student.title',
+    bodyKey: 'landing.roles.student.body',
+    pointKeys: ['landing.roles.student.b1', 'landing.roles.student.b2', 'landing.roles.student.b3'],
+  },
+];
+
+export const WHO = [
+  { icon: School, titleKey: 'landing.who.school.title', bodyKey: 'landing.who.school.body' },
+  {
+    icon: GraduationCap,
+    titleKey: 'landing.who.college.title',
+    bodyKey: 'landing.who.college.body',
+  },
+  { icon: BookOpen, titleKey: 'landing.who.coaching.title', bodyKey: 'landing.who.coaching.body' },
+  {
+    icon: Armchair,
+    titleKey: 'landing.who.studyCentre.title',
+    bodyKey: 'landing.who.studyCentre.body',
+  },
+];
+
+export const ANDROID_POINTS = ['landing.android.b1', 'landing.android.b2', 'landing.android.b3'];
 
 export const SECURITY = [
   {
     num: '01',
     titleKey: 'landing.security.isolation.title',
     bodyKey: 'landing.security.isolation.body',
+    techKey: 'landing.security.isolation.tech',
   },
-  { num: '02', titleKey: 'landing.security.pii.title', bodyKey: 'landing.security.pii.body' },
-  { num: '03', titleKey: 'landing.security.audit.title', bodyKey: 'landing.security.audit.body' },
+  {
+    num: '02',
+    titleKey: 'landing.security.pii.title',
+    bodyKey: 'landing.security.pii.body',
+    techKey: 'landing.security.pii.tech',
+  },
+  {
+    num: '03',
+    titleKey: 'landing.security.audit.title',
+    bodyKey: 'landing.security.audit.body',
+    techKey: 'landing.security.audit.tech',
+  },
 ];
+
+export const FAQ = ['free', 'app', 'hindi', 'salary', 'students', 'orgs'].map((id) => ({
+  id,
+  qKey: `landing.faq.${id}.q`,
+  aKey: `landing.faq.${id}.a`,
+}));
 
 export const ABOUT_VALUES = [
   { titleKey: 'landing.values.reliability.title', bodyKey: 'landing.values.reliability.body' },
@@ -115,7 +206,7 @@ export const PROCESS = [
   { n: 4, titleKey: 'landing.process.support.title', bodyKey: 'landing.process.support.body' },
 ];
 
-// The four mobile "why schools trust it" facts — shorter copy than the
+// The three mobile "why schools trust it" facts — shorter copy than the
 // desktop security rows, per the approved mobile mock.
 export const MOBILE_FACTS = [
   {
@@ -133,11 +224,6 @@ export const MOBILE_FACTS = [
     titleKey: 'landing.mobile.facts.audit.title',
     bodyKey: 'landing.mobile.facts.audit.body',
   },
-  {
-    num: '04',
-    titleKey: 'landing.mobile.facts.roles.title',
-    bodyKey: 'landing.mobile.facts.roles.body',
-  },
 ];
 
 export const MOBILE_TAGS = [
@@ -145,12 +231,4 @@ export const MOBILE_TAGS = [
   'landing.mobile.tags.cloudNative',
   'landing.mobile.tags.knowledge',
   'landing.mobile.tags.rural',
-];
-
-export const PREVIEW_ROLES = [
-  'landing.preview.rolePrincipal',
-  'landing.preview.roleTeacher',
-  'landing.preview.roleAccountant',
-  'landing.preview.roleLibrarian',
-  'landing.preview.roleTenantAdmin',
 ];

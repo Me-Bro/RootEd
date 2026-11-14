@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RootEd — Landing page v2 (desktop)</title>
+<link rel="stylesheet" href="landing.css">
+<link rel="stylesheet" href="landing-v2.css">
+</head>
+<body>
+
+<div class="meta">
+  <span class="crumbs"><a href="index.html">← Index</a> · Landing page v2 · Desktop</span>
+  <span class="tag status">Proposal</span>
+  <span class="spacer"></span>
+  <span class="note">Adds real product frames, Android app, role tabs, org types, FAQ. Figures: Test School, Fri 21 Aug 2026 (docs/mobile-ui/20-dashboard-approved.html). Play badge is a placeholder shape.</span>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="gp" viewBox="0 0 24 26">
+      <path d="M1 1.2v23.6c0 .5.5.8 1 .5L13 13z" fill="#00d7fe"/>
+      <path d="M17 9.3 13 13l4 3.7 5-2.8c1-.6 1-1.9 0-2.5z" fill="#ffce00"/>
+      <path d="M2 .7 13 13l4-3.7z" fill="#00f076"/>
+      <path d="M2 25.3 13 13l4 3.7z" fill="#f43249"/>
+    </symbol>
+  </defs>
+</svg>
+
+<nav class="lp-nav">
+  <div class="brand"><img src="favicon.svg" alt="RootEd"> RootEd</div>
+  <div class="links">
+    <a href="#roles">Product</a>
+    <a href="#who">Who it's for</a>
+    <a href="#android">Android app</a>
+    <a href="#security">Security</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#faq">FAQ</a>
+  </div>
+  <div class="cta">
+    <a class="btn ghost sm" href="#">Log in</a>
+    <a class="btn primary sm" href="#">Get started free</a>
+  </div>
+</nav>
+
+<!-- 1 · HERO -->
+<header class="v2-hero motif-wrap">
+  <svg class="motif" viewBox="0 0 600 600" width="560" height="560" style="right:-120px;top:-80px;left:auto" aria-hidden="true">
+    <g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+      <path d="M60 580 Q100 500 150 470"/><path d="M60 580 Q130 520 220 430"/><path d="M60 580 Q170 540 300 390"/>
+      <path d="M60 580 Q220 560 380 350"/><path d="M60 580 Q280 580 460 320"/><path d="M60 580 Q340 600 540 290"/>
+    </g>
+    <g fill="currentColor"><circle cx="150" cy="470" r="4"/><circle cx="220" cy="430" r="4"/><circle cx="300" cy="390" r="4"/><circle cx="380" cy="350" r="4"/><circle cx="460" cy="320" r="4"/><circle cx="540" cy="290" r="4"/></g>
+  </svg>
+  <div>
+    <span class="badge dot">Now on web and Android</span>
+    <h1>One system for your whole school — <span class="grad">on every screen.</span></h1>
+    <p class="lead">Attendance, fees, staff, expenses and inventory for schools, colleges, coaching and tuition centres, and study centres. Free to start, in English and Hindi.</p>
+    <div class="cta-row">
+      <a class="btn primary" href="#">Get started free</a>
+      <a class="play on-light" href="#" aria-label="Get it on Google Play"><svg><use href="#gp"/></svg><span><small>Get it on</small><b>Google Play</b></span></a>
+    </div>
+    <p class="fineprint">No credit card. Already a RootEd school? <a href="#" style="color:var(--brand-ink);font-weight:600">Log in →</a></p>
+  </div>
+
+  <div class="v2-stage">
+    <div class="app">
+      <div class="bar"><i></i><i></i><i></i><span class="url">testschool.rooted.app/dashboard</span></div>
+      <div class="body">
+        <div class="side"><b><img src="favicon.svg" alt="">RootEd</b><span class="on">Dashboard</span><span>Academics</span><span>Staff</span><span>Fee</span><span>Expense</span><span>Inventory</span></div>
+        <div class="main">
+          <div><h4>Good morning, Heena</h4><p class="sub">Test School · Fri, 21 Aug 2026</p></div>
+          <div class="att">
+            <div class="bad"><b>414 fee defaulters</b><small>₹29.41L overdue</small></div>
+            <div class="warn"><b>36 leave approvals</b><small>oldest since 14 Jun</small></div>
+            <div class="warn"><b>51 absent today</b><small>of 962 students</small></div>
+          </div>
+          <div class="kpis">
+            <div><small>Attendance today</small><b>90.5%</b></div>
+            <div><small>Fee collected</small><b>66.2%</b></div>
+            <div><small>Avg exam score</small><b>74.6%</b></div>
+            <div><small>Staff present</small><b>94.6%</b></div>
+          </div>
+          <div class="trend">
+            <div class="hd"><span><b>90.5%</b>attendance, 7-day</span><span>13 – 21 Aug</span></div>
+            <div class="bars"><span style="height:46%"></span><span style="height:47%"></span><span style="height:56%"></span><span style="height:52%"></span><span style="height:59%"></span><span style="height:55%"></span><span style="height:55%"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="phone-mini">
+      <div class="scr">
+        <div><h5>Good morning, Heena</h5><p class="sub">Test School · Fri, 21 Aug</p></div>
+        <div class="row"><div><b>414 fee defaulters</b><small>₹29.41L overdue</small></div>›</div>
+        <div class="row"><div><b>51 absent today</b><small>of 962</small></div>›</div>
+        <div class="k"><div><small>Attendance</small><b>90.5%</b></div><div><small>Fee collected</small><b>66.2%</b></div></div>
+        <div class="tabbar"><span class="on">Home</span><span>Classes</span><span>Fees</span><span>More</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- 2 · TRUST STRIP -->
+<section class="trust" aria-label="At a glance">
+  <ul>
+    <li><i>₹</i>Free core, no expiry</li>
+    <li><i>अ</i>English, Hindi, or both</li>
+    <li><i>▢</i>Web and Android app</li>
+    <li><i>◐</i>A view for every role</li>
+    <li><i>⌂</i>Your data, your school only</li>
+  </ul>
+</section>
+
+<!-- 3 · ROLE TABS -->
+<section class="lp-section" id="roles">
+  <div class="section-head">
+    <span class="eyebrow">Product</span>
+    <h2>Everyone sees the part that is theirs</h2>
+    <p>Principal, teacher, accountant and student each log in to a view built for their day. What they can see is enforced on the server, not just hidden in the menu.</p>
+  </div>
+
+  <div class="roles">
+    <input type="radio" name="role" id="r1" checked>
+    <input type="radio" name="role" id="r2">
+    <input type="radio" name="role" id="r3">
+    <input type="radio" name="role" id="r4">
+    <div class="tablist" role="presentation">
+      <label for="r1">Principal</label><label for="r2">Teacher</label><label for="r3">Accountant</label><label for="r4">Student</label>
+    </div>
+
+    <div class="panel p1">
+      <div>
+        <h3>Check the whole school before first period</h3>
+        <p>One dashboard answers the morning questions: who is absent, who owes fees, what is waiting for approval.</p>
+        <ul><li>Attendance, fee, exam and staff numbers on one screen</li><li>Tap an alert to open the exact list behind it</li><li>Rewind to any past day with the date picker</li></ul>
+      </div>
+      <div class="app"><div class="main">
+        <div><h4>Attention today</h4><p class="sub">Test School · Fri, 21 Aug 2026</p></div>
+        <div class="att" style="grid-template-columns:1fr"><div class="bad"><b>414 fee defaulters</b><small>₹29.41L overdue</small></div><div class="warn"><b>36 leave approvals pending</b><small>oldest since 14 Jun</small></div><div class="warn"><b>51 students absent today</b><small>of 962</small></div></div>
+      </div></div>
+    </div>
+
+    <div class="panel p2">
+      <div>
+        <h3>Mark a class in under a minute</h3>
+        <p>Open your section, mark each student Present, Absent or Late, and save. Report cards and parent-facing numbers are built from the same record.</p>
+        <ul><li>Your own classes are listed first</li><li>Grades and timetable in the same place</li><li>Apply for leave and see the approval status</li></ul>
+      </div>
+      <div class="app"><div class="main">
+        <div><h4>Grade 5-A · Attendance</h4><p class="sub">Fri, 21 Aug 2026 · 19 present</p></div>
+        <div class="roster">
+          <div><span>Chetan Shetty</span><span class="chip a">Absent</span></div>
+          <div><span>Heena Malhotra</span><span class="chip l">Late</span></div>
+          <div><span>19 other students</span><span class="chip p">Present</span></div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="panel p3">
+      <div>
+        <h3>Know what is collected and what is overdue</h3>
+        <p>Fee structures, collection and receipts, with defaulters one tap away. Expenses and payroll move through approvals, so every rupee has a trail.</p>
+        <ul><li>Online payments with automatic reconciliation (Razorpay)</li><li>Expense and leave approvals with auto-escalation</li><li>Receipts and reports on demand</li></ul>
+      </div>
+      <div class="app"><div class="main">
+        <div><h4>Fee overview</h4><p class="sub">Academic year 2026-27</p></div>
+        <div class="kpis" style="grid-template-columns:1fr 1fr"><div><small>Fee collected</small><b>66.2%</b></div><div><small>Overdue</small><b>₹29.41L</b></div></div>
+        <div class="att" style="grid-template-columns:1fr"><div class="bad"><b>414 fee defaulters</b><small>open the list, send reminders</small></div></div>
+      </div></div>
+    </div>
+
+    <div class="panel p4">
+      <div>
+        <h3>Students see only their own record</h3>
+        <p>A student login opens a personal view: attendance, published grades and report cards. Nothing about anyone else.</p>
+        <ul><li>Self-scoped by design</li><li>Hindi, English, or both</li><li>Same login on web and in the app</li></ul>
+      </div>
+      <div class="app"><div class="main">
+        <div><h4>My school</h4><p class="sub">Only your own data is shown</p></div>
+        <div class="kpis" style="grid-template-columns:1fr 1fr 1fr"><div><small>Attendance</small><b>—</b></div><div><small>Grades</small><b>—</b></div><div><small>Fees</small><b>—</b></div></div>
+        <span class="todo-tag">TODO: pull a real student row from seed before build</span>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 · MODULES -->
+<section class="lp-section on-surface" id="modules">
+  <div class="section-head">
+    <span class="eyebrow">Modules</span>
+    <h2>Five modules. One record per student.</h2>
+    <p>Attendance, fee balance and report card live in the same system, not three tools.</p>
+  </div>
+  <div class="lp-grid">
+    <div class="lp-card"><div class="icon">A</div><h3>Academics</h3><p>Attendance, grades, timetable, report cards and academic years.</p></div>
+    <div class="lp-card"><div class="icon">S</div><h3>Staff</h3><p>Directory, leave requests with approval chains, and payroll.</p></div>
+    <div class="lp-card"><div class="icon">₹</div><h3>Fee</h3><p>Fee structures, collection, Razorpay online payments and receipts.</p></div>
+    <div class="lp-card"><div class="icon">E</div><h3>Expense</h3><p>Entries with approval chains, auto-escalation and budgets.</p></div>
+    <div class="lp-card"><div class="icon">I</div><h3>Inventory</h3><p>Stock tracking, depreciation and overdue-return alerts.</p></div>
+    <div class="lp-card" style="background:var(--brand-soft);border-color:transparent"><div class="icon" style="background:#fff">∞</div><h3>All connected</h3><p>A defaulter list and an attendance report can point at the same student.</p></div>
+  </div>
+</section>
+
+<!-- 5 · WHO IT'S FOR -->
+<section class="lp-section" id="who">
+  <div class="section-head">
+    <span class="eyebrow">Who it's for</span>
+    <h2>Built for how you actually run things</h2>
+    <p>One platform, set up differently for each kind of organisation. Each gets its own address and its own data.</p>
+  </div>
+  <div class="lp-grid cols-4">
+    <div class="lp-card"><div class="icon">🏫</div><h3>Schools</h3><p>Classes and sections, timetable, report cards, fees and staff payroll.</p></div>
+    <div class="lp-card"><div class="icon">🎓</div><h3>Colleges</h3><p>Training and placement tracking: batches, programme runs, completion, learning roadmaps.</p></div>
+    <div class="lp-card"><div class="icon">📚</div><h3>Coaching &amp; tuition</h3><p>The same modules, without the school overhead. Batches, fees and attendance.</p></div>
+    <div class="lp-card"><div class="icon">🪑</div><h3>Study centres</h3><p>Sell seats by shift, day passes and plans. Front-desk check-in and a live seat map.</p></div>
+  </div>
+</section>
+
+<!-- 6 · ANDROID -->
+<section class="android" id="android">
+  <div class="in">
+    <div>
+      <span class="eyebrow">Android app</span>
+      <h2>Your school in your pocket</h2>
+      <p>The RootEd app is on Google Play. Check the day's numbers, mark attendance and approve requests from your phone.</p>
+      <ul><li>Dashboard, attendance, grades, timetable</li><li>Leave and expense approvals on the go</li><li>Same login and same data as the web</li></ul>
+      <div class="get">
+        <a class="play" href="#" aria-label="Get it on Google Play"><svg><use href="#gp"/></svg><span><small>Get it on</small><b>Google Play</b></span></a>
+        <figure class="qr"><img src="qr-play.png" width="104" height="104" alt="Scan to get RootEd on Google Play"><figcaption>Scan with your phone<small>Opens RootEd on Google Play</small></figcaption></figure>
+      </div>
+    </div>
+    <div>
+      <div class="phones">
+        <div class="phone-mini"><div class="scr">
+          <div><h5>Good morning, Heena</h5><p class="sub">Test School · Fri, 21 Aug</p></div>
+          <div class="row"><div><b>414 fee defaulters</b><small>₹29.41L overdue</small></div>›</div>
+          <div class="row"><div><b>36 leave approvals</b><small>oldest since 14 Jun</small></div>›</div>
+          <div class="row"><div><b>51 absent today</b><small>of 962</small></div>›</div>
+          <div class="k"><div><small>Attendance</small><b>90.5%</b></div><div><small>Fee collected</small><b>66.2%</b></div></div>
+          <div class="tabbar"><span class="on">Home</span><span>Classes</span><span>Fees</span><span>More</span></div>
+        </div></div>
+        <div class="phone-mini"><div class="scr">
+          <div><h5>Grade 5-A</h5><p class="sub">Attendance · Fri, 21 Aug</p></div>
+          <div class="row"><div><b>Chetan Shetty</b><small>Roll call</small></div><span class="chip a">Absent</span></div>
+          <div class="row"><div><b>Heena Malhotra</b><small>Roll call</small></div><span class="chip l">Late</span></div>
+          <div class="row"><div><b>19 others</b><small>marked Present</small></div><span class="chip p">19</span></div>
+          <div class="tabbar" style="margin-top:46px"><span>Home</span><span class="on">Classes</span><span>Fees</span><span>More</span></div>
+        </div></div>
+      </div>
+      <p class="shot-note">drawn from the approved mobile specs · replace with real Play screenshots</p>
+    </div>
+  </div>
+</section>
+
+<!-- 7 · SECURITY -->
+<section class="lp-section on-surface" id="security" style="max-width:none">
+  <div style="max-width:var(--maxw);margin:0 auto">
+    <div class="section-head">
+      <span class="eyebrow">Security</span>
+      <h2>Staff bank details and student records, protected on purpose</h2>
+      <p>Here is what protects them, in plain words first and technical detail second.</p>
+    </div>
+    <div class="lp-security-row"><span class="num">01</span><div><h4>One school can never see another's data</h4><p>Every database query is checked against your school before it runs. If a bug tried to read someone else's rows, it would fail, not quietly return them.</p><span class="tech">tenantId enforced by a Mongoose plugin on every tenant-owned model</span></div></div>
+    <div class="lp-security-row"><span class="num">02</span><div><h4>Bank accounts, IDs and salaries are encrypted</h4><p>Each school has its own encryption key, so there is no single key that opens everyone's data.</p><span class="tech">AES-256-GCM · per-tenant key via HKDF-SHA256</span></div></div>
+    <div class="lp-security-row"><span class="num">03</span><div><h4>You can always see who changed what</h4><p>Every change to a sensitive record is saved as a before-and-after entry that nobody can edit afterwards.</p><span class="tech">Immutable AuditLog, written asynchronously</span></div></div>
+  </div>
+</section>
+
+<!-- 8 · PRICING -->
+<section class="lp-section" id="pricing">
+  <div class="section-head">
+    <span class="eyebrow">Pricing</span>
+    <h2>Free forever. Premium when you need it.</h2>
+    <p>Every core module is free, with no trial and no time limit. Add these channels whenever you want them.</p>
+  </div>
+  <div class="lp-grid cols-4">
+    <div class="lp-card" style="background:var(--brand-soft);border-color:transparent"><div class="icon" style="background:#fff">✓</div><h3>Free, always</h3><p>Every core module, unlimited staff and students. No credit card, no expiry.</p></div>
+    <div class="lp-card"><div class="icon">@</div><h3>Dedicated email</h3><p>A branded address for notices, receipts and report cards.</p></div>
+    <div class="lp-card"><div class="icon">W</div><h3>WhatsApp and SMS alerts</h3><p>Attendance, fee and exam notices straight to a parent's phone.</p></div>
+    <div class="lp-card"><div class="icon">₹</div><h3>Own payment gateway</h3><p>A gateway account in your school's name.</p></div>
+  </div>
+  <p style="margin-top:20px"><a href="#" style="color:var(--brand-ink);font-weight:600">Ask about premium add-ons →</a></p>
+</section>
+
+<!-- 9 · PROCESS -->
+<section class="lp-section on-surface" style="max-width:none">
+  <div style="max-width:var(--maxw);margin:0 auto">
+    <div class="section-head"><span class="eyebrow">How it works</span><h2>From first call to going live</h2></div>
+    <div class="lp-process">
+      <div class="step"><div class="n">1</div><h4>Understand</h4><p>A quick call about your classes, sections, staff and fee structure.</p></div>
+      <div class="step"><div class="n">2</div><h4>Plan</h4><p>We map your school onto RootEd: roles, sections and fee structures.</p></div>
+      <div class="step"><div class="n">3</div><h4>Go live</h4><p>Your school is set up and you are live, free from day one.</p></div>
+      <div class="step"><div class="n">4</div><h4>Support</h4><p>Training, updates and support, not a one-time handoff.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 · FAQ -->
+<section class="lp-section" id="faq">
+  <div class="section-head"><span class="eyebrow">FAQ</span><h2>Questions schools ask first</h2></div>
+  <div class="faq">
+    <details open><summary>Is RootEd really free?</summary><p>Yes. Every core module is free, with unlimited staff and students, no trial and no expiry. Dedicated email, WhatsApp, SMS and your own payment gateway are paid add-ons.</p></details>
+    <details><summary>Is there a mobile app?</summary><p>Yes, an Android app is on Google Play. The web app also works in a phone browser, with the same login and data.</p></details>
+    <details><summary>Does it work in Hindi?</summary><p>Yes. Choose English, Hindi, or a combined Hindi / English view.</p></details>
+    <details><summary>Who can see staff salaries and bank details?</summary><p>Only roles you give that permission. A librarian cannot see payroll and a teacher cannot see budgets. Those fields are also encrypted at rest.</p></details>
+    <details><summary>Can students log in?</summary><p>Yes. A student login opens a personal view of their own attendance, published grades and report cards, and nothing else.</p></details>
+    <details><summary>Do you support colleges and study centres?</summary><p>Yes. Schools, colleges, coaching and tuition centres, and study centres each get a setup that fits, on the same platform.</p></details>
+  </div>
+</section>
+
+<!-- 11 · CTA BAND -->
+<div class="lp-cta-band">
+  <div><h3>Ready to see it running on your school's data?</h3><p>Free to use · no credit card required</p></div>
+  <div class="actions" style="display:flex;gap:12px;align-items:center">
+    <a class="btn primary" href="#">Get started free</a>
+    <a class="play" href="#" aria-label="Get it on Google Play"><svg><use href="#gp"/></svg><span><small>Get it on</small><b>Google Play</b></span></a>
+  </div>
+</div>
+
+<footer class="lp-footer" id="contact">
+  <div class="top">
+    <div><div class="brand"><img src="favicon.svg" alt="" style="width:22px"> RootEd</div><p style="max-width:300px;margin:0">Where your school's roots grow digital. Built by Rural Root Cloud Tech Services And Training.</p></div>
+    <div class="cols">
+      <div><h6>Product</h6><a href="#roles">Product</a><a href="#pricing">Pricing</a><a href="#security">Security</a><a href="#android">Android app</a></div>
+      <div><h6>Company</h6><a href="#">About</a><a href="#">Contact</a><a href="#">Rural Root Cloud</a></div>
+      <div><h6>Legal</h6><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Account deletion</a></div>
+    </div>
+  </div>
+  <div class="bottom"><span>© 2026 Rural Root Cloud Tech Services And Training</span><span>info@ruralrootcloud.com</span></div>
+</footer>
+
+<nav class="reviewnav" title="Review">
+  <a class="rn-btn" href="index.html" data-nav="prev"><span class="rn-lbl">Index</span></a>
+  <a class="rn-mid" href="index.html" data-nav="index"><span class="rn-count">V2 PROPOSAL</span><span class="rn-title">Desktop</span></a>
+  <a class="rn-btn" href="mobile-v2.html" data-nav="next"><span class="rn-lbl">Mobile</span> ›</a>
+  <span class="rn-keys">I index</span>
+</nav>
+<script src="nav.js"></script>
+</body>
+</html>

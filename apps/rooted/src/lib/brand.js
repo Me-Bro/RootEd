@@ -8,6 +8,11 @@ const RURAL_ROOT_CLOUD = {
   contactEmail: 'info@ruralrootcloud.com',
   parentSiteUrl: 'https://ruralrootcloud.com/',
   portalHost: 'rooted.ruralrootcloud.com',
+  // The Android app is published under Rural Root Cloud's Play account, so only
+  // this brand shows the Play badge and QR code (public/landing/qr-play.svg encodes
+  // the same URL plus a landing_qr referrer). Brands without it hide both.
+  playStoreUrl:
+    'https://play.google.com/store/apps/details?id=com.ruralrootcloud.rooted&referrer=utm_source%3Dlanding',
   // The "rural to global" quote, about section and values are Rural Root Cloud's
   // own story; brands without copy of their own hide them.
   showStory: true,
@@ -19,6 +24,7 @@ const RANA_BROTHERS = {
   contactEmail: 'hello@ranabrothers.online',
   parentSiteUrl: 'https://ranabrothers.online/',
   portalHost: 'rooted.ranabrothers.online',
+  playStoreUrl: null,
   showStory: false,
 };
 

@@ -1786,33 +1786,27 @@
       "pricing": "Pricing",
       "getStarted": "Get started free",
       "dashboard": "Dashboard",
-      "logout": "Log out"
+      "logout": "Log out",
+      "who": "Who it's for",
+      "android": "Android app",
+      "faq": "FAQ"
     },
     "hero": {
-      "badge": "Built by {{shortName}}",
-      "titleMain": "Run your school, college or coaching center —",
-      "titleAccent": "not five spreadsheets.",
-      "lead": "RootEd is the system schools, colleges and coaching or tuition centers use to run attendance, fees, staff and inventory in one place. Multi-tenant, role-based, and built with the same data-safety discipline as a bank's back office.",
+      "badge": "Now on web and Android",
+      "titleMain": "One system for your whole school —",
+      "titleAccent": "on every screen.",
+      "lead": "Attendance, fees, staff, expenses and inventory for schools, colleges, coaching and tuition centres, and study centres. Free to start, in English and Hindi.",
       "ctaStart": "Get started free",
       "ctaLogin": "Log in to your school",
       "fineprint": "Free to use, no credit card. Already a RootEd school?",
       "fineprintLogin": "Log in →"
     },
-    "preview": {
-      "rolePrincipal": "Principal",
-      "roleTeacher": "Teacher",
-      "roleAccountant": "Accountant",
-      "roleLibrarian": "Librarian",
-      "roleTenantAdmin": "Tenant Admin",
-      "heading": "A dashboard for every role — not just one",
-      "body": "Each login sees a view scoped to what they're permitted to see, enforced by RBAC, not just hidden nav items. Shown here: the principal's view — attention strip, attendance/fee/grade KPIs, 7D trend, date picker to rewind any past day. Parents and students feel the results too — fees paid on time, report cards that are accurate — without a login of their own to manage."
-    },
     "modulesSection": {
       "eyebrow": "Product",
-      "heading": "Five modules. One tenant. Zero spreadsheets.",
-      "lead": "Everything your organisation runs day to day, already wired together — a student's attendance record, fee balance and report card live in the same system, not three disconnected tools.",
+      "heading": "Five modules. One record per student.",
+      "lead": "Attendance, fee balance and report card live in the same system, not three tools.",
       "allConnectedTitle": "All connected",
-      "allConnectedBody": "One login, one dataset, per school — a fee defaulter list and an attendance report can reference the same student record."
+      "allConnectedBody": "A defaulter list and an attendance report can point at the same student record."
     },
     "modules": {
       "academics": {
@@ -1834,24 +1828,6 @@
       "inventory": {
         "title": "Inventory",
         "body": "Stock tracking, depreciation, and overdue-return alerts — know what your school owns and where it went."
-      }
-    },
-    "why": {
-      "multiTenant": {
-        "title": "Multi-tenant",
-        "body": "One deployment serves schools, colleges and coaching centers alike — each with its own subdomain, branding and data, so a growing group can onboard new campuses in minutes, not a new server each time."
-      },
-      "rbac": {
-        "title": "Three-tier RBAC",
-        "body": "Super Admin → Tenant Admin → module-permissioned roles. A librarian can't see payroll. A teacher can't see budgets."
-      },
-      "i18n": {
-        "title": "English · Hindi · both",
-        "body": "Full i18n including a merged Hindi+English interface — built for how staff actually read, not just English-only software."
-      },
-      "workflows": {
-        "title": "Approval workflows",
-        "body": "Leave, expense and purchase requests move through a real approval chain with auto-escalation — nothing sits forgotten."
       }
     },
     "pricingSection": {
@@ -1882,21 +1858,24 @@
     },
     "securitySection": {
       "eyebrow": "Security",
-      "heading": "Your staff's bank details and your students' records — protected on purpose, not by accident.",
-      "lead": "School data is sensitive: staff government IDs, bank accounts, salaries, student records. Here's specifically what protects it."
+      "heading": "Staff bank details and student records, protected on purpose",
+      "lead": "Here is what protects them, in plain words first and technical detail second."
     },
     "security": {
       "isolation": {
-        "title": "Tenant isolation enforced at the database layer",
-        "body": "Every query is automatically checked for your school's tenant ID before it runs. A bug that tries to read another school's data fails outright — it doesn't quietly return the wrong rows."
+        "title": "One school can never see another's data",
+        "body": "Every database query is checked against your school before it runs. If a bug tried to read someone else’s rows, it would fail, not quietly return them.",
+        "tech": "Tenant ID enforced on every query by the data layer"
       },
       "pii": {
-        "title": "Encrypted staff PII",
-        "body": "Government ID, bank account and salary fields are encrypted with AES-256-GCM, with a separate encryption key derived per school — not one shared key for every tenant."
+        "title": "Bank accounts, IDs and salaries are encrypted",
+        "body": "Each school has its own encryption key, so there is no single key that opens everyone’s data.",
+        "tech": "AES-256-GCM · per-school key derived with HKDF-SHA256"
       },
       "audit": {
-        "title": "Immutable audit log",
-        "body": "Every change to sensitive records is written to an audit log as a before/after diff that can't be edited after the fact — you can always answer \"who changed this, and when.\""
+        "title": "You can always see who changed what",
+        "body": "Every change to a sensitive record is saved as a before-and-after entry that nobody can edit afterwards.",
+        "tech": "Immutable audit log, written asynchronously"
       }
     },
     "statement": {
@@ -1969,31 +1948,28 @@
         "sending": "Sending…",
         "success": "Thanks — we'll get back to you soon.",
         "failed": "Couldn't send that, please try again."
-      }
+      },
+      "androidApp": "Android app"
     },
     "mobile": {
-      "titleMain": "One system.",
-      "titleAccent": "Every role.",
-      "lead": "Attendance, fees, staff and inventory — for schools, colleges and coaching or tuition centers, not five spreadsheets.",
+      "titleMain": "One system for your whole school.",
+      "titleAccent": "On every screen.",
+      "lead": "Attendance, fees, staff and inventory for schools, colleges, coaching centres and study centres. Free, in English and Hindi.",
       "fineprint": "Free to use. Already a school?",
       "whyEyebrow": "Why schools trust it",
       "whyHeading": "Protected on purpose",
       "facts": {
         "isolation": {
-          "title": "Tenant-isolated by design",
-          "body": "Enforced at the database layer — a bug can't leak another school's data."
+          "title": "One school never sees another's data",
+          "body": "Checked on every database query."
         },
         "pii": {
-          "title": "Encrypted staff PII",
-          "body": "AES-256-GCM, a separate key per school."
+          "title": "Encrypted bank details and salaries",
+          "body": "A separate key for each school."
         },
         "audit": {
-          "title": "Immutable audit log",
-          "body": "Every change, before/after, that can't be edited after the fact."
-        },
-        "roles": {
-          "title": "A view for every role",
-          "body": "Principal, teacher, accountant, librarian each see only what they're permitted to. Parents and students feel the results, without a login of their own to manage."
+          "title": "A change log nobody can edit",
+          "body": "See who changed what, and when."
         }
       },
       "modulesHeading": "Five modules, one tenant",
@@ -2009,7 +1985,176 @@
       },
       "processHeading": "First call to going live",
       "ctaHeading": "Ready to see it on your data?",
-      "ctaSub": "Free to use · no credit card"
+      "ctaSub": "Free to use · no credit card",
+      "getStartedWeb": "Get started free on web",
+      "rolesHeading": "A view for every role",
+      "whoHeading": "Built for how you run things",
+      "appLead": "Check the day's numbers, mark attendance and approve requests, with the same login as the web."
+    },
+    "trust": {
+      "label": "At a glance",
+      "free": "Free core, no expiry",
+      "languages": "English, Hindi, or both",
+      "platforms": "Web and Android app",
+      "roles": "A view for every role",
+      "isolation": "Your data, your school only"
+    },
+    "rolesSection": {
+      "eyebrow": "Product",
+      "heading": "Everyone sees the part that is theirs",
+      "lead": "Principal, teacher, accountant and student each log in to a view built for their day. What they can see is enforced on the server, not just hidden in the menu."
+    },
+    "roles": {
+      "principal": {
+        "tab": "Principal",
+        "title": "Check the whole school before first period",
+        "body": "One dashboard answers the morning questions: who is absent, who owes fees, what is waiting for approval.",
+        "b1": "Attendance, fee, exam and staff numbers on one screen",
+        "b2": "Tap an alert to open the exact list behind it",
+        "b3": "Rewind to any past day with the date picker",
+        "panelTitle": "Attention today"
+      },
+      "teacher": {
+        "tab": "Teacher",
+        "title": "Mark a class in under a minute",
+        "body": "Open your section, mark each student Present, Absent or Late, and save. Report cards and parent-facing numbers are built from the same record.",
+        "b1": "Your own classes are listed first",
+        "b2": "Grades and timetable in the same place",
+        "b3": "Apply for leave and see the approval status",
+        "panelTitle": "Grade 5-A · Attendance"
+      },
+      "accountant": {
+        "tab": "Accountant",
+        "title": "Know what is collected and what is overdue",
+        "body": "Fee structures, collection and receipts, with defaulters one tap away. Expenses and payroll move through approvals, so every rupee has a trail.",
+        "b1": "Online payments with automatic reconciliation (Razorpay)",
+        "b2": "Expense and leave approvals with auto-escalation",
+        "b3": "Receipts and reports on demand",
+        "panelTitle": "Fee overview"
+      },
+      "student": {
+        "tab": "Student",
+        "title": "Students see only their own record",
+        "body": "A student login opens a personal view: attendance, published grades and report cards. Nothing about anyone else.",
+        "b1": "Self-scoped by design",
+        "b2": "Hindi, English, or both",
+        "b3": "Same login on web and in the app",
+        "panelTitle": "My school"
+      }
+    },
+    "demo": {
+      "school": "Test School",
+      "date": "Fri, 21 Aug 2026",
+      "dateShort": "Fri, 21 Aug",
+      "greeting": "Good morning, Heena",
+      "defaulters": "414 fee defaulters",
+      "overdue": "₹29.41L overdue",
+      "leave": "36 leave approvals",
+      "leavePending": "36 leave approvals pending",
+      "leaveOldest": "oldest since 14 Jun",
+      "absent": "51 absent today",
+      "absentPending": "51 students absent today",
+      "absentOf": "of 962 students",
+      "absentOfShort": "of 962",
+      "attendanceToday": "Attendance today",
+      "attendance": "Attendance",
+      "feeCollected": "Fee collected",
+      "avgScore": "Avg exam score",
+      "staffPresent": "Staff present",
+      "trend": "attendance, 7-day",
+      "presentCount": "19 present",
+      "otherStudents": "19 other students",
+      "others": "19 others",
+      "markedPresent": "marked Present",
+      "rollCall": "Roll call",
+      "absentChip": "Absent",
+      "lateChip": "Late",
+      "presentChip": "Present",
+      "academicYear": "Academic year 2026-27",
+      "openList": "open the list, send reminders",
+      "onlyYours": "Only your own data is shown",
+      "myAttendance": "Attendance",
+      "myGrades": "Published grades",
+      "myReportCards": "Report cards",
+      "tabHome": "Home",
+      "tabClasses": "Classes",
+      "tabFees": "Fees",
+      "tabMore": "More",
+      "nav": {
+        "dashboard": "Dashboard",
+        "academics": "Academics",
+        "staff": "Staff",
+        "fee": "Fee",
+        "expense": "Expense",
+        "inventory": "Inventory"
+      }
+    },
+    "whoSection": {
+      "eyebrow": "Who it's for",
+      "heading": "Built for how you actually run things",
+      "lead": "One platform, set up differently for each kind of organisation. Each gets its own address and its own data."
+    },
+    "who": {
+      "school": {
+        "title": "Schools",
+        "body": "Classes and sections, timetable, report cards, fees and staff payroll."
+      },
+      "college": {
+        "title": "Colleges",
+        "body": "Training and placement tracking: batches, programme runs, completion, learning roadmaps."
+      },
+      "coaching": {
+        "title": "Coaching & tuition",
+        "body": "The same modules, without the school overhead. Batches, fees and attendance."
+      },
+      "studyCentre": {
+        "title": "Study centres",
+        "body": "Sell seats by shift, day passes and plans. Front-desk check-in and a live seat map."
+      }
+    },
+    "android": {
+      "eyebrow": "Android app",
+      "heading": "Your school in your pocket",
+      "lead": "The RootEd app is on Google Play. Check the day's numbers, mark attendance and approve requests from your phone.",
+      "b1": "Dashboard, attendance, grades, timetable",
+      "b2": "Leave and expense approvals on the go",
+      "b3": "Same login and same data as the web",
+      "badgeAria": "Get it on Google Play",
+      "badgeSmall": "Get it on",
+      "qrCaption": "Scan with your phone",
+      "qrSub": "Opens RootEd on Google Play",
+      "qrAlt": "Scan to get RootEd on Google Play"
+    },
+    "faqSection": {
+      "eyebrow": "FAQ",
+      "heading": "Questions schools ask first",
+      "mobileHeading": "Common questions"
+    },
+    "faq": {
+      "free": {
+        "q": "Is RootEd really free?",
+        "a": "Yes. Every core module is free, with unlimited staff and students, no trial and no expiry. Dedicated email, WhatsApp, SMS and your own payment gateway are paid add-ons."
+      },
+      "app": {
+        "q": "Is there a mobile app?",
+        "a": "Yes, an Android app is on Google Play. The web app also works in a phone browser, with the same login and data."
+      },
+      "hindi": {
+        "q": "Does it work in Hindi?",
+        "a": "Yes. Choose English, Hindi, or a combined Hindi / English view."
+      },
+      "salary": {
+        "q": "Who can see staff salaries and bank details?",
+        "a": "Only roles you give that permission. A librarian cannot see payroll and a teacher cannot see budgets. Those fields are also encrypted at rest."
+      },
+      "students": {
+        "q": "Can students log in?",
+        "a": "Yes. A student login opens a personal view of their own attendance, published grades and report cards, and nothing else."
+      },
+      "orgs": {
+        "q": "Do you support colleges and study centres?",
+        "a": "Yes. Schools, colleges, coaching and tuition centres, and study centres each get a setup that fits, on the same platform."
+      }
     }
   },
   "org": {

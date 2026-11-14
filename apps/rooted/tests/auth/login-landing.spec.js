@@ -150,8 +150,8 @@ test.describe('Login landing page — mobile', () => {
 test.describe('Login landing page — translation', () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  const HERO_EN = 'Run your school, college or coaching center';
-  const HERO_HI = 'अपना स्कूल, कॉलेज या कोचिंग सेंटर चलाएँ';
+  const HERO_EN = 'One system for your whole school';
+  const HERO_HI = 'आपके पूरे स्कूल के लिए एक सिस्टम';
 
   async function gotoIn(page, lang) {
     await page.addInitScript((l) => localStorage.setItem('app-lang', l), lang);
@@ -166,7 +166,7 @@ test.describe('Login landing page — translation', () => {
     const h1 = page.getByRole('heading', { level: 1 });
     await expect(h1).toContainText(HERO_HI);
     await expect(h1).not.toContainText(HERO_EN);
-    await expect(page.locator('.lp-hero p.lead')).toContainText('मल्टी-टेनेंट');
+    await expect(page.locator('.lp-hero p.lead')).toContainText('उपस्थिति, फीस, स्टाफ');
     // The switcher sets the document language alongside the copy.
     await expect(page.locator('html')).toHaveAttribute('lang', 'hi');
   });
