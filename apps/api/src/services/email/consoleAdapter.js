@@ -11,4 +11,5 @@ const HREF = /href="([^"]+)"/;
  */
 export async function sendViaConsole({ to, subject, html }) {
   logger.info({ to, subject, link: html.match(HREF)?.[1] }, 'Email (console provider — not sent)');
+  return { skipped: 'console_provider' };
 }

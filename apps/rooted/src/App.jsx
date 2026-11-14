@@ -37,6 +37,7 @@ import TenantsPage from './pages/admin/TenantsPage.jsx';
 import TenantDetailPage from './pages/admin/TenantDetailPage.jsx';
 import AuditPage from './pages/admin/AuditPage.jsx';
 import RequestLogsPage from './pages/admin/RequestLogsPage.jsx';
+import EmailLogsPage from './pages/admin/EmailLogsPage.jsx';
 import FlagsPage from './pages/admin/FlagsPage.jsx';
 import FeedbackPage from './pages/admin/FeedbackPage.jsx';
 import UsersPage from './pages/admin/UsersPage.jsx';
@@ -246,6 +247,14 @@ function AppRoutes() {
           element={
             <RequireSystemRole roles={['super_admin']}>
               <RequestLogsPage />
+            </RequireSystemRole>
+          }
+        />
+        <Route
+          path="/email-logs"
+          element={
+            <RequireSystemRole roles={['super_admin']}>
+              <EmailLogsPage />
             </RequireSystemRole>
           }
         />

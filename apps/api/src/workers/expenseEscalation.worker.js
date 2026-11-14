@@ -42,6 +42,7 @@ export function startExpenseEscalationWorker() {
       if (!user?.email) return;
 
       await sendEmail({
+        kind: 'expense-escalation',
         to: user.email,
         subject: 'Action Required: Expense Approval Pending',
         html: `

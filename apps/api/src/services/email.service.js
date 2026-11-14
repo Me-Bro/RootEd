@@ -2,6 +2,10 @@ import { env } from '../config/env.js';
 import { createSmtpTransport, sendViaSmtp } from './email/smtpAdapter.js';
 import { sendViaPostmark } from './email/postmarkAdapter.js';
 import { sendViaConsole } from './email/consoleAdapter.js';
+import { classifyEmailError } from './email/classifyEmailError.js';
+import { EmailLog } from '../models/EmailLog.js';
+import { monitoringConnection } from '../config/monitoringDb.js';
+import { logger } from '../utils/logger.js';
 
 let smtpTransporter = null;
 if (env.EMAIL_PROVIDER === 'smtp') {
@@ -20,18 +24,53 @@ export function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
 }
 
-export async function sendEmail({ to, subject, html }) {
-  if (env.EMAIL_PROVIDER === 'console') {
-    return sendViaConsole({ to, subject, html });
-  }
-  if (env.EMAIL_PROVIDER === 'postmark') {
-    return sendViaPostmark({ to, subject, html });
-  }
+function dispatch({ to, subject, html }) {
+  if (env.EMAIL_PROVIDER === 'console') return sendViaConsole({ to, subject, html });
+  if (env.EMAIL_PROVIDER === 'postmark') return sendViaPostmark({ to, subject, html });
   return sendViaSmtp(smtpTransporter, { to, subject, html });
+}
+
+/**
+ * Sends one email and records the attempt in EmailLog. The log write is
+ * fire-and-forget and the original error is rethrown, so callers behave exactly
+ * as they did before logging existed. `kind` names the template for the stats.
+ */
+export async function sendEmail({ to, subject, html, kind }) {
+  const started = Date.now();
+  const row = { provider: env.EMAIL_PROVIDER, kind, to, subject };
+  try {
+    const result = (await dispatch({ to, subject, html })) ?? {};
+    recordEmail({
+      ...row,
+      durationMs: Date.now() - started,
+      status: result.skipped ? 'skipped' : 'sent',
+      reason: result.skipped,
+      messageId: result.messageId,
+    });
+    return result;
+  } catch (err) {
+    recordEmail({
+      ...row,
+      durationMs: Date.now() - started,
+      status: 'failed',
+      reason: classifyEmailError(err),
+      errorCode: err?.code != null ? String(err.code) : undefined,
+      errorMessage: String(err?.message ?? err).slice(0, 500),
+    });
+    throw err;
+  }
+}
+
+function recordEmail(row) {
+  // Best-effort: if the monitoring DB is down, drop the row rather than let
+  // mongoose buffer writes (and hold memory) until its 10s timeout.
+  if (monitoringConnection.readyState !== 1) return;
+  EmailLog.create(row).catch((err) => logger.warn({ err }, 'Failed to write EmailLog row'));
 }
 
 export async function sendPasswordReset(email, resetUrl) {
   await sendEmail({
+    kind: 'password-reset',
     to: email,
     subject: 'Reset your RootEd password',
     html: `
@@ -47,6 +86,7 @@ export async function sendPasswordReset(email, resetUrl) {
 
 export async function sendTenantInvite(email, tenantName, inviteUrl) {
   await sendEmail({
+    kind: 'tenant-invite',
     to: email,
     subject: `You've been invited to ${tenantName} on RootEd`,
     html: `
@@ -69,6 +109,7 @@ export async function sendApprovalRequest(
   approveUrl
 ) {
   await sendEmail({
+    kind: 'approval-request',
     to: email,
     subject: `Approval Required: ${entityType} from ${requesterName}`,
     html: `
@@ -85,6 +126,7 @@ export async function sendApprovalRequest(
 
 export async function sendBudgetAlert(email, category, percentage, cap) {
   await sendEmail({
+    kind: 'budget-alert',
     to: email,
     subject: `Budget Alert: ${category} at ${percentage.toFixed(1)}% utilization`,
     html: `
@@ -101,6 +143,7 @@ export async function sendBudgetAlert(email, category, percentage, cap) {
 
 export async function sendEmailVerification(email, verifyUrl) {
   await sendEmail({
+    kind: 'verification',
     to: email,
     subject: 'Verify your RootEd email address',
     html: `
@@ -116,6 +159,7 @@ export async function sendEmailVerification(email, verifyUrl) {
 
 export async function sendEmailChangeConfirmation(newEmail, confirmUrl) {
   await sendEmail({
+    kind: 'email-change-confirmation',
     to: newEmail,
     subject: 'Confirm your new RootEd email address',
     html: `
@@ -134,6 +178,7 @@ export async function sendEmailChangeConfirmation(newEmail, confirmUrl) {
 // never find out.
 export async function sendEmailChangeNotice(currentEmail, newEmail) {
   await sendEmail({
+    kind: 'email-change-notice',
     to: currentEmail,
     subject: 'Your RootEd email address is being changed',
     html: `
@@ -152,6 +197,7 @@ export async function sendEmailChangeNotice(currentEmail, newEmail) {
 // the address still gets told what happened, here.
 export async function sendAccountExistsNotice(email, loginUrl, resetUrl) {
   await sendEmail({
+    kind: 'account-exists',
     to: email,
     subject: 'You already have a RootEd account',
     html: `
@@ -167,6 +213,7 @@ export async function sendAccountExistsNotice(email, loginUrl, resetUrl) {
 
 export async function sendAccountClaim(email, orgName, claimUrl) {
   await sendEmail({
+    kind: 'account-claim',
     to: email,
     subject: `Set up your RootEd account for ${orgName}`,
     html: `

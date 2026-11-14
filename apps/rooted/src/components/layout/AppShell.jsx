@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import {
   Activity,
+  Mail,
   Archive,
   Armchair,
   BarChart2,
@@ -94,6 +95,7 @@ function getNavGroups(t, orgType) {
         { to: '/tenants', label: t('nav.tenants'), icon: Building2 },
         { to: '/audit', label: t('nav.audit'), icon: ScrollText },
         { to: '/request-logs', label: t('nav.requestLogs'), icon: Activity },
+        { to: '/email-logs', label: t('nav.emailLogs'), icon: Mail },
         { to: '/flags', label: t('nav.flags'), icon: ToggleLeft },
         { to: '/users', label: t('nav.platformUsers'), icon: Users },
         { to: '/feedback', label: t('nav.feedback'), icon: MessageSquare },
