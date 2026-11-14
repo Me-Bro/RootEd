@@ -13,6 +13,7 @@ import {
 } from './auth.service.js';
 import { queueEmail } from './email.service.js';
 import { env, getPortalHost } from '../config/env.js';
+import { emailDomainProblem } from '../utils/emailDomain.js';
 import { isModuleEnabled } from '@rooted/shared/utils';
 
 export const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
@@ -231,7 +232,7 @@ export async function provisionStudentAccount({
   studentRoleId,
   enqueue = queueEmail,
 }) {
-  const gate = await blockedBySuspension(tenant, email);
+  const gate = (await blockedBySuspension(tenant, email)) ?? (await emailDomainProblem(email));
   if (gate) return { user: null, reason: gate };
 
   const user = await findOrCreateClaimableUser({
@@ -273,7 +274,7 @@ export async function provisionStaffAccount({
   roleIds,
   enqueue = queueEmail,
 }) {
-  const gate = await blockedBySuspension(tenant, email);
+  const gate = (await blockedBySuspension(tenant, email)) ?? (await emailDomainProblem(email));
   if (gate) return { user: null, reason: gate };
 
   const user = await findOrCreateClaimableUser({ email, firstName, lastName });
