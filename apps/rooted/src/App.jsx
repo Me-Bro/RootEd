@@ -24,6 +24,7 @@ import AccountDeletionPage from './pages/legal/AccountDeletionPage.jsx';
 import MembersPage from './pages/tenant/MembersPage.jsx';
 import JoinPolicyPage from './pages/tenant/JoinPolicyPage.jsx';
 import CentreSettingsPage from './pages/tenant/CentreSettingsPage.jsx';
+import ReportCardSettingsPage from './pages/tenant/ReportCardSettingsPage.jsx';
 import SeatsPage from './pages/academic/SeatsPage.jsx';
 import SellPage from './pages/fee/SellPage.jsx';
 import FrontDeskPage from './pages/academic/FrontDeskPage.jsx';
@@ -652,6 +653,14 @@ function AppRoutes() {
           element={
             <RequirePermission permission="tenant:admin">
               <CentreSettingsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/tenant/report-card"
+          element={
+            <RequirePermission permission="tenant:admin">
+              <ReportCardSettingsPage />
             </RequirePermission>
           }
         />

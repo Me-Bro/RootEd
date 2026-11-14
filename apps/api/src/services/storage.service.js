@@ -35,6 +35,17 @@ export async function uploadBuffer(key, buffer, contentType) {
   });
 }
 
+export async function getObjectBuffer(key) {
+  const stream = await minioClient.getObject(env.S3_BUCKET, key);
+  const chunks = [];
+  for await (const chunk of stream) chunks.push(chunk);
+  return Buffer.concat(chunks);
+}
+
+export async function removeObject(key) {
+  await minioClient.removeObject(env.S3_BUCKET, key);
+}
+
 export async function getSignedUrl(key, expirySeconds = 3600) {
   return presignClient.presignedGetObject(env.S3_BUCKET, key, expirySeconds);
 }
