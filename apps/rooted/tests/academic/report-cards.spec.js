@@ -74,8 +74,21 @@ test.describe('Report Cards page', () => {
     });
   });
 
+  test('an administrator gets a link to the report card design page', async ({ page }) => {
+    const link = page.getByRole('link', { name: 'Customize design' });
+    await expect(link).toBeVisible();
+    await link.click();
+    await expect(page).toHaveURL(/\/tenant\/report-card$/);
+    await expect(page.getByRole('heading', { name: 'Report card design' })).toBeVisible();
+  });
+
   test.describe('teacher (grades:publish)', () => {
     test.use({ storageState: AUTH_STATES.teacher });
+
+    test('has no link to the design page, which is for administrators', async ({ page }) => {
+      await expect(page.getByRole('button', { name: 'Generate Report Cards' })).toBeVisible();
+      await expect(page.getByRole('link', { name: 'Customize design' })).toHaveCount(0);
+    });
 
     test('sees the Generate button too', async ({ page }) => {
       await expect(page.getByRole('button', { name: 'Generate Report Cards' })).toBeVisible();

@@ -941,6 +941,7 @@
       "starting": "Starting…",
       "generating": "Generating…",
       "generateButton": "Generate Report Cards",
+      "designLink": "Customize design",
       "noPermission": "You don't have permission to generate report cards. Ask an admin for the",
       "noPermissionSuffix": "permission.",
       "startFailed": "Failed to start generation",
