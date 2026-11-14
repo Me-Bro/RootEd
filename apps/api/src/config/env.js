@@ -82,6 +82,13 @@ const schema = z.object({
   // self-hosted/demo boxes with no mail provider; see consoleAdapter.js.
   EMAIL_PROVIDER: z.enum(['smtp', 'postmark', 'console']).default('smtp'),
   POSTMARK_API_TOKEN: z.string().optional(),
+  // Reject addresses whose domain has no MX/A record at registration, invite,
+  // import and account-creation time. Off by default: seeds and e2e use
+  // `.local`/`.example` domains that would all fail. Turn on in prod/staging.
+  EMAIL_MX_CHECK: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
 });
 
 const parsed = schema.safeParse(process.env);

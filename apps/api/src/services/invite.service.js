@@ -7,6 +7,7 @@ import { AppError } from '../middleware/errorHandler.js';
 import { invalidatePermissions } from '../middleware/requirePermission.js';
 import { generateToken, hashToken } from './auth.service.js';
 import { env, getPortalHost } from '../config/env.js';
+import { assertDeliverableDomain } from '../utils/emailDomain.js';
 
 export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -24,6 +25,7 @@ export function inviteUrlFor(tenant, token) {
  * Returns the raw token, which is the only place it ever exists un-hashed.
  */
 export async function createInvite({ tenantId, email, roleIds, invitedBy }) {
+  await assertDeliverableDomain(email);
   // Roles are per-tenant documents. Accepting an id without checking it belongs
   // to *this* tenant would let an admin graft another tenant's role onto their
   // own member.

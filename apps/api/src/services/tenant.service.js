@@ -17,6 +17,7 @@ import {
 import { AppError } from '../middleware/errorHandler.js';
 import { sendTenantInvite } from './email.service.js';
 import { env, getPortalHost } from '../config/env.js';
+import { assertDeliverableDomain } from '../utils/emailDomain.js';
 
 /** Organizations a single person may create. See ADR 006 §D5. */
 export const MAX_ORGS_PER_FOUNDER = 3;
@@ -143,6 +144,9 @@ export async function createTenant({
     const exists = await Tenant.findOne({ subdomain });
     if (exists) throw new AppError('Subdomain already taken', 409);
   }
+  // Before the transaction: a typo'd admin address would otherwise leave a
+  // finished tenant whose only admin never receives the invite.
+  await assertDeliverableDomain(adminEmail);
 
   const session = await mongoose.startSession();
   let tenant;

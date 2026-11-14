@@ -69,6 +69,7 @@ import {
   sendAccountExistsNotice,
 } from '../services/email.service.js';
 import { acceptInvite } from '../services/invite.service.js';
+import { assertDeliverableDomain } from '../utils/emailDomain.js';
 import { tenantForJoinCode, submitJoinRequest } from '../services/joinRequest.service.js';
 import { broadcastToRole } from '../services/notification.service.js';
 import { verifyGoogleIdToken, findOrCreateGoogleUser } from '../services/googleAuth.service.js';
@@ -819,6 +820,10 @@ router.post('/register', registerLimiter, validate(registerSchema), async (req, 
     // Deliberately identical whether or not the address is already registered.
     const accepted = { message: 'Check your email to continue.' };
 
+    // Domain only, never the mailbox, so it says nothing about whether the
+    // address is already registered and stays clear of the enumeration oracle.
+    await assertDeliverableDomain(email);
+
     const existing = await User.findOne({ email }, '_id').lean();
     if (existing) {
       await deliverOrLog(
@@ -978,6 +983,7 @@ router.post('/change-email', authenticate, validate(changeEmailSchema), async (r
       throw new AppError('Incorrect password', 401);
     }
     if (newEmail === user.email) throw new AppError('That is already your email address', 400);
+    await assertDeliverableDomain(newEmail);
 
     // Unlike /register, this reports the conflict outright: the caller is
     // already authenticated and has just re-entered their password, so it is a
