@@ -57,6 +57,7 @@ services:
     ports: !override
       - '3002:3001'
     environment:
+      TRUST_PROXY_HOPS: 2
       APP_DOMAIN: ruralrootcloud.com
       PORTAL_SUBDOMAIN: rooted-uat
       NODE_ENV: production

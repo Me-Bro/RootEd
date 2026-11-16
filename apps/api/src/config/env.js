@@ -29,6 +29,10 @@ const schema = z.object({
     z.coerce.number().int().positive().optional()
   ),
   MASTER_ENCRYPTION_KEY: z.string().min(32),
+  // Trusted reverse-proxy hops in front of the API (Express `trust proxy`), which
+  // decides req.ip, so the rate limiter and audit log see the real visitor. 1 for
+  // a single nginx; 2 behind the Cloudflare Tunnel (see docker-compose.tunnel*.yml).
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
   APP_DOMAIN: z.string().default('rooted.app'),
   // Optional single-label subdomain (e.g. "rooted") that should be treated as the
   // bare/general-portal host — same as APP_DOMAIN itself with zero labels — instead
