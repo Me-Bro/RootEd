@@ -54,6 +54,7 @@ services:
         VITE_PORTAL_SUBDOMAIN: rooted
   api:
     environment:
+      TRUST_PROXY_HOPS: 2
       APP_DOMAIN: ruralrootcloud.com
       PORTAL_SUBDOMAIN: rooted
       NODE_ENV: production

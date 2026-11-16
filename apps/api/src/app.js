@@ -40,7 +40,11 @@ import webhooksRouter from './routes/webhooks.js';
 
 const app = express();
 
-app.set('trust proxy', 1);
+// Proxy hops in front of the API. The tunnel stack has two (X-Forwarded-For is
+// "client, <upstream proxy>" and the socket peer is the last nginx), so 1 made
+// every visitor look like the same internal address: one shared rate-limit
+// bucket for all users, and wrong IPs in audit logs. See TRUST_PROXY_HOPS.
+app.set('trust proxy', env.TRUST_PROXY_HOPS);
 
 // ── Trace ID ─────────────────────────────────────────────────────────────────
 app.use((req, res, next) => {
@@ -108,10 +112,9 @@ const { doubleCsrfProtection, generateCsrfToken } = doubleCsrf({
   },
   size: 64,
   getTokenFromRequest: (req) => req.headers['x-csrf-token'],
-  getSessionIdentifier: (req) => {
-    const ip = req.ip ?? '127.0.0.1';
-    return ip.replace(/^::ffff:/, '').replace(/^::1$/, '127.0.0.1');
-  },
+  // Not bound to the client IP: a phone's address changes mid-session, which
+  // would invalidate its token. The cookie/header double-submit still applies.
+  getSessionIdentifier: () => 'rooted',
 });
 
 // CSRF token endpoint (GET — safe, no protection needed)
