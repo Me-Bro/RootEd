@@ -141,9 +141,12 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/certs:/etc/nginx/certs:ro
+    # catalyst: nginx.tunnel.conf proxies to `catalyst:80`, and nginx refuses to start
+    # ("host not found in upstream") when that container does not exist.
     depends_on:
       - api
       - rooted
+      - catalyst
     networks:
       - rooted
 
