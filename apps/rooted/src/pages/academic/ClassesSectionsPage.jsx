@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { hasSeats, isBatchOrgType, resolveOrgTerm } from '@rooted/shared/utils';
+import { apiError, formatShiftHours } from '../../utils/studyCenter.js';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { useClassSections } from '../../hooks/useClassSections.js';
@@ -171,12 +172,14 @@ function SectionModal({
     },
     onError: (err) =>
       setError(
-        err.response?.data?.error ||
+        apiError(
+          err,
           t(
             isEdit
               ? 'academic.classesSections.updateSectionFailed'
               : 'academic.classesSections.createSectionFailed'
           )
+        )
       ),
   });
 
@@ -209,18 +212,21 @@ function SectionModal({
             required
             placeholder="A"
           />
-          <SelectField
-            label={t('academic.classesSections.assignTeacher')}
-            value={form.classTeacherId}
-            onValueChange={(v) => setForm((f) => ({ ...f, classTeacherId: v }))}
-            placeholder={t('academic.classesSections.selectTeacherPlaceholder')}
-          >
-            {staff.map((s) => (
-              <SelectItem key={s._id} value={s.userId}>
-                {s.firstName} {s.lastName}
-              </SelectItem>
-            ))}
-          </SelectField>
+          {/* A study center's shift has no class teacher. */}
+          {!showTimes && (
+            <SelectField
+              label={t('academic.classesSections.assignTeacher')}
+              value={form.classTeacherId}
+              onValueChange={(v) => setForm((f) => ({ ...f, classTeacherId: v }))}
+              placeholder={t('academic.classesSections.selectTeacherPlaceholder')}
+            >
+              {staff.map((s) => (
+                <SelectItem key={s._id} value={s.userId}>
+                  {s.firstName} {s.lastName}
+                </SelectItem>
+              ))}
+            </SelectField>
+          )}
           {showTimes && (
             <div className="grid grid-cols-2 gap-3">
               <Input
@@ -341,12 +347,18 @@ export default function ClassesSectionsPage() {
                   >
                     <div className="min-w-0">
                       <p className="text-sm font-medium">{section.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {section.classTeacherId
-                          ? (teacherNameById.get(section.classTeacherId) ??
-                            t('academic.classesSections.noTeacherAssigned'))
-                          : t('academic.classesSections.noTeacherAssigned')}
-                      </p>
+                      {hasSeats(orgType) ? (
+                        <p className="text-xs text-muted-foreground">
+                          {formatShiftHours(section.startTime, section.endTime)}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          {section.classTeacherId
+                            ? (teacherNameById.get(section.classTeacherId) ??
+                              t('academic.classesSections.noTeacherAssigned'))
+                            : t('academic.classesSections.noTeacherAssigned')}
+                        </p>
+                      )}
                     </div>
                     <Link
                       to={`/academic/subjects?classId=${cls._id}`}
