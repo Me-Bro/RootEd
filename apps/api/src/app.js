@@ -94,10 +94,13 @@ app.use(requestMonitor);
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: env.NODE_ENV === 'production' ? 300 : 10_000,
+    // A SPA page fires ~10-20 calls, so 300 locked out a normal user in minutes.
+    max: env.NODE_ENV === 'production' ? 3000 : 10_000,
     standardHeaders: true,
     legacyHeaders: false,
-    skip: () => env.NODE_ENV === 'test',
+    // Session renewal must never be throttled by the bucket: a 429 on refresh logs the user out.
+    skip: (req) =>
+      env.NODE_ENV === 'test' || req.path === '/auth/refresh' || req.path === '/auth/me',
   })
 );
 
