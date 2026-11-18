@@ -716,6 +716,13 @@
     "studentDetail": {
       "subjectsHeading": "विषय और शिक्षक",
       "subjectsEmpty": "इस सेक्शन में अभी कोई शिक्षक नहीं सौंपा गया।",
+      "feeStructureHeading": "फीस संरचना",
+      "feeStructureEmpty": "अभी कोई फीस संरचना नहीं सौंपी गई।",
+      "feeStructureNoneAvailable": "सौंपने के लिए कोई फीस संरचना नहीं है। फीस में जाकर बनाएँ।",
+      "feeStructureChoose": "फीस संरचना चुनें",
+      "feeStructureAssign": "सौंपें",
+      "feeStructureChange": "बदलें",
+      "feeStructureFailed": "फीस संरचना नहीं सौंपी जा सकी।",
       "loginHeading": "लॉगिन",
       "loginHint": "लॉगिन के बिना यह छात्र अपनी उपस्थिति, अंक या फीस नहीं देख सकता।",
       "giveLogin": "लॉगिन बनाएँ",

@@ -716,6 +716,13 @@
     "studentDetail": {
       "subjectsHeading": "Subjects and teachers",
       "subjectsEmpty": "No teachers assigned to this section yet.",
+      "feeStructureHeading": "Fee structure",
+      "feeStructureEmpty": "No fee structure assigned yet.",
+      "feeStructureNoneAvailable": "No fee structures to assign yet. Create one under Fees.",
+      "feeStructureChoose": "Choose a fee structure",
+      "feeStructureAssign": "Assign",
+      "feeStructureChange": "Change",
+      "feeStructureFailed": "The fee structure could not be assigned.",
       "loginHeading": "Login",
       "loginHint": "Without a login this student cannot see their own attendance, grades or fees.",
       "giveLogin": "Create login",

@@ -88,6 +88,11 @@ export const assignFeeStructureSchema = z.object({
   dueDate: z.coerce.date().optional(),
 });
 
+// Study centers: the one fee structure a learner holds, set from the student page.
+export const setStudentFeeStructureSchema = z.object({
+  feeStructureId: objectId,
+});
+
 export const cloneFeeStructureSchema = z.object({
   targetAcademicYearId: objectId,
   amountAdjustmentPercent: z.coerce.number().optional(),
