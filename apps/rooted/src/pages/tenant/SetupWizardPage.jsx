@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
+import { isBatchOrgType } from '@rooted/shared/utils';
 import api from '../../lib/api.js';
+import { useAuth } from '../../contexts/useAuth.js';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 
@@ -144,6 +146,8 @@ function StepAcademicYear({ onNext, onBack }) {
 
 // Step 3: Class + Section
 function StepClassSection({ onNext, onBack }) {
+  const { user } = useAuth();
+  const isBatch = isBatchOrgType(user?.orgType);
   const [form, setForm] = useState({ className: '', gradeLevel: '', sectionName: '' });
   const [classId, setClassId] = useState(null);
 
@@ -160,10 +164,11 @@ function StepClassSection({ onNext, onBack }) {
   async function handleSubmit() {
     let cid = classId;
     if (!cid) {
-      const res = await classMutation.mutateAsync({
-        name: form.className,
-        gradeLevel: Number(form.gradeLevel) || 1,
-      });
+      const res = await classMutation.mutateAsync(
+        isBatch
+          ? { name: form.className }
+          : { name: form.className, gradeLevel: Number(form.gradeLevel) || 1 }
+      );
       cid = res.data._id;
     }
     if (form.sectionName) {
@@ -183,16 +188,18 @@ function StepClassSection({ onNext, onBack }) {
         label="Class Name"
         value={form.className}
         onChange={(e) => setForm((f) => ({ ...f, className: e.target.value }))}
-        placeholder="Grade 1"
+        placeholder={isBatch ? 'e.g. Morning Batch' : 'Grade 1'}
         required
       />
-      <Input
-        label="Grade Level"
-        type="number"
-        value={form.gradeLevel}
-        onChange={(e) => setForm((f) => ({ ...f, gradeLevel: e.target.value }))}
-        placeholder="1"
-      />
+      {!isBatch && (
+        <Input
+          label="Grade Level"
+          type="number"
+          value={form.gradeLevel}
+          onChange={(e) => setForm((f) => ({ ...f, gradeLevel: e.target.value }))}
+          placeholder="1"
+        />
+      )}
       <Input
         label="Section Name"
         value={form.sectionName}

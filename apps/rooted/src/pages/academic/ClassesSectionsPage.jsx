@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { hasSeats, resolveOrgTerm } from '@rooted/shared/utils';
+import { hasSeats, isBatchOrgType, resolveOrgTerm } from '@rooted/shared/utils';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { useClassSections } from '../../hooks/useClassSections.js';
@@ -23,7 +23,7 @@ import { EmptyState } from '../../components/ui/EmptyState.jsx';
 
 const CLASSES_QUERY_KEY = ['classes-with-sections'];
 
-function ClassModal({ open, onOpenChange, classItem, classLevelLabel, isSchoolTerm }) {
+function ClassModal({ open, onOpenChange, classItem, classLevelLabel, isSchoolTerm, isBatch }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const isEdit = Boolean(classItem);
@@ -35,10 +35,13 @@ function ClassModal({ open, onOpenChange, classItem, classLevelLabel, isSchoolTe
 
   const mutation = useMutation({
     mutationFn: () => {
-      const body = {
-        name: form.name,
-        gradeLevel: form.gradeLevel === '' ? undefined : Number(form.gradeLevel),
-      };
+      // Batch orgs have no grade level: leave any stored value untouched.
+      const body = isBatch
+        ? { name: form.name }
+        : {
+            name: form.name,
+            gradeLevel: form.gradeLevel === '' ? undefined : Number(form.gradeLevel),
+          };
       return isEdit
         ? api.patch(`/academic/classes/${classItem._id}`, body).then((r) => r.data)
         : api.post('/academic/classes', body).then((r) => r.data);
@@ -89,14 +92,20 @@ function ClassModal({ open, onOpenChange, classItem, classLevelLabel, isSchoolTe
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             required
-            placeholder="Grade 5"
+            placeholder={
+              isBatch
+                ? t('academic.classesSections.batchNamePlaceholder')
+                : t('academic.classesSections.classNamePlaceholder')
+            }
           />
-          <Input
-            label={t('academic.classesSections.gradeLevel')}
-            type="number"
-            value={form.gradeLevel}
-            onChange={(e) => setForm((f) => ({ ...f, gradeLevel: e.target.value }))}
-          />
+          {!isBatch && (
+            <Input
+              label={t('academic.classesSections.gradeLevel')}
+              type="number"
+              value={form.gradeLevel}
+              onChange={(e) => setForm((f) => ({ ...f, gradeLevel: e.target.value }))}
+            />
+          )}
           {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
         <DialogFooter>
@@ -255,6 +264,7 @@ export default function ClassesSectionsPage() {
   const canWrite = (user?.permissions ?? []).includes('tenant:admin');
   const orgType = user?.orgType;
   const isSchoolTerm = !orgType || orgType === 'school';
+  const isBatch = isBatchOrgType(orgType);
 
   const classLevelLabel = isSchoolTerm
     ? t('academic.classesSections.classLevel')
@@ -271,7 +281,11 @@ export default function ClassesSectionsPage() {
   const [addSectionFor, setAddSectionFor] = useState(null); // classId | null
   const [editingSection, setEditingSection] = useState(null);
 
-  const sortedClasses = [...classes].sort((a, b) => (a.gradeLevel ?? 0) - (b.gradeLevel ?? 0));
+  const sortedClasses = [...classes].sort(
+    isBatch
+      ? (a, b) => (a.name ?? '').localeCompare(b.name ?? '')
+      : (a, b) => (a.gradeLevel ?? 0) - (b.gradeLevel ?? 0)
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -306,7 +320,7 @@ export default function ClassesSectionsPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-lg font-semibold">{cls.name}</p>
-                  {cls.gradeLevel != null && (
+                  {!isBatch && cls.gradeLevel != null && (
                     <p className="text-xs text-muted-foreground">
                       {t('academic.classesSections.gradeLevel')}: {cls.gradeLevel}
                     </p>
@@ -373,6 +387,7 @@ export default function ClassesSectionsPage() {
         onOpenChange={setShowCreateClass}
         classLevelLabel={classLevelLabel}
         isSchoolTerm={isSchoolTerm}
+        isBatch={isBatch}
       />
 
       {editingClass && (
@@ -382,6 +397,7 @@ export default function ClassesSectionsPage() {
           classItem={editingClass}
           classLevelLabel={classLevelLabel}
           isSchoolTerm={isSchoolTerm}
+          isBatch={isBatch}
         />
       )}
 

@@ -547,6 +547,8 @@
       "newClassTitle": "New Class",
       "editClassTitle": "Edit Class",
       "gradeLevel": "Grade Level",
+      "classNamePlaceholder": "Grade 5",
+      "batchNamePlaceholder": "e.g. Morning Batch",
       "createClassFailed": "Failed to create class",
       "updateClassFailed": "Failed to update class",
       "newSection": "+ Add a section",

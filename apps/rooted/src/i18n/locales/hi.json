@@ -547,6 +547,8 @@
       "newClassTitle": "नई कक्षा",
       "editClassTitle": "कक्षा संपादित करें",
       "gradeLevel": "ग्रेड स्तर",
+      "classNamePlaceholder": "ग्रेड 5",
+      "batchNamePlaceholder": "जैसे सुबह का बैच",
       "createClassFailed": "कक्षा बनाने में विफल",
       "updateClassFailed": "कक्षा अपडेट करने में विफल",
       "newSection": "+ अनुभाग जोड़ें",
