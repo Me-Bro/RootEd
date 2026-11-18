@@ -27,6 +27,9 @@ const { Student } = await import('../models/Student.js');
 const { Class } = await import('../models/Class.js');
 const { Section } = await import('../models/Section.js');
 const { Enrollment } = await import('../models/Enrollment.js');
+const { FeeStructure } = await import('../models/FeeStructure.js');
+const { FeeAssignment } = await import('../models/FeeAssignment.js');
+const { AcademicYear } = await import('../models/AcademicYear.js');
 const { TenantMembership } = await import('../models/TenantMembership.js');
 const { default: academicRouter } = await import('../routes/academic.js');
 const { default: meRouter } = await import('../routes/me.js');
@@ -909,5 +912,79 @@ describe('GET /academic/students/:id/aadhaar (reveal)', () => {
     auditLog.mockClear();
     await call('patch', `/academic/students/${s._id}`, 'admin', { firstName: 'Anya' });
     expect(auditLog).not.toHaveBeenCalled();
+  });
+});
+
+describe('fee structure on create (study center)', () => {
+  const post = (body, tenant = 'study', who = 'studyAdmin') =>
+    call('post', '/academic/students', who, body, tenant);
+  let year;
+  let structure;
+  let plan;
+
+  beforeAll(async () => {
+    year = await AcademicYear.create({
+      tenantId: tenants.study._id,
+      name: 'Ongoing',
+      startDate: new Date('2026-01-01'),
+      endDate: new Date('2036-01-01'),
+      isActive: true,
+    });
+    const mk = (name, extra = {}) =>
+      FeeStructure.create({
+        tenantId: tenants.study._id,
+        name,
+        academicYearId: year._id,
+        applicableTo: 'student',
+        components: [{ label: 'Seat', amount: 500 }],
+        ...extra,
+      });
+    structure = await mk('Library fee');
+    plan = await mk('Monthly', { plan: { kind: 'shift_plan', durationDays: 30 } });
+  });
+
+  test('assigns the chosen structure to the new learner only', async () => {
+    const res = await post({
+      firstName: 'Fee',
+      lastName: 'One',
+      feeStructureId: String(structure._id),
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.feeError).toBeUndefined();
+    const rows = await FeeAssignment.find({ tenantId: tenants.study._id }).lean();
+    expect(rows).toHaveLength(1);
+    expect(String(rows[0].studentId)).toBe(res.body._id);
+    expect(rows[0].totalAmount).toBe(500);
+  });
+
+  test('no structure means no assignment', async () => {
+    const before = await FeeAssignment.countDocuments({ tenantId: tenants.study._id });
+    const res = await post({ firstName: 'Fee', lastName: 'None' });
+    expect(res.status).toBe(201);
+    expect(await FeeAssignment.countDocuments({ tenantId: tenants.study._id })).toBe(before);
+  });
+
+  test('a plan, an unknown id or a foreign structure is a 404 and creates no student', async () => {
+    const foreign = await FeeStructure.create({
+      tenantId: tenants.school._id,
+      name: 'Tuition',
+      academicYearId: new mongoose.Types.ObjectId(),
+      components: [{ label: 'T', amount: 1 }],
+    });
+    const count = await Student.countDocuments({ tenantId: tenants.study._id });
+    for (const id of [plan._id, new mongoose.Types.ObjectId(), foreign._id]) {
+      const res = await post({ firstName: 'Bad', lastName: 'Fee', feeStructureId: String(id) });
+      expect(res.status).toBe(404);
+    }
+    expect(await Student.countDocuments({ tenantId: tenants.study._id })).toBe(count);
+  });
+
+  test('other org types reject the field', async () => {
+    const res = await post(
+      { ...base('FS-1'), feeStructureId: String(structure._id) },
+      'school',
+      'admin'
+    );
+    expect(res.status).toBe(400);
   });
 });

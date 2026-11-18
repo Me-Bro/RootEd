@@ -167,6 +167,8 @@ function build(mode, orgType) {
     const admissionNo = z.string().trim().min(1).max(50);
     shape.admissionNo = hasSeats(orgType) ? admissionNo.optional() : admissionNo;
     shape.email = f(z.string().trim().toLowerCase().email());
+    // Study centers: one fee structure to assign to the new learner.
+    if (hasSeats(orgType)) shape.feeStructureId = f(objectId);
   } else {
     shape.status = z.enum(STUDENT_STATUSES).optional();
     shape.statusReason = f(text(200));

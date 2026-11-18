@@ -54,6 +54,8 @@ import { env } from '../config/env.js';
 import { Student } from '../models/Student.js';
 import { allocateAdmissionNo, peekAdmissionNo } from '../services/counter.service.js';
 import { Enrollment } from '../models/Enrollment.js';
+import { FeeStructure } from '../models/FeeStructure.js';
+import { assignFeesToStudents } from '../services/fee.service.js';
 import { Role } from '../models/Role.js';
 import { User } from '../models/User.js';
 import { TenantMembership } from '../models/TenantMembership.js';
@@ -565,7 +567,22 @@ router.post('/students', requirePermission('students:write'), async (req, res, n
     const body = parseStudentBody(studentCreateSchemaFor, req, res);
     if (!body) return;
     const tenantId = req.tenant._id;
-    const { email, aadhaar, ...fields } = body;
+    const { email, aadhaar, feeStructureId, ...fields } = body;
+
+    // Checked before the student exists, so a bad id never leaves a half-made record.
+    // Plans are sold at the desk (POST /fee/sales), never assigned this way.
+    if (feeStructureId) {
+      const structure = await FeeStructure.findOne(
+        {
+          _id: feeStructureId,
+          tenantId,
+          isActive: { $ne: false },
+          'plan.kind': { $exists: false },
+        },
+        '_id'
+      ).lean();
+      if (!structure) return res.status(404).json({ error: 'Fee structure not found' });
+    }
 
     // Study centers may omit it; the server then assigns the next free number.
     const autoNumber = !fields.admissionNo;
@@ -610,6 +627,16 @@ router.post('/students', requirePermission('students:write'), async (req, res, n
 
     const out = student.toObject();
     delete out.aadhaarEnc;
+
+    // Like the login below, a failed assignment must not lose the saved student.
+    if (feeStructureId) {
+      try {
+        await assignFeesToStudents({ studentIds: [student._id], feeStructureId, tenantId });
+      } catch (err) {
+        logger.warn({ err, studentId: student._id }, 'fee structure could not be assigned');
+        out.feeError = 'the fee structure could not be assigned';
+      }
+    }
 
     // A login is a nicety, never a reason to lose the student just saved: if it
     // cannot be made, say why next to the created record.

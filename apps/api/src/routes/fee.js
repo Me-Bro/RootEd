@@ -104,7 +104,14 @@ router.post(
           .json({ error: 'A fee structure with this name already exists for this academic year' });
       }
 
-      const structure = await FeeStructure.create({ tenantId, ...req.body });
+      // Study centers assign a structure per learner (from the student form), never
+      // to the roster: the stored scope is always 'student' there.
+      const seats = hasSeats(req.tenant.orgType);
+      const structure = await FeeStructure.create({
+        tenantId,
+        ...req.body,
+        ...(seats ? { applicableTo: 'student' } : {}),
+      });
 
       await auditLog({
         actorId: req.user.sub,
@@ -116,7 +123,7 @@ router.post(
       });
 
       let autoAssign = { created: 0, skipped: 0 };
-      if (structure.applicableTo === 'all' || structure.applicableTo === 'class') {
+      if (!seats && (structure.applicableTo === 'all' || structure.applicableTo === 'class')) {
         const studentIds = await resolveStudentIdsForStructure(structure, tenantId);
         autoAssign = await assignFeesToStudents({
           studentIds,
@@ -373,6 +380,11 @@ router.post(
   validate(assignFeeStructureSchema),
   async (req, res, next) => {
     try {
+      if (hasSeats(req.tenant.orgType)) {
+        return res
+          .status(400)
+          .json({ error: 'Study centers assign a fee structure from the student form' });
+      }
       const { sectionId, dueDate } = req.body;
       const result = await assignFeesToSection(sectionId, req.params.id, req.tenant._id, dueDate);
       res.json(result);
