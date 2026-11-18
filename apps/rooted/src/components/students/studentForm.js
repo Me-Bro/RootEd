@@ -51,6 +51,7 @@ export function formFromStudent(student = {}, orgType) {
     dateOfBirth: day(student.dateOfBirth),
     gender: text(student.gender),
     email: '',
+    feeStructureId: '',
     phone: text(student.phone),
     whatsappNumber: text(student.whatsappNumber),
     whatsappSameAsPhone: Boolean(student.whatsappSameAsPhone),
@@ -124,6 +125,7 @@ export function studentPayload(form, { mode, orgType }) {
   if (create) {
     put('admissionNo', form.admissionNo);
     put('email', form.email);
+    put('feeStructureId', form.feeStructureId);
   }
 
   const address = Object.fromEntries(

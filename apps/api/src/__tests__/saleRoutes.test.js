@@ -202,13 +202,13 @@ describe('plan structures', () => {
     ctx.monthly = month.body;
   });
 
-  test('a regular fee structure still auto-assigns as before', async () => {
+  test('a regular fee structure is per-learner in a study center: nothing is auto-assigned', async () => {
     const res = await call('post', '/fee/structures', 'owner', structureBody('Library fee', 50));
     expect(res.status).toBe(201);
     expect(res.body.plan).toBeUndefined();
-    // Two members, the walk-in is skipped.
-    expect(res.body.autoAssign.created).toBe(2);
-    await FeeAssignment.deleteMany({ tenantId: tenants.study._id });
+    expect(res.body.applicableTo).toBe('student');
+    expect(res.body.autoAssign).toEqual({ created: 0, skipped: 0 });
+    expect(await FeeAssignment.countDocuments({ tenantId: tenants.study._id })).toBe(0);
     ctx.regular = res.body;
   });
 

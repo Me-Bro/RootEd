@@ -512,6 +512,7 @@ function StructureSummary({ summaryQuery }) {
 
 export default function FeeStructuresPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [yearId, setYearId] = useState('');
   const [classFilter, setClassFilter] = useState('');
   const [search, setSearch] = useState('');
@@ -655,9 +656,11 @@ export default function FeeStructuresPage() {
                 <StructureSummary summaryQuery={summaryQueries[i]} />
               </CardContent>
               <CardFooter className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" onClick={() => setAssignFor(s)}>
-                  {t('fee.structures.assignToSectionTitle')}
-                </Button>
+                {!hasSeats(user?.orgType) && (
+                  <Button size="sm" variant="outline" onClick={() => setAssignFor(s)}>
+                    {t('fee.structures.assignToSectionTitle')}
+                  </Button>
+                )}
                 <Button size="sm" variant="outline" onClick={() => setEditFor(s)}>
                   {t('common.edit')}
                 </Button>

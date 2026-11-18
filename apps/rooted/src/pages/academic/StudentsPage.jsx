@@ -48,6 +48,16 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
     gcTime: 0,
   });
 
+  // Study centers pick one fee structure here (plans are sold at the desk instead).
+  // A role without fees:read gets a 403, so the field simply does not show.
+  const { data: feeStructures = [] } = useQuery({
+    queryKey: ['fee-structures', 'for-student-form'],
+    queryFn: () => api.get('/fee/structures').then((r) => r.data),
+    enabled: autoAdmission && open,
+    retry: false,
+  });
+  const assignable = feeStructures.filter((s) => s.isActive !== false && !s.plan?.kind);
+
   const mutation = useMutation({
     mutationFn: (data) =>
       api
@@ -59,6 +69,7 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
         name: `${student.firstName} ${student.lastName}`,
         email: student.account?.email,
         loginError: student.loginError,
+        feeError: student.feeError,
       });
       onOpenChange(false);
       setForm(formFromStudent({}, orgType));
@@ -184,6 +195,26 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
             />
             <p className="text-xs text-muted-foreground">{t('academic.studentForm.emailHint')}</p>
           </div>
+          {assignable.length > 0 && (
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <label htmlFor="student-fee-structure" className="text-sm font-medium">
+                {t('academic.students.feeStructure')}
+              </label>
+              <select
+                id="student-fee-structure"
+                value={form.feeStructureId}
+                onChange={update('feeStructureId')}
+                className={selectCls}
+              >
+                <option value="">{t('academic.students.feeStructureNone')}</option>
+                {assignable.map((s) => (
+                  <option key={s._id} value={s._id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <StudentExtraFields form={form} setForm={setForm} orgType={orgType} />
           {error && <p className="text-sm text-destructive sm:col-span-2">{error}</p>}
         </form>
@@ -395,6 +426,7 @@ export default function StudentsPage() {
                   reason: added.loginError,
                 })
               : t('academic.students.addedNext', { name: added.name })}
+          {added.feeError && ` ${t('academic.students.feeNotAssigned')}`}
         </p>
       )}
 
