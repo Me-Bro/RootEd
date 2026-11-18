@@ -43,6 +43,7 @@ import {
 import { markRead, getUnread, broadcastToRole } from '../services/notification.service.js';
 import { auditLog } from '../services/audit.service.js';
 import { blockToken } from '../services/auth.service.js';
+import { archiveTenant } from '../services/tenant.service.js';
 import { getTenantKey, decrypt } from '../utils/fieldEncryption.js';
 import { Tenant } from '../models/Tenant.js';
 import { AppError } from '../middleware/errorHandler.js';
@@ -388,6 +389,42 @@ router.delete('/gdpr/delete', async (req, res, next) => {
     });
 
     res.json({ message: 'Your data has been deleted.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Self-service archive ─────────────────────────────────────────────────────
+
+const archiveOrgSchema = z.object({ confirmName: z.string().min(1) });
+
+// An org admin closes their own org. Soft only: the tenant stops resolving (login and
+// every tenant route 404) and the data is kept for the retention window. Only a
+// super_admin can restore it (PATCH /admin/tenants/:id/restore).
+router.post('/archive', requirePermission('tenant:admin'), async (req, res, next) => {
+  try {
+    const { confirmName } = archiveOrgSchema.parse(req.body);
+    if (confirmName.trim() !== req.tenant.name) {
+      throw new AppError('Organization name does not match', 400);
+    }
+
+    const tenant = await archiveTenant(req.tenant._id);
+
+    await auditLog({
+      actorId: req.user.sub,
+      tenantId: tenant._id.toString(),
+      action: 'tenant.archived',
+      target: { model: 'Tenant', id: tenant._id },
+      ip: req.ip,
+    });
+
+    if (req.token) await blockToken(req.token, 15 * 60);
+
+    res.json({
+      status: tenant.status,
+      archivedAt: tenant.archivedAt,
+      dataRetentionUntil: tenant.dataRetentionUntil,
+    });
   } catch (err) {
     next(err);
   }
