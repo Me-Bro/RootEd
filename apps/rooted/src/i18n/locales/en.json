@@ -130,6 +130,12 @@
     "amPm": "AM or PM",
     "dateMin": "Date must be on or after {{date}}",
     "dateMax": "Date must be on or before {{date}}",
+    "calendarOpen": "Open calendar",
+    "calendarPrev": "Previous month",
+    "calendarNext": "Next month",
+    "calendarMonth": "Month",
+    "calendarYear": "Year",
+    "calendarToday": "Today",
     "loginState": {
       "none": "No login yet",
       "pending": "Waiting for password",
