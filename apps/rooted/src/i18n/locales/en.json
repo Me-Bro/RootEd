@@ -573,6 +573,7 @@
       "addStudent": "Add Student",
       "recentlyUsed": "Recently used",
       "admissionNo": "Admission No",
+      "admissionNoAutoHint": "Assigned automatically. Double-click to type your own.",
       "firstName": "First Name",
       "lastName": "Last Name",
       "section": "Section",

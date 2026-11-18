@@ -13,6 +13,7 @@ jest.unstable_mockModule('../services/storage.service.js', () => ({
   uploadBuffer,
   getSignedUrl: jest.fn().mockResolvedValue('https://files.test/doc.pdf'),
   deleteObject: jest.fn().mockResolvedValue(undefined),
+  getObjectBuffer: jest.fn().mockResolvedValue(null),
 }));
 
 const { MongoMemoryServer } = await import('mongodb-memory-server');
@@ -271,6 +272,45 @@ describe('POST /academic/students', () => {
 
   test('needs students:write', async () => {
     expect((await call('post', '/academic/students', 'teacher', base('P-013'))).status).toBe(403);
+  });
+});
+
+describe('auto admission numbers (study center)', () => {
+  const post = (body) => call('post', '/academic/students', 'studyAdmin', body, 'study');
+  const noNumber = { firstName: 'Auto', lastName: 'Learner' };
+
+  test('assigns counting plain numbers when none is sent', async () => {
+    const a = await post(noNumber);
+    const b = await post(noNumber);
+    expect(a.status).toBe(201);
+    expect(a.body.admissionNo).toBe('1');
+    expect(b.body.admissionNo).toBe('2');
+  });
+
+  test('a typed number is kept, and the preview skips taken numbers', async () => {
+    await post({ ...noNumber, admissionNo: '3' });
+    const peek = await call(
+      'get',
+      '/academic/students/next-admission-no',
+      'studyAdmin',
+      undefined,
+      'study'
+    );
+    expect(peek.body.admissionNo).toBe('4');
+    const c = await post(noNumber);
+    expect(c.body.admissionNo).toBe('4');
+  });
+
+  test('a duplicate typed number is still a 409', async () => {
+    const res = await post({ ...noNumber, admissionNo: '1' });
+    expect(res.status).toBe(409);
+  });
+
+  test('other org types still require one, and have no preview', async () => {
+    const res = await call('post', '/academic/students', 'admin', noNumber);
+    expect(res.status).toBe(400);
+    const peek = await call('get', '/academic/students/next-admission-no', 'admin');
+    expect(peek.status).toBe(404);
   });
 });
 

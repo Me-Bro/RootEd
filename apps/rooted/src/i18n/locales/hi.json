@@ -573,6 +573,7 @@
       "addStudent": "छात्र जोड़ें",
       "recentlyUsed": "हाल में उपयोग किया गया",
       "admissionNo": "प्रवेश क्रमांक",
+      "admissionNoAutoHint": "अपने आप तय होता है। अपना नंबर डालने के लिए डबल-क्लिक करें।",
       "firstName": "पहला नाम",
       "lastName": "अंतिम नाम",
       "section": "सेक्शन",
