@@ -40,6 +40,7 @@
     "organization": "Organization",
     "members": "Members",
     "joinPolicy": "Joining",
+    "closeOrg": "Close organization",
     "centreSettings": "Centre settings",
     "reportCardSettings": "Report card design",
     "seats": "Seats",
@@ -2525,6 +2526,16 @@
     "saved": "Report card design saved.",
     "saveFailed": "Could not save the report card design."
   },
+  "closeOrg": {
+    "title": "Close organization",
+    "description": "Archive this organization when you no longer need it.",
+    "effectAccess": "Everyone, including you, is signed out and can no longer log in.",
+    "effectData": "Nothing is deleted. Your data is kept for 90 days.",
+    "effectRestore": "Only the RootEd platform team can restore an archived organization.",
+    "confirmLabel": "Type \"{{name}}\" to confirm",
+    "button": "Close organization",
+    "closing": "Closing…"
+  },
   "joinPolicy": {
     "title": "Joining",
     "description": "How people can ask to join this organization.",
@@ -2536,6 +2547,8 @@
     "autoApprove": "Approve automatically",
     "autoApproveHint": "Anyone with the code joins immediately, with the roles you choose below. Use this only for a code you can control.",
     "currentCode": "Current join code",
+    "tapToCopy": "Tap to copy",
+    "copied": "Copied",
     "codeHint": "Case and spacing do not matter when it is typed in.",
     "rotateCode": "Generate a new code",
     "rotateHint": "The old code stops working immediately."

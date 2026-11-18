@@ -340,6 +340,12 @@ function getNavGroups(t, orgType) {
           permission: 'tenant:admin',
         },
         {
+          to: '/tenant/close',
+          label: t('nav.closeOrg'),
+          icon: Archive,
+          permission: 'tenant:admin',
+        },
+        {
           to: '/tenant/report-card',
           label: t('nav.reportCardSettings'),
           icon: FileText,
