@@ -1,9 +1,7 @@
-import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { Card, CardContent } from '../ui/Card.jsx';
-import { Button } from '../ui/Button.jsx';
 import { Badge } from '../ui/Badge.jsx';
 
 // "Ends today", "Ends in 2 days", "Ended 3 days ago": one phrase per row.
@@ -17,10 +15,9 @@ function expiryLabel(t, daysLeft) {
 
 /**
  * Members whose plan ends soon or just ended and who have not renewed, for the front
- * desk. The phone is a tap-to-call link; Renew opens the sale with the learner and plan
- * filled in (and, for a plan still running, the start date right after it ends).
+ * desk. The phone is a tap-to-call link.
  */
-export default function ExpiringPlans({ canRenew }) {
+export default function ExpiringPlans() {
   const { t } = useTranslation();
   const plans = useQuery({
     queryKey: ['expiring-plans'],
@@ -66,30 +63,6 @@ export default function ExpiringPlans({ canRenew }) {
                     {r.phone}
                   </a>
                 )}
-                {canRenew &&
-                  (r.renewable ? (
-                    <Link
-                      to="/fee/sell"
-                      state={{
-                        learner: {
-                          _id: r.studentId,
-                          firstName: r.firstName,
-                          lastName: r.lastName,
-                          phone: r.phone,
-                        },
-                        feeStructureId: r.feeStructureId,
-                        renewFrom: r.renewFrom,
-                      }}
-                    >
-                      <Button size="sm" variant="outline" type="button">
-                        {t('studyCenter.desk.renew')}
-                      </Button>
-                    </Link>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">
-                      {t('studyCenter.desk.renewUnavailable')}
-                    </span>
-                  ))}
               </div>
             </li>
           ))}

@@ -71,6 +71,11 @@ const STUDY_CENTER_HIDDEN = new Set([
   '/tenant/report-card',
   '/me/timetable',
   '/me/grades',
+  '/academic/subjects',
+  '/academic/my-classes',
+  // Front desk and plan sales are not offered yet.
+  '/desk',
+  '/fee/sell',
 ]);
 
 function getNavGroups(t, orgType) {

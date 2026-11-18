@@ -367,12 +367,14 @@ export default function ClassesSectionsPage() {
                           </p>
                         )}
                       </div>
-                      <Link
-                        to={`/academic/subjects?classId=${cls._id}`}
-                        className="ml-auto text-xs text-muted-foreground hover:underline"
-                      >
-                        {t('academic.classesSections.subjectsLink')}
-                      </Link>
+                      {!hasSeats(user?.orgType) && (
+                        <Link
+                          to={`/academic/subjects?classId=${cls._id}`}
+                          className="ml-auto text-xs text-muted-foreground hover:underline"
+                        >
+                          {t('academic.classesSections.subjectsLink')}
+                        </Link>
+                      )}
                       {canWrite && (
                         <Button
                           size="sm"

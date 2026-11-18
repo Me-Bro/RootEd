@@ -194,7 +194,6 @@ function NewStructureModal({ open, onOpenChange }) {
                   className={selectCls}
                 >
                   <option value="">{t('studyCenter.plan.regular')}</option>
-                  <option value="day_pass">{t('studyCenter.plan.dayPass')}</option>
                   <option value="shift_plan">{t('studyCenter.plan.shiftPlan')}</option>
                 </select>
               </div>
