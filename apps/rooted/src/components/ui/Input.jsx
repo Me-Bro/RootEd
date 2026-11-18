@@ -5,12 +5,14 @@ import { Input as InputPrimitive } from '@base-ui/react/input';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { DateInput } from '@/components/ui/DateInput';
+import { TimeInput } from '@/components/ui/TimeInput';
 
 function Input({ className, type, label, id, error, ...props }) {
   const inputId = id ?? (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
   const isPassword = type === 'password';
-  // Date fields are typed as DD-MM-YYYY; the native picker follows the browser locale.
-  const Control = type === 'date' ? DateInput : InputPrimitive;
+  // Date fields are typed as DD-MM-YYYY and time fields as hh:mm with AM/PM; the native
+  // pickers follow the browser/OS locale.
+  const Control = type === 'date' ? DateInput : type === 'time' ? TimeInput : InputPrimitive;
   const [revealed, setRevealed] = useState(false);
 
   return (
