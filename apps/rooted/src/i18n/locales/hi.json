@@ -126,6 +126,8 @@
   },
   "common": {
     "dateInvalid": "मान्य तारीख DD-MM-YYYY रूप में दर्ज करें",
+    "timeInvalid": "मान्य समय दर्ज करें, जैसे 08:30",
+    "amPm": "AM या PM",
     "dateMin": "तारीख {{date}} या उसके बाद की होनी चाहिए",
     "dateMax": "तारीख {{date}} या उससे पहले की होनी चाहिए",
     "loginState": {

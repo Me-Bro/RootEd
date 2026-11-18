@@ -126,6 +126,8 @@
   },
   "common": {
     "dateInvalid": "Enter a valid date as DD-MM-YYYY",
+    "timeInvalid": "Enter a valid time, for example 08:30",
+    "amPm": "AM or PM",
     "dateMin": "Date must be on or after {{date}}",
     "dateMax": "Date must be on or before {{date}}",
     "loginState": {
