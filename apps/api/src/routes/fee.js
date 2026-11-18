@@ -42,6 +42,7 @@ import {
   createFeeStructureSchema,
   updateFeeStructureSchema,
   assignFeeStructureSchema,
+  setStudentFeeStructureSchema,
   cloneFeeStructureSchema,
   createFeeDiscountSchema,
   recordFeePaymentSchema,
@@ -412,6 +413,83 @@ router.get('/assignments', requirePermission('fees:read'), async (req, res, next
     next(err);
   }
 });
+
+// Study centers: a learner holds one fee structure at a time (plans are sold at the
+// desk and carry coversFrom, so they are not counted here). Setting the same one is a
+// no-op; swapping is allowed only while nothing has been paid against the old one.
+router.put(
+  '/students/:studentId/structure',
+  requireSeatsOrg,
+  requirePermission('fees:write'),
+  validate(setStudentFeeStructureSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { studentId } = req.params;
+      const { feeStructureId } = req.body;
+
+      const student = await Student.findOne({ _id: studentId, tenantId }, 'kind').lean();
+      if (!student) return res.status(404).json({ error: 'Student not found' });
+      if (student.kind === 'walk_in') {
+        return res.status(400).json({ error: 'Walk-ins buy a day pass instead' });
+      }
+
+      const structure = await FeeStructure.findOne(
+        {
+          _id: feeStructureId,
+          tenantId,
+          isActive: { $ne: false },
+          'plan.kind': { $exists: false },
+        },
+        '_id'
+      ).lean();
+      if (!structure) return res.status(404).json({ error: 'Fee structure not found' });
+
+      const current = await FeeAssignment.find({
+        tenantId,
+        studentId,
+        coversFrom: { $exists: false },
+      }).lean();
+
+      if (current.some((a) => String(a.feeStructureId) === String(structure._id))) {
+        return res.json({ created: 0, skipped: 1 });
+      }
+      if (current.length) {
+        const paid = await FeePayment.exists({
+          tenantId,
+          assignmentId: { $in: current.map((a) => a._id) },
+          refunded: { $ne: true },
+        });
+        if (paid) {
+          return res
+            .status(409)
+            .json({ error: 'Payments were recorded against the current fee structure' });
+        }
+        await FeeAssignment.deleteMany({ tenantId, _id: { $in: current.map((a) => a._id) } });
+      }
+
+      const result = await assignFeesToStudents({
+        studentIds: [studentId],
+        feeStructureId: structure._id,
+        tenantId,
+      });
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'student.feeStructure.set',
+        target: { model: 'Student', id: studentId },
+        before: { feeStructureIds: current.map((a) => a.feeStructureId) },
+        after: { feeStructureId: structure._id },
+        ip: req.ip,
+      });
+
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.post(
   '/assignments/:id/discount',
