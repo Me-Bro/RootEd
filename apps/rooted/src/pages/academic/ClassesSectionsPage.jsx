@@ -28,9 +28,14 @@ function ClassModal({ open, onOpenChange, classItem, classLevelLabel, isSchoolTe
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const isEdit = Boolean(classItem);
+  const { user } = useAuth();
+  // A study center's batch is its shift, so it carries the hours (labels, nothing enforces them).
+  const showHours = hasSeats(user?.orgType);
   const [form, setForm] = useState({
     name: classItem?.name ?? '',
     gradeLevel: classItem?.gradeLevel ?? '',
+    startTime: classItem?.startTime ?? '',
+    endTime: classItem?.endTime ?? '',
   });
   const [error, setError] = useState('');
 
@@ -43,6 +48,12 @@ function ClassModal({ open, onOpenChange, classItem, classLevelLabel, isSchoolTe
             name: form.name,
             gradeLevel: form.gradeLevel === '' ? undefined : Number(form.gradeLevel),
           };
+      if (showHours) {
+        // An edit sends null to clear an hour; a create just leaves it out.
+        const empty = isEdit ? null : undefined;
+        body.startTime = form.startTime || empty;
+        body.endTime = form.endTime || empty;
+      }
       return isEdit
         ? api.patch(`/academic/classes/${classItem._id}`, body).then((r) => r.data)
         : api.post('/academic/classes', body).then((r) => r.data);
@@ -51,7 +62,7 @@ function ClassModal({ open, onOpenChange, classItem, classLevelLabel, isSchoolTe
       queryClient.invalidateQueries({ queryKey: CLASSES_QUERY_KEY });
       onOpenChange(false);
       if (!isEdit) {
-        setForm({ name: '', gradeLevel: '' });
+        setForm({ name: '', gradeLevel: '', startTime: '', endTime: '' });
         setError('');
       }
     },
@@ -107,6 +118,24 @@ function ClassModal({ open, onOpenChange, classItem, classLevelLabel, isSchoolTe
               onChange={(e) => setForm((f) => ({ ...f, gradeLevel: e.target.value }))}
             />
           )}
+          {showHours && (
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                type="time"
+                id="class-start-time"
+                label={t('studyCenter.shift.startTime')}
+                value={form.startTime}
+                onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
+              />
+              <Input
+                type="time"
+                id="class-end-time"
+                label={t('studyCenter.shift.endTime')}
+                value={form.endTime}
+                onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))}
+              />
+            </div>
+          )}
           {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
         <DialogFooter>
@@ -141,23 +170,12 @@ function SectionModal({
   const [form, setForm] = useState({
     name: sectionItem?.name ?? '',
     classTeacherId: sectionItem?.classTeacherId ?? '',
-    startTime: sectionItem?.startTime ?? '',
-    endTime: sectionItem?.endTime ?? '',
   });
   const [error, setError] = useState('');
-  const { user } = useAuth();
-  // A study center's shifts carry their hours; they are labels, nothing enforces them.
-  const showTimes = hasSeats(user?.orgType);
 
   const mutation = useMutation({
     mutationFn: () => {
       const body = { name: form.name, classTeacherId: form.classTeacherId || undefined };
-      if (showTimes) {
-        // An edit sends null to clear a time; a create just leaves it out.
-        const empty = isEdit ? null : undefined;
-        body.startTime = form.startTime || empty;
-        body.endTime = form.endTime || empty;
-      }
       return isEdit
         ? api.patch(`/academic/sections/${sectionItem._id}`, body).then((r) => r.data)
         : api.post('/academic/sections', { ...body, classId }).then((r) => r.data);
@@ -166,7 +184,7 @@ function SectionModal({
       queryClient.invalidateQueries({ queryKey: CLASSES_QUERY_KEY });
       onOpenChange(false);
       if (!isEdit) {
-        setForm({ name: '', classTeacherId: '', startTime: '', endTime: '' });
+        setForm({ name: '', classTeacherId: '' });
         setError('');
       }
     },
@@ -212,39 +230,18 @@ function SectionModal({
             required
             placeholder="A"
           />
-          {/* A study center's shift has no class teacher. */}
-          {!showTimes && (
-            <SelectField
-              label={t('academic.classesSections.assignTeacher')}
-              value={form.classTeacherId}
-              onValueChange={(v) => setForm((f) => ({ ...f, classTeacherId: v }))}
-              placeholder={t('academic.classesSections.selectTeacherPlaceholder')}
-            >
-              {staff.map((s) => (
-                <SelectItem key={s._id} value={s.userId}>
-                  {s.firstName} {s.lastName}
-                </SelectItem>
-              ))}
-            </SelectField>
-          )}
-          {showTimes && (
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                type="time"
-                id="section-start-time"
-                label={t('studyCenter.shift.startTime')}
-                value={form.startTime}
-                onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
-              />
-              <Input
-                type="time"
-                id="section-end-time"
-                label={t('studyCenter.shift.endTime')}
-                value={form.endTime}
-                onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))}
-              />
-            </div>
-          )}
+          <SelectField
+            label={t('academic.classesSections.assignTeacher')}
+            value={form.classTeacherId}
+            onValueChange={(v) => setForm((f) => ({ ...f, classTeacherId: v }))}
+            placeholder={t('academic.classesSections.selectTeacherPlaceholder')}
+          >
+            {staff.map((s) => (
+              <SelectItem key={s._id} value={s.userId}>
+                {s.firstName} {s.lastName}
+              </SelectItem>
+            ))}
+          </SelectField>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
         <DialogFooter>
@@ -271,6 +268,7 @@ export default function ClassesSectionsPage() {
   const orgType = user?.orgType;
   const isSchoolTerm = !orgType || orgType === 'school';
   const isBatch = isBatchOrgType(orgType);
+  const seatsOrg = hasSeats(orgType);
 
   const classLevelLabel = isSchoolTerm
     ? t('academic.classesSections.classLevel')
@@ -299,7 +297,9 @@ export default function ClassesSectionsPage() {
         title={
           isSchoolTerm
             ? t('academic.classesSections.title')
-            : `${classLevelLabel} & ${sectionLabel}`
+            : seatsOrg
+              ? `${classLevelLabel}es`
+              : `${classLevelLabel} & ${sectionLabel}`
         }
         action={
           canWrite && (
@@ -326,6 +326,11 @@ export default function ClassesSectionsPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-lg font-semibold">{cls.name}</p>
+                  {seatsOrg && (
+                    <p className="text-xs text-muted-foreground">
+                      {formatShiftHours(cls.startTime, cls.endTime)}
+                    </p>
+                  )}
                   {!isBatch && cls.gradeLevel != null && (
                     <p className="text-xs text-muted-foreground">
                       {t('academic.classesSections.gradeLevel')}: {cls.gradeLevel}
@@ -339,56 +344,59 @@ export default function ClassesSectionsPage() {
                 )}
               </div>
 
-              <div className="mt-3 flex flex-col gap-2">
-                {(cls.sections ?? []).map((section) => (
-                  <div
-                    key={section._id}
-                    className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium">{section.name}</p>
-                      {hasSeats(orgType) ? (
-                        <p className="text-xs text-muted-foreground">
-                          {formatShiftHours(section.startTime, section.endTime)}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">
-                          {section.classTeacherId
-                            ? (teacherNameById.get(section.classTeacherId) ??
-                              t('academic.classesSections.noTeacherAssigned'))
-                            : t('academic.classesSections.noTeacherAssigned')}
-                        </p>
+              {/* A study center's batch is the shift: no groups under it. */}
+              {!seatsOrg && (
+                <div className="mt-3 flex flex-col gap-2">
+                  {(cls.sections ?? []).map((section) => (
+                    <div
+                      key={section._id}
+                      className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">{section.name}</p>
+                        {hasSeats(orgType) ? (
+                          <p className="text-xs text-muted-foreground">
+                            {formatShiftHours(section.startTime, section.endTime)}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">
+                            {section.classTeacherId
+                              ? (teacherNameById.get(section.classTeacherId) ??
+                                t('academic.classesSections.noTeacherAssigned'))
+                              : t('academic.classesSections.noTeacherAssigned')}
+                          </p>
+                        )}
+                      </div>
+                      <Link
+                        to={`/academic/subjects?classId=${cls._id}`}
+                        className="ml-auto text-xs text-muted-foreground hover:underline"
+                      >
+                        {t('academic.classesSections.subjectsLink')}
+                      </Link>
+                      {canWrite && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEditingSection(section)}
+                        >
+                          {t('common.edit')}
+                        </Button>
                       )}
                     </div>
-                    <Link
-                      to={`/academic/subjects?classId=${cls._id}`}
-                      className="ml-auto text-xs text-muted-foreground hover:underline"
+                  ))}
+                  {canWrite && (
+                    <button
+                      type="button"
+                      onClick={() => setAddSectionFor(cls._id)}
+                      className="rounded-lg border border-dashed border-border px-3 py-2 text-left text-sm text-muted-foreground hover:border-primary hover:text-primary"
                     >
-                      {t('academic.classesSections.subjectsLink')}
-                    </Link>
-                    {canWrite && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setEditingSection(section)}
-                      >
-                        {t('common.edit')}
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                {canWrite && (
-                  <button
-                    type="button"
-                    onClick={() => setAddSectionFor(cls._id)}
-                    className="rounded-lg border border-dashed border-border px-3 py-2 text-left text-sm text-muted-foreground hover:border-primary hover:text-primary"
-                  >
-                    {isSchoolTerm
-                      ? t('academic.classesSections.newSection')
-                      : `Add ${sectionLabel}`}
-                  </button>
-                )}
-              </div>
+                      {isSchoolTerm
+                        ? t('academic.classesSections.newSection')
+                        : `Add ${sectionLabel}`}
+                    </button>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}

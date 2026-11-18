@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { isBatchOrgType, resolveOrgTerm } from '@rooted/shared/utils';
+import { hasSeats, isBatchOrgType, resolveOrgTerm } from '@rooted/shared/utils';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Button } from '../ui/Button.jsx';
@@ -30,6 +30,7 @@ export default function CreateSectionDialog({ open, onOpenChange, classes, class
   const orgType = user?.orgType;
   const isSchoolTerm = !orgType || orgType === 'school';
   const isBatch = isBatchOrgType(orgType);
+  const seatsOrg = hasSeats(orgType);
   const classLabel = isSchoolTerm
     ? t('academic.students.classLabel')
     : resolveOrgTerm(orgType, 'classLevel');
@@ -44,12 +45,25 @@ export default function CreateSectionDialog({ open, onOpenChange, classes, class
   );
   const [className, setClassName] = useState('');
   const [sectionName, setSectionName] = useState(DEFAULT_SECTION_NAME);
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [error, setError] = useState('');
 
   const creatingClass = selectedClass === NEW_CLASS;
 
   const mutation = useMutation({
     mutationFn: async () => {
+      if (seatsOrg) {
+        // A study center's batch is its shift: one request makes it and its one section.
+        const batch = await api
+          .post('/academic/classes', {
+            name: className,
+            startTime: startTime || undefined,
+            endTime: endTime || undefined,
+          })
+          .then((r) => r.data);
+        return batch.section;
+      }
       let targetClassId = selectedClass;
       if (creatingClass) {
         const cls = await api.post('/academic/classes', { name: className }).then((r) => r.data);
@@ -121,6 +135,24 @@ export default function CreateSectionDialog({ open, onOpenChange, classes, class
               onChange={(e) => setClassName(e.target.value)}
               required
             />
+          )}
+          {seatsOrg && (
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                type="time"
+                id="batch-start-time"
+                label={t('studyCenter.shift.startTime')}
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+              />
+              <Input
+                type="time"
+                id="batch-end-time"
+                label={t('studyCenter.shift.endTime')}
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+              />
+            </div>
           )}
           {!oneStep && (
             <Input

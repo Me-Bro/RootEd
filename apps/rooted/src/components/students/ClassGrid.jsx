@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '../../lib/utils.js';
 import SectionChips from './SectionChips.jsx';
 import RosterInfiniteList from './RosterInfiniteList.jsx';
+import { formatShiftHours } from '../../utils/studyCenter.js';
 
 /**
  * Replaces the desktop's 40-option <select> for browsing students by class.
@@ -23,6 +24,7 @@ export default function ClassGrid({
   onSelectSection,
   canCreateSection,
   onAddSection,
+  singleTier = false,
 }) {
   const { t } = useTranslation();
   if (!classes.length) return null;
@@ -56,7 +58,9 @@ export default function ClassGrid({
                 <div>
                   <p className="text-sm font-medium">{c.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {t('academic.students.sectionCount', { count: sectionCount })}
+                    {singleTier
+                      ? formatShiftHours(c.startTime, c.endTime)
+                      : t('academic.students.sectionCount', { count: sectionCount })}
                   </p>
                 </div>
               </div>
@@ -70,12 +74,17 @@ export default function ClassGrid({
             </button>
             {isExpanded && (
               <div className="rounded-b-lg border border-t-0 border-primary bg-primary/5 p-2.5">
-                <SectionChips
-                  sections={c.sections || []}
-                  activeId={activeSectionId}
-                  onSelect={onSelectSection}
-                />
-                {canCreateSection ? (
+                {/* A study center's batch is one shift: its roster opens straight away. */}
+                {singleTier ? (
+                  c.sections?.[0] && <RosterInfiniteList sectionId={c.sections[0]._id} />
+                ) : (
+                  <SectionChips
+                    sections={c.sections || []}
+                    activeId={activeSectionId}
+                    onSelect={onSelectSection}
+                  />
+                )}
+                {singleTier ? null : canCreateSection ? (
                   <button
                     type="button"
                     onClick={() => onAddSection(c._id)}
@@ -88,7 +97,7 @@ export default function ClassGrid({
                     {t('academic.students.askAdminCreateSection')}
                   </p>
                 )}
-                {activeSectionId && (
+                {!singleTier && activeSectionId && (
                   <div className="mt-3">
                     <RosterInfiniteList sectionId={activeSectionId} />
                   </div>

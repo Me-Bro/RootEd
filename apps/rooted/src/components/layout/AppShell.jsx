@@ -79,8 +79,10 @@ function getNavGroups(t, orgType) {
   // coverage stays intact for the common case.
   const studentLabel =
     orgType && orgType !== 'school' ? resolveOrgTerm(orgType, 'student') : t('nav.students');
-  const classesSectionsLabel =
-    orgType && orgType !== 'school'
+  // A study center has one tier (its batches are its shifts), so no "& Group".
+  const classesSectionsLabel = hasSeats(orgType)
+    ? `${resolveOrgTerm(orgType, 'classLevel')}es`
+    : orgType && orgType !== 'school'
       ? `${resolveOrgTerm(orgType, 'classLevel')} & ${resolveOrgTerm(orgType, 'section')}`
       : t('nav.classesSections');
 

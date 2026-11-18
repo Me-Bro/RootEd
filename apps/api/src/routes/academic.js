@@ -69,6 +69,7 @@ import { encryptField, decryptField } from '../utils/fieldEncryption.js';
 import { mapImportRow } from '../utils/studentImport.js';
 import { loadTeachingLoad } from '../services/teachingLoad.service.js';
 import { endAllocationsFor } from '../services/seat.service.js';
+import { createBatch, updateBatch } from '../services/batch.service.js';
 import { TimetablePublish } from '../models/TimetablePublish.js';
 import { AttendanceRecord } from '../models/AttendanceRecord.js';
 import { Grade } from '../models/Grade.js';
@@ -207,6 +208,15 @@ router.patch('/terms/:id', requirePermission('tenant:admin'), async (req, res, n
 router.post('/classes', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
     const { name, gradeLevel } = req.body;
+    if (hasSeats(req.tenant.orgType)) {
+      // A study center's batch is its shift: it carries the hours and owns one section.
+      const times = sectionTimesSchema.parse({
+        startTime: req.body.startTime,
+        endTime: req.body.endTime,
+      });
+      const { cls, section } = await createBatch(req.tenant._id, { name, ...times });
+      return res.status(201).json({ ...cls.toObject(), section });
+    }
     const cls = await Class.create({ tenantId: req.tenant._id, name, gradeLevel });
     res.status(201).json(cls);
   } catch (err) {
@@ -242,6 +252,18 @@ router.get('/classes', requirePermission('students:read'), async (req, res, next
 router.patch('/classes/:id', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
     const { name, gradeLevel } = req.body;
+    if (hasSeats(req.tenant.orgType)) {
+      const times = sectionTimesSchema.parse({
+        startTime: req.body.startTime,
+        endTime: req.body.endTime,
+      });
+      const patch = { name };
+      // A null clears an hour; a key left out is untouched.
+      for (const key of ['startTime', 'endTime']) if (key in req.body) patch[key] = times[key];
+      const batch = await updateBatch(req.tenant._id, req.params.id, patch);
+      if (!batch) return res.status(404).json({ error: 'Not found' });
+      return res.json(batch);
+    }
     const cls = await Class.findOneAndUpdate(
       { _id: req.params.id, tenantId: req.tenant._id },
       { $set: { name, gradeLevel } },
@@ -259,6 +281,11 @@ router.patch('/classes/:id', requirePermission('tenant:admin'), async (req, res,
 router.post('/sections', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
     const { classId, name, classTeacherId } = req.body;
+    if (hasSeats(req.tenant.orgType)) {
+      return res
+        .status(400)
+        .json({ error: 'A batch is its own shift. Create a batch instead of a group.' });
+    }
     const times = sectionTimesSchema.parse({
       startTime: req.body.startTime,
       endTime: req.body.endTime,
@@ -290,6 +317,10 @@ router.get('/sections', requirePermission('students:read'), async (req, res, nex
 router.patch('/sections/:id', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
     const body = { ...req.body };
+    if (hasSeats(req.tenant.orgType) && ['name', 'startTime', 'endTime'].some((k) => k in body)) {
+      // The section mirrors its batch; renaming or re-timing it here would let them drift.
+      return res.status(400).json({ error: 'Edit the batch to change its name or hours.' });
+    }
     // Shift hours are the only section fields with a format; a null clears one.
     if ('startTime' in body || 'endTime' in body) {
       const times = sectionTimesSchema.parse({ startTime: body.startTime, endTime: body.endTime });
