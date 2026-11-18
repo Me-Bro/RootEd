@@ -32,7 +32,21 @@ export async function resolveTenant(req, res, next) {
     // only a peek to pick req.tenant; authenticate() still does the real
     // enforcement (blocklist/revocation) downstream in each tenant router.
     const tenant = await resolveTenantFromToken(req);
-    if (!tenant) return next(new AppError('Tenant not found', 404));
+    if (!tenant) {
+      // A bad/expired bearer token must be a 401 so the client refreshes and retries,
+      // not a 404 that looks like a missing tenant.
+      const bearer = req.headers.authorization?.startsWith('Bearer ')
+        ? req.headers.authorization.slice(7)
+        : null;
+      if (bearer) {
+        try {
+          verifyAccessToken(bearer);
+        } catch {
+          return next(new AppError('Unauthorized', 401));
+        }
+      }
+      return next(new AppError('Tenant not found', 404));
+    }
     req.tenant = tenant;
     next();
   } catch (err) {
