@@ -83,12 +83,12 @@ test('no-subdomain Host + tenantId claim pointing at a suspended tenant → 404'
   expect(err.status).toBe(404);
 });
 
-test('no-subdomain Host + garbage token → 404, not a 500', async () => {
+test('no-subdomain Host + garbage/expired token → 401 so the client refreshes, not a 500', async () => {
   const req = mockReq({ hostname: 'rooted.app', token: 'not-a-real-jwt' });
   const next = await run(req);
 
   const err = next.mock.calls[0][0];
-  expect(err.status).toBe(404);
+  expect(err.status).toBe(401);
 });
 
 test('PORTAL_SUBDOMAIN Host is treated as the general portal, not a real tenant lookup', async () => {
