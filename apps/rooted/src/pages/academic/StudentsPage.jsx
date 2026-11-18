@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { hasSeats } from '@rooted/shared/utils';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight } from 'lucide-react';
 import api from '../../lib/api.js';
@@ -36,6 +37,16 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
   const [showCreateSection, setShowCreateSection] = useState(false);
   const [form, setForm] = useState(() => formFromStudent({}, orgType));
   const [error, setError] = useState('');
+  // Study centers number learners themselves; double-click switches to typing.
+  const autoAdmission = hasSeats(orgType);
+  const [overrideAdmission, setOverrideAdmission] = useState(false);
+  const { data: nextAdmissionNo } = useQuery({
+    queryKey: ['students', 'next-admission-no'],
+    queryFn: () => api.get('/academic/students/next-admission-no').then((r) => r.data.admissionNo),
+    enabled: autoAdmission && open,
+    staleTime: 0,
+    gcTime: 0,
+  });
 
   const mutation = useMutation({
     mutationFn: (data) =>
@@ -51,6 +62,7 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
       });
       onOpenChange(false);
       setForm(formFromStudent({}, orgType));
+      setOverrideAdmission(false);
       setError('');
     },
     onError: (err) => setError(err.response?.data?.error || t('academic.students.addFailed')),
@@ -77,12 +89,32 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
           }}
           className="grid grid-cols-1 gap-4 sm:grid-cols-2"
         >
-          <Input
-            label={t('academic.students.admissionNo')}
-            value={form.admissionNo}
-            onChange={update('admissionNo')}
-            required
-          />
+          {autoAdmission && !overrideAdmission ? (
+            <div className="flex flex-col gap-1">
+              <Input
+                label={t('academic.students.admissionNo')}
+                value={nextAdmissionNo ?? ''}
+                readOnly
+                onDoubleClick={() => {
+                  setOverrideAdmission(true);
+                  setForm((f) => ({ ...f, admissionNo: nextAdmissionNo ?? '' }));
+                }}
+                title={t('academic.students.admissionNoAutoHint')}
+                className="cursor-pointer bg-muted/40"
+              />
+              <p className="text-xs text-muted-foreground">
+                {t('academic.students.admissionNoAutoHint')}
+              </p>
+            </div>
+          ) : (
+            <Input
+              label={t('academic.students.admissionNo')}
+              value={form.admissionNo}
+              onChange={update('admissionNo')}
+              required
+              autoFocus={overrideAdmission}
+            />
+          )}
           <Input
             label={t('academic.students.firstName')}
             value={form.firstName}

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { indianMobileSchema } from './studyCenter.schema.js';
+import { hasSeats } from '../utils/orgTypes.js';
 import { isValidAadhaar, normalizeAadhaar, studentGroupFor } from '../utils/student.js';
 
 export const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -162,7 +163,9 @@ function build(mode, orgType) {
     // The admission number is the student's identity in the roster and in
     // imports, so it is set once and never patched. A new student is always
     // active; status and its reason only change through an update.
-    shape.admissionNo = z.string().trim().min(1).max(50);
+    // A study center may leave it out: the server then assigns the next number.
+    const admissionNo = z.string().trim().min(1).max(50);
+    shape.admissionNo = hasSeats(orgType) ? admissionNo.optional() : admissionNo;
     shape.email = f(z.string().trim().toLowerCase().email());
   } else {
     shape.status = z.enum(STUDENT_STATUSES).optional();

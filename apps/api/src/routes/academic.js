@@ -33,7 +33,7 @@ import {
   studentUpdateSchemaFor,
   sectionTimesSchema,
 } from '@rooted/shared/schemas';
-import { scoreToLetter, isBatchOrgType, isModuleEnabled } from '@rooted/shared/utils';
+import { scoreToLetter, isBatchOrgType, isModuleEnabled, hasSeats } from '@rooted/shared/utils';
 import { REPORT_CARD_EXCLUDED_ASSESSMENT_TYPES } from '@rooted/shared/constants';
 import { authenticate } from '../middleware/authenticate.js';
 import {
@@ -52,6 +52,7 @@ import { Section } from '../models/Section.js';
 import { Subject } from '../models/Subject.js';
 import { env } from '../config/env.js';
 import { Student } from '../models/Student.js';
+import { allocateAdmissionNo, peekAdmissionNo } from '../services/counter.service.js';
 import { Enrollment } from '../models/Enrollment.js';
 import { Role } from '../models/Role.js';
 import { User } from '../models/User.js';
@@ -535,8 +536,12 @@ router.post('/students', requirePermission('students:write'), async (req, res, n
     const tenantId = req.tenant._id;
     const { email, aadhaar, ...fields } = body;
 
-    const existing = await Student.findOne({ tenantId, admissionNo: fields.admissionNo });
-    if (existing) return res.status(409).json({ error: 'Admission number already exists' });
+    // Study centers may omit it; the server then assigns the next free number.
+    const autoNumber = !fields.admissionNo;
+    if (!autoNumber) {
+      const existing = await Student.findOne({ tenantId, admissionNo: fields.admissionNo });
+      if (existing) return res.status(409).json({ error: 'Admission number already exists' });
+    }
 
     // Without this a caller could point a student at another tenant's section.
     if (fields.sectionId && !(await sectionExists(tenantId, fields.sectionId))) {
@@ -547,7 +552,19 @@ router.post('/students', requirePermission('students:write'), async (req, res, n
       fields.aadhaarLast4 = aadhaar.slice(-4);
     }
 
-    const student = await Student.create({ tenantId, ...fields });
+    let student;
+    for (let attempt = 0; ; attempt++) {
+      if (autoNumber) fields.admissionNo = await allocateAdmissionNo(tenantId);
+      try {
+        student = await Student.create({ tenantId, ...fields });
+        break;
+      } catch (err) {
+        // Two desks taking the same number at once: the unique index decides and
+        // the loser draws the next one. A typed number is a real conflict.
+        const onAdmissionNo = err.code === 11000 && err.keyPattern?.admissionNo;
+        if (!(autoNumber && onAdmissionNo && attempt < 5)) throw err;
+      }
+    }
     await ensureEnrollment(tenantId, student);
 
     if (aadhaar) {
@@ -661,6 +678,23 @@ router.get('/students', requirePermission('students:read'), async (req, res, nex
     next(err);
   }
 });
+
+// What the next auto-assigned admission number will be (study centers). Not
+// reserved: the number is drawn again at save time.
+router.get(
+  '/students/next-admission-no',
+  requirePermission('students:write'),
+  async (req, res, next) => {
+    try {
+      if (!hasSeats(req.tenant.orgType)) {
+        return res.status(404).json({ error: 'Admission numbers are typed for this organization' });
+      }
+      res.json({ admissionNo: await peekAdmissionNo(req.tenant._id) });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.get('/students/:id', requirePermission('students:read'), async (req, res, next) => {
   try {
