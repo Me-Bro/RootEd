@@ -2,18 +2,12 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
-import { useAuth } from '../../contexts/useAuth.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
-import { formatCurrency, formatDate } from '../../utils/intl.js';
-import {
-  daysAgoString,
-  localDayString,
-  localMonthString,
-  splitMinutes,
-} from '../../utils/studyCenter.js';
+import { formatDate } from '../../utils/intl.js';
+import { localDayString, localMonthString, splitMinutes } from '../../utils/studyCenter.js';
 
 function Stat({ label, value, testId }) {
   return (
@@ -38,14 +32,10 @@ function useDuration() {
 // calendar; the dates here only choose what to look at.
 export default function StudyCenterReportsPage() {
   const { t } = useTranslation();
-  const { user } = useAuth();
-  const canSeeSales = (user?.permissions ?? []).includes('fees:read');
   const duration = useDuration();
 
   const [month, setMonth] = useState(localMonthString());
   const [day, setDay] = useState(localDayString());
-  const [from, setFrom] = useState(daysAgoString(29));
-  const [to, setTo] = useState(localDayString());
 
   const occupancy = useQuery({
     queryKey: ['report', 'occupancy'],
@@ -63,12 +53,6 @@ export default function StudyCenterReportsPage() {
     queryFn: () =>
       api.get('/academic/visits/reports/no-shows', { params: { date: day } }).then((r) => r.data),
     enabled: Boolean(day),
-  });
-  const sales = useQuery({
-    queryKey: ['report', 'sales', from, to],
-    queryFn: () =>
-      api.get('/fee/reports/day-pass-sales', { params: { from, to } }).then((r) => r.data),
-    enabled: canSeeSales && Boolean(from) && Boolean(to) && to >= from,
   });
 
   const o = occupancy.data;
@@ -96,11 +80,6 @@ export default function StudyCenterReportsPage() {
                 testId="stat-held"
                 label={t('studyCenter.reports.heldByMembers')}
                 value={o.held}
-              />
-              <Stat
-                testId="stat-pool"
-                label={t('studyCenter.reports.dayPassPool')}
-                value={`${o.poolFree} / ${o.poolSeats}`}
               />
             </div>
             <DataTable
@@ -204,56 +183,6 @@ export default function StudyCenterReportsPage() {
           ))}
         </DataTable>
       </section>
-
-      {canSeeSales && (
-        <section className="flex flex-col gap-3" aria-labelledby="rep-sales">
-          <h2 id="rep-sales" className="text-sm font-semibold">
-            {t('studyCenter.reports.sales')}
-          </h2>
-          <div className="grid max-w-md grid-cols-2 gap-3">
-            <Input
-              id="report-from"
-              type="date"
-              label={t('studyCenter.reports.from')}
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-            />
-            <Input
-              id="report-to"
-              type="date"
-              label={t('studyCenter.reports.to')}
-              value={to}
-              onChange={(e) => setTo(e.target.value)}
-            />
-          </div>
-          <DataTable
-            headers={[
-              t('studyCenter.reports.day'),
-              t('studyCenter.reports.passesSold'),
-              t('studyCenter.reports.revenue'),
-            ]}
-            isLoading={sales.isLoading}
-            isEmpty={!sales.isLoading && (sales.data?.days ?? []).length === 0}
-            emptyMessage={t('studyCenter.reports.noSales')}
-          >
-            {(sales.data?.days ?? []).map((d) => (
-              <TableRow key={d.day}>
-                <TableCell className="font-medium">{formatDate(d.day)}</TableCell>
-                <TableCell>{d.count}</TableCell>
-                <TableCell>{formatCurrency(d.revenue)}</TableCell>
-              </TableRow>
-            ))}
-          </DataTable>
-          {sales.data && sales.data.totalCount > 0 && (
-            <p className="text-xs text-muted-foreground" data-testid="sales-total">
-              {t('studyCenter.reports.salesTotal', {
-                count: sales.data.totalCount,
-                amount: formatCurrency(sales.data.totalRevenue),
-              })}
-            </p>
-          )}
-        </section>
-      )}
     </div>
   );
 }

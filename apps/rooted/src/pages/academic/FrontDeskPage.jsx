@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
@@ -26,7 +26,6 @@ export default function FrontDeskPage() {
   const location = useLocation();
   const queryClient = useQueryClient();
   const canSeeFees = (user?.permissions ?? []).includes('fees:read');
-  const canSell = (user?.permissions ?? []).includes('fees:collect');
 
   const [learner, setLearner] = useState(location.state?.learner ?? null);
   const [seatId, setSeatId] = useState('');
@@ -136,7 +135,7 @@ export default function FrontDeskPage() {
         </Card>
       )}
 
-      {canSeeFees && <ExpiringPlans canRenew={canSell} />}
+      {canSeeFees && <ExpiringPlans />}
 
       <Card>
         <CardContent className="flex flex-col gap-4 pt-4">
@@ -202,11 +201,6 @@ export default function FrontDeskPage() {
                     >
                       {t('studyCenter.desk.checkIn')}
                     </Button>
-                    <Link to="/fee/sell" state={{ learner }}>
-                      <Button variant="outline" type="button">
-                        {t('studyCenter.desk.sellPlan')}
-                      </Button>
-                    </Link>
                   </div>
                 </div>
               )}
