@@ -130,6 +130,12 @@
     "amPm": "AM या PM",
     "dateMin": "तारीख {{date}} या उसके बाद की होनी चाहिए",
     "dateMax": "तारीख {{date}} या उससे पहले की होनी चाहिए",
+    "calendarOpen": "कैलेंडर खोलें",
+    "calendarPrev": "पिछला महीना",
+    "calendarNext": "अगला महीना",
+    "calendarMonth": "महीना",
+    "calendarYear": "वर्ष",
+    "calendarToday": "आज",
     "loginState": {
       "none": "अभी लॉगिन नहीं",
       "pending": "पासवर्ड का इंतज़ार",

@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input as InputPrimitive } from '@base-ui/react/input';
+import { Popover } from '@base-ui/react/popover';
+import { CalendarDays } from 'lucide-react';
+
+import { cn } from '@/lib/utils';
+import { DateCalendar } from '@/components/ui/DateCalendar';
 
 // A typed date field that always reads DD-MM-YYYY, whatever the browser locale.
 // The value in and out is the ISO `YYYY-MM-DD` string a native date input uses (or ''),
@@ -34,9 +39,22 @@ function maskDate(raw) {
   return digits;
 }
 
-function DateInput({ value, onChange, min, max, name, id, ...props }) {
+function DateInput({
+  value,
+  onChange,
+  min,
+  max,
+  name,
+  id,
+  className,
+  disabled,
+  readOnly,
+  ...props
+}) {
   const { t } = useTranslation();
   const ref = useRef(null);
+  const anchorRef = useRef(null);
+  const [open, setOpen] = useState(false);
   const [text, setText] = useState(() => isoToDisplay(value));
   const [seen, setSeen] = useState(value ?? '');
 
@@ -64,20 +82,56 @@ function DateInput({ value, onChange, min, max, name, id, ...props }) {
     onChange?.({ target: { value: displayToIso(next), name, id } });
   }
 
+  function pick(nextIso) {
+    setText(isoToDisplay(nextIso));
+    onChange?.({ target: { value: nextIso, name, id } });
+    setOpen(false);
+    ref.current?.focus();
+  }
+
   return (
-    <InputPrimitive
-      {...props}
-      ref={ref}
-      id={id}
-      name={name}
-      type="text"
-      inputMode="numeric"
-      autoComplete="off"
-      maxLength={10}
-      placeholder={props.placeholder ?? 'DD-MM-YYYY'}
-      value={text}
-      onChange={handleChange}
-    />
+    <div ref={anchorRef} className="relative w-full">
+      <InputPrimitive
+        {...props}
+        ref={ref}
+        id={id}
+        name={name}
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        maxLength={10}
+        placeholder={props.placeholder ?? 'DD-MM-YYYY'}
+        className={cn(className, 'pr-9')}
+        disabled={disabled}
+        readOnly={readOnly}
+        value={text}
+        onChange={handleChange}
+      />
+      <Popover.Root open={open} onOpenChange={setOpen}>
+        <Popover.Trigger
+          type="button"
+          disabled={disabled || readOnly}
+          aria-label={t('common.calendarOpen')}
+          className="absolute inset-y-0 right-1 my-auto flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50"
+        >
+          <CalendarDays className="size-4" />
+        </Popover.Trigger>
+        <Popover.Portal>
+          <Popover.Positioner
+            anchor={anchorRef}
+            side="bottom"
+            align="end"
+            sideOffset={4}
+            className="z-[70]"
+          >
+            <Popover.Popup className="rounded-lg bg-popover p-3 text-popover-foreground shadow-lg ring-1 ring-foreground/10 outline-none">
+              {/* Remounts on each open so the grid starts at the current value. */}
+              <DateCalendar value={iso} min={min} max={max} onPick={pick} />
+            </Popover.Popup>
+          </Popover.Positioner>
+        </Popover.Portal>
+      </Popover.Root>
+    </div>
   );
 }
 
