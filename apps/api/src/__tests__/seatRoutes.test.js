@@ -123,22 +123,34 @@ beforeAll(async () => {
     await makeMember(tuition.tenant, tuition.roles.tenant_admin, 'tuiown')
   ).token;
 
-  const klass = await Class.create({ tenantId: study.tenant._id, name: 'Batches' });
+  // A study center's batch is its shift: a class with hours and one mirrored section.
+  const morningBatch = await Class.create({
+    tenantId: study.tenant._id,
+    name: 'Morning',
+    startTime: '06:00',
+    endTime: '14:00',
+  });
+  const eveningBatch = await Class.create({
+    tenantId: study.tenant._id,
+    name: 'Evening',
+    startTime: '14:00',
+    endTime: '22:00',
+  });
   ctx.morning = await Section.create({
     tenantId: study.tenant._id,
-    classId: klass._id,
+    classId: morningBatch._id,
     name: 'Morning',
     startTime: '06:00',
     endTime: '14:00',
   });
   ctx.evening = await Section.create({
     tenantId: study.tenant._id,
-    classId: klass._id,
+    classId: eveningBatch._id,
     name: 'Evening',
     startTime: '14:00',
     endTime: '22:00',
   });
-  ctx.klass = klass;
+  ctx.klass = morningBatch;
 
   // Two members with a login each, one without, one walk-in.
   const login1 = await makeMember(study.tenant, study.roles.student, 'learner1');
@@ -626,14 +638,33 @@ describe('ending an enrollment ends the seat (AC3, R15)', () => {
   });
 });
 
-describe('shift hours on a section', () => {
-  test('a section takes start and end times, validated as HH:mm and ordered', async () => {
-    const ok = await call('patch', `/academic/sections/${ctx.morning._id}`, 'owner', {
-      startTime: '05:30',
-      endTime: '13:30',
+describe('a study center batch is its shift', () => {
+  test('creating a batch makes one mirrored section carrying the hours', async () => {
+    const res = await call('post', '/academic/classes', 'owner', {
+      name: 'Night',
+      startTime: '22:00',
+      endTime: '23:30',
     });
-    expect(ok.status).toBe(200);
-    expect(ok.body).toMatchObject({ startTime: '05:30', endTime: '13:30' });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({ name: 'Night', startTime: '22:00', endTime: '23:30' });
+    expect(res.body.section).toMatchObject({
+      name: 'Night',
+      startTime: '22:00',
+      endTime: '23:30',
+      classId: res.body._id,
+    });
+    const sections = await Section.find({
+      tenantId: tenants.study._id,
+      classId: res.body._id,
+    }).lean();
+    expect(sections).toHaveLength(1);
+  });
+
+  test('hours are optional, and validated as HH:mm and ordered', async () => {
+    const plain = await call('post', '/academic/classes', 'owner', { name: 'Plain' });
+    expect(plain.status).toBe(201);
+    expect(plain.body.startTime).toBeUndefined();
+    expect(plain.body.section.startTime).toBeUndefined();
 
     for (const bad of [
       { startTime: '25:00' },
@@ -641,56 +672,138 @@ describe('shift hours on a section', () => {
       { startTime: '14:00', endTime: '06:00' },
       { endTime: 'noon' },
     ]) {
-      const res = await call('patch', `/academic/sections/${ctx.morning._id}`, 'owner', bad);
+      const res = await call('post', '/academic/classes', 'owner', { name: 'Bad', ...bad });
+      expect(res.status).toBe(400);
+    }
+    expect(await Class.countDocuments({ tenantId: tenants.study._id, name: 'Bad' })).toBe(0);
+  });
+
+  test('a duplicate batch name leaves no half-made batch behind', async () => {
+    const before = await Section.countDocuments({ tenantId: tenants.study._id });
+    const dup = await call('post', '/academic/classes', 'owner', { name: 'Morning' });
+    expect(dup.status).toBeGreaterThanOrEqual(400);
+    expect(await Section.countDocuments({ tenantId: tenants.study._id })).toBe(before);
+  });
+
+  test('editing a batch carries its name and hours onto its section; null clears one', async () => {
+    const made = await call('post', '/academic/classes', 'owner', {
+      name: 'Late',
+      startTime: '20:00',
+      endTime: '22:00',
+    });
+    const id = made.body._id;
+
+    const ok = await call('patch', `/academic/classes/${id}`, 'owner', {
+      name: 'Late shift',
+      startTime: '19:00',
+    });
+    expect(ok.status).toBe(200);
+    expect(ok.body).toMatchObject({ name: 'Late shift', startTime: '19:00', endTime: '22:00' });
+    let section = await Section.findOne({ tenantId: tenants.study._id, classId: id }).lean();
+    expect(section).toMatchObject({ name: 'Late shift', startTime: '19:00', endTime: '22:00' });
+
+    const cleared = await call('patch', `/academic/classes/${id}`, 'owner', { endTime: null });
+    expect(cleared.status).toBe(200);
+    section = await Section.findOne({ tenantId: tenants.study._id, classId: id }).lean();
+    expect(section.endTime).toBeUndefined();
+    expect(section.startTime).toBe('19:00');
+
+    const bad = await call('patch', `/academic/classes/${id}`, 'owner', {
+      startTime: '23:00',
+      endTime: '07:00',
+    });
+    expect(bad.status).toBe(400);
+  });
+
+  test('a group cannot be added, and a section cannot be renamed or re-timed on its own', async () => {
+    const add = await call('post', '/academic/sections', 'owner', {
+      classId: String(ctx.klass._id),
+      name: 'Extra',
+    });
+    expect(add.status).toBe(400);
+    expect(await Section.countDocuments({ classId: ctx.klass._id })).toBe(1);
+
+    for (const body of [{ name: 'Renamed' }, { startTime: '05:00' }, { endTime: null }]) {
+      const res = await call('patch', `/academic/sections/${ctx.morning._id}`, 'owner', body);
       expect(res.status).toBe(400);
     }
     const kept = await Section.findById(ctx.morning._id).lean();
-    expect(kept).toMatchObject({ startTime: '05:30', endTime: '13:30' });
-
-    await call('patch', `/academic/sections/${ctx.morning._id}`, 'owner', {
-      startTime: '06:00',
-      endTime: '14:00',
-    });
+    expect(kept).toMatchObject({ name: 'Morning', startTime: '06:00', endTime: '14:00' });
   });
 
-  test('null clears a time and other fields still patch as before', async () => {
-    const section = await Section.create({
-      tenantId: tenants.study._id,
-      classId: ctx.klass._id,
-      name: 'Night',
-      startTime: '22:00',
+  test('a tuition center still adds groups under a batch', async () => {
+    const batch = await call(
+      'post',
+      '/academic/classes',
+      'tuitionOwner',
+      { name: 'Maths' },
+      'tuition'
+    );
+    expect(batch.status).toBe(201);
+    expect(batch.body.section).toBeUndefined();
+    const group = await call(
+      'post',
+      '/academic/sections',
+      'tuitionOwner',
+      { classId: batch.body._id, name: 'Group 1' },
+      'tuition'
+    );
+    expect(group.status).toBe(201);
+  });
+});
+
+describe('normalizeBatches (migration 0008)', () => {
+  test('splits a multi-shift class into one batch per shift, keeping section ids', async () => {
+    const { normalizeBatches } = await import('../services/batch.service.js');
+    const tenantId = tenants.study2._id;
+    const old = await Class.create({ tenantId, name: 'Batches' });
+    const am = await Section.create({
+      tenantId,
+      classId: old._id,
+      name: 'Dawn',
+      startTime: '05:00',
+      endTime: '09:00',
     });
-    const res = await call('patch', `/academic/sections/${section._id}`, 'owner', {
-      startTime: null,
-      name: 'Late',
+    const pm = await Section.create({
+      tenantId,
+      classId: old._id,
+      name: 'Dusk',
+      startTime: '17:00',
     });
-    expect(res.status).toBe(200);
-    expect(res.body.name).toBe('Late');
-    expect(res.body.startTime).toBeUndefined();
+
+    const writes = await normalizeBatches(tenantId);
+    expect(writes).toBeGreaterThan(0);
+
+    const classes = await Class.find({ tenantId }).lean();
+    const dawn = classes.find((c) => c.name === 'Dawn');
+    const dusk = classes.find((c) => c.name === 'Dusk');
+    expect(dawn).toMatchObject({ startTime: '05:00', endTime: '09:00' });
+    expect(dusk).toMatchObject({ startTime: '17:00' });
+    expect(classes.find((c) => c.name === 'Batches')).toBeUndefined();
+
+    const sections = await Section.find({ tenantId }).lean();
+    expect(String(sections.find((s) => String(s._id) === String(am._id)).classId)).toBe(
+      String(dawn._id)
+    );
+    expect(String(sections.find((s) => String(s._id) === String(pm._id)).classId)).toBe(
+      String(dusk._id)
+    );
+
+    // Already in shape: a second run writes nothing.
+    expect(await normalizeBatches(tenantId)).toBe(0);
   });
 
-  test('a section is created without times exactly as before, or with them', async () => {
-    const plain = await call('post', '/academic/sections', 'owner', {
-      classId: String(ctx.klass._id),
-      name: 'Plain',
+  test('a class whose only section is a bare "A" keeps its own name', async () => {
+    const { normalizeBatches } = await import('../services/batch.service.js');
+    const tenantId = tenants.study2._id;
+    const cls = await Class.create({ tenantId, name: 'Library', startTime: '08:00' });
+    const sec = await Section.create({ tenantId, classId: cls._id, name: 'A' });
+    await normalizeBatches(tenantId);
+    expect(await Class.findById(cls._id).lean()).toMatchObject({ name: 'Library' });
+    expect(await Section.findById(sec._id).lean()).toMatchObject({
+      name: 'Library',
+      startTime: '08:00',
     });
-    expect(plain.status).toBe(201);
-    expect(plain.body.startTime).toBeUndefined();
-
-    const timed = await call('post', '/academic/sections', 'owner', {
-      classId: String(ctx.klass._id),
-      name: 'Timed',
-      startTime: '09:00',
-      endTime: '12:00',
-    });
-    expect(timed.body).toMatchObject({ startTime: '09:00', endTime: '12:00' });
-
-    const bad = await call('post', '/academic/sections', 'owner', {
-      classId: String(ctx.klass._id),
-      name: 'Bad',
-      startTime: '99:99',
-    });
-    expect(bad.status).toBe(400);
   });
 });
 

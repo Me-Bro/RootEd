@@ -129,7 +129,7 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
           />
           <div className="flex flex-col gap-1.5">
             <label htmlFor="student-section" className="text-sm font-medium">
-              {t('academic.students.section')}
+              {autoAdmission ? t('academic.students.batch') : t('academic.students.section')}
             </label>
             <select
               id="student-section"
@@ -139,16 +139,28 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
               }
               className={selectCls}
             >
-              <option value="">{t('academic.students.selectSection')}</option>
+              <option value="">
+                {autoAdmission
+                  ? t('academic.students.selectBatch')
+                  : t('academic.students.selectSection')}
+              </option>
               {sections.map((s) => (
                 <option key={s._id} value={s._id}>
                   {s.label}
                 </option>
               ))}
               {canCreateSection ? (
-                <option value={NEW_SECTION}>{t('academic.students.newSectionOption')}</option>
+                <option value={NEW_SECTION}>
+                  {autoAdmission
+                    ? t('academic.students.newBatchOption')
+                    : t('academic.students.newSectionOption')}
+                </option>
               ) : (
-                <option disabled>{t('academic.students.askAdminCreateSection')}</option>
+                <option disabled>
+                  {autoAdmission
+                    ? t('academic.students.askAdminCreateBatch')
+                    : t('academic.students.askAdminCreateSection')}
+                </option>
               )}
             </select>
           </div>
@@ -429,6 +441,7 @@ export default function StudentsPage() {
             onSelectSection={setDrillSectionId}
             canCreateSection={canCreateSection}
             onAddSection={setAddSectionFor}
+            singleTier={hasSeats(user?.orgType)}
           />
         </div>
       )}

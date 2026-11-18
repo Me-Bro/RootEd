@@ -416,27 +416,30 @@ async function run() {
     ).toObject();
   }
 
-  // A shift is a Section; the study center's two shifts live in one class.
-  const studyClass = await Class.findOneAndUpdate(
-    { tenantId: studyTenantId, name: 'Batches' },
-    { $setOnInsert: { tenantId: studyTenantId, name: 'Batches' } },
-    { upsert: true, new: true, ...BYPASS_SC }
-  ).lean();
+  // A study center has one tier: a batch is a shift and carries its hours. Each batch keeps
+  // one mirrored Section (same name and hours) that seats, plans and visits point at.
   const studyShifts = {};
+  const studyClasses = {};
   const shiftHours = {
     Morning: { startTime: '06:00', endTime: '14:00' },
     Evening: { startTime: '14:00', endTime: '22:00' },
   };
   for (const name of ['Morning', 'Evening']) {
+    studyClasses[name] = await Class.findOneAndUpdate(
+      { tenantId: studyTenantId, name },
+      { $setOnInsert: { tenantId: studyTenantId, name }, $set: shiftHours[name] },
+      { upsert: true, new: true, ...BYPASS_SC }
+    ).lean();
     studyShifts[name] = await Section.findOneAndUpdate(
-      { tenantId: studyTenantId, classId: studyClass._id, name },
+      { tenantId: studyTenantId, classId: studyClasses[name]._id, name },
       {
-        $setOnInsert: { tenantId: studyTenantId, classId: studyClass._id, name },
+        $setOnInsert: { tenantId: studyTenantId, classId: studyClasses[name]._id, name },
         $set: shiftHours[name],
       },
       { upsert: true, new: true, ...BYPASS_SC }
     ).lean();
   }
+  const studyClass = studyClasses.Morning;
 
   // Two members, each linked to a login, enrolled in both shifts.
   const studyMembers = {};

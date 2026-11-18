@@ -53,7 +53,9 @@ export const ORG_TYPE_CONFIG = {
   },
   study_center: {
     enabledModules: ['academic', 'staff', 'fee', 'billing'],
-    terms: { classLevel: 'Batch', section: 'Group', student: 'Learner' },
+    // One tier only: a batch is the shift, so there is no "Group" under it. Each batch
+    // keeps one hidden Section (services/batch.service.js); `section` is never shown.
+    terms: { classLevel: 'Batch', section: 'Batch', student: 'Learner' },
   },
 };
 

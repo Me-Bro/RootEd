@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { isBatchOrgType } from '@rooted/shared/utils';
+import { hasSeats, isBatchOrgType } from '@rooted/shared/utils';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Button } from '../../components/ui/Button.jsx';
@@ -148,6 +148,7 @@ function StepAcademicYear({ onNext, onBack }) {
 function StepClassSection({ onNext, onBack }) {
   const { user } = useAuth();
   const isBatch = isBatchOrgType(user?.orgType);
+  const seatsOrg = hasSeats(user?.orgType);
   const [form, setForm] = useState({ className: '', gradeLevel: '', sectionName: '' });
   const [classId, setClassId] = useState(null);
 
@@ -171,7 +172,8 @@ function StepClassSection({ onNext, onBack }) {
       );
       cid = res.data._id;
     }
-    if (form.sectionName) {
+    // A study center's batch comes with its one section; there is no group to add.
+    if (form.sectionName && !seatsOrg) {
       await sectionMutation.mutateAsync({ classId: cid, name: form.sectionName });
     } else {
       onNext();
@@ -200,12 +202,14 @@ function StepClassSection({ onNext, onBack }) {
           placeholder="1"
         />
       )}
-      <Input
-        label="Section Name"
-        value={form.sectionName}
-        onChange={(e) => setForm((f) => ({ ...f, sectionName: e.target.value }))}
-        placeholder="A"
-      />
+      {!seatsOrg && (
+        <Input
+          label="Section Name"
+          value={form.sectionName}
+          onChange={(e) => setForm((f) => ({ ...f, sectionName: e.target.value }))}
+          placeholder="A"
+        />
+      )}
       {error && (
         <p className="text-sm text-red-500">
           {error?.response?.data?.error ?? 'Failed to create class/section'}

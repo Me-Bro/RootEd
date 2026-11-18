@@ -13,8 +13,14 @@ export function useClassSections() {
     queryFn: () => api.get('/academic/classes?includeSections=true').then((r) => r.data),
   });
 
+  // A study center's batch holds one section named like itself, so "Morning - Morning" is
+  // just "Morning".
   const sections = classes.flatMap((c) =>
-    (c.sections || []).map((s) => ({ ...s, className: c.name, label: `${c.name} - ${s.name}` }))
+    (c.sections || []).map((s) => ({
+      ...s,
+      className: c.name,
+      label: s.name === c.name ? c.name : `${c.name} - ${s.name}`,
+    }))
   );
 
   return { classes, sections, isLoading };
