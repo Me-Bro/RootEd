@@ -2351,6 +2351,37 @@
       "row": "{{shift}}: seat {{label}}",
       "openMap": "Open the seat map"
     },
+    "studentVisits": {
+      "heading": "Visits",
+      "insideNow": "Inside now",
+      "insideSince": "since {{time}} on seat {{seat}}",
+      "monthSummary_one": "This month: {{count}} visit, {{time}} on seat.",
+      "monthSummary_other": "This month: {{count}} visits, {{time}} on seat.",
+      "date": "Date",
+      "in": "In",
+      "out": "Out",
+      "duration": "Time",
+      "seat": "Seat",
+      "plan": "Plan at check-in",
+      "notes": "Notes",
+      "recordedBy": "Recorded by",
+      "stillInside": "Inside",
+      "autoClosed": "Auto-closed",
+      "outsideHours": "Outside hours",
+      "none": "No visits yet.",
+      "previous": "Previous",
+      "next": "Next",
+      "pageOfTotal": "Page {{page}} of {{total}}",
+      "entitlement": {
+        "valid": "Valid",
+        "unpaid": "Unpaid",
+        "expired": "Expired",
+        "none": "No plan",
+        "paused": "Paused",
+        "ended": "Ended",
+        "scheduled": "Not started"
+      }
+    },
     "sell": {
       "title": "Sell a plan",
       "description": "Sell a day pass or a plan and take the payment in one step.",

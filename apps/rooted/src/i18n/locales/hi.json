@@ -2351,6 +2351,37 @@
       "row": "{{shift}}: सीट {{label}}",
       "openMap": "सीट मैप खोलें"
     },
+    "studentVisits": {
+      "heading": "विज़िट",
+      "insideNow": "अभी अंदर हैं",
+      "insideSince": "{{time}} से सीट {{seat}} पर",
+      "monthSummary_one": "इस महीने: {{count}} विज़िट, सीट पर {{time}}।",
+      "monthSummary_other": "इस महीने: {{count}} विज़िट, सीट पर {{time}}।",
+      "date": "तारीख",
+      "in": "आए",
+      "out": "गए",
+      "duration": "समय",
+      "seat": "सीट",
+      "plan": "चेक-इन पर प्लान",
+      "notes": "टिप्पणी",
+      "recordedBy": "दर्ज किया",
+      "stillInside": "अंदर",
+      "autoClosed": "अपने-आप बंद",
+      "outsideHours": "समय के बाहर",
+      "none": "अभी तक कोई विज़िट नहीं।",
+      "previous": "पिछला",
+      "next": "अगला",
+      "pageOfTotal": "पृष्ठ {{page}} / {{total}}",
+      "entitlement": {
+        "valid": "मान्य",
+        "unpaid": "बकाया",
+        "expired": "समाप्त",
+        "none": "कोई प्लान नहीं",
+        "paused": "रुका हुआ",
+        "ended": "खत्म",
+        "scheduled": "शुरू नहीं हुआ"
+      }
+    },
     "sell": {
       "title": "प्लान बेचें",
       "description": "डे पास या प्लान बेचें और उसी समय भुगतान लें।",

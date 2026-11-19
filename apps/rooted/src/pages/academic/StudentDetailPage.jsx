@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { hasSeats } from '@rooted/shared/utils';
 import { DOCUMENT_KINDS } from '@rooted/shared/schemas';
 import StudentSeatsPanel from '../../components/study/StudentSeatsPanel.jsx';
+import StudentVisitsTable from '../../components/study/StudentVisitsTable.jsx';
 import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
@@ -710,6 +711,12 @@ export default function StudentDetailPage() {
           <div className="rounded-lg border border-border p-4">
             <h2 className="mb-3 text-sm font-semibold">{t('studyCenter.studentSeats.heading')}</h2>
             <StudentSeatsPanel studentId={id} />
+          </div>
+        )}
+        {hasSeats(user?.orgType) && permissions.includes('attendance:read') && (
+          <div className="rounded-lg border border-border p-4 sm:col-span-2">
+            <h2 className="mb-3 text-sm font-semibold">{t('studyCenter.studentVisits.heading')}</h2>
+            <StudentVisitsTable studentId={id} />
           </div>
         )}
         {hasSeats(user?.orgType) &&

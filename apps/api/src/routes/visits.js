@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
+import { z } from 'zod';
 import {
   checkInSchema,
   freeSeatsQuerySchema,
@@ -10,6 +12,8 @@ import { requirePermission, userHasPermission } from '../middleware/requirePermi
 import { requireSeatsOrg } from '../middleware/requireSeatsOrg.js';
 import { validate } from '../middleware/validate.js';
 import { checkIn, checkOut, freeSeats, listOpenVisits } from '../services/visit.service.js';
+import { learnerVisits } from '../services/studentVisits.service.js';
+import { Student } from '../models/Student.js';
 import { auditLog } from '../services/audit.service.js';
 import { currentOccupancy, monthlyHours, noShowsOn } from '../services/studyReports.service.js';
 
@@ -78,6 +82,32 @@ router.get(
     }
   }
 );
+
+// One learner's visits for their profile: the open visit, this month's totals and a
+// page of past visits (what the front desk needs to settle "were they here?").
+const learnerVisitsQuery = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+  month: monthQuerySchema.shape.month.optional(),
+});
+
+router.get('/students/:id/visits', requirePermission('attendance:read'), async (req, res, next) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    const query = learnerVisitsQuery.safeParse(req.query);
+    if (!query.success) return res.status(400).json({ error: query.error.issues[0].message });
+
+    const tenantId = req.tenant._id;
+    const student = await Student.findOne({ _id: req.params.id, tenantId }, '_id').lean();
+    if (!student) return res.status(404).json({ error: 'Not found' });
+
+    res.json(await learnerVisits({ tenant: req.tenant, studentId: student._id, ...query.data }));
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.get('/visits/free-seats', requirePermission('attendance:read'), async (req, res, next) => {
   try {
