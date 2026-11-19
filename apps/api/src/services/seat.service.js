@@ -6,6 +6,7 @@ import { Enrollment } from '../models/Enrollment.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { buildAvailability, bulkLabels } from '../utils/seatAvailability.js';
 import { fullName } from '../utils/fullName.js';
+import { shiftsOverlap } from '../utils/shiftOverlap.js';
 
 /**
  * A learner who has left a shift no longer holds its seat. Called wherever an
@@ -48,17 +49,32 @@ export async function createSeats(tenantId, { prefix, count, start, zone }) {
 
 /** Seats of one shift with who holds each, and the day-pass pool size. */
 export async function loadAvailability(tenantId, sectionId) {
-  const section = await Section.findOne({ _id: sectionId, tenantId }, '_id').lean();
+  const section = await Section.findOne({ _id: sectionId, tenantId }, SHIFT_FIELDS).lean();
   if (!section) throw new AppError('Shift not found', 404);
 
   const [seats, anyAllocations] = await Promise.all([
     Seat.find({ tenantId }).lean(),
     SeatAllocation.find({ tenantId, status: 'active' }).lean(),
   ]);
-  const shiftAllocations = anyAllocations.filter((a) => String(a.sectionId) === String(sectionId));
+  const inShift = (a) => String(a.sectionId) === String(sectionId);
+  const shiftAllocations = anyAllocations.filter(inShift);
+
+  // Holds in other shifts that share hours with this one: those seats cannot be given here.
+  const elsewhere = anyAllocations.filter((a) => !inShift(a));
+  const otherSections = await Section.find(
+    { tenantId, _id: { $in: [...new Set(elsewhere.map((a) => String(a.sectionId)))] } },
+    SHIFT_FIELDS
+  ).lean();
+  const sectionById = new Map(otherSections.map((s) => [String(s._id), s]));
+  const overlapping = elsewhere
+    .map((a) => ({ ...a, section: sectionById.get(String(a.sectionId)) }))
+    .filter((a) => a.section && shiftsOverlap(section, a.section));
 
   const students = await Student.find(
-    { tenantId, _id: { $in: shiftAllocations.map((a) => a.studentId) } },
+    {
+      tenantId,
+      _id: { $in: [...shiftAllocations, ...overlapping].map((a) => a.studentId) },
+    },
     'firstName lastName'
   ).lean();
   const names = new Map(students.map((s) => [String(s._id), fullName(s)]));
@@ -67,6 +83,7 @@ export async function loadAvailability(tenantId, sectionId) {
     seats,
     shiftAllocations,
     anyAllocations,
+    overlapping,
     holderName: (id) => names.get(String(id)) ?? 'another learner',
   });
 }
@@ -98,10 +115,64 @@ async function explainConflict(tenantId, { seatId, studentId, sectionId }) {
   return 'That seat is already taken in this shift';
 }
 
+const SHIFT_FIELDS = 'name startTime endTime';
+
+// "06:00–14:00", or "all day" for a shift with no hours at all.
+function hoursLabel({ startTime, endTime }) {
+  if (!startTime && !endTime) return 'all day';
+  return `${startTime ?? '00:00'}–${endTime ?? '24:00'}`;
+}
+
+/**
+ * Active holds on this seat in OTHER shifts whose hours overlap `target` (a section with
+ * its hours). One chair cannot belong to two members at the same time of day, and the
+ * unique indexes only see one section at a time, so this is checked here. Returns
+ * `[{ hold, section }]`, empty when the seat is clear.
+ */
+async function findOverlapConflicts(tenantId, { seatId, sectionId }, target) {
+  const [section, holds] = await Promise.all([
+    target ?? Section.findOne({ _id: sectionId, tenantId }, SHIFT_FIELDS).lean(),
+    SeatAllocation.find({
+      tenantId,
+      seatId,
+      status: 'active',
+      sectionId: { $ne: sectionId },
+    }).lean(),
+  ]);
+  if (!section || !holds.length) return [];
+  const sections = await Section.find(
+    { tenantId, _id: { $in: holds.map((h) => h.sectionId) } },
+    SHIFT_FIELDS
+  ).lean();
+  const byId = new Map(sections.map((s) => [String(s._id), s]));
+  return holds
+    .map((hold) => ({ hold, section: byId.get(String(hold.sectionId)) }))
+    .filter((c) => c.section && shiftsOverlap(section, c.section));
+}
+
+async function explainOverlap(tenantId, seatId, target, conflicts) {
+  const [seat, students] = await Promise.all([
+    Seat.findOne({ _id: seatId, tenantId }, 'label').lean(),
+    Student.find(
+      { tenantId, _id: { $in: conflicts.map((c) => c.hold.studentId) } },
+      'firstName lastName'
+    ).lean(),
+  ]);
+  const names = new Map(students.map((s) => [String(s._id), fullName(s)]));
+  const who = conflicts
+    .map(
+      (c) =>
+        `${names.get(String(c.hold.studentId)) ?? 'another learner'} in ${c.section.name} (${hoursLabel(c.section)})`
+    )
+    .join(', ');
+  const label = seat ? `Seat ${seat.label}` : 'That seat';
+  return `${label} is held by ${who}, which overlaps ${target.name} (${hoursLabel(target)})`;
+}
+
 async function assertCanSit(tenantId, { studentId, sectionId, seatId }) {
   const [student, section, seat, enrollment] = await Promise.all([
     Student.findOne({ _id: studentId, tenantId }, 'kind status').lean(),
-    Section.findOne({ _id: sectionId, tenantId }, '_id').lean(),
+    Section.findOne({ _id: sectionId, tenantId }, SHIFT_FIELDS).lean(),
     Seat.findOne({ _id: seatId, tenantId }, 'isActive label').lean(),
     Enrollment.findOne({ tenantId, studentId, sectionId, status: 'active' }, '_id').lean(),
   ]);
@@ -114,16 +185,104 @@ async function assertCanSit(tenantId, { studentId, sectionId, seatId }) {
   }
   if (!seat.isActive) throw new AppError('That seat is not in use', 422);
   if (!enrollment) throw new AppError('Enrol the learner in this shift first', 422);
+
+  const conflicts = await findOverlapConflicts(tenantId, { seatId, sectionId }, section);
+  if (conflicts.length) {
+    throw new AppError(await explainOverlap(tenantId, seatId, section, conflicts), 409);
+  }
 }
 
-export async function assignSeat(tenantId, input) {
-  await assertCanSit(tenantId, input);
+/**
+ * Refuses a batch edit that would make its seats overlap another batch's holds. `before`
+ * and `after` are `{ name, startTime, endTime }` for the batch's shift. Only conflicts the
+ * edit introduces count: a clash that already exists (older data) does not block an edit
+ * that leaves it as it was or narrows it, so the owner can still tidy up by shrinking hours.
+ */
+export async function assertHoursKeepSeatsClear(tenantId, classId, { before, after }) {
+  const sections = await Section.find({ tenantId, classId }, '_id').lean();
+  const sectionIds = sections.map((s) => s._id);
+  const mine = await SeatAllocation.find({
+    tenantId,
+    sectionId: { $in: sectionIds },
+    status: 'active',
+  }).lean();
+  if (!mine.length) return;
+
+  const others = await SeatAllocation.find({
+    tenantId,
+    seatId: { $in: mine.map((h) => h.seatId) },
+    status: 'active',
+    sectionId: { $nin: sectionIds },
+  }).lean();
+  if (!others.length) return;
+
+  const otherSections = await Section.find(
+    { tenantId, _id: { $in: others.map((h) => h.sectionId) } },
+    SHIFT_FIELDS
+  ).lean();
+  const sectionById = new Map(otherSections.map((s) => [String(s._id), s]));
+
+  const clashes = [];
+  for (const hold of mine) {
+    for (const other of others) {
+      if (String(other.seatId) !== String(hold.seatId)) continue;
+      const section = sectionById.get(String(other.sectionId));
+      if (!section) continue;
+      if (shiftsOverlap(after, section) && !shiftsOverlap(before, section)) {
+        clashes.push({ hold: other, section });
+      }
+    }
+  }
+  if (!clashes.length) return;
+
+  const [seats, students] = await Promise.all([
+    Seat.find({ tenantId, _id: { $in: clashes.map((c) => c.hold.seatId) } }, 'label').lean(),
+    Student.find(
+      { tenantId, _id: { $in: clashes.map((c) => c.hold.studentId) } },
+      'firstName lastName'
+    ).lean(),
+  ]);
+  const labels = new Map(seats.map((s) => [String(s._id), s.label]));
+  const names = new Map(students.map((s) => [String(s._id), fullName(s)]));
+  const list = clashes
+    .map(
+      (c) =>
+        `${labels.get(String(c.hold.seatId)) ?? 'a seat'} (${names.get(String(c.hold.studentId)) ?? 'another learner'} in ${c.section.name}, ${hoursLabel(c.section)})`
+    )
+    .join(', ');
+  throw new AppError(
+    `${after.name} would be ${hoursLabel(after)}, which overlaps seats held in other batches: ${list}. Move or end those seats first.`,
+    409
+  );
+}
+
+/**
+ * Creates the hold. The partial unique indexes settle two holds on the same seat in the
+ * same shift, but not two in overlapping shifts, so once the row exists it is checked
+ * again: if a hold in an overlapping shift slipped in at the same moment, the one with
+ * the later _id removes itself. Both sides see each other, so exactly one survives.
+ */
+async function createHold(tenantId, input) {
+  let hold;
   try {
-    return await SeatAllocation.create({ tenantId, ...input, status: 'active' });
+    hold = await SeatAllocation.create({ tenantId, ...input, status: 'active' });
   } catch (err) {
     if (err.code === 11000) throw new AppError(await explainConflict(tenantId, input), 409);
     throw err;
   }
+
+  const conflicts = await findOverlapConflicts(tenantId, input);
+  if (conflicts.some((c) => String(c.hold._id) < String(hold._id))) {
+    await SeatAllocation.deleteOne({ _id: hold._id, tenantId });
+    const target = await Section.findOne({ _id: input.sectionId, tenantId }, SHIFT_FIELDS).lean();
+    throw new AppError(await explainOverlap(tenantId, input.seatId, target, conflicts), 409);
+  }
+  return hold;
+}
+
+export async function assignSeat(tenantId, input) {
+  await assertCanSit(tenantId, input);
+  return createHold(tenantId, input);
 }
 
 export async function endAllocation(tenantId, allocationId) {
@@ -155,13 +314,12 @@ export async function moveAllocation(tenantId, allocationId, seatId) {
 
   await endAllocation(tenantId, allocationId);
   try {
-    return await SeatAllocation.create({ tenantId, ...input, status: 'active' });
+    return await createHold(tenantId, input);
   } catch (err) {
     await SeatAllocation.updateOne(
       { _id: allocationId, tenantId },
       { $set: { status: 'active' }, $unset: { endDate: '' } }
     );
-    if (err.code === 11000) throw new AppError(await explainConflict(tenantId, input), 409);
     throw err;
   }
 }

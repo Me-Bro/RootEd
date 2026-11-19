@@ -1,5 +1,6 @@
 import { Class } from '../models/Class.js';
 import { Section } from '../models/Section.js';
+import { assertHoursKeepSeatsClear } from './seat.service.js';
 
 /**
  * A study center has one tier, the Batch, and a batch is a shift (Morning, Evening) with
@@ -55,6 +56,18 @@ export async function updateBatch(tenantId, classId, body) {
   for (const key of TIME_KEYS) if (key in body) fields[key] = body[key] || null;
   const update = toUpdate(fields);
   if (!Object.keys(update).length) return Class.findOne({ _id: classId, tenantId });
+
+  // Changing the hours must not make a held seat overlap another batch's hold.
+  if (TIME_KEYS.some((key) => key in fields)) {
+    const current = await Class.findOne({ _id: classId, tenantId }).lean();
+    if (!current) return null;
+    const after = { name: fields.name ?? current.name };
+    for (const key of TIME_KEYS) after[key] = key in fields ? fields[key] : current[key];
+    await assertHoursKeepSeatsClear(tenantId, classId, {
+      before: { name: current.name, ...timesOf(current) },
+      after,
+    });
+  }
 
   const cls = await Class.findOneAndUpdate({ _id: classId, tenantId }, update, { new: true });
   if (!cls) return null;

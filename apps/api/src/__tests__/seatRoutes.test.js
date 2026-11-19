@@ -551,6 +551,269 @@ describe('standing allocations', () => {
   });
 });
 
+describe('a seat cannot be held in two shifts whose hours overlap', () => {
+  const shifts = {};
+  let seq = 0;
+
+  const makeShift = async (name, startTime, endTime) => {
+    const hours = { ...(startTime && { startTime }), ...(endTime && { endTime }) };
+    const cls = await Class.create({ tenantId: tenants.study._id, name, ...hours });
+    return Section.create({
+      tenantId: tenants.study._id,
+      classId: cls._id,
+      name,
+      ...hours,
+    });
+  };
+
+  // A fresh learner enrolled in the given shifts.
+  const learner = async (firstName, ...sections) => {
+    seq += 1;
+    const student = await Student.create({
+      tenantId: tenants.study._id,
+      admissionNo: `OV-${seq}`,
+      firstName,
+      lastName: 'Overlap',
+    });
+    for (const section of sections) await enroll(tenants.study, student, section);
+    return student;
+  };
+
+  const assign = (student, section, seat, who = 'desk') =>
+    call('post', '/academic/seat-allocations', who, {
+      studentId: String(student._id),
+      sectionId: String(section._id),
+      seatId: String(seat._id),
+    });
+
+  const activeHolds = (seat) =>
+    SeatAllocation.countDocuments({
+      tenantId: tenants.study._id,
+      seatId: seat._id,
+      status: 'active',
+    });
+
+  beforeAll(async () => {
+    // Morning is 06:00-14:00 and Evening 14:00-22:00 (set up above).
+    shifts.midday = await makeShift('Midday', '12:00', '18:00');
+    shifts.early = await makeShift('Early', '05:00', '06:00');
+    shifts.allDay = await makeShift('All day');
+  });
+
+  afterAll(async () => {
+    const seats = await Seat.find({ tenantId: tenants.study._id, label: /^N-/ }, '_id').lean();
+    await SeatAllocation.deleteMany({
+      tenantId: tenants.study._id,
+      seatId: { $in: seats.map((s) => s._id) },
+    });
+  });
+
+  test('is refused, naming the holder and both shifts, and nothing is created', async () => {
+    const seat = await seatByLabel('N-1');
+    const holder = await learner('Holder', ctx.morning);
+    const other = await learner('Other', shifts.midday);
+    expect((await assign(holder, ctx.morning, seat)).status).toBe(201);
+
+    const res = await assign(other, shifts.midday, seat);
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe(
+      'Seat N-1 is held by Holder Overlap in Morning (06:00–14:00), which overlaps Midday (12:00–18:00)'
+    );
+    expect(await activeHolds(seat)).toBe(1);
+  });
+
+  test('is allowed in an adjacent shift (one ends when the next starts)', async () => {
+    const seat = await seatByLabel('N-1');
+    const early = await learner('Dawn', shifts.early);
+    expect((await assign(early, shifts.early, seat)).status).toBe(201);
+    expect(await activeHolds(seat)).toBe(2);
+  });
+
+  test('a shift with no hours is all-day: it blocks, and is blocked by, every other shift', async () => {
+    const heldInMorning = await seatByLabel('N-1');
+    const blocked = await assign(
+      await learner('Allday1', shifts.allDay),
+      shifts.allDay,
+      heldInMorning
+    );
+    expect(blocked.status).toBe(409);
+    expect(blocked.body.error).toMatch(/overlaps All day \(all day\)/);
+
+    const seat = await seatByLabel('N-2');
+    expect(
+      (await assign(await learner('Allday2', shifts.allDay), shifts.allDay, seat)).status
+    ).toBe(201);
+    const res = await assign(await learner('Morner', ctx.morning), ctx.morning, seat);
+    expect(res.status).toBe(409);
+    expect(res.body.error).toMatch(/N-2 is held by Allday2 Overlap in All day \(all day\)/);
+  });
+
+  test('a shift with only one bound uses the day edge for the other', async () => {
+    const lateOnly = await makeShift('Late only', '21:00'); // 21:00-24:00
+    const seat = await seatByLabel('N-3');
+    expect((await assign(await learner('Eve', ctx.evening), ctx.evening, seat)).status).toBe(201);
+    const res = await assign(await learner('Late', lateOnly), lateOnly, seat);
+    expect(res.status).toBe(409);
+    expect(res.body.error).toMatch(/overlaps Late only \(21:00–24:00\)/);
+  });
+
+  test('moving into an overlapping shift fails and the learner keeps their seat', async () => {
+    const mine = await seatByLabel('N-5');
+    const theirs = await seatByLabel('N-6');
+    const mover = await learner('Mover', shifts.midday);
+    await assign(await learner('Squatter', ctx.morning), ctx.morning, theirs);
+    const hold = (await assign(mover, shifts.midday, mine)).body;
+
+    const res = await call('patch', `/academic/seat-allocations/${hold._id}`, 'desk', {
+      action: 'move',
+      seatId: String(theirs._id),
+    });
+    expect(res.status).toBe(409);
+    expect(res.body.error).toMatch(/N-6 is held by Squatter Overlap in Morning/);
+
+    const still = await SeatAllocation.findById(hold._id).lean();
+    expect(still.status).toBe('active');
+    expect(String(still.seatId)).toBe(String(mine._id));
+    expect(await activeHolds(theirs)).toBe(1);
+  });
+
+  test('moving within the same shift to a clear seat still works', async () => {
+    const from = await seatByLabel('N-8');
+    const to = await seatByLabel('N-9');
+    const member = await learner('Shifter', shifts.midday);
+    const hold = (await assign(member, shifts.midday, from)).body;
+    const res = await call('patch', `/academic/seat-allocations/${hold._id}`, 'desk', {
+      action: 'move',
+      seatId: String(to._id),
+    });
+    expect(res.status).toBe(200);
+    expect(String(res.body.seatId)).toBe(String(to._id));
+  });
+
+  test('two desks assigning one seat in overlapping shifts at once: exactly one wins', async () => {
+    const seat = await seatByLabel('N-7');
+    const a = await learner('RaceA', ctx.morning);
+    const b = await learner('RaceB', shifts.midday);
+    const results = await Promise.all([
+      assign(a, ctx.morning, seat),
+      assign(b, shifts.midday, seat),
+    ]);
+    expect(results.map((r) => r.status).sort()).toEqual([201, 409]);
+    expect(await activeHolds(seat)).toBe(1);
+  });
+
+  describe('editing a batch’s hours', () => {
+    // Early (05:00-06:00) holds N-1 and Morning (06:00-14:00) holds N-1 too (set up above).
+    const patchHours = (section, body) =>
+      call('patch', `/academic/classes/${section.classId}`, 'owner', body);
+    const hoursOf = async (section) => {
+      const s = await Section.findById(section._id).lean();
+      return [s.startTime, s.endTime];
+    };
+
+    test('widening into a shift that holds the same seat is refused and nothing changes', async () => {
+      const res = await patchHours(shifts.early, { endTime: '08:00' });
+      expect(res.status).toBe(409);
+      expect(res.body.error).toBe(
+        'Early would be 05:00–08:00, which overlaps seats held in other batches: N-1 (Holder Overlap in Morning, 06:00–14:00). Move or end those seats first.'
+      );
+      expect(await hoursOf(shifts.early)).toEqual(['05:00', '06:00']);
+      expect((await Class.findById(shifts.early.classId).lean()).endTime).toBe('06:00');
+    });
+
+    test('clearing an hour makes the batch longer and is checked the same way', async () => {
+      const res = await patchHours(shifts.early, { endTime: null });
+      expect(res.status).toBe(409);
+      expect(res.body.error).toMatch(/Early would be 05:00–24:00/);
+      expect(await hoursOf(shifts.early)).toEqual(['05:00', '06:00']);
+    });
+
+    test('moving earlier, narrowing, or a rename is allowed', async () => {
+      expect((await patchHours(shifts.early, { startTime: '04:00' })).status).toBe(200);
+      expect(await hoursOf(shifts.early)).toEqual(['04:00', '06:00']);
+      expect((await patchHours(shifts.early, { name: 'Early bird' })).status).toBe(200);
+    });
+
+    test('an overlap that already exists does not block an edit that does not add one', async () => {
+      const legacy = await makeShift('Legacy', '06:00', '10:00');
+      const seat = await seatByLabel('N-4');
+      const a = await learner('LegacyA', ctx.morning);
+      const b = await learner('LegacyB', legacy);
+      // Older data that predates the rule: both holds written straight to the database.
+      for (const [student, section] of [
+        [a, ctx.morning],
+        [b, legacy],
+      ]) {
+        await SeatAllocation.create({
+          tenantId: tenants.study._id,
+          seatId: seat._id,
+          studentId: student._id,
+          sectionId: section._id,
+        });
+      }
+      // Shrinking it, or stretching it while it still overlaps the same shift, adds nothing new.
+      expect((await patchHours(legacy, { endTime: '09:00' })).status).toBe(200);
+      expect((await patchHours(legacy, { endTime: '13:00' })).status).toBe(200);
+      // Stretching into Evening, which holds nothing on N-4, is fine too.
+      expect((await patchHours(legacy, { endTime: '16:00' })).status).toBe(200);
+
+      // But a hold in Evening on that seat would make stretching into it a new overlap.
+      const eve = await learner('LegacyEve', ctx.evening);
+      await SeatAllocation.create({
+        tenantId: tenants.study._id,
+        seatId: seat._id,
+        studentId: eve._id,
+        sectionId: ctx.evening._id,
+      });
+      await patchHours(legacy, { endTime: '10:00' });
+      const blocked = await patchHours(legacy, { endTime: '15:00' });
+      expect(blocked.status).toBe(409);
+      expect(blocked.body.error).toMatch(/N-4 \(LegacyEve Overlap in Evening, 14:00–22:00\)/);
+    });
+
+    test('a batch that holds no seats can change hours freely', async () => {
+      const free = await makeShift('Free hours', '01:00', '02:00');
+      expect((await patchHours(free, { startTime: '00:00', endTime: '23:00' })).status).toBe(200);
+    });
+  });
+
+  test('the seat map marks seats held in an overlapping shift as blocked', async () => {
+    const availability = async (section) =>
+      (await call('get', `/academic/seats/availability?sectionId=${section._id}`, 'teacher')).body
+        .items;
+    const find = (items, label) => items.find((i) => i.label === label);
+
+    // N-1 is held in Morning (06:00-14:00) and Early. Midday (12:00-18:00) overlaps Morning.
+    const midday = find(await availability(shifts.midday), 'N-1');
+    expect(midday.heldBy).toBeNull();
+    expect(midday.blockedBy).toEqual({
+      name: 'Holder Overlap',
+      sectionName: 'Morning',
+      startTime: '06:00',
+      endTime: '14:00',
+    });
+
+    // Evening only touches Morning at 14:00, so N-1 is still open there.
+    expect(find(await availability(ctx.evening), 'N-1').blockedBy).toBeNull();
+
+    // In Morning itself it is held, never blocked; an untouched seat is neither.
+    const morning = await availability(ctx.morning);
+    expect(find(morning, 'N-1').heldBy.name).toBe('Holder Overlap');
+    expect(find(morning, 'N-1').blockedBy).toBeNull();
+    expect(find(morning, 'N-8').blockedBy).toBeNull();
+  });
+
+  test('ending the hold frees the seat for the overlapping shift', async () => {
+    const seat = await seatByLabel('N-10');
+    const a = await learner('First', ctx.morning);
+    const b = await learner('Second', shifts.midday);
+    const hold = (await assign(a, ctx.morning, seat)).body;
+    expect((await assign(b, shifts.midday, seat)).status).toBe(409);
+    await call('patch', `/academic/seat-allocations/${hold._id}`, 'desk', { action: 'end' });
+    expect((await assign(b, shifts.midday, seat)).status).toBe(201);
+  });
+});
+
 describe('ending an enrollment ends the seat (AC3, R15)', () => {
   const findHold = (student, section) =>
     SeatAllocation.findOne({

@@ -4,7 +4,8 @@ import { STUDY_AUTH_STATES } from '../fixtures/auth.js';
 // Phase 2 of TICKET-007: seats, per-shift standing holds, and the seat map.
 // Seeded: 12 seats (A-1..A-6 in Hall 1, B-1..B-6 in Hall 2), Morning 06:00-14:00 and
 // Evening 14:00-22:00, member1 holding A-1 in the Morning and B-4 in the Evening,
-// member2 holding nothing.
+// member2 holding nothing. A third shift, Midday 12:00-18:00, holds no seats and overlaps
+// both: a seat held in Morning or Evening is unavailable there.
 
 async function openShift(page, name) {
   await page.getByLabel('Shift').click();
@@ -44,6 +45,51 @@ test.describe('seat map', () => {
 
     await seat(page, 'A-2').getByRole('button', { name: 'End' }).click();
     await expect(seat(page, 'A-2')).toContainText('Free');
+  });
+
+  test('a seat held in an overlapping shift is unavailable, and says who holds it', async ({
+    page,
+  }) => {
+    await page.goto('/academic/seat-map');
+    await openShift(page, 'Midday');
+
+    // A-1 is held in Morning (06:00-14:00) and B-4 in Evening (14:00-22:00); both overlap Midday.
+    await expect(seat(page, 'A-1')).toHaveAttribute('data-blocked', 'true', { timeout: 15_000 });
+    await expect(page.getByTestId('blocked-A-1')).toContainText(
+      'Not available: held by Member One Study in Morning (06:00–14:00)'
+    );
+    await expect(seat(page, 'B-4')).toHaveAttribute('data-blocked', 'true');
+    await expect(page.getByTestId('blocked-B-4')).toContainText(
+      'held by Member One Study in Evening (14:00–22:00)'
+    );
+
+    // Not held (and not the same as "Free"): a clear seat has no blocked marker.
+    await expect(seat(page, 'A-3')).toContainText('Free');
+    await expect(seat(page, 'A-3')).not.toHaveAttribute('data-blocked', 'true');
+  });
+
+  test('with a learner chosen, only the clear seats offer Seat here, not the blocked ones', async ({
+    page,
+  }) => {
+    await page.goto('/academic/seat-map');
+    await openShift(page, 'Midday');
+    await expect(seat(page, 'A-1')).toHaveAttribute('data-blocked', 'true', { timeout: 15_000 });
+
+    await page.getByLabel('Learner').click();
+    await page.getByRole('option', { name: 'Member Two Study' }).click();
+
+    await expect(seat(page, 'A-3').getByRole('button', { name: 'Seat here' })).toBeVisible();
+    for (const label of ['A-1', 'B-4']) {
+      await expect(seat(page, label).getByRole('button', { name: 'Seat here' })).toHaveCount(0);
+    }
+  });
+
+  test('shifts that only touch at the hand-over do not block each other', async ({ page }) => {
+    await page.goto('/academic/seat-map');
+    // Morning ends at 14:00 and Evening starts at 14:00: B-4 (Evening) is plainly free in Morning.
+    await openShift(page, 'Morning');
+    await expect(seat(page, 'B-4')).toContainText('Free', { timeout: 15_000 });
+    await expect(seat(page, 'B-4')).not.toHaveAttribute('data-blocked', 'true');
   });
 
   test('a held seat has no Seat here button', async ({ page }) => {
