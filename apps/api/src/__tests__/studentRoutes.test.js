@@ -1161,3 +1161,22 @@ describe('student audit entries', () => {
     expect(entries().every((e) => String(e.target.id) === id)).toBe(true);
   });
 });
+
+describe('enrolment audit', () => {
+  const entries = () => auditLog.mock.calls.map(([e]) => e);
+  beforeEach(() => auditLog.mockClear());
+
+  test('joining a shift is audited once; sending the same enrolment again is not', async () => {
+    const s = await Student.create({ tenantId: tenants.school._id, ...base('EN-1') });
+    const body = { studentId: String(s._id), sectionId: String(sections.school._id) };
+    expect((await call('post', '/academic/enrollments', 'admin', body)).status).toBe(201);
+    expect(entries()).toHaveLength(1);
+    expect(entries()[0]).toMatchObject({ action: 'student.enrolled' });
+    expect(String(entries()[0].target.id)).toBe(String(s._id));
+    expect(String(entries()[0].after.sectionId)).toBe(String(sections.school._id));
+
+    auditLog.mockClear();
+    expect((await call('post', '/academic/enrollments', 'admin', body)).status).toBe(201);
+    expect(auditLog).not.toHaveBeenCalled();
+  });
+});

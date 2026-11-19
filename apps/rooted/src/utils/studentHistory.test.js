@@ -81,6 +81,7 @@ test('editChanges keeps scalar changes only, with a dash for an empty side', () 
 test('every action the server writes for a learner has wording', () => {
   const known = [
     'student.create',
+    'student.enrolled',
     'student.update',
     'student.status_change',
     'student.photo_set',
@@ -126,6 +127,7 @@ test('every wording the code can pick exists in English and Hindi', async () => 
     JSON.parse(readFileSync(new URL(`../i18n/locales/${lang}.json`, import.meta.url), 'utf8'));
   const actions = [
     'student.create',
+    'student.enrolled',
     'student.update',
     'student.status_change',
     'student.photo_set',

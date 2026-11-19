@@ -107,3 +107,15 @@ describe('referencedIds', () => {
     expect(out.sectionIds).toEqual(['c1']);
   });
 });
+
+describe('enrolment entries', () => {
+  test('name the shift joined', () => {
+    const l = { ...lookups(), sections: new Map([['c1', 'Morning']]) };
+    const entry = buildHistoryEntry(
+      { _id: 'e3', at: new Date(), action: 'student.enrolled', after: { sectionId: 'c1' } },
+      l
+    );
+    expect(entry.params).toEqual({ shift: 'Morning' });
+    expect(entry.type).toBe('profile');
+  });
+});

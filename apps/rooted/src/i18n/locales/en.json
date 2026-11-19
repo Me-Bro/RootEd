@@ -2350,7 +2350,17 @@
       "heading": "Seats",
       "none": "No seat in any shift.",
       "row": "{{shift}}: seat {{label}}",
-      "openMap": "Open the seat map"
+      "openMap": "Open the seat map",
+      "move": "Move",
+      "end": "Release",
+      "chooseSeat": "Choose a free seat",
+      "moveConfirm": "Move here",
+      "give": "Give a seat",
+      "chooseShift": "Choose a shift",
+      "giveConfirm": "Give seat",
+      "noFreeSeat": "No free seat in this shift.",
+      "failed": "Could not change the seat.",
+      "inactiveNote": "A withdrawn learner cannot be given a seat."
     },
     "studentBilling": {
       "overdue": "Overdue: {{amount}}",
@@ -2701,6 +2711,7 @@
       "actions": {
         "unknown": "Activity recorded ({{action}}).",
         "student_create": "Added as a learner (admission no. {{admissionNo}}).",
+        "student_enrolled": "Joined the {{shift}} shift.",
         "student_update": "Details updated: {{fields}}.",
         "student_status_change": "Status changed from {{from}} to {{to}}.",
         "student_status_change_withReason": "Status changed from {{from}} to {{to}}: {{reason}}",

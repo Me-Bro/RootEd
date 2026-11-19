@@ -1281,6 +1281,14 @@ router.post('/enrollments', requirePermission('students:write'), async (req, res
       { upsert: true, new: true, runValidators: true }
     );
 
+    // Joining a batch or shift is part of a learner's history. Re-sending an enrolment
+    // that is already active changes nothing, so it is not recorded again.
+    if (existing?.status !== 'active') {
+      await auditStudent(req, 'student.enrolled', studentId, {
+        after: { sectionId: enrollment.sectionId, enrollmentId: enrollment._id },
+      });
+    }
+
     res.status(201).json(enrollment);
   } catch (err) {
     next(err);

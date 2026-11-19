@@ -2350,7 +2350,17 @@
       "heading": "सीटें",
       "none": "किसी पाली में सीट नहीं।",
       "row": "{{shift}}: सीट {{label}}",
-      "openMap": "सीट मैप खोलें"
+      "openMap": "सीट मैप खोलें",
+      "move": "बदलें",
+      "end": "छोड़ें",
+      "chooseSeat": "खाली सीट चुनें",
+      "moveConfirm": "यहाँ ले जाएँ",
+      "give": "सीट दें",
+      "chooseShift": "पाली चुनें",
+      "giveConfirm": "सीट दें",
+      "noFreeSeat": "इस पाली में कोई खाली सीट नहीं।",
+      "failed": "सीट नहीं बदली जा सकी।",
+      "inactiveNote": "छोड़ चुके शिक्षार्थी को सीट नहीं दी जा सकती।"
     },
     "studentBilling": {
       "overdue": "बकाया: {{amount}}",
@@ -2701,6 +2711,7 @@
       "actions": {
         "unknown": "गतिविधि दर्ज हुई ({{action}})।",
         "student_create": "शिक्षार्थी के रूप में जोड़ा गया (प्रवेश संख्या {{admissionNo}})।",
+        "student_enrolled": "{{shift}} पाली में शामिल हुए।",
         "student_update": "विवरण बदले गए: {{fields}}।",
         "student_status_change": "स्थिति {{from}} से {{to}} हुई।",
         "student_status_change_withReason": "स्थिति {{from}} से {{to}} हुई: {{reason}}",

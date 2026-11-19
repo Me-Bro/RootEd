@@ -54,6 +54,8 @@ function paramsOf(log, lookups) {
   switch (log.action) {
     case 'student.create':
       return { admissionNo: after.admissionNo ?? null };
+    case 'student.enrolled':
+      return { shift: lookups.sections.get(ids(after.sectionId)) ?? null };
     case 'student.update':
       return { fields: changesOf(log).map((c) => c.field) };
     case 'student.status_change':

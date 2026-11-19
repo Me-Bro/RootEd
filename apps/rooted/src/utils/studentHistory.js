@@ -26,6 +26,8 @@ export function historyMessage(entry, labels = {}) {
   switch (entry.action) {
     case 'student.create':
       return { key: base, params: { admissionNo: dash(p.admissionNo) } };
+    case 'student.enrolled':
+      return { key: base, params: { shift: dash(p.shift) } };
     case 'student.update':
       return {
         key: base,

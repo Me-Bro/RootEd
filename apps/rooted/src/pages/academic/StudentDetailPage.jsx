@@ -675,7 +675,11 @@ export default function StudentDetailPage() {
         {seats && student.kind !== 'walk_in' && (
           <div className="rounded-lg border border-border p-4">
             <h2 className="mb-3 text-sm font-semibold">{t('studyCenter.studentSeats.heading')}</h2>
-            <StudentSeatsPanel studentId={id} />
+            <StudentSeatsPanel
+              studentId={id}
+              canWrite={canWrite}
+              active={student.status === 'active'}
+            />
           </div>
         )}
         {student.sectionId && !seats && (
