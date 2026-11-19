@@ -2369,6 +2369,7 @@
       "payable": "{{amount}} चुकाने हैं",
       "collect": "भुगतान लें",
       "refund": "वापस करें",
+      "addDiscount": "छूट जोड़ें",
       "historyHeading": "प्लान का इतिहास",
       "noHistory": "अभी तक कोई प्लान इतिहास नहीं।",
       "historyPlan": "{{name}} · {{amount}} {{cycle}}",

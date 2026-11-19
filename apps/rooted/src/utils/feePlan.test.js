@@ -189,3 +189,52 @@ test('collectableFees lists fees with something to pay, using the plan payable a
   );
   assert.deepEqual(collectableFees(), []);
 });
+
+import { standingDiscountPayload } from './feePlan.js';
+
+const goodForm = {
+  name: ' Scholar ',
+  type: 'percentage',
+  value: '10',
+  validFrom: '',
+  validTo: '2027-06-30',
+};
+
+test('a complete standing discount becomes a request for that learner and year', () => {
+  assert.deepEqual(standingDiscountPayload({ form: goodForm, studentId: 's1', yearId: 'y1' }), {
+    name: 'Scholar',
+    type: 'percentage',
+    value: 10,
+    applicableTo: 'student',
+    studentId: 's1',
+    academicYearId: 'y1',
+    validTo: '2027-06-30',
+  });
+});
+
+test('a start date is sent only when given', () => {
+  const p = standingDiscountPayload({
+    form: { ...goodForm, validFrom: '2027-01-01' },
+    studentId: 's1',
+    yearId: 'y1',
+  });
+  assert.equal(p.validFrom, '2027-01-01');
+});
+
+test('a standing discount must end, name the learner and year, and have a sensible value', () => {
+  const make = (form, extra = {}) =>
+    standingDiscountPayload({
+      form: { ...goodForm, ...form },
+      studentId: 's1',
+      yearId: 'y1',
+      ...extra,
+    });
+  assert.equal(make({ validTo: '' }), null);
+  assert.equal(make({ name: '  ' }), null);
+  assert.equal(make({ value: '0' }), null);
+  assert.equal(make({ value: '101' }), null);
+  assert.equal(make({ type: 'flat', value: '500' }).value, 500);
+  assert.equal(make({ validFrom: '2027-07-01' }), null);
+  assert.equal(make({}, { yearId: undefined }), null);
+  assert.equal(make({}, { studentId: undefined }), null);
+});

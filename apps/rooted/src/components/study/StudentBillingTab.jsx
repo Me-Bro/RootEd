@@ -7,6 +7,7 @@ import { Button } from '../ui/Button.jsx';
 import CollectPaymentModal from '../fee/CollectPaymentModal.jsx';
 import StudentFeeStructurePanel from '../students/StudentFeeStructurePanel.jsx';
 import StudentPaymentsTable from './StudentPaymentsTable.jsx';
+import StudentDiscountForm from './StudentDiscountForm.jsx';
 import { formatCurrency, formatDate } from '../../utils/intl.js';
 import {
   ENTITLEMENT_VARIANT,
@@ -180,6 +181,7 @@ export default function StudentBillingTab({
   canWrite,
   canCollect = false,
   canRefund = false,
+  canAddDiscount = false,
   learnerName,
 }) {
   const { t, i18n } = useTranslation();
@@ -211,6 +213,7 @@ export default function StudentBillingTab({
       </Section>
       <Section title={t(`${prefix}.discountHeading`)}>
         <StandingDiscounts studentId={studentId} />
+        {canAddDiscount && <StudentDiscountForm studentId={studentId} onDone={refresh} />}
       </Section>
       <Section title={t(`${prefix}.paymentsHeading`)}>
         <StudentPaymentsTable studentId={studentId} canRefund={canRefund} onDone={refresh} />

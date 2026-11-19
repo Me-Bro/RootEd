@@ -140,3 +140,24 @@ export function collectableFees(assignments = []) {
     .filter((row) => row.canCollect && row.payable > 0)
     .map(({ assignment, payable }) => ({ assignment, payable }));
 }
+
+// The request body for a standing discount set from a learner's page, or null while the
+// form is not complete. A discount for one learner must end (the server insists), the
+// value is a percentage up to 100 or a positive amount, and it belongs to the active
+// academic year. The server checks it all again.
+export function standingDiscountPayload({ form, studentId, yearId }) {
+  const value = Number(form.value);
+  if (!form.name.trim() || !studentId || !yearId || !form.validTo) return null;
+  if (!(value > 0) || (form.type === 'percentage' && value > 100)) return null;
+  if (form.validFrom && form.validTo < form.validFrom) return null;
+  return {
+    name: form.name.trim(),
+    type: form.type,
+    value,
+    applicableTo: 'student',
+    studentId,
+    academicYearId: yearId,
+    ...(form.validFrom ? { validFrom: form.validFrom } : {}),
+    validTo: form.validTo,
+  };
+}

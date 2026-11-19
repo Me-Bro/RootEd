@@ -55,6 +55,7 @@ export default function StudyCenterStudentTabs({ studentId, student, permissions
             canWrite={permissions.includes('fees:write')}
             canCollect={permissions.includes('fees:collect')}
             canRefund={permissions.includes('tenant:admin')}
+            canAddDiscount={permissions.includes('tenant:admin')}
             learnerName={`${student.firstName} ${student.lastName}`}
           />
         </TabsContent>

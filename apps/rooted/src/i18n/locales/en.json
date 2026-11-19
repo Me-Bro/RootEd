@@ -2369,6 +2369,7 @@
       "payable": "{{amount}} to pay",
       "collect": "Collect payment",
       "refund": "Refund",
+      "addDiscount": "Add a discount",
       "historyHeading": "Plan history",
       "noHistory": "No plan history yet.",
       "historyPlan": "{{name}} · {{amount}} {{cycle}}",
