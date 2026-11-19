@@ -99,6 +99,7 @@ export default function StudentVisitsTable({ studentId, canMark = false, active 
             <TableCell className="px-4 py-2">
               <span className="flex flex-wrap gap-1">
                 {v.autoClosed && <Badge variant="warning">{t(`${prefix}.autoClosed`)}</Badge>}
+                {v.bulkClosed && <Badge variant="secondary">{t(`${prefix}.closedByOwner`)}</Badge>}
                 {v.outsideHours && <Badge variant="warning">{t(`${prefix}.outsideHours`)}</Badge>}
               </span>
             </TableCell>

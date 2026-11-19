@@ -106,6 +106,9 @@ export default function StudyCenterReportsPage() {
         <h2 id="rep-hours" className="text-sm font-semibold">
           {t('studyCenter.reports.hours')}
         </h2>
+        <p className="text-xs text-muted-foreground" data-testid="hours-note">
+          {t('studyCenter.reports.hoursNote')}
+        </p>
         <div className="max-w-xs">
           <Input
             id="report-month"

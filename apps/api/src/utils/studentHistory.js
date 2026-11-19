@@ -76,6 +76,7 @@ function paramsOf(log, lookups) {
         inAt: after.inAt ?? null,
         outAt: after.outAt ?? null,
         autoClosed: Boolean(after.autoClosed),
+        bulkClosed: Boolean(after.bulkClosed),
       };
     case 'visit.outsideHours':
       return { seat: seatLabel(lookups, after.seatId) };

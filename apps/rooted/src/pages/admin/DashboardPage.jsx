@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { isSelfScoped } from '@rooted/shared/constants';
 import { hasSeats, isModuleEnabled } from '@rooted/shared/utils';
 import api from '../../lib/api.js';
 import { formatDate, formatDateTime, localDay } from '../../utils/intl.js';
 import { useAuth } from '../../contexts/useAuth.js';
+import { landsOnDesk } from '../../utils/deskView.js';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
@@ -218,7 +219,7 @@ function StudentDashboard() {
   const { data: attendance = [], isLoading: loadingAttendance } = useQuery({
     queryKey: ['me', 'attendance', 'dashboard'],
     queryFn: () => api.get('/me/attendance').then((r) => r.data),
-    enabled: isStudent && academicEnabled,
+    enabled: isStudent && academicEnabled && !seats,
   });
   const { data: grades = [], isLoading: loadingGrades } = useQuery({
     queryKey: ['me', 'grades', 'dashboard'],
@@ -273,7 +274,7 @@ function StudentDashboard() {
             onOpenSubject={setSubject}
           />
         )}
-        {academicEnabled && (
+        {academicEnabled && !seats && (
           <AttendanceCard records={attendance} now={now} loading={loadingAttendance} />
         )}
         {academicEnabled && !seats && (
@@ -299,9 +300,11 @@ function StudentDashboard() {
                 {t('dashboard.student.viewTimetable')}
               </Button>
             )}
-            <Button variant="outline" onClick={() => navigate('/me/attendance')}>
-              {t('dashboard.student.viewAttendance')}
-            </Button>
+            {!seats && (
+              <Button variant="outline" onClick={() => navigate('/me/attendance')}>
+                {t('dashboard.student.viewAttendance')}
+              </Button>
+            )}
             {!seats && (
               <Button variant="outline" onClick={() => navigate('/me/grades')}>
                 {t('dashboard.student.viewGrades')}
@@ -340,7 +343,8 @@ function PrincipalDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   // A study center bills by cycle from each learner's own start date: no defaulters.
-  const showDefaulters = !hasSeats(user?.orgType);
+  const seatsOrg = hasSeats(user?.orgType);
+  const showDefaulters = !seatsOrg;
   const [selectedDate, setSelectedDate] = useState(todayParam());
   const [period, setPeriod] = useState('7d');
   const isToday = selectedDate === todayParam();
@@ -368,12 +372,30 @@ function PrincipalDashboard() {
         .then((r) => r.data.total ?? 0),
   });
 
+  // A study center has no roll call: presence is who checked in (visits), not a mark.
   const { data: studentAttendance = [] } = useQuery({
     queryKey: ['academic', 'attendance', selectedDate, 'student'],
     queryFn: () =>
       api
         .get('/academic/attendance', { params: { date: selectedDate, entityType: 'student' } })
         .then((r) => r.data),
+    enabled: !seatsOrg,
+  });
+
+  const { data: deskSummary } = useQuery({
+    queryKey: ['visits', 'desk-summary'],
+    queryFn: () => api.get('/academic/visits/desk/summary').then((r) => r.data),
+    enabled: seatsOrg,
+    refetchInterval: 60_000,
+  });
+
+  const { data: noShowData } = useQuery({
+    queryKey: ['visits', 'no-shows', todayParam()],
+    queryFn: () =>
+      api
+        .get('/academic/visits/reports/no-shows', { params: { date: todayParam() } })
+        .then((r) => r.data),
+    enabled: seatsOrg,
   });
 
   const { data: staffAttendance = [] } = useQuery({
@@ -425,7 +447,7 @@ function PrincipalDashboard() {
       api
         .get('/academic/attendance/trend', { params: { days: period === '30d' ? 30 : 7 } })
         .then((r) => r.data),
-    enabled: period !== 'year',
+    enabled: period !== 'year' && !seatsOrg,
   });
 
   const presentCount = studentAttendance.filter((r) =>
@@ -471,14 +493,23 @@ function PrincipalDashboard() {
         : undefined,
       onTap: () => navigate('/dashboard/staff'),
     },
-    {
-      key: 'absentToday',
-      count: isToday ? absentCount : 0,
-      tone: 'warn',
-      labelKey: 'dashboard.principal.absentTodayLabel',
-      meta: t('dashboard.principal.absentTodayMeta', { total: totalStudents }),
-      onTap: () => navigate('/dashboard/academic'),
-    },
+    seatsOrg
+      ? {
+          key: 'noShows',
+          count: noShowData?.noShows.length ?? 0,
+          tone: 'warn',
+          labelKey: 'dashboard.principal.noShowsLabel',
+          meta: t('dashboard.principal.noShowsMeta'),
+          onTap: () => navigate('/academic/study-center-reports'),
+        }
+      : {
+          key: 'absentToday',
+          count: isToday ? absentCount : 0,
+          tone: 'warn',
+          labelKey: 'dashboard.principal.absentTodayLabel',
+          meta: t('dashboard.principal.absentTodayMeta', { total: totalStudents }),
+          onTap: () => navigate('/dashboard/academic'),
+        },
   ];
 
   const trendPoints =
@@ -520,7 +551,7 @@ function PrincipalDashboard() {
             })}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className={seatsOrg ? 'hidden' : 'flex items-center gap-2'}>
           <Input
             type="date"
             value={selectedDate}
@@ -550,18 +581,40 @@ function PrincipalDashboard() {
         <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
           {t('dashboard.principal.keyNumbers')}
         </p>
-        <div
-          className={`grid grid-cols-2 gap-3 ${showDefaulters ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}
-        >
-          <KpiCard
-            label={t(
-              isToday ? 'dashboard.principal.attendanceToday' : 'dashboard.principal.attendanceOn'
-            )}
-            valueLabel={attendancePct !== null ? `${attendancePct}%` : '—'}
-            percent={attendancePct ?? 0}
-            tone={tone(attendancePct)}
-            onTap={() => navigate('/dashboard/academic')}
-          />
+        <div className={`grid grid-cols-2 gap-3 lg:grid-cols-4`}>
+          {seatsOrg ? (
+            <>
+              <KpiCard
+                label={t('dashboard.principal.insideNow')}
+                valueLabel={deskSummary ? String(deskSummary.insideNow) : '—'}
+                meta={
+                  deskSummary
+                    ? t('dashboard.principal.insideNowMeta', { total: deskSummary.seatsActive })
+                    : undefined
+                }
+                percent={pct(deskSummary?.insideNow, deskSummary?.seatsActive) ?? 0}
+                tone="good"
+                onTap={() => navigate('/desk')}
+              />
+              <KpiCard
+                label={t('dashboard.principal.visitsToday')}
+                valueLabel={deskSummary ? String(deskSummary.checkInsToday) : '—'}
+                percent={0}
+                tone="good"
+                onTap={() => navigate('/academic/study-center-reports')}
+              />
+            </>
+          ) : (
+            <KpiCard
+              label={t(
+                isToday ? 'dashboard.principal.attendanceToday' : 'dashboard.principal.attendanceOn'
+              )}
+              valueLabel={attendancePct !== null ? `${attendancePct}%` : '—'}
+              percent={attendancePct ?? 0}
+              tone={tone(attendancePct)}
+              onTap={() => navigate('/dashboard/academic')}
+            />
+          )}
           <KpiCard
             label={t('dashboard.principal.feeCollected')}
             valueLabel={feeSummary?.collectedPct != null ? `${feeSummary.collectedPct}%` : '—'}
@@ -600,14 +653,16 @@ function PrincipalDashboard() {
         </div>
       </div>
 
-      <TrendChart
-        period={period}
-        onPeriodChange={setPeriod}
-        points={trendPoints}
-        headline={trendHeadline}
-        subline={trendSubline}
-        notEnoughHistory={period === 'year'}
-      />
+      {!seatsOrg && (
+        <TrendChart
+          period={period}
+          onPeriodChange={setPeriod}
+          points={trendPoints}
+          headline={trendHeadline}
+          subline={trendSubline}
+          notEnoughHistory={period === 'year'}
+        />
+      )}
     </div>
   );
 }
@@ -615,6 +670,10 @@ function PrincipalDashboard() {
 export default function DashboardPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  // Desk staff at a study center work from the front desk, not a dashboard.
+  if (landsOnDesk({ seats: hasSeats(user?.orgType), permissions: user?.permissions })) {
+    return <Navigate to="/desk" replace />;
+  }
   const isSuperAdmin = user?.systemRole === 'super_admin';
   const isStudentView = !isSuperAdmin && hasSelfScopedVisibility(user);
   const isPrincipalView = !isSuperAdmin && !isStudentView && hasSchoolWideVisibility(user);

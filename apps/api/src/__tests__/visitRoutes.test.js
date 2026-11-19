@@ -1,4 +1,4 @@
-// Check-in and check-out, live seat occupancy, open hours, the daily attendance
+// Check-in and check-out, live seat occupancy, open hours
 // record and the auto-close sweeper, through a mini Express app against an in-memory
 // Mongo. Redis and BullMQ are faked. Time is fixed with fake timers that fake only
 // Date, so the centre's clock (Asia/Kolkata) is deterministic.
@@ -240,36 +240,22 @@ async function reset() {
 describe('check-in', () => {
   beforeEach(reset);
 
-  test('a member with a valid plan is seated at their own chair and marked present for the day', async () => {
+  test('a member with a valid plan is seated at their own chair, and no roll-call record is written', async () => {
     const res = await checkIn('desk', ctx.m1);
     expect(res.status).toBe(201);
     expect(res.body.seat.label).toBe('A-1');
     expect(res.body.warning).toBeNull();
     expect(res.body.visit).toMatchObject({ entitlementAtCheckIn: 'valid', outsideHours: false });
 
-    const record = await AttendanceRecord.findOne({
-      tenantId: tenants.study._id,
-      entityId: ctx.m1._id,
-    }).lean();
-    expect(record).toMatchObject({ status: 'present', entityType: 'student' });
-    expect(record.date.toISOString()).toBe('2026-05-11T00:00:00.000Z');
-    expect(String(record.sectionId)).toBe(String(ctx.morning._id));
-    expect(record.subjectId).toBeNull();
+    // A visit is the record of presence at a study center (TICKET-009): nothing is
+    // written to the roll-call attendance collection.
+    expect(
+      await AttendanceRecord.countDocuments({ tenantId: tenants.study._id, entityId: ctx.m1._id })
+    ).toBe(0);
     expect(auditLog).toHaveBeenCalledWith(expect.objectContaining({ action: 'visit.checkIn' }));
   });
 
-  test('the attendance day is the centre’s, not the UTC day: 01:30 IST on the 12th is the 12th', async () => {
-    clock(NIGHT_IST);
-    await setCentre(tenants.study, { open24h: true });
-    await checkIn('desk', ctx.m1);
-    const record = await AttendanceRecord.findOne({
-      tenantId: tenants.study._id,
-      entityId: ctx.m1._id,
-    }).lean();
-    expect(record.date.toISOString()).toBe('2026-05-12T00:00:00.000Z');
-  });
-
-  test('the same learner cannot be checked in twice, but can after checking out, with one record for the day', async () => {
+  test('the same learner cannot be checked in twice, but can after checking out', async () => {
     const first = await checkIn('desk', ctx.m1);
     expect((await checkIn('desk', ctx.m1)).status).toBe(409);
 
@@ -279,9 +265,6 @@ describe('check-in', () => {
     expect(out.body.isOpen).toBeUndefined();
 
     expect((await checkIn('desk', ctx.m1)).status).toBe(201);
-    expect(
-      await AttendanceRecord.countDocuments({ tenantId: tenants.study._id, entityId: ctx.m1._id })
-    ).toBe(1);
     expect(await Visit.countDocuments({ tenantId: tenants.study._id, studentId: ctx.m1._id })).toBe(
       2
     );
@@ -487,7 +470,7 @@ describe('who is in, and who may', () => {
     ).toBe(403);
   });
 
-  test('a manual absent mark the same day is overwritten by the check-in, not duplicated', async () => {
+  test('a manual absent mark the same day is left alone by a check-in', async () => {
     await AttendanceRecord.create({
       tenantId: tenants.study._id,
       date: new Date('2026-05-11T00:00:00Z'),
@@ -502,7 +485,7 @@ describe('who is in, and who may', () => {
       entityId: ctx.m1._id,
     }).lean();
     expect(records).toHaveLength(1);
-    expect(records[0].status).toBe('present');
+    expect(records[0].status).toBe('absent');
   });
 });
 

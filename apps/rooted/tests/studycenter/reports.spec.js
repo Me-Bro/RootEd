@@ -20,8 +20,13 @@ test.describe('reports', () => {
 
   test('lists time on seat per learner for the month', async ({ page }) => {
     await page.goto('/academic/study-center-reports');
-    const row = page.getByRole('row', { name: /Member One Study/ });
+    // The same learner can also be in the "did not come in" list, so scope to this table.
+    const row = page
+      .getByRole('region', { name: 'Time on seat' })
+      .getByRole('row', { name: /Member One Study/ });
     await expect(row).toBeVisible({ timeout: 15_000 });
+    // A visit nobody checked out still counts in full, and the page says so (TICKET-009).
+    await expect(page.getByTestId('hours-note')).toContainText('counts in full');
     // 60 + 90 minutes seeded, plus anything the front-desk specs added.
     await expect(row).toContainText(/\d+ h|\d+ min/);
   });

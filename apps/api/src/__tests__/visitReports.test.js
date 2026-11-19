@@ -86,6 +86,21 @@ describe('hoursPerLearner', () => {
     expect(rows[0]).toMatchObject({ minutes: 60, visits: 2, autoClosedVisits: 1 });
   });
 
+  test('an auto-closed visit counts its full time up to the close time, and a visit the owner closed counts its real time (TICKET-009)', () => {
+    // Closed by the sweeper at closing time: the learner is credited the whole stay
+    // (10:00-22:00 IST here), not zero and not a guess at when they really left.
+    const rows = hoursPerLearner({
+      visits: [
+        visit('a', '2026-05-11T04:30:00Z', '2026-05-11T16:30:00Z', { autoClosed: true }),
+        visit('a', '2026-05-12T04:30:00Z', '2026-05-12T06:00:00Z', { bulkClosed: true }),
+      ],
+      from,
+      to,
+      now,
+    });
+    expect(rows[0]).toMatchObject({ minutes: 720 + 90, visits: 2, autoClosedVisits: 1 });
+  });
+
   test('no visits gives an empty list', () => {
     expect(hoursPerLearner({ visits: [], from, to, now })).toEqual([]);
   });

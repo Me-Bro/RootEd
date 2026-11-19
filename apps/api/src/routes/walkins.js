@@ -10,8 +10,8 @@ import { auditLog } from '../services/audit.service.js';
 import { dayStringInTz } from '../utils/dayKey.js';
 
 // Walk-in visitors of a study center: a Student with kind 'walk_in', a name and
-// a phone, so a day pass is sold and attended through the same fee and
-// attendance records as a member. Mounted under /academic.
+// a phone, so a day pass is sold and checked in (a Visit) through the same fee and
+// visit records as a member. Mounted under /academic.
 const router = Router();
 
 router.use(authenticate);

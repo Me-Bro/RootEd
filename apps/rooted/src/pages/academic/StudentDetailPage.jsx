@@ -640,7 +640,7 @@ export default function StudentDetailPage() {
       <StudentProfileDetails student={student} orgType={user?.orgType} canWrite={canWrite} />
 
       <div className="grid gap-6 sm:grid-cols-2">
-        {permissions.includes('attendance:read') && (
+        {!seats && permissions.includes('attendance:read') && (
           <div className="rounded-lg border border-border p-4">
             <h2 className="mb-3 text-sm font-semibold">
               {t('academic.studentDetail.attendanceHeading')}

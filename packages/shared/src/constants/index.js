@@ -251,3 +251,6 @@ export const READINESS_WEIGHTS = {
   project: 20,
   mockInterview: 15,
 };
+
+// The ways the study-center front desk can narrow its learner list (API query and UI chips).
+export const DESK_FILTERS = ['all', 'inside', 'notInside', 'warning'];

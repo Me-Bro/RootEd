@@ -73,8 +73,11 @@ const STUDY_CENTER_HIDDEN = new Set([
   '/me/grades',
   '/academic/subjects',
   '/academic/my-classes',
-  // Front desk and plan sales are not offered yet.
-  '/desk',
+  // Presence is check-in and check-out (the front desk), not a roll call.
+  '/academic/attendance',
+  '/academic/attendance/report',
+  '/me/attendance',
+  // Plan sales are not offered yet (the front desk is).
   '/fee/sell',
 ]);
 
