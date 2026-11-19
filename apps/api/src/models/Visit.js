@@ -18,6 +18,8 @@ const visitSchema = new mongoose.Schema(
     recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     // Closed by the sweeper because nobody checked the learner out.
     autoClosed: { type: Boolean, default: false },
+    // Closed by an owner's "check out everyone", not by the learner's own check-out.
+    bulkClosed: { type: Boolean, default: false },
     // Checked in outside opening hours, which only an owner may do.
     outsideHours: { type: Boolean, default: false },
     // As it stood at check-in: valid | unpaid | expired | none, and for a learner on

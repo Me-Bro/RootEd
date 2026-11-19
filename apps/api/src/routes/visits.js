@@ -12,6 +12,8 @@ import { requirePermission, userHasPermission } from '../middleware/requirePermi
 import { requireSeatsOrg } from '../middleware/requireSeatsOrg.js';
 import { validate } from '../middleware/validate.js';
 import { checkIn, checkOut, freeSeats, listOpenVisits } from '../services/visit.service.js';
+import { checkOutAll, loadDesk } from '../services/desk.service.js';
+import { DESK_FILTERS } from '../utils/deskView.js';
 import { learnerVisits } from '../services/studentVisits.service.js';
 import { Student } from '../models/Student.js';
 import { auditLog } from '../services/audit.service.js';
@@ -34,6 +36,24 @@ const audit = (req, action, visit, extra = {}) =>
     ip: req.ip,
     ...extra,
   });
+
+// The front desk in one read: the strip, the learner list, live seat tiles, today's
+// activity. A learner's plan status is included only for someone who may read fees.
+const deskQuery = z.object({
+  search: z.string().trim().max(60).optional(),
+  filter: z.enum(DESK_FILTERS).default('all'),
+});
+
+router.get('/visits/desk', requirePermission('attendance:read'), async (req, res, next) => {
+  try {
+    const query = deskQuery.safeParse(req.query);
+    if (!query.success) return res.status(400).json({ error: query.error.issues[0].message });
+    const withFees = await userHasPermission(req, 'fees:read');
+    res.json(await loadDesk({ tenant: req.tenant, withFees, ...query.data }));
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.get('/visits/open', requirePermission('attendance:read'), async (req, res, next) => {
   try {
@@ -136,6 +156,24 @@ router.post(
       // An owner letting someone in after hours is the exception the owner must own.
       if (result.visit.outsideHours) await audit(req, 'visit.outsideHours', result.visit);
       res.status(201).json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// End of day: an owner closes everyone still inside. Each closed visit is audited.
+router.post(
+  '/visits/check-out-all',
+  requirePermission('attendance:write'),
+  async (req, res, next) => {
+    try {
+      if (!(await userHasPermission(req, 'tenant:admin'))) {
+        return res.status(403).json({ error: 'Only an owner can check everyone out' });
+      }
+      const closed = await checkOutAll({ tenantId: req.tenant._id });
+      for (const visit of closed) await audit(req, 'visit.checkOut', visit);
+      res.json({ closed: closed.length });
     } catch (err) {
       next(err);
     }

@@ -1,8 +1,8 @@
 import { FeeAssignment } from '../models/FeeAssignment.js';
 import { Tenant } from '../models/Tenant.js';
 import { classifyEntitlement } from '../utils/entitlement.js';
-import { billingEntitlement } from '../utils/billingCycle.js';
-import { loadBillingLedger } from './feePlanLedger.service.js';
+import { billingEntitlement, isBillingAssignment } from '../utils/billingCycle.js';
+import { ledgersFor, loadBillingLedger } from './feePlanLedger.service.js';
 
 /**
  * May this learner use the centre right now?
@@ -38,4 +38,52 @@ export async function entitlementFor(tenantId, studentId, at = new Date()) {
     'status coversFrom coversTo'
   ).lean();
   return classifyEntitlement(assignments, at);
+}
+
+/**
+ * `entitlementFor` for many learners at once (the front-desk list), keyed by student
+ * id: one assignments query, plus the batched ledgers for those on a billing plan.
+ * `tenant` needs `_id` and `timezone`.
+ */
+export async function entitlementsFor(tenant, studentIds, at = new Date()) {
+  const result = new Map();
+  if (!studentIds.length) return result;
+
+  const assignments = await FeeAssignment.find(
+    {
+      tenantId: tenant._id,
+      studentId: { $in: studentIds },
+      $or: [{ billing: { $exists: true } }, { coversTo: { $exists: true, $ne: null } }],
+    },
+    'studentId status coversFrom coversTo billing'
+  ).lean();
+
+  const byStudent = new Map();
+  for (const a of assignments) {
+    const key = String(a.studentId);
+    if (!byStudent.has(key)) byStudent.set(key, []);
+    byStudent.get(key).push(a);
+  }
+
+  const billing = assignments.filter(isBillingAssignment);
+  const ledgers = await ledgersFor({ tenant, assignments: billing, now: at });
+  const billed = new Map(billing.map((a) => [String(a.studentId), a]));
+
+  for (const studentId of studentIds) {
+    const key = String(studentId);
+    const plan = billed.get(key);
+    if (plan) {
+      const ledger = ledgers.get(String(plan._id));
+      result.set(key, {
+        status: billingEntitlement(ledger),
+        coversTo: null,
+        overdue: ledger.overdue,
+        nextDue: ledger.nextDue,
+      });
+    } else {
+      const own = (byStudent.get(key) ?? []).filter((a) => a.coversTo);
+      result.set(key, classifyEntitlement(own, at));
+    }
+  }
+  return result;
 }

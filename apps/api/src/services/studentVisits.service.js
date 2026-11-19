@@ -51,6 +51,7 @@ export async function learnerVisits({ tenant, studentId, page, limit, month, now
     seat: { _id: String(v.seatId), label: seatLabels.get(String(v.seatId)) ?? null },
     method: v.method,
     autoClosed: Boolean(v.autoClosed),
+    bulkClosed: Boolean(v.bulkClosed),
     outsideHours: Boolean(v.outsideHours),
     entitlementAtCheckIn: v.entitlementAtCheckIn ?? null,
     recordedBy: { _id: String(v.recordedBy), name: names.get(String(v.recordedBy)) ?? null },
