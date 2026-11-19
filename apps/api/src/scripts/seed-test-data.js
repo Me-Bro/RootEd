@@ -420,11 +420,15 @@ async function run() {
   // one mirrored Section (same name and hours) that seats, plans and visits point at.
   const studyShifts = {};
   const studyClasses = {};
+  // Morning and Evening are adjacent (14:00 is the hand-over, not an overlap). Midday
+  // overlaps both and holds no seats of its own, so it shows what an overlapping shift
+  // sees: every seat held in Morning or Evening is unavailable there.
   const shiftHours = {
     Morning: { startTime: '06:00', endTime: '14:00' },
     Evening: { startTime: '14:00', endTime: '22:00' },
+    Midday: { startTime: '12:00', endTime: '18:00' },
   };
-  for (const name of ['Morning', 'Evening']) {
+  for (const name of ['Morning', 'Evening', 'Midday']) {
     studyClasses[name] = await Class.findOneAndUpdate(
       { tenantId: studyTenantId, name },
       { $setOnInsert: { tenantId: studyTenantId, name }, $set: shiftHours[name] },
@@ -441,7 +445,7 @@ async function run() {
   }
   const studyClass = studyClasses.Morning;
 
-  // Two members, each linked to a login, enrolled in both shifts.
+  // Two members, each linked to a login, enrolled in every shift.
   const studyMembers = {};
   for (const [userKey, admissionNo, firstName, phone] of [
     ['studyMember1', 'SC-001', 'Member One', '9000000001'],

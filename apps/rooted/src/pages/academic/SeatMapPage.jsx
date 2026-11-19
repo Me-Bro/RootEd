@@ -165,13 +165,17 @@ export default function SeatMapPage() {
       >
         {items.map((seat) => {
           const held = seat.heldBy;
+          // Free in this shift, but held in another whose hours overlap it.
+          const blocked = seat.blockedBy;
           return (
             <li
               key={seat.seatId}
               data-testid={`seat-${seat.label}`}
+              data-blocked={blocked ? 'true' : undefined}
               className={cn(
                 'flex flex-col gap-2 rounded-lg border p-3 text-sm',
-                held ? 'border-border bg-muted/40' : 'border-dashed border-border'
+                held || blocked ? 'border-border bg-muted/40' : 'border-dashed border-border',
+                blocked && 'opacity-80'
               )}
             >
               <div className="flex items-baseline justify-between gap-2">
@@ -208,6 +212,16 @@ export default function SeatMapPage() {
                     </div>
                   )}
                 </>
+              ) : blocked ? (
+                <p className="text-xs text-muted-foreground" data-testid={`blocked-${seat.label}`}>
+                  {t('studyCenter.seatMap.blockedBy', {
+                    name: blocked.name,
+                    shift: blocked.sectionName,
+                    hours:
+                      formatShiftHours(blocked.startTime, blocked.endTime) ||
+                      t('studyCenter.seatMap.allDay'),
+                  })}
+                </p>
               ) : (
                 <>
                   <p className="text-xs text-muted-foreground">{t('studyCenter.seatMap.free')}</p>

@@ -2329,6 +2329,8 @@
       "empty": "No seats to show. Add seats first.",
       "heldBy": "Held by {{name}}",
       "free": "Free",
+      "blockedBy": "Not available: held by {{name}} in {{shift}} ({{hours}}), which overlaps this shift.",
+      "allDay": "all day",
       "assign": "Seat here",
       "move": "Move",
       "moveHere": "Move here",

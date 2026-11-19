@@ -82,6 +82,85 @@ describe('buildAvailability', () => {
     expect(result.poolSize).toBe(2);
   });
 
+  describe('seats held in an overlapping shift', () => {
+    const evening = { name: 'Evening', startTime: '16:00', endTime: '20:00' };
+    const clash = (seatLabel, studentId, section = evening) => ({
+      seatId: `id-${seatLabel}`,
+      studentId,
+      sectionId: 'evening',
+      section,
+    });
+
+    test('are marked blocked, with who holds them and where', () => {
+      const result = buildAvailability({
+        seats,
+        shiftAllocations: [],
+        anyAllocations: [hold('A-2', 's2', 'evening')],
+        overlapping: [clash('A-2', 's2')],
+        holderName,
+      });
+      expect(result.items.find((i) => i.label === 'A-2').blockedBy).toEqual({
+        name: 'Ravi Kumar',
+        sectionName: 'Evening',
+        startTime: '16:00',
+        endTime: '20:00',
+      });
+      expect(result.items.find((i) => i.label === 'A-3').blockedBy).toBeNull();
+    });
+
+    test('a shift with no hours reports null times', () => {
+      const result = buildAvailability({
+        seats,
+        shiftAllocations: [],
+        anyAllocations: [hold('A-2', 's2', 'evening')],
+        overlapping: [clash('A-2', 's2', { name: 'Anytime' })],
+        holderName,
+      });
+      expect(result.items.find((i) => i.label === 'A-2').blockedBy).toMatchObject({
+        sectionName: 'Anytime',
+        startTime: null,
+        endTime: null,
+      });
+    });
+
+    test('a seat held in the chosen shift itself is held, not blocked', () => {
+      const own = hold('A-1', 's1', 'morning');
+      const result = buildAvailability({
+        seats,
+        shiftAllocations: [own],
+        anyAllocations: [own, hold('A-1', 's2', 'evening')],
+        overlapping: [clash('A-1', 's2')],
+        holderName,
+      });
+      const a1 = result.items.find((i) => i.label === 'A-1');
+      expect(a1.heldBy.name).toBe('Asha Rana');
+      expect(a1.blockedBy).toBeNull();
+    });
+
+    test('does not change the day-pass pool', () => {
+      const other = hold('A-2', 's2', 'evening');
+      const result = buildAvailability({
+        seats,
+        shiftAllocations: [],
+        anyAllocations: [other],
+        overlapping: [clash('A-2', 's2')],
+        holderName,
+      });
+      expect(result.poolSize).toBe(2);
+      expect(result.heldCount).toBe(0);
+    });
+
+    test('without any overlapping holds nothing is blocked', () => {
+      const result = buildAvailability({
+        seats,
+        shiftAllocations: [],
+        anyAllocations: [],
+        holderName,
+      });
+      expect(result.items.every((i) => i.blockedBy === null)).toBe(true);
+    });
+  });
+
   test('items come back in natural label order', () => {
     const many = [seat('A-10'), seat('A-9'), seat('A-1')];
     const result = buildAvailability({
