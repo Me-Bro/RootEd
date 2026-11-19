@@ -325,8 +325,16 @@
         "hint": "Add the chairs you have, one by one or a run like A-1 to A-20."
       },
       "plans": {
-        "title": "Add a plan or day pass",
-        "hint": "Set a fixed price for a shift plan or a day pass. Without one nothing can be sold."
+        "title": "Add a fee plan",
+        "hint": "Set a monthly or weekly price. Without one members have nothing to be billed on."
+      },
+      "seatMap": {
+        "title": "Seat Map",
+        "hint": "Open the seat map and give each member a seat in their shift."
+      },
+      "collection": {
+        "title": "Fee collection",
+        "hint": "Record the first payment from a member to start collecting fees."
       },
       "members": {
         "title": "Add members",
