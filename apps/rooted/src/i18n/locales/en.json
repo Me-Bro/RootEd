@@ -2373,7 +2373,7 @@
       "historyHeading": "Plan history",
       "noHistory": "No plan history yet.",
       "historyPlan": "{{name}} · {{amount}} {{cycle}}",
-      "historyPause": "Billing paused",
+      "historyPause": "Paused",
       "historyEnded": "Billing ended on {{day}}",
       "fromTo": "{{from}} to {{to}}",
       "fromOn": "from {{from}}",

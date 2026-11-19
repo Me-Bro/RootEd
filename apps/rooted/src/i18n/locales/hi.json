@@ -2373,7 +2373,7 @@
       "historyHeading": "प्लान का इतिहास",
       "noHistory": "अभी तक कोई प्लान इतिहास नहीं।",
       "historyPlan": "{{name}} · {{amount}} {{cycle}}",
-      "historyPause": "बिलिंग रुकी",
+      "historyPause": "रुकी हुई",
       "historyEnded": "बिलिंग {{day}} को खत्म हुई",
       "fromTo": "{{from}} से {{to}} तक",
       "fromOn": "{{from}} से",

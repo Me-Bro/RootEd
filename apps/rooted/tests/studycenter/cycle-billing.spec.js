@@ -92,7 +92,9 @@ test.describe('the owner sets up and runs a fee plan', () => {
       await pick(oneOff, 'Registration');
       await page.getByRole('button', { name: 'Add', exact: true }).click();
     }
-    await expect(page.getByRole('listitem').filter({ hasText: 'Registration' })).toBeVisible({
+    // The one-off fees section, not the Due now list that repeats the fee's name.
+    const oneOffs = page.locator('section[aria-label="One-off fees"]');
+    await expect(oneOffs.getByRole('listitem').filter({ hasText: 'Registration' })).toBeVisible({
       timeout: 10_000,
     });
     await page.getByRole('button', { name: 'Remove' }).click();

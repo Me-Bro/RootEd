@@ -22,11 +22,11 @@ test.describe('learner profile', () => {
   });
 
   test('the add form asks for batch fields only, and saves them', async ({ page }) => {
-    const admissionNo = `SC-PF-${Date.now()}`;
     await page.goto('/academic/students');
     await page.getByRole('button', { name: 'Add Student' }).click();
     const dialog = page.getByRole('dialog');
-    await dialog.getByLabel('Admission No').fill(admissionNo);
+    // A study center numbers its learners itself: the box is read-only until double-clicked.
+    await expect(dialog.getByLabel('Admission No')).toHaveAttribute('readonly', '');
     await dialog.getByLabel('First Name').fill('Aspirant');
     await dialog.getByLabel('Last Name').fill('Learner');
 
