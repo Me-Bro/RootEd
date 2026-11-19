@@ -75,9 +75,11 @@ export default function SetupChecklist() {
   const students = useSetupQuery('students', '/academic/students', { limit: 1 }, isAdmin);
   const seatList = useSetupQuery('seats', '/academic/seats', undefined, centre);
   const plans = useSetupQuery('plans', '/fee/structures', undefined, centre && feeEnabled);
+  const allocations = useSetupQuery('allocations', '/academic/seat-allocations', undefined, centre);
+  const payments = useSetupQuery('payments', '/fee/payments', { limit: 1 }, centre && feeEnabled);
 
   const required = seats
-    ? [classes, seatList, students, ...(feeEnabled ? [plans] : [])]
+    ? [classes, seatList, students, allocations, ...(feeEnabled ? [plans, payments] : [])]
     : [years, terms, classes, subjects, assignments, students, ...(staffEnabled ? [staff] : [])];
   if (!isAdmin || required.some((q) => !q.isSuccess)) return null;
 
@@ -91,7 +93,9 @@ export default function SetupChecklist() {
     assignments: assignments.data ?? [],
     studentsTotal: students.data.total,
     seatCount: seatList.data?.length ?? 0,
-    planCount: feeEnabled ? plans.data?.filter((f) => f.plan).length : undefined,
+    planCount: feeEnabled ? plans.data?.filter((f) => f.plan || f.cycle).length : undefined,
+    allocationCount: allocations.data?.length ?? 0,
+    paymentCount: feeEnabled ? payments.data?.length : undefined,
   });
   const doneCount = steps.filter((s) => s.done).length;
   if (dismissed) return null;

@@ -52,11 +52,11 @@ test('every step links to the page that completes it', () => {
   assert.equal(to.students, '/academic/students');
 });
 
-test('a study center gets its own four steps, in order', () => {
-  const steps = setupSteps({ ...empty, seats: true, planCount: 0 });
+test('a study center gets its own six steps, in order', () => {
+  const steps = setupSteps({ ...empty, seats: true, planCount: 0, paymentCount: 0 });
   assert.deepEqual(
     steps.map((s) => s.key),
-    ['shifts', 'seats', 'plans', 'members']
+    ['shifts', 'seats', 'plans', 'members', 'seatMap', 'collection']
   );
   assert.deepEqual(done(steps), []);
 });
@@ -74,17 +74,33 @@ test('each study center step ticks from its own data and links to its page', () 
     seatCount: 12,
     planCount: 2,
     studentsTotal: 5,
+    allocationCount: 3,
+    paymentCount: 1,
   });
-  assert.equal(done(steps).length, 4);
+  assert.equal(done(steps).length, 6);
   assert.deepEqual(
     steps.map((s) => s.to),
-    ['/academic/classes-sections', '/academic/seats', '/fee/structures', '/academic/students']
+    [
+      '/academic/classes-sections',
+      '/academic/seats',
+      '/fee/structures',
+      '/academic/students',
+      '/academic/seat-map',
+      '/fee',
+    ]
   );
 });
 
-test('the plans step is left out when planCount is unknown (fee module off)', () => {
+test('the seat map step ticks only once a seat is held', () => {
+  const at = (allocationCount) =>
+    done(setupSteps({ ...empty, seats: true, allocationCount })).includes('seatMap');
+  assert.equal(at(0), false);
+  assert.equal(at(1), true);
+});
+
+test('the plans and collection steps are left out when the fee module is off', () => {
   const keys = setupSteps({ ...empty, seats: true }).map((s) => s.key);
-  assert.deepEqual(keys, ['shifts', 'seats', 'members']);
+  assert.deepEqual(keys, ['shifts', 'seats', 'members', 'seatMap']);
 });
 
 test('without seats the existing step list is unchanged', () => {

@@ -770,13 +770,15 @@ router.get('/payments', requirePermission('fees:read'), async (req, res, next) =
       if (req.query.to) filter.paymentDate.$lte = new Date(req.query.to);
     }
 
-    const payments = await FeePayment.find(filter)
+    const query = FeePayment.find(filter)
       .populate('studentId', 'firstName lastName admissionNo')
       .populate('collectedBy', 'email')
-      .sort({ paymentDate: -1 })
-      .lean();
+      .sort({ paymentDate: -1 });
+    // Optional cap, for callers that only need to know whether any payment exists.
+    const limit = Number.parseInt(req.query.limit, 10);
+    if (limit > 0) query.limit(Math.min(limit, 500));
 
-    res.json(payments);
+    res.json(await query.lean());
   } catch (err) {
     next(err);
   }
