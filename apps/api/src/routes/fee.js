@@ -497,6 +497,7 @@ router.put(
           tenantId: tenantId.toString(),
           action: 'student.feePlan.set',
           target: { model: 'FeeAssignment', id: assignment._id },
+          studentId,
           before: before ? { billing: before.billing } : undefined,
           after: { billing: assignment.toObject().billing },
           ip: req.ip,
@@ -586,6 +587,7 @@ router.post(
         tenantId: req.tenant._id.toString(),
         action: 'student.feePlan.pause',
         target: { model: 'FeeAssignment', id: assignment._id },
+        studentId: req.params.studentId,
         after: { on: req.body.on, seatsReleased },
         ip: req.ip,
       });
@@ -617,6 +619,7 @@ router.post(
         tenantId: req.tenant._id.toString(),
         action: 'student.feePlan.resume',
         target: { model: 'FeeAssignment', id: assignment._id },
+        studentId: req.params.studentId,
         after: { on: req.body.on, seatId: seat?.seatId, sectionId: seat?.sectionId },
         ip: req.ip,
       });
@@ -728,6 +731,27 @@ router.post(
   }
 );
 
+// A payment taken, for the learner's history. Online payments carry the provider's
+// payment id as the transaction id.
+const auditPayment = (req, payment, extra = {}) =>
+  auditLog({
+    actorId: req.user.sub,
+    tenantId: req.tenant._id.toString(),
+    action: 'feePayment.record',
+    target: { model: 'FeePayment', id: payment._id },
+    after: {
+      studentId: payment.studentId,
+      assignmentId: payment.assignmentId,
+      amount: payment.amount,
+      paymentMethod: payment.paymentMethod,
+      transactionId: payment.transactionId,
+      receiptNumber: payment.receiptNumber,
+      installmentIndex: payment.installmentIndex,
+      ...extra,
+    },
+    ip: req.ip,
+  });
+
 router.post(
   '/payments',
   requirePermission('fees:collect'),
@@ -747,6 +771,7 @@ router.post(
         collectedBy: req.user.sub,
         tenantId: req.tenant._id,
       });
+      await auditPayment(req, payment);
 
       let receiptUrl = null;
       if (payment.receiptPdfKey) {
@@ -957,6 +982,7 @@ router.post('/payments/verify', requirePermission('fees:collect'), async (req, r
       collectedBy: req.user.sub,
       tenantId: req.tenant._id,
     });
+    await auditPayment(req, payment, { online: true });
 
     let receiptUrl = null;
     if (payment.receiptPdfKey) {

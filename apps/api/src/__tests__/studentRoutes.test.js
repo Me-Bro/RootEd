@@ -903,7 +903,10 @@ describe('GET /academic/students/:id/aadhaar (reveal)', () => {
   test('entering it when the student is created is audited too', async () => {
     auditLog.mockClear();
     await call('post', '/academic/students', 'admin', base('RV-7', { aadhaar: AADHAAR }));
-    expect(auditLog.mock.calls.map(([e]) => e.action)).toEqual(['student.aadhaar_set']);
+    expect(auditLog.mock.calls.map(([e]) => e.action)).toEqual([
+      'student.create',
+      'student.aadhaar_set',
+    ]);
     expect(JSON.stringify(auditLog.mock.calls)).not.toContain(AADHAAR);
   });
 
@@ -911,7 +914,7 @@ describe('GET /academic/students/:id/aadhaar (reveal)', () => {
     const s = await Student.create({ tenantId: tenants.school._id, ...base('RV-6') });
     auditLog.mockClear();
     await call('patch', `/academic/students/${s._id}`, 'admin', { firstName: 'Anya' });
-    expect(auditLog).not.toHaveBeenCalled();
+    expect(auditLog.mock.calls.map(([e]) => e.action)).toEqual(['student.update']);
   });
 });
 
@@ -1048,5 +1051,113 @@ describe('fee structure on create (study center)', () => {
       expect(res.status).toBe(422);
       expect(await Student.countDocuments({ tenantId: tenants.study._id })).toBe(count);
     });
+  });
+});
+
+describe('student audit entries', () => {
+  const entries = () => auditLog.mock.calls.map(([e]) => e);
+  const make = (no, extra) =>
+    Student.create({ tenantId: tenants.school._id, ...base(no), ...extra });
+  beforeEach(() => auditLog.mockClear());
+
+  test('creating a student is audited with the saved record, never the Aadhaar number', async () => {
+    const res = await call(
+      'post',
+      '/academic/students',
+      'admin',
+      base('AU-1', { aadhaar: AADHAAR })
+    );
+    expect(res.status).toBe(201);
+    const created = entries().find((e) => e.action === 'student.create');
+    expect(String(created.target.id)).toBe(res.body._id);
+    expect(created.after).toMatchObject({ admissionNo: 'AU-1', firstName: 'Asha' });
+    expect(created.after.aadhaarEnc).toBe('[redacted]');
+    expect(created.after.aadhaarLast4).toBe('[redacted]');
+    expect(JSON.stringify(entries())).not.toContain(AADHAAR);
+  });
+
+  test('an edit records only the fields that changed, before and after', async () => {
+    const s = await make('AU-2', { phone: '9876543210', bloodGroup: 'O+' });
+    const res = await call('patch', `/academic/students/${s._id}`, 'admin', {
+      phone: '9876500000',
+      bloodGroup: 'O+',
+    });
+    expect(res.status).toBe(200);
+    expect(entries()).toHaveLength(1);
+    expect(entries()[0]).toMatchObject({
+      action: 'student.update',
+      before: { phone: '9876543210' },
+      after: { phone: '9876500000' },
+    });
+    expect(entries()[0].after.bloodGroup).toBeUndefined();
+  });
+
+  test('a patch that changes nothing writes no entry', async () => {
+    const s = await make('AU-3', { phone: '9876543210' });
+    await call('patch', `/academic/students/${s._id}`, 'admin', { phone: '9876543210' });
+    expect(auditLog).not.toHaveBeenCalled();
+  });
+
+  test('a status change is its own entry, apart from the other edits', async () => {
+    const s = await make('AU-4');
+    await call('patch', `/academic/students/${s._id}`, 'admin', {
+      status: 'withdrawn',
+      statusReason: 'Moved city',
+      firstName: 'Anya',
+    });
+    const [status, update] = entries();
+    expect(status).toMatchObject({
+      action: 'student.status_change',
+      before: { status: 'active' },
+      after: { status: 'withdrawn', statusReason: 'Moved city' },
+    });
+    expect(update).toMatchObject({
+      action: 'student.update',
+      before: { firstName: 'Asha' },
+      after: { firstName: 'Anya' },
+    });
+  });
+
+  test('an Aadhaar change never puts the number, or its digits, in a diff', async () => {
+    const s = await make('AU-5');
+    await call('patch', `/academic/students/${s._id}`, 'admin', {
+      aadhaar: AADHAAR,
+      firstName: 'Anya',
+    });
+    expect(entries().map((e) => e.action)).toEqual(['student.update', 'student.aadhaar_set']);
+    expect(JSON.stringify(entries())).not.toContain(AADHAAR);
+    expect(JSON.stringify(entries())).not.toContain(AADHAAR.slice(-4));
+  });
+
+  test('a refused edit is not audited', async () => {
+    const s = await make('AU-6');
+    await call('patch', `/academic/students/${s._id}`, 'teacher', { firstName: 'Anya' });
+    await call('patch', `/academic/students/${s._id}`, 'admin', { admissionNo: 'x' });
+    expect(auditLog).not.toHaveBeenCalled();
+  });
+
+  test('uploading a photo or a document, and downloading a document, are audited', async () => {
+    const s = await make('AU-7');
+    const id = String(s._id);
+    const as = (path) =>
+      request(app)
+        .post(path)
+        .set('x-tenant', 'school')
+        .set('Authorization', `Bearer ${tokens.admin}`);
+    await as(`/academic/students/${id}/photo`).attach('file', Buffer.from('png'), {
+      filename: 'me.png',
+      contentType: 'image/png',
+    });
+    await as(`/academic/students/${id}/documents`)
+      .field('kind', 'resume')
+      .attach('file', Buffer.from('pdf'), { filename: 'cv.pdf', contentType: 'application/pdf' });
+    await call('get', `/academic/students/${id}/documents/0/download`, 'admin');
+    expect(entries().map((e) => e.action)).toEqual([
+      'student.photo_set',
+      'student.document_add',
+      'student.document_download',
+    ]);
+    expect(entries()[1].after).toEqual({ name: 'cv.pdf', kind: 'resume' });
+    expect(entries().every((e) => String(e.target.id) === id)).toBe(true);
   });
 });

@@ -452,3 +452,51 @@ describe('paying against a fee plan', () => {
     expect(payments.every((p) => p.receiptPdfKey)).toBe(true);
   });
 });
+
+describe('recording a payment is audited against the learner', () => {
+  test('one entry per payment, naming the learner, amount and receipt; a refused payment has none', async () => {
+    const learner = await mkStudent(tenants.study, 'PAY-AUD');
+    await setStructure(learner, ctx.monthly, { startDate: `${today().slice(0, 8)}01` });
+    const plan = await planOf(learner);
+    auditLog.mockClear();
+
+    const refused = await call('post', '/fee/payments', 'owner', {
+      assignmentId: String(plan._id),
+      amount: 999999,
+      paymentMethod: 'cash',
+    });
+    expect(refused.status).toBe(400);
+    expect(auditLog).not.toHaveBeenCalled();
+
+    const ok = await call('post', '/fee/payments', 'owner', {
+      assignmentId: String(plan._id),
+      amount: 400,
+      paymentMethod: 'cash',
+      transactionId: 'T-1',
+    });
+    expect(ok.status).toBe(201);
+    expect(auditLog).toHaveBeenCalledTimes(1);
+    const entry = auditLog.mock.calls[0][0];
+    expect(entry.action).toBe('feePayment.record');
+    expect(String(entry.target.id)).toBe(ok.body.payment._id);
+    expect(entry.after).toMatchObject({
+      amount: 400,
+      paymentMethod: 'cash',
+      transactionId: 'T-1',
+      receiptNumber: ok.body.payment.receiptNumber,
+    });
+    expect(String(entry.after.studentId)).toBe(String(learner._id));
+    expect(String(entry.after.assignmentId)).toBe(String(plan._id));
+  });
+
+  test('pause and resume name the learner explicitly', async () => {
+    const learner = await mkStudent(tenants.study, 'PAY-AUD2');
+    await setStructure(learner, ctx.monthly, { startDate: dayOffset(-10) });
+    auditLog.mockClear();
+    await call('post', `/fee/students/${learner._id}/pause`, 'owner', { on: today() });
+    expect(auditLog.mock.calls[0][0]).toMatchObject({
+      action: 'student.feePlan.pause',
+      studentId: String(learner._id),
+    });
+  });
+});
