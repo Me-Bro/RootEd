@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { hasSeats } from '@rooted/shared/utils';
 import { useTranslation } from 'react-i18next';
@@ -26,6 +26,7 @@ import { formFromStudent, studentPayload } from '../../components/students/stude
 import { useAuth } from '../../contexts/useAuth.js';
 import { localDayString } from '../../utils/studyCenter.js';
 import { earliestStartDay } from '../../utils/feePlan.js';
+import { noticeFromCreated } from '../../utils/studentAdded.js';
 
 const LAST_SECTION_KEY = 'students:lastSectionId';
 
@@ -68,12 +69,7 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
         .then((r) => r.data),
     onSuccess: (student) => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
-      onAdded({
-        name: `${student.firstName} ${student.lastName}`,
-        email: student.account?.email,
-        loginError: student.loginError,
-        feeError: student.feeError,
-      });
+      onAdded(student);
       onOpenChange(false);
       setForm(formFromStudent({}, orgType));
       setOverrideAdmission(false);
@@ -316,10 +312,17 @@ export default function StudentsPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const canCreateSection = (user?.permissions ?? []).includes('tenant:admin');
   const [showAdd, setShowAdd] = useState(false);
-  const [added, setAdded] = useState(null);
+
+  // A student just added is opened straight away: that page is where everything about
+  // them is managed, and it says how their login and fee went.
+  const openAdded = (student) =>
+    navigate(`/academic/students/${student._id}`, {
+      state: { justAdded: noticeFromCreated(student) },
+    });
   const [addSectionFor, setAddSectionFor] = useState(null); // classId | null
   const [importResult, setImportResult] = useState(null);
   const [searchInput, setSearchInput] = useState('');
@@ -452,20 +455,6 @@ export default function StudentsPage() {
         }
       />
 
-      {added && (
-        <p role="status" className="rounded-lg border border-border bg-card px-4 py-3 text-sm">
-          {added.email
-            ? t('academic.students.addedWithLogin', { name: added.name, email: added.email })
-            : added.loginError
-              ? t('academic.students.addedNoLogin', {
-                  name: added.name,
-                  reason: added.loginError,
-                })
-              : t('academic.students.addedNext', { name: added.name })}
-          {added.feeError && ` ${t('academic.students.feeNotAssigned')}`}
-        </p>
-      )}
-
       <SearchField value={searchInput} onChange={setSearchInput} />
 
       {search ? (
@@ -505,7 +494,7 @@ export default function StudentsPage() {
       <AddStudentModal
         open={showAdd}
         onOpenChange={setShowAdd}
-        onAdded={setAdded}
+        onAdded={openAdded}
         sections={sections}
         classes={classes}
         canCreateSection={canCreateSection}

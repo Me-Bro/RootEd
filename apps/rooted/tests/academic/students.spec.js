@@ -81,8 +81,9 @@ test.describe('Students page', () => {
 
     await dialog.getByRole('button', { name: 'Add Student' }).click();
 
-    // Dialog closes
+    // Dialog closes and the new student's profile opens
     await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 8_000 });
+    await expect(page).toHaveURL(/\/academic\/students\/[0-9a-f]{24}$/);
   });
 
   test('shows error for duplicate admission number', async ({ page }) => {

@@ -88,3 +88,76 @@ export function statusTransitions(status, seats) {
   if (status === 'graduated' || status === 'withdrawn') return [reactivate];
   return [];
 }
+
+// A badge colour per entitlement status (GET /fee/entitlement, and a visit's plan at
+// check-in): green when they may come in, amber when the desk should look twice, red
+// when there is nothing covering them.
+export const ENTITLEMENT_VARIANT = {
+  valid: 'success',
+  unpaid: 'warning',
+  paused: 'warning',
+  scheduled: 'warning',
+  expired: 'danger',
+  ended: 'danger',
+  none: 'danger',
+};
+
+// A plan's life as a list, newest first: each stretch on a structure, each pause, and
+// when billing ended. Days are the centre's YYYY-MM-DD strings from the billing
+// endpoint, `to` null while a stretch or pause is still open (so it sorts by `from`).
+export function planHistory(plan) {
+  if (!plan) return [];
+  const rows = [
+    ...(plan.segments ?? []).map((s) => ({
+      kind: 'plan',
+      name: s.name,
+      cycle: s.cycle,
+      amount: s.amount,
+      from: s.from,
+      to: s.to ?? null,
+    })),
+    ...(plan.pauses ?? []).map((p) => ({ kind: 'pause', from: p.from, to: p.to ?? null })),
+    ...(plan.endedOn ? [{ kind: 'ended', from: plan.endedOn, to: null }] : []),
+  ];
+  const order = { ended: 0, pause: 1, plan: 2 };
+  return rows.sort((a, b) => b.from.localeCompare(a.from) || order[a.kind] - order[b.kind]);
+}
+
+// Where a discount stands today: inside its dates, not started, or past its end. A
+// discount with no dates is always active (the server applies it the same way).
+export function discountStatus(discount, now = new Date()) {
+  if (discount.validFrom && new Date(discount.validFrom) > now) return 'upcoming';
+  if (discount.validTo && new Date(discount.validTo) < now) return 'ended';
+  return 'active';
+}
+
+// The fees on a learner's page that can take a payment right now, with how much: a plan
+// by what is payable today (so paying ahead works), anything else by its balance. Waived,
+// paid and zero-balance fees are left out.
+export function collectableFees(assignments = []) {
+  return assignments
+    .map((assignment) => ({ assignment, ...assignmentRow(assignment) }))
+    .filter((row) => row.canCollect && row.payable > 0)
+    .map(({ assignment, payable }) => ({ assignment, payable }));
+}
+
+// The request body for a standing discount set from a learner's page, or null while the
+// form is not complete. A discount for one learner must end (the server insists), the
+// value is a percentage up to 100 or a positive amount, and it belongs to the active
+// academic year. The server checks it all again.
+export function standingDiscountPayload({ form, studentId, yearId }) {
+  const value = Number(form.value);
+  if (!form.name.trim() || !studentId || !yearId || !form.validTo) return null;
+  if (!(value > 0) || (form.type === 'percentage' && value > 100)) return null;
+  if (form.validFrom && form.validTo < form.validFrom) return null;
+  return {
+    name: form.name.trim(),
+    type: form.type,
+    value,
+    applicableTo: 'student',
+    studentId,
+    academicYearId: yearId,
+    ...(form.validFrom ? { validFrom: form.validFrom } : {}),
+    validTo: form.validTo,
+  };
+}

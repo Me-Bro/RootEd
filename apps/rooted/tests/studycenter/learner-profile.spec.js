@@ -22,11 +22,11 @@ test.describe('learner profile', () => {
   });
 
   test('the add form asks for batch fields only, and saves them', async ({ page }) => {
-    const admissionNo = `SC-PF-${Date.now()}`;
     await page.goto('/academic/students');
     await page.getByRole('button', { name: 'Add Student' }).click();
     const dialog = page.getByRole('dialog');
-    await dialog.getByLabel('Admission No').fill(admissionNo);
+    // A study center numbers its learners itself: the box is read-only until double-clicked.
+    await expect(dialog.getByLabel('Admission No')).toHaveAttribute('readonly', '');
     await dialog.getByLabel('First Name').fill('Aspirant');
     await dialog.getByLabel('Last Name').fill('Learner');
 
@@ -38,8 +38,8 @@ test.describe('learner profile', () => {
     await dialog.getByRole('button', { name: 'Add Student' }).click();
     await expect(dialog).not.toBeVisible({ timeout: 8_000 });
 
-    await page.getByPlaceholder(/search/i).fill(admissionNo);
-    await page.getByRole('link', { name: new RegExp(admissionNo) }).click();
+    // The new learner's profile opens by itself.
+    await expect(page).toHaveURL(/\/academic\/students\/[0-9a-f]{24}$/);
     await expect(page.getByText('NEET')).toBeVisible();
     await expect(page.getByText('Walk-by')).toBeVisible();
   });

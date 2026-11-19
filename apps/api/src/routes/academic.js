@@ -95,6 +95,7 @@ import { buildPreviewInput } from '../utils/reportCardPreview.js';
 import { loadReportCardLogo } from '../services/reportCardLogo.service.js';
 import { filterVisibleTimetableEntries } from '../utils/timetableVisibility.js';
 import { auditLog } from '../services/audit.service.js';
+import { changedFields, redactFields } from '../utils/auditDiff.js';
 import { getSignedUrl, uploadBuffer } from '../services/storage.service.js';
 
 const DEFAULTER_THRESHOLD_PCT = 75;
@@ -569,6 +570,21 @@ function parseStudentBody(schemaFor, req, res) {
 const sectionExists = (tenantId, sectionId) =>
   Section.findOne({ _id: sectionId, tenantId }, '_id').lean();
 
+// One learner-scoped audit entry; the learner is found from the target.
+const auditStudent = (req, action, studentId, extra = {}) =>
+  auditLog({
+    actorId: req.user.sub,
+    tenantId: req.tenant._id.toString(),
+    action,
+    target: { model: 'Student', id: studentId },
+    ip: req.ip,
+    ...extra,
+  });
+
+// The Aadhaar number has its own entries (set, cleared, revealed) that never carry
+// the value, so it stays out of every snapshot and diff.
+const STUDENT_AUDIT_SECRETS = ['aadhaarEnc', 'aadhaarLast4'];
+
 // Both steps do nothing when there is nothing to do (billing already ended, or never
 // ended), so the route runs them on every status write. That makes a retry heal a
 // request that saved the status but failed before billing caught up.
@@ -587,6 +603,7 @@ async function syncBillingWithStatus({ tenant, studentId, to, actorId, ip }) {
       tenantId: tenant._id.toString(),
       action: to === 'withdrawn' ? 'student.feePlan.end' : 'student.feePlan.reopen',
       target: { model: 'FeeAssignment', id: plan._id },
+      studentId,
       after: { on: today },
       ip,
     });
@@ -642,6 +659,10 @@ router.post('/students', requirePermission('students:write'), async (req, res, n
       }
     }
     await ensureEnrollment(tenantId, student);
+
+    await auditStudent(req, 'student.create', student._id, {
+      after: redactFields(student.toObject(), STUDENT_AUDIT_SECRETS),
+    });
 
     if (aadhaar) {
       await auditLog({
@@ -842,10 +863,8 @@ router.patch('/students/:id', requirePermission('students:write'), async (req, r
     if (!body) return;
     const tenantId = req.tenant._id;
 
-    const current = await Student.findOne(
-      { _id: req.params.id, tenantId },
-      'status phone whatsappSameAsPhone'
-    ).lean();
+    // The whole record: what the patch changes is diffed against it for the audit log.
+    const current = await Student.findOne({ _id: req.params.id, tenantId }).lean();
     if (!current) return res.status(404).json({ error: 'Not found' });
 
     // The schema cannot see what is already stored, so the flag is checked here
@@ -908,6 +927,22 @@ router.patch('/students/:id', requirePermission('students:write'), async (req, r
         ip: req.ip,
       });
     }
+
+    // What changed, field by field. A status change is its own entry so the
+    // timeline can say "withdrawn" rather than "edited".
+    const touched = [...Object.keys(set), ...Object.keys(unset)].filter(
+      (k) => !STUDENT_AUDIT_SECRETS.includes(k) && k !== 'statusChangedAt'
+    );
+    const after = student.toObject();
+    const pick = (doc, keys) => Object.fromEntries(keys.map((k) => [k, doc[k]]));
+    const statusKeys = statusChanged
+      ? touched.filter((k) => k === 'status' || k === 'statusReason')
+      : [];
+    const otherKeys = touched.filter((k) => !statusKeys.includes(k));
+    const statusDiff = changedFields(pick(current, statusKeys), pick(after, statusKeys));
+    if (statusDiff) await auditStudent(req, 'student.status_change', student._id, statusDiff);
+    const updateDiff = changedFields(pick(current, otherKeys), pick(after, otherKeys));
+    if (updateDiff) await auditStudent(req, 'student.update', student._id, updateDiff);
 
     // Setting or clearing the number is recorded too (never its value).
     if (aadhaar !== undefined) {
@@ -1013,8 +1048,14 @@ router.post(
       const key = `students/${tenantId}/${student._id}/photo/${Date.now()}-${req.file.originalname}`;
       await uploadBuffer(key, req.file.buffer, req.file.mimetype);
 
+      const previousKey = student.photoKey;
       student.photoKey = key;
       await student.save();
+
+      await auditStudent(req, 'student.photo_set', student._id, {
+        before: previousKey ? { photoKey: previousKey } : undefined,
+        after: { photoKey: key },
+      });
 
       res.json({ photoKey: key });
     } catch (err) {
@@ -1066,7 +1107,12 @@ router.post(
       });
       await student.save();
 
-      res.json({ document: student.documents[student.documents.length - 1] });
+      const document = student.documents[student.documents.length - 1];
+      await auditStudent(req, 'student.document_add', student._id, {
+        after: { name: document.name, kind: document.kind },
+      });
+
+      res.json({ document });
     } catch (err) {
       next(err);
     }
@@ -1088,6 +1134,9 @@ router.get(
       if (!doc?.key) return res.status(404).json({ error: 'Document not found' });
 
       const url = await getSignedUrl(doc.key, 3600);
+      await auditStudent(req, 'student.document_download', student._id, {
+        after: { name: doc.name, kind: doc.kind },
+      });
       res.json({ url });
     } catch (err) {
       next(err);
@@ -1231,6 +1280,14 @@ router.post('/enrollments', requirePermission('students:write'), async (req, res
       },
       { upsert: true, new: true, runValidators: true }
     );
+
+    // Joining a batch or shift is part of a learner's history. Re-sending an enrolment
+    // that is already active changes nothing, so it is not recorded again.
+    if (existing?.status !== 'active') {
+      await auditStudent(req, 'student.enrolled', studentId, {
+        after: { sectionId: enrollment.sectionId, enrollmentId: enrollment._id },
+      });
+    }
 
     res.status(201).json(enrollment);
   } catch (err) {

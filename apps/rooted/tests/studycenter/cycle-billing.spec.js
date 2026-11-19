@@ -53,7 +53,7 @@ test.describe('the owner sets up and runs a fee plan', () => {
   test('puts a learner on a plan from a start date, then pauses and resumes it', async ({
     page,
   }) => {
-    await page.goto(`/academic/students/${billingLearnerId()}`);
+    await page.goto(`/academic/students/${billingLearnerId()}?tab=billing`);
     await expect(panel(page)).toBeVisible({ timeout: 15_000 });
 
     // Wait for the panel to load: it shows either the start form or the plan. A re-run
@@ -81,7 +81,7 @@ test.describe('the owner sets up and runs a fee plan', () => {
   });
 
   test('a one-off fee is added alongside the plan and removed again', async ({ page }) => {
-    await page.goto(`/academic/students/${billingLearnerId()}`);
+    await page.goto(`/academic/students/${billingLearnerId()}?tab=billing`);
     await expect(panel(page)).toBeVisible({ timeout: 15_000 });
     const oneOff = page.getByLabel('Choose a one-off fee');
     // Wait for the fees to load: the add dropdown, or a fee already added on an earlier run.
@@ -92,7 +92,9 @@ test.describe('the owner sets up and runs a fee plan', () => {
       await pick(oneOff, 'Registration');
       await page.getByRole('button', { name: 'Add', exact: true }).click();
     }
-    await expect(page.getByRole('listitem').filter({ hasText: 'Registration' })).toBeVisible({
+    // The one-off fees section, not the Due now list that repeats the fee's name.
+    const oneOffs = page.locator('section[aria-label="One-off fees"]');
+    await expect(oneOffs.getByRole('listitem').filter({ hasText: 'Registration' })).toBeVisible({
       timeout: 10_000,
     });
     await page.getByRole('button', { name: 'Remove' }).click();
@@ -120,7 +122,7 @@ test.describe('the front desk', () => {
   test.use({ storageState: STUDY_AUTH_STATES.desk });
 
   test('can see the plan but not pause it', async ({ page }) => {
-    await page.goto(`/academic/students/${billingLearnerId()}`);
+    await page.goto(`/academic/students/${billingLearnerId()}?tab=billing`);
     await expect(panel(page)).toBeVisible({ timeout: 15_000 });
     await expect(page.getByRole('button', { name: 'Pause billing' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Resume billing' })).toHaveCount(0);

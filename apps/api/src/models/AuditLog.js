@@ -9,6 +9,9 @@ const auditLogSchema = new mongoose.Schema(
       model: { type: String },
       id: { type: mongoose.Schema.Types.ObjectId },
     },
+    // The learner an entry concerns, set by every learner-related caller so a
+    // profile's history can be read without scanning `before`/`after`.
+    studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student' },
     before: { type: mongoose.Schema.Types.Mixed },
     after: { type: mongoose.Schema.Types.Mixed },
     ip: { type: String },
@@ -22,6 +25,8 @@ const auditLogSchema = new mongoose.Schema(
 auditLogSchema.index({ tenantId: 1, at: -1 });
 auditLogSchema.index({ tenantId: 1, actorId: 1, at: -1 });
 auditLogSchema.index({ tenantId: 1, action: 1, at: -1 });
-auditLogSchema.index({ at: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 90 }); // 90-day TTL
+auditLogSchema.index({ tenantId: 1, studentId: 1, at: -1 }, { sparse: true });
+export const AUDIT_RETENTION_DAYS = 365;
+auditLogSchema.index({ at: 1 }, { expireAfterSeconds: 60 * 60 * 24 * AUDIT_RETENTION_DAYS });
 
 export const AuditLog = mongoose.model('AuditLog', auditLogSchema);

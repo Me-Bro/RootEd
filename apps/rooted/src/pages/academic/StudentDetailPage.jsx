@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { hasSeats } from '@rooted/shared/utils';
 import { DOCUMENT_KINDS } from '@rooted/shared/schemas';
@@ -12,7 +12,8 @@ import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { LoginBadge } from '../../components/ui/LoginBadge.jsx';
-import StudentFeeStructurePanel from '../../components/students/StudentFeeStructurePanel.jsx';
+import StudyCenterStudentTabs from '../../components/study/StudyCenterStudentTabs.jsx';
+import StudentAddedNotice from '../../components/students/StudentAddedNotice.jsx';
 import SectionTeachersCard from '../../components/academic/SectionTeachersCard.jsx';
 import {
   Dialog,
@@ -601,6 +602,17 @@ export default function StudentDetailPage() {
   const [statusTarget, setStatusTarget] = useState(null);
   const { sections } = useClassSections();
 
+  // Arriving from "Add student" carries a notice about the new student's login and fee.
+  // It is kept here and cleared from the history entry, so a reload does not repeat it.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [addedNotice, setAddedNotice] = useState(() => location.state?.justAdded ?? null);
+  useEffect(() => {
+    if (location.state?.justAdded) {
+      navigate(`${location.pathname}${location.search}`, { replace: true, state: null });
+    }
+  }, [location, navigate]);
+
   const {
     data: student,
     isLoading,
@@ -619,7 +631,74 @@ export default function StudentDetailPage() {
     return <p className="text-destructive">{t('academic.studentDetail.loadFailed')}</p>;
 
   // A study center's learner is active or withdrawn: nobody graduates from one.
-  const transitions = statusTransitions(student.status, hasSeats(user?.orgType));
+  const seats = hasSeats(user?.orgType);
+  const transitions = statusTransitions(student.status, seats);
+
+  // Everything about the learner that is not a tab of its own.
+  const overview = (
+    <>
+      <StudentProfileDetails student={student} orgType={user?.orgType} canWrite={canWrite} />
+
+      <div className="grid gap-6 sm:grid-cols-2">
+        {permissions.includes('attendance:read') && (
+          <div className="rounded-lg border border-border p-4">
+            <h2 className="mb-3 text-sm font-semibold">
+              {t('academic.studentDetail.attendanceHeading')}
+            </h2>
+            <AttendanceSummary studentId={id} />
+          </div>
+        )}
+        {!seats && permissions.includes('grades:read') && (
+          <div className="rounded-lg border border-border p-4">
+            <h2 className="mb-3 text-sm font-semibold">
+              {t('academic.studentDetail.gradesHeading')}
+            </h2>
+            <GradesSummary studentId={id} />
+          </div>
+        )}
+        {!seats && permissions.includes('fees:read') && (
+          <div className="rounded-lg border border-border p-4">
+            <h2 className="mb-3 text-sm font-semibold">
+              {t('academic.studentDetail.feesHeading')}
+            </h2>
+            <FeeSummary studentId={id} />
+          </div>
+        )}
+        {canWrite && (
+          <div className="rounded-lg border border-border p-4">
+            <h2 className="mb-3 text-sm font-semibold">
+              {t('academic.studentDetail.loginHeading')}
+            </h2>
+            <LoginPanel student={student} />
+          </div>
+        )}
+        {seats && student.kind !== 'walk_in' && (
+          <div className="rounded-lg border border-border p-4">
+            <h2 className="mb-3 text-sm font-semibold">{t('studyCenter.studentSeats.heading')}</h2>
+            <StudentSeatsPanel
+              studentId={id}
+              canWrite={canWrite}
+              active={student.status === 'active'}
+            />
+          </div>
+        )}
+        {student.sectionId && !seats && (
+          <div className="rounded-lg border border-border p-4">
+            <h2 className="mb-3 text-sm font-semibold">
+              {t('academic.studentDetail.subjectsHeading')}
+            </h2>
+            <SectionTeachersCard sectionId={student.sectionId} />
+          </div>
+        )}
+        <div className="rounded-lg border border-border p-4">
+          <h2 className="mb-3 text-sm font-semibold">
+            {t('academic.studentDetail.documentsHeading')}
+          </h2>
+          <DocumentsPanel student={student} canWrite={canWrite} />
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -636,6 +715,10 @@ export default function StudentDetailPage() {
           )
         }
       />
+
+      {addedNotice?.studentId === id && (
+        <StudentAddedNotice notice={addedNotice} onDismiss={() => setAddedNotice(null)} />
+      )}
 
       <PhotoPanel student={student} canWrite={canWrite} />
 
@@ -671,75 +754,16 @@ export default function StudentDetailPage() {
         </p>
       )}
 
-      <StudentProfileDetails student={student} orgType={user?.orgType} canWrite={canWrite} />
-
-      <div className="grid gap-6 sm:grid-cols-2">
-        {permissions.includes('attendance:read') && (
-          <div className="rounded-lg border border-border p-4">
-            <h2 className="mb-3 text-sm font-semibold">
-              {t('academic.studentDetail.attendanceHeading')}
-            </h2>
-            <AttendanceSummary studentId={id} />
-          </div>
-        )}
-        {permissions.includes('grades:read') && (
-          <div className="rounded-lg border border-border p-4">
-            <h2 className="mb-3 text-sm font-semibold">
-              {t('academic.studentDetail.gradesHeading')}
-            </h2>
-            <GradesSummary studentId={id} />
-          </div>
-        )}
-        {permissions.includes('fees:read') && (
-          <div className="rounded-lg border border-border p-4">
-            <h2 className="mb-3 text-sm font-semibold">
-              {t('academic.studentDetail.feesHeading')}
-            </h2>
-            <FeeSummary studentId={id} />
-          </div>
-        )}
-        {canWrite && (
-          <div className="rounded-lg border border-border p-4">
-            <h2 className="mb-3 text-sm font-semibold">
-              {t('academic.studentDetail.loginHeading')}
-            </h2>
-            <LoginPanel student={student} />
-          </div>
-        )}
-        {hasSeats(user?.orgType) && student.kind !== 'walk_in' && (
-          <div className="rounded-lg border border-border p-4">
-            <h2 className="mb-3 text-sm font-semibold">{t('studyCenter.studentSeats.heading')}</h2>
-            <StudentSeatsPanel studentId={id} />
-          </div>
-        )}
-        {hasSeats(user?.orgType) &&
-          student.kind !== 'walk_in' &&
-          permissions.includes('fees:read') && (
-            <div className="rounded-lg border border-border p-4">
-              <h2 className="mb-3 text-sm font-semibold">
-                {t('academic.studentDetail.feeStructureHeading')}
-              </h2>
-              <StudentFeeStructurePanel
-                studentId={id}
-                canWrite={permissions.includes('fees:write')}
-              />
-            </div>
-          )}
-        {student.sectionId && !hasSeats(user?.orgType) && (
-          <div className="rounded-lg border border-border p-4">
-            <h2 className="mb-3 text-sm font-semibold">
-              {t('academic.studentDetail.subjectsHeading')}
-            </h2>
-            <SectionTeachersCard sectionId={student.sectionId} />
-          </div>
-        )}
-        <div className="rounded-lg border border-border p-4">
-          <h2 className="mb-3 text-sm font-semibold">
-            {t('academic.studentDetail.documentsHeading')}
-          </h2>
-          <DocumentsPanel student={student} canWrite={canWrite} />
-        </div>
-      </div>
+      {seats ? (
+        <StudyCenterStudentTabs
+          studentId={id}
+          student={student}
+          permissions={permissions}
+          overview={overview}
+        />
+      ) : (
+        overview
+      )}
 
       {showEdit && (
         <EditStudentModal

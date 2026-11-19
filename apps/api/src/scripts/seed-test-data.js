@@ -708,6 +708,67 @@ async function run() {
     );
   }
 
+  // History (the learner page's History tab): what the audit log would hold for member1,
+  // written directly because the audit queue is not running while seeding. Tagged so a
+  // re-run replaces these rows rather than adding to them. Newest last in this list.
+  await AuditLog.deleteMany({ tenantId: studyTenantId, userAgent: 'e2e-seed' });
+  const member1 = studyMembers.studyMember1._id;
+  const seedAudit = (minutesIntoMonth, actor, action, target, fields = {}) => ({
+    tenantId: studyTenantId,
+    actorId: users[actor]._id,
+    action,
+    studentId: member1,
+    target,
+    ip: '10.0.0.5',
+    userAgent: 'e2e-seed',
+    at: new Date(monthStart.getTime() + minutesIntoMonth * 60 * 1000),
+    ...fields,
+  });
+  await AuditLog.insertMany([
+    seedAudit(
+      10,
+      'studyOwner',
+      'student.create',
+      { model: 'Student', id: member1 },
+      {
+        after: { admissionNo: 'SC-001', firstName: 'Member', lastName: 'One' },
+      }
+    ),
+    seedAudit(
+      20,
+      'studyDesk',
+      'student.update',
+      { model: 'Student', id: member1 },
+      {
+        before: { phone: '9000000000' },
+        after: { phone: '9000000001' },
+      }
+    ),
+    seedAudit(
+      30,
+      'studyDesk',
+      'feePayment.record',
+      { model: 'FeePayment', id: member1 },
+      {
+        after: {
+          amount: 1080,
+          paymentMethod: 'cash',
+          receiptNumber: 'RCP-SEED-STUDY-0001',
+          studentId: member1,
+        },
+      }
+    ),
+    seedAudit(
+      60,
+      'studyDesk',
+      'visit.checkIn',
+      { model: 'Visit', id: member1 },
+      {
+        after: { seatId: studySeats['A-1']._id, entitlementAtCheckIn: 'valid', studentId: member1 },
+      }
+    ),
+  ]);
+
   const seedWalkIn = await Student.findOneAndUpdate(
     { tenantId: studyTenantId, admissionNo: 'W-SEED-001' },
     {

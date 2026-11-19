@@ -22,7 +22,7 @@ import { AppError } from '../middleware/errorHandler.js';
  * username, email (replaced by a per-account tombstone), password, MFA secret,
  * every pending token, and every organization seat.
  * What remains: tenant-owned academic and financial records, and AuditLog
- * entries — which are immutable by design and already expire on a 90-day TTL.
+ * entries — which are immutable by design and already expire on a one-year TTL.
  */
 
 /** A random, unusable credential — passwordHash is required and cannot be unset. */

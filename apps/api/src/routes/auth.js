@@ -525,7 +525,7 @@ router.post(
       await deleteUserAccount(user);
 
       // Queued after the scrub so a failed deletion never leaves a record
-      // claiming it happened. AuditLog is immutable and TTLs at 90 days, which
+      // claiming it happened. AuditLog is immutable and TTLs at one year, which
       // is the retained proof the request was made and honoured.
       await auditLog({
         actorId: user._id,

@@ -117,3 +117,124 @@ test('a graduated or withdrawn learner can always be reactivated', () => {
   }
   assert.deepEqual(statusTransitions('mystery', true), []);
 });
+
+import { ENTITLEMENT_VARIANT, planHistory, discountStatus } from './feePlan.js';
+
+test('planHistory lists stretches, pauses and the end, newest first', () => {
+  const plan = {
+    segments: [
+      { name: 'Monthly', cycle: 'monthly', amount: 1500, from: '2027-01-01', to: '2027-03-01' },
+      { name: 'Weekly', cycle: 'weekly', amount: 400, from: '2027-03-01', to: null },
+    ],
+    pauses: [{ from: '2027-02-10', to: '2027-02-20' }],
+    endedOn: null,
+  };
+  assert.deepEqual(
+    planHistory(plan).map((r) => [r.kind, r.from]),
+    [
+      ['plan', '2027-03-01'],
+      ['pause', '2027-02-10'],
+      ['plan', '2027-01-01'],
+    ]
+  );
+});
+
+test('planHistory shows the end, ahead of anything else on the same day', () => {
+  const rows = planHistory({
+    segments: [{ name: 'M', cycle: 'monthly', amount: 1, from: '2027-01-01', to: '2027-04-01' }],
+    pauses: [{ from: '2027-04-01', to: null }],
+    endedOn: '2027-04-01',
+  });
+  assert.deepEqual(
+    rows.map((r) => r.kind),
+    ['ended', 'pause', 'plan']
+  );
+});
+
+test('planHistory of no plan, or a plan with nothing recorded, is empty', () => {
+  assert.deepEqual(planHistory(null), []);
+  assert.deepEqual(planHistory({}), []);
+});
+
+test('discountStatus compares the dates with now; no dates is always active', () => {
+  const now = new Date('2027-03-15T00:00:00Z');
+  assert.equal(discountStatus({}, now), 'active');
+  assert.equal(discountStatus({ validFrom: '2027-03-01', validTo: '2027-03-31' }, now), 'active');
+  assert.equal(discountStatus({ validFrom: '2027-04-01' }, now), 'upcoming');
+  assert.equal(discountStatus({ validTo: '2027-03-01' }, now), 'ended');
+});
+
+test('every entitlement status has a badge colour', () => {
+  for (const s of ['valid', 'unpaid', 'expired', 'none', 'paused', 'ended', 'scheduled']) {
+    assert.ok(ENTITLEMENT_VARIANT[s], s);
+  }
+});
+
+import { collectableFees } from './feePlan.js';
+
+test('collectableFees lists fees with something to pay, using the plan payable and the one-off balance', () => {
+  const rows = collectableFees([
+    { _id: 'plan', status: 'unpaid', balanceDue: 0, ledger: { overdue: 0, payableNow: 500 } },
+    { _id: 'one', status: 'partial', balanceDue: 200 },
+    { _id: 'paid', status: 'paid', balanceDue: 0 },
+    { _id: 'waived', status: 'waived', balanceDue: 0 },
+    { _id: 'clear', status: 'unpaid', balanceDue: 0, ledger: { overdue: 0, payableNow: 0 } },
+  ]);
+  assert.deepEqual(
+    rows.map((r) => [r.assignment._id, r.payable]),
+    [
+      ['plan', 500],
+      ['one', 200],
+    ]
+  );
+  assert.deepEqual(collectableFees(), []);
+});
+
+import { standingDiscountPayload } from './feePlan.js';
+
+const goodForm = {
+  name: ' Scholar ',
+  type: 'percentage',
+  value: '10',
+  validFrom: '',
+  validTo: '2027-06-30',
+};
+
+test('a complete standing discount becomes a request for that learner and year', () => {
+  assert.deepEqual(standingDiscountPayload({ form: goodForm, studentId: 's1', yearId: 'y1' }), {
+    name: 'Scholar',
+    type: 'percentage',
+    value: 10,
+    applicableTo: 'student',
+    studentId: 's1',
+    academicYearId: 'y1',
+    validTo: '2027-06-30',
+  });
+});
+
+test('a start date is sent only when given', () => {
+  const p = standingDiscountPayload({
+    form: { ...goodForm, validFrom: '2027-01-01' },
+    studentId: 's1',
+    yearId: 'y1',
+  });
+  assert.equal(p.validFrom, '2027-01-01');
+});
+
+test('a standing discount must end, name the learner and year, and have a sensible value', () => {
+  const make = (form, extra = {}) =>
+    standingDiscountPayload({
+      form: { ...goodForm, ...form },
+      studentId: 's1',
+      yearId: 'y1',
+      ...extra,
+    });
+  assert.equal(make({ validTo: '' }), null);
+  assert.equal(make({ name: '  ' }), null);
+  assert.equal(make({ value: '0' }), null);
+  assert.equal(make({ value: '101' }), null);
+  assert.equal(make({ type: 'flat', value: '500' }).value, 500);
+  assert.equal(make({ validFrom: '2027-07-01' }), null);
+  assert.equal(make({}, { yearId: undefined }), null);
+  assert.equal(make({}, { studentId: undefined }), null);
+});

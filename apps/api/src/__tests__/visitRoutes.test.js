@@ -543,3 +543,123 @@ describe('the auto-close sweeper', () => {
     expect(await autoCloseVisits(new Date('2030-01-01'))).toBe(0);
   });
 });
+
+describe("a learner's visit history", () => {
+  const visitsOf = (student, who = 'owner', query = '', tenant) =>
+    call('get', `/academic/students/${student._id}/visits${query}`, who, undefined, tenant);
+
+  beforeAll(async () => {
+    await reset();
+    const base = {
+      tenantId: tenants.study._id,
+      studentId: ctx.m1._id,
+      recordedBy: ctx.deskUser._id,
+      method: 'manual',
+    };
+    await Visit.create([
+      {
+        ...base,
+        seatId: ctx.seats['A-1']._id,
+        inAt: new Date('2026-05-02T09:00:00Z'),
+        outAt: new Date('2026-05-02T12:30:00Z'),
+        entitlementAtCheckIn: 'valid',
+      },
+      {
+        ...base,
+        seatId: ctx.seats['A-2']._id,
+        inAt: new Date('2026-05-05T04:00:00Z'),
+        outAt: new Date('2026-05-05T06:00:00Z'),
+        autoClosed: true,
+        outsideHours: true,
+        entitlementAtCheckIn: 'unpaid',
+      },
+      {
+        ...base,
+        seatId: ctx.seats['A-1']._id,
+        inAt: new Date('2026-04-20T09:00:00Z'),
+        outAt: new Date('2026-04-20T10:00:00Z'),
+      },
+      // Still inside: since 09:30 IST, and "now" is 12:00 IST.
+      {
+        ...base,
+        seatId: ctx.seats['A-3']._id,
+        inAt: new Date('2026-05-11T04:00:00Z'),
+        isOpen: true,
+      },
+      // Someone else's visit must never show up here.
+      {
+        ...base,
+        studentId: ctx.m2._id,
+        seatId: ctx.seats['A-4']._id,
+        inAt: new Date('2026-05-03T04:00:00Z'),
+        outAt: new Date('2026-05-03T05:00:00Z'),
+      },
+    ]);
+  });
+
+  test('lists only this learner, newest first, with seat, duration and who recorded it', async () => {
+    const res = await visitsOf(ctx.m1);
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ total: 4, page: 1, pages: 1 });
+    expect(res.body.visits.map((v) => v.seat.label)).toEqual(['A-3', 'A-2', 'A-1', 'A-1']);
+    expect(res.body.visits.map((v) => v.minutes)).toEqual([150, 120, 210, 60]);
+    expect(res.body.visits[2]).toMatchObject({
+      entitlementAtCheckIn: 'valid',
+      autoClosed: false,
+      outsideHours: false,
+      method: 'manual',
+      open: false,
+    });
+    expect(res.body.visits[2].recordedBy.name).toMatch(/^desk-/);
+    expect(res.body.visits[1]).toMatchObject({ autoClosed: true, outsideHours: true });
+  });
+
+  test('says who is inside now, counting an open visit up to the present', async () => {
+    const res = await visitsOf(ctx.m1);
+    expect(res.body.open).toMatchObject({ open: true, outAt: null, minutes: 150 });
+    expect(res.body.open.seat.label).toBe('A-3');
+    expect((await visitsOf(ctx.m2)).body.open).toBeNull();
+  });
+
+  test("summarises the current month on the centre's calendar, or the month asked for", async () => {
+    const may = (await visitsOf(ctx.m1)).body.summary;
+    expect(may).toEqual({ month: '2026-05', visits: 3, minutes: 480, autoClosedVisits: 1 });
+    const april = (await visitsOf(ctx.m1, 'owner', '?month=2026-04')).body.summary;
+    expect(april).toEqual({ month: '2026-04', visits: 1, minutes: 60, autoClosedVisits: 0 });
+    const none = (await visitsOf(ctx.m1, 'owner', '?month=2025-01')).body.summary;
+    expect(none).toEqual({ month: '2025-01', visits: 0, minutes: 0, autoClosedVisits: 0 });
+  });
+
+  test('pages through the visits', async () => {
+    const first = await visitsOf(ctx.m1, 'owner', '?limit=2');
+    expect(first.body).toMatchObject({ total: 4, pages: 2 });
+    expect(first.body.visits.map((v) => v.seat.label)).toEqual(['A-3', 'A-2']);
+    const second = await visitsOf(ctx.m1, 'owner', '?limit=2&page=2');
+    expect(second.body.visits.map((v) => v.minutes)).toEqual([210, 60]);
+  });
+
+  test('a learner who never came has an empty history, not an error', async () => {
+    const res = await visitsOf(ctx.walkIn2);
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ visits: [], open: null, total: 0, pages: 0 });
+  });
+
+  test('the front desk can read it; a role without attendance:read cannot', async () => {
+    expect((await visitsOf(ctx.m1, 'desk')).status).toBe(200);
+    expect((await visitsOf(ctx.m1, 'accountant')).status).toBe(403);
+    expect((await visitsOf(ctx.m1, null)).status).toBe(401);
+  });
+
+  test("another tenant's learner, a bad id and bad paging are refused", async () => {
+    expect((await visitsOf(ctx.other, 'owner')).status).toBe(404);
+    expect((await visitsOf(ctx.m1, 'owner2', '', 'study2')).status).toBe(404);
+    expect((await visitsOf({ _id: 'nope' }, 'owner')).status).toBe(404);
+    for (const q of ['?page=0', '?limit=500', '?month=2026-13']) {
+      expect((await visitsOf(ctx.m1, 'owner', q)).status).toBe(400);
+    }
+  });
+
+  test('only study centers have it', async () => {
+    expect((await visitsOf(ctx.m1, 'tuitionOwner', '', 'tuition')).status).toBe(403);
+  });
+});
