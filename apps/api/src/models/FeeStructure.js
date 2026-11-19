@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { BILLING_CYCLES } from '@rooted/shared/schemas';
 import { tenantScopePlugin } from './plugins/tenantScope.js';
 
 const feeStructureSchema = new mongoose.Schema(
@@ -35,6 +36,10 @@ const feeStructureSchema = new mongoose.Schema(
       durationDays: { type: Number, min: 1 },
       sectionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Section' },
     },
+    // Study centers only: bills a learner every calendar month or Monday-to-Sunday
+    // week from their own start date; the amount is the price per cycle. A structure
+    // with a cycle has no plan and no installments. Absent = a one-off fee.
+    cycle: { type: String, enum: BILLING_CYCLES },
   },
   { timestamps: true }
 );

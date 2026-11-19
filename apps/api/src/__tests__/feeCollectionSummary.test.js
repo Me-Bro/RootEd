@@ -51,6 +51,40 @@ test('overdueTotal only counts unpaid installments already past the given today'
   expect(result).toMatchObject({ defaulterCount: 1, overdueTotal: 12000 + (10000 - 4000) });
 });
 
+test('a study-center fee plan counts its ledger: billed cycles, all money paid, overdue', () => {
+  const assignments = [
+    { _id: 'plan', totalAmount: 1500, billing: { segments: [{}] } },
+    { _id: 'one-off', totalAmount: 500, installments: [] },
+  ];
+  const ledgers = new Map([
+    [
+      'plan',
+      {
+        cycles: [
+          { net: 1500, paid: 1500 },
+          { net: 750, paid: 250 },
+        ],
+        credit: 0,
+        overdue: 0,
+      },
+    ],
+  ]);
+
+  const result = summarizeFeeCollection(assignments, [], new Date(), ledgers);
+
+  // The plan's 1500 per-cycle price is not counted as if it were a total.
+  expect(result).toMatchObject({ totalAssigned: 1500 + 750 + 500, totalCollected: 1750 });
+});
+
+test('credit on a plan counts as collected and its overdue adds to the total', () => {
+  const ledgers = new Map([
+    ['p', { cycles: [{ net: 1000, paid: 400 }], credit: 0, overdue: 600 }],
+    ['q', { cycles: [{ net: 1000, paid: 1000 }], credit: 300, overdue: 0 }],
+  ]);
+  const result = summarizeFeeCollection([{ _id: 'p' }, { _id: 'q' }], [], new Date(), ledgers);
+  expect(result).toMatchObject({ totalAssigned: 2000, totalCollected: 1700, overdueTotal: 600 });
+});
+
 test('defaulterCount is the number of defaulter records, independent of overdueTotal', () => {
   const defaulters = [{ installments: [] }, { installments: [] }, { installments: [] }];
 

@@ -987,4 +987,66 @@ describe('fee structure on create (study center)', () => {
     );
     expect(res.status).toBe(400);
   });
+
+  describe('a monthly structure (TICKET-008)', () => {
+    let monthly;
+    const centreDay = (k = 0) => {
+      const d = new Date(Date.now() + 5.5 * 3600 * 1000 + k * 86_400_000);
+      return d.toISOString().slice(0, 10);
+    };
+    const planOf = (studentId) =>
+      FeeAssignment.findOne({
+        tenantId: tenants.study._id,
+        studentId,
+        billing: { $exists: true },
+      }).lean();
+
+    beforeAll(async () => {
+      monthly = await FeeStructure.create({
+        tenantId: tenants.study._id,
+        name: 'Seat monthly',
+        academicYearId: year._id,
+        applicableTo: 'student',
+        cycle: 'monthly',
+        components: [{ label: 'Seat', amount: 1500 }],
+      });
+    });
+
+    test('puts the new learner on a fee plan from the given start date', async () => {
+      const res = await post({
+        firstName: 'Plan',
+        lastName: 'One',
+        feeStructureId: String(monthly._id),
+        feeStructureStartDate: centreDay(-3),
+      });
+      expect(res.status).toBe(201);
+      expect(res.body.feeError).toBeUndefined();
+      const plan = await planOf(res.body._id);
+      expect(plan.billing.segments[0]).toMatchObject({ cycle: 'monthly', amount: 1500 });
+      expect(plan.billing.segments[0].from.toISOString().slice(0, 10)).toBe(centreDay(-3));
+    });
+
+    test('defaults the start to today', async () => {
+      const res = await post({
+        firstName: 'Plan',
+        lastName: 'Two',
+        feeStructureId: String(monthly._id),
+      });
+      expect(res.status).toBe(201);
+      const plan = await planOf(res.body._id);
+      expect(plan.billing.segments[0].from.toISOString().slice(0, 10)).toBe(centreDay());
+    });
+
+    test('a start more than 31 days back is refused before the learner is saved', async () => {
+      const count = await Student.countDocuments({ tenantId: tenants.study._id });
+      const res = await post({
+        firstName: 'Plan',
+        lastName: 'Old',
+        feeStructureId: String(monthly._id),
+        feeStructureStartDate: centreDay(-32),
+      });
+      expect(res.status).toBe(422);
+      expect(await Student.countDocuments({ tenantId: tenants.study._id })).toBe(count);
+    });
+  });
 });

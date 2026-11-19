@@ -565,6 +565,49 @@ async function run() {
     ).lean();
   }
 
+  // Cycle billing (TICKET-008): a monthly and a weekly fee plan, set per learner from
+  // their own page, and a one-off registration fee. Nobody is put on a plan here, so
+  // the plan specs start member2 from nothing and member1's desk plan is untouched.
+  for (const [name, price, extra] of [
+    ['Seat monthly', 1500, { cycle: 'monthly' }],
+    ['Seat weekly', 400, { cycle: 'weekly' }],
+    ['Registration', 500, {}],
+  ]) {
+    studyPlans[name] = await FeeStructure.findOneAndUpdate(
+      { tenantId: studyTenantId, name, academicYearId: studyYear._id },
+      {
+        $setOnInsert: {
+          tenantId: studyTenantId,
+          name,
+          academicYearId: studyYear._id,
+          components: [{ label: name, amount: price, isOptional: false }],
+          applicableTo: 'student',
+          isActive: true,
+          ...extra,
+        },
+      },
+      { upsert: true, new: true, ...BYPASS_SC }
+    ).lean();
+  }
+
+  // A learner with no login, no seat and no plan, for the fee-plan e2e spec to put on a
+  // plan and pause, so the specs that rely on member2 having none stay as they are.
+  studyMembers.studyBilling = await Student.findOneAndUpdate(
+    { tenantId: studyTenantId, admissionNo: 'SC-003' },
+    {
+      $setOnInsert: {
+        tenantId: studyTenantId,
+        admissionNo: 'SC-003',
+        firstName: 'Plan',
+        lastName: 'Learner',
+        phone: '9000000003',
+        kind: 'member',
+        status: 'active',
+      },
+    },
+    { upsert: true, new: true, ...BYPASS_SC }
+  ).lean();
+
   const studyDiscounts = {};
   for (const def of [
     {

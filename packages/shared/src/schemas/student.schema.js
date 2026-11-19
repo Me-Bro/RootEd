@@ -1,11 +1,14 @@
 import { z } from 'zod';
 import { indianMobileSchema } from './studyCenter.schema.js';
+import { dayStringSchema } from './fee.schema.js';
 import { hasSeats } from '../utils/orgTypes.js';
 import { isValidAadhaar, normalizeAadhaar, studentGroupFor } from '../utils/student.js';
 
 export const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 export const STUDENT_CATEGORIES = ['general', 'obc', 'sc', 'st', 'ews', 'other'];
 export const STUDENT_STATUSES = ['active', 'graduated', 'withdrawn'];
+// A study center's learner is either here or has left: nobody graduates from one.
+export const SEATS_STUDENT_STATUSES = ['active', 'withdrawn'];
 export const MAX_GUARDIANS = 5;
 // What an uploaded file on a student is. A resume is what a placement team asks for.
 export const DOCUMENT_KINDS = ['resume', 'transfer_certificate', 'id_proof', 'medical', 'other'];
@@ -167,10 +170,20 @@ function build(mode, orgType) {
     const admissionNo = z.string().trim().min(1).max(50);
     shape.admissionNo = hasSeats(orgType) ? admissionNo.optional() : admissionNo;
     shape.email = f(z.string().trim().toLowerCase().email());
-    // Study centers: one fee structure to assign to the new learner.
-    if (hasSeats(orgType)) shape.feeStructureId = f(objectId);
+    // Study centers: one fee structure to assign to the new learner, and for a
+    // monthly/weekly structure the day billing starts (default today).
+    if (hasSeats(orgType)) {
+      shape.feeStructureId = f(objectId);
+      shape.feeStructureStartDate = f(dayStringSchema);
+    }
   } else {
-    shape.status = z.enum(STUDENT_STATUSES).optional();
+    shape.status = hasSeats(orgType)
+      ? z
+          .enum(SEATS_STUDENT_STATUSES, {
+            errorMap: () => ({ message: 'A study center learner is either active or withdrawn' }),
+          })
+          .optional()
+      : z.enum(STUDENT_STATUSES).optional();
     shape.statusReason = f(text(200));
   }
 

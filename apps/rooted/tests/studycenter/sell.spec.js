@@ -115,22 +115,25 @@ test.describe('the owner', () => {
     await expect(page.getByRole('row', { name: /Winter 15%/ })).toContainText('Member Two Study');
   });
 
-  test('creates a plan: a day pass with no installments and no year to pick', async ({ page }) => {
+  // The day-pass type was taken off the fee form (TICKET-008): a fee is now a one-off
+  // or a monthly/weekly cycle. The sell page itself is hidden, so this only checks the
+  // form still creates a fee with no year to pick.
+  test('creates a weekly fee with no year to pick', async ({ page }) => {
     await page.goto('/fee/structures');
     await page.getByRole('button', { name: /New/ }).first().click();
-    await page.getByLabel('Name', { exact: true }).fill('Weekend pass');
-    await page.getByLabel('Type of fee').selectOption('day_pass');
+    await page.getByLabel('Name', { exact: true }).fill('Weekend weekly');
+    await page.getByLabel('Billing').selectOption('weekly');
     await expect(page.getByRole('dialog').getByLabel('Academic year')).toHaveCount(0);
-    await page.getByPlaceholder(/Label/i).first().fill('Weekend pass');
+    await page.getByPlaceholder(/Label/i).first().fill('Weekend');
     await page
       .getByPlaceholder(/Amount/i)
       .first()
       .fill('200');
     await page.getByRole('button', { name: 'Create' }).click();
-    await expect(page.locator('[data-slot="card-title"]', { hasText: 'Weekend pass' })).toBeVisible(
-      {
-        timeout: 15_000,
-      }
-    );
+    await expect(
+      page.locator('[data-slot="card-title"]', { hasText: 'Weekend weekly' })
+    ).toBeVisible({
+      timeout: 15_000,
+    });
   });
 });

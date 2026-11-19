@@ -24,6 +24,17 @@ import {
   refundPayment,
 } from '../services/fee.service.js';
 import { sellPlan, voidSale } from '../services/sale.service.js';
+import {
+  addOneOff,
+  findAssignableStructure,
+  findBillableLearner,
+  pauseBilling,
+  removeOneOff,
+  resumeBilling,
+  setCyclePlan,
+} from '../services/feePlan.service.js';
+import { isBillingAssignment, dayStringOf } from '../utils/billingCycle.js';
+import { ledgersFor } from '../services/feePlanLedger.service.js';
 import { entitlementFor } from '../services/entitlement.service.js';
 import { dayPassSales, expiringPlans } from '../services/studyReports.service.js';
 import { resolveCentreSettings } from '../utils/centreSettings.js';
@@ -43,6 +54,8 @@ import {
   updateFeeStructureSchema,
   assignFeeStructureSchema,
   setStudentFeeStructureSchema,
+  pauseBillingSchema,
+  resumeBillingSchema,
   cloneFeeStructureSchema,
   createFeeDiscountSchema,
   recordFeePaymentSchema,
@@ -96,6 +109,11 @@ router.post(
       const { name, academicYearId } = req.body;
       if (req.body.plan && !hasSeats(req.tenant.orgType)) {
         return res.status(400).json({ error: 'Plans are only available for study centers' });
+      }
+      if (req.body.cycle && !hasSeats(req.tenant.orgType)) {
+        return res
+          .status(400)
+          .json({ error: 'Billing cycles are only available for study centers' });
       }
 
       const existing = await FeeStructure.findOne({ tenantId, name, academicYearId });
@@ -161,6 +179,21 @@ router.patch(
           return res.status(400).json({ error: 'A plan has no installments' });
         }
       }
+      // Same rules as create for a billing cycle: study centers only, per learner, and
+      // never together with a plan or installments.
+      const cycle = update.cycle ?? before.cycle;
+      if (update.cycle && !hasSeats(req.tenant.orgType)) {
+        return res
+          .status(400)
+          .json({ error: 'Billing cycles are only available for study centers' });
+      }
+      if (cycle && (update.plan ?? before.plan)?.kind) {
+        return res.status(400).json({ error: 'A billing cycle cannot be combined with a plan' });
+      }
+      if (cycle && (update.installments ?? before.installments)?.length) {
+        return res.status(400).json({ error: 'A billing cycle has no installments' });
+      }
+      if (update.cycle) update.applicableTo = 'student';
 
       const doc = await FeeStructure.findOneAndUpdate(
         { _id: req.params.id, tenantId },
@@ -414,9 +447,10 @@ router.get('/assignments', requirePermission('fees:read'), async (req, res, next
   }
 });
 
-// Study centers: a learner holds one fee structure at a time (plans are sold at the
-// desk and carry coversFrom, so they are not counted here). Setting the same one is a
-// no-op; swapping is allowed only while nothing has been paid against the old one.
+// Study centers: put a learner on a fee structure. A structure with a billing cycle
+// sets (or changes) the learner's one fee plan from `startDate` (default today); any
+// other structure is a one-off fee added alongside it. Plans sold at the desk are not
+// assignable here.
 router.put(
   '/students/:studentId/structure',
   requireSeatsOrg,
@@ -426,65 +460,195 @@ router.put(
     try {
       const tenantId = req.tenant._id;
       const { studentId } = req.params;
-      const { feeStructureId } = req.body;
+      const { feeStructureId, startDate } = req.body;
 
-      const student = await Student.findOne({ _id: studentId, tenantId }, 'kind').lean();
-      if (!student) return res.status(404).json({ error: 'Student not found' });
-      if (student.kind === 'walk_in') {
-        return res.status(400).json({ error: 'Walk-ins buy a day pass instead' });
-      }
-
-      const structure = await FeeStructure.findOne(
-        {
-          _id: feeStructureId,
-          tenantId,
-          isActive: { $ne: false },
-          'plan.kind': { $exists: false },
-        },
-        '_id'
-      ).lean();
+      await findBillableLearner(tenantId, studentId);
+      const structure = await findAssignableStructure(tenantId, feeStructureId);
       if (!structure) return res.status(404).json({ error: 'Fee structure not found' });
 
-      const current = await FeeAssignment.find({
-        tenantId,
-        studentId,
-        coversFrom: { $exists: false },
-      }).lean();
-
-      if (current.some((a) => String(a.feeStructureId) === String(structure._id))) {
-        return res.json({ created: 0, skipped: 1 });
-      }
-      if (current.length) {
-        const paid = await FeePayment.exists({
-          tenantId,
-          assignmentId: { $in: current.map((a) => a._id) },
-          refunded: { $ne: true },
-        });
-        if (paid) {
-          return res
-            .status(409)
-            .json({ error: 'Payments were recorded against the current fee structure' });
+      if (!structure.cycle) {
+        const result = await addOneOff({ tenantId, studentId, structure });
+        if (result.created) {
+          await auditLog({
+            actorId: req.user.sub,
+            tenantId: tenantId.toString(),
+            action: 'student.feeStructure.add',
+            target: { model: 'Student', id: studentId },
+            after: { feeStructureId: structure._id },
+            ip: req.ip,
+          });
         }
-        await FeeAssignment.deleteMany({ tenantId, _id: { $in: current.map((a) => a._id) } });
+        return res.json({ kind: 'one_off', ...result });
       }
 
-      const result = await assignFeesToStudents({
-        studentIds: [studentId],
-        feeStructureId: structure._id,
-        tenantId,
+      const before = await FeeAssignment.findOne(
+        { tenantId, studentId, billing: { $exists: true } },
+        'billing feeStructureId'
+      ).lean();
+      const { result, assignment } = await setCyclePlan({
+        tenant: req.tenant,
+        studentId,
+        structure,
+        startDay: startDate,
       });
+      if (result !== 'unchanged') {
+        await auditLog({
+          actorId: req.user.sub,
+          tenantId: tenantId.toString(),
+          action: 'student.feePlan.set',
+          target: { model: 'FeeAssignment', id: assignment._id },
+          before: before ? { billing: before.billing } : undefined,
+          after: { billing: assignment.toObject().billing },
+          ip: req.ip,
+        });
+      }
+      res.status(result === 'created' ? 201 : 200).json({
+        kind: 'plan',
+        result,
+        assignmentId: assignment._id,
+        billing: assignment.toObject().billing,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
+// Study centers: a learner's fee plan and its ledger, computed now. Days are the
+// centre's calendar days (YYYY-MM-DD); `to` and `endedOn` are the first day not
+// billed. `{ plan: null }` when the learner has no plan.
+router.get(
+  '/students/:studentId/billing',
+  requireSeatsOrg,
+  requirePermission('fees:read'),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const assignment = await FeeAssignment.findOne({
+        tenantId,
+        studentId: req.params.studentId,
+        billing: { $exists: true },
+      }).lean();
+      if (!assignment) return res.json({ plan: null });
+
+      const { segments, pauses, endedOn } = assignment.billing;
+      const [ledgers, structures] = await Promise.all([
+        ledgersFor({ tenant: req.tenant, assignments: [assignment] }),
+        FeeStructure.find(
+          { tenantId, _id: { $in: segments.map((s) => s.feeStructureId) } },
+          'name'
+        ).lean(),
+      ]);
+      const names = new Map(structures.map((s) => [String(s._id), s.name]));
+      const day = (d) => (d ? dayStringOf(d) : null);
+
+      res.json({
+        plan: {
+          assignmentId: assignment._id,
+          feeStructureId: assignment.feeStructureId,
+          name: names.get(String(assignment.feeStructureId)) ?? null,
+          cycle: segments[segments.length - 1].cycle,
+          segments: segments.map((s) => ({
+            feeStructureId: s.feeStructureId,
+            name: names.get(String(s.feeStructureId)) ?? null,
+            cycle: s.cycle,
+            amount: s.amount,
+            from: day(s.from),
+            to: day(s.to),
+          })),
+          pauses: pauses.map((p) => ({ from: day(p.from), to: day(p.to) })),
+          endedOn: day(endedOn),
+          ...ledgers.get(String(assignment._id)),
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// Study centers, owner only: pause a learner's billing from a day (today or earlier).
+// Paused days are not billed and the learner's seats are freed for others.
+router.post(
+  '/students/:studentId/pause',
+  requireSeatsOrg,
+  requirePermission('tenant:admin'),
+  validate(pauseBillingSchema),
+  async (req, res, next) => {
+    try {
+      const { assignment, seatsReleased, seatError } = await pauseBilling({
+        tenant: req.tenant,
+        studentId: req.params.studentId,
+        onDay: req.body.on,
+      });
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: req.tenant._id.toString(),
+        action: 'student.feePlan.pause',
+        target: { model: 'FeeAssignment', id: assignment._id },
+        after: { on: req.body.on, seatsReleased },
+        ip: req.ip,
+      });
+      res.json({ billing: assignment.toObject().billing, seatsReleased, seatError });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// Study centers, owner only: resume a paused learner's billing from a day, optionally
+// giving them a seat in a shift again.
+router.post(
+  '/students/:studentId/resume',
+  requireSeatsOrg,
+  requirePermission('tenant:admin'),
+  validate(resumeBillingSchema),
+  async (req, res, next) => {
+    try {
+      const { assignment, seat, seatError } = await resumeBilling({
+        tenant: req.tenant,
+        studentId: req.params.studentId,
+        onDay: req.body.on,
+        seatId: req.body.seatId,
+        sectionId: req.body.sectionId,
+      });
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: req.tenant._id.toString(),
+        action: 'student.feePlan.resume',
+        target: { model: 'FeeAssignment', id: assignment._id },
+        after: { on: req.body.on, seatId: seat?.seatId, sectionId: seat?.sectionId },
+        ip: req.ip,
+      });
+      res.json({ billing: assignment.toObject().billing, seat, seatError });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// Study centers: remove a one-off fee from a learner while nothing is paid against it.
+router.delete(
+  '/students/:studentId/assignments/:id',
+  requireSeatsOrg,
+  requirePermission('fees:write'),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const removed = await removeOneOff({
+        tenantId,
+        studentId: req.params.studentId,
+        assignmentId: req.params.id,
+      });
       await auditLog({
         actorId: req.user.sub,
         tenantId: tenantId.toString(),
-        action: 'student.feeStructure.set',
-        target: { model: 'Student', id: studentId },
-        before: { feeStructureIds: current.map((a) => a.feeStructureId) },
-        after: { feeStructureId: structure._id },
+        action: 'student.feeStructure.remove',
+        target: { model: 'FeeAssignment', id: removed._id },
+        before: removed,
         ip: req.ip,
       });
-
-      res.json(result);
+      res.status(204).end();
     } catch (err) {
       next(err);
     }
@@ -533,6 +697,9 @@ router.post(
       const tenantId = req.tenant._id;
       const doc = await FeeAssignment.findOne({ _id: req.params.id, tenantId });
       if (!doc) return res.status(404).json({ error: 'Not found' });
+      if (isBillingAssignment(doc)) {
+        return res.status(422).json({ error: 'A fee plan cannot be waived' });
+      }
       if (!canWaiveAssignment(doc.status)) {
         return res.status(400).json({ error: `Cannot waive a ${doc.status} assignment` });
       }
@@ -684,8 +851,9 @@ router.get('/collection-summary', requirePermission('fees:read'), async (req, re
       FeeAssignment.find(filter).lean(),
       getDefaulters(tenantId, academicYearId),
     ]);
+    const ledgers = await ledgersFor({ tenant: req.tenant, assignments });
 
-    res.json(summarizeFeeCollection(assignments, defaulters));
+    res.json(summarizeFeeCollection(assignments, defaulters, new Date(), ledgers));
   } catch (err) {
     next(err);
   }

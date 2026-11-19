@@ -68,7 +68,16 @@ export default function MySeatPage() {
         <Card data-testid="my-plan">
           <CardContent className="flex flex-col gap-1 pt-4 text-sm">
             <h2 className="text-sm font-semibold">{t('studyCenter.mySeat.planLabel')}</h2>
-            {data.plan && (
+            {data.plan && data.plan.cycle && (
+              <>
+                <p>{data.plan.name}</p>
+                <p className="text-muted-foreground" data-testid="my-plan-state">
+                  {t(`studyCenter.mySeat.planCycle_${data.plan.cycle}`)} ·{' '}
+                  {t(`studyCenter.mySeat.planState_${data.plan.state}`)}
+                </p>
+              </>
+            )}
+            {data.plan && !data.plan.cycle && (
               <>
                 <p>{data.plan.name}</p>
                 <p className="text-muted-foreground">

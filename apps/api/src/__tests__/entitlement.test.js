@@ -131,4 +131,57 @@ describe('summarizePlan', () => {
       nextDue: null,
     });
   });
+
+  describe('with a monthly/weekly fee plan (TICKET-008)', () => {
+    const feePlan = {
+      _id: 'fp',
+      feeStructureId: 's2',
+      status: 'unpaid', // never kept up to date for a fee plan: must be ignored
+      totalAmount: 1500,
+      billing: { segments: [{ cycle: 'monthly' }] },
+    };
+    const billing = (nextDue, state = 'active') => ({
+      name: 'Seat monthly',
+      cycle: 'monthly',
+      ledger: { state, nextDue },
+    });
+
+    test('the fee plan is the plan line, and its ledger gives the next due', () => {
+      const r = summarizePlan({
+        assignments: [feePlan],
+        payments: [],
+        structureNames: names,
+        billing: billing({ amount: 1350, dueOn: '2026-04-30' }),
+        at,
+      });
+      expect(r.plan).toEqual({ name: 'Seat monthly', cycle: 'monthly', state: 'active' });
+      expect(r.nextDue.amount).toBe(1350);
+      expect(r.nextDue.dueDate.toISOString()).toBe('2026-04-30T00:00:00.000Z');
+    });
+
+    test("the plan's stored total is never treated as owed", () => {
+      const r = summarizePlan({
+        assignments: [feePlan],
+        payments: [],
+        structureNames: names,
+        billing: billing(null),
+        at,
+      });
+      expect(r.nextDue).toBeNull();
+    });
+
+    test('an earlier one-off fee comes before the plan', () => {
+      const oneOff = assignment('r1', 'unpaid', '2026-01-01', '2026-01-02', 500, '2026-04-10');
+      delete oneOff.coversFrom;
+      delete oneOff.coversTo;
+      const r = summarizePlan({
+        assignments: [feePlan, oneOff],
+        payments: [],
+        structureNames: names,
+        billing: billing({ amount: 1350, dueOn: '2026-04-30' }),
+        at,
+      });
+      expect(r.nextDue).toMatchObject({ amount: 500 });
+    });
+  });
 });

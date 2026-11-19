@@ -1,13 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { hasSeats } from '@rooted/shared/utils';
 import api from '../../lib/api.js';
+import { useAuth } from '../../contexts/useAuth.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
 import { Progress, ProgressTrack, ProgressIndicator } from '../../components/ui/progress.jsx';
 
 export default function FinanceSummaryPage() {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  // A study center bills by cycle from each learner's own start date: no defaulters.
+  const showDefaulters = !hasSeats(user?.orgType);
 
   const { data: feeSummary } = useQuery({
     queryKey: ['fee', 'collection-summary'],
@@ -50,28 +55,32 @@ export default function FinanceSummaryPage() {
         </CardContent>
       </Card>
 
-      <Card className="border-destructive/30">
-        <CardContent className="pt-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-3xl font-bold text-destructive">
-                {feeSummary?.defaulterCount ?? 0}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {t('dashboard.financeSummary.defaultersCard', {
-                  count: feeSummary?.defaulterCount ?? 0,
-                })}
-                {feeSummary &&
-                  ` · ${t('dashboard.financeSummary.overdueAmount', { amount: feeSummary.overdueTotal.toLocaleString('en-IN') })}`}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {showDefaulters && (
+        <>
+          <Card className="border-destructive/30">
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-3xl font-bold text-destructive">
+                    {feeSummary?.defaulterCount ?? 0}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t('dashboard.financeSummary.defaultersCard', {
+                      count: feeSummary?.defaulterCount ?? 0,
+                    })}
+                    {feeSummary &&
+                      ` · ${t('dashboard.financeSummary.overdueAmount', { amount: feeSummary.overdueTotal.toLocaleString('en-IN') })}`}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-      <Link to="/fee" className="text-sm text-primary hover:underline w-fit">
-        {t('dashboard.financeSummary.viewDefaulters')} ›
-      </Link>
+          <Link to="/fee" className="text-sm text-primary hover:underline w-fit">
+            {t('dashboard.financeSummary.viewDefaulters')} ›
+          </Link>
+        </>
+      )}
     </div>
   );
 }

@@ -21,6 +21,9 @@ import {
 import { autoAssignSupported } from '../utils/feeAutoAssignScope.js';
 import { buildReceiptLines } from '../utils/receiptLines.js';
 import { scheduleLateCharge } from '../workers/feeLateCharge.worker.js';
+import { isBillingAssignment, settledSpan } from '../utils/billingCycle.js';
+import { zonedMidnight } from '../utils/dayKey.js';
+import { ledgersFor, ledgerTotals, loadBillingLedger } from './feePlanLedger.service.js';
 
 const MAX_MUTATION_ATTEMPTS = 3;
 
@@ -35,14 +38,18 @@ export async function applyAssignmentMutation(assignmentId, tenantId, extraMutat
 
     if (extraMutate) extraMutate(assignment);
 
-    const payments = await FeePayment.find({
-      tenantId,
-      assignmentId,
-      refunded: { $ne: true },
-    }).lean();
-    const { installments, status } = recomputeFeeStatus({ assignment, payments });
-    if (installments) assignment.installments = installments;
-    if (assignment.status !== 'waived') assignment.status = status;
+    // A cycle plan has no fixed total, so a stored status would only be wrong: its
+    // readers work the balance out from the ledger.
+    if (!isBillingAssignment(assignment)) {
+      const payments = await FeePayment.find({
+        tenantId,
+        assignmentId,
+        refunded: { $ne: true },
+      }).lean();
+      const { installments, status } = recomputeFeeStatus({ assignment, payments });
+      if (installments) assignment.installments = installments;
+      if (assignment.status !== 'waived') assignment.status = status;
+    }
 
     try {
       await assignment.save();
@@ -62,6 +69,11 @@ export async function assignFeesToStudents({
 }) {
   const structure = await FeeStructure.findOne({ _id: feeStructureId, tenantId }).lean();
   if (!structure) throw new Error('FeeStructure not found');
+  // A cycle structure bills each learner from their own start date (feePlan.service.js),
+  // never as one lump sum.
+  if (structure.cycle) {
+    throw new AppError("Put learners on a fee plan from each learner's page", 422);
+  }
 
   const totalAmount = calculateMandatoryTotal(structure.components);
   const hasInstallments = Boolean(structure.installments?.length);
@@ -170,13 +182,30 @@ export async function recordPayment({
     throw new AppError('Cannot record a payment against a waived assignment', 400);
   }
 
-  const existingPayments = await FeePayment.find({
-    tenantId,
-    assignmentId,
-    refunded: { $ne: true },
-  }).lean();
-  const totalPaid = existingPayments.reduce((sum, p) => sum + p.amount, 0);
-  const remaining = calculateRemainingDue({ assignment, totalPaid, installmentIndex });
+  // The receipt names the organization that issued it; a cycle plan also needs the
+  // centre's calendar to know what is due.
+  const tenant = await Tenant.findById(tenantId, 'name timezone').lean();
+  const billing = isBillingAssignment(assignment);
+
+  let remaining;
+  let ledgerBefore;
+  if (billing) {
+    if (installmentIndex !== undefined && installmentIndex !== null) {
+      throw new AppError('A fee plan has no installments', 400);
+    }
+    // What is overdue plus what is left of the current cycle: paying before a cycle
+    // closes is normal, it settles that cycle when it falls due.
+    ledgerBefore = await loadBillingLedger({ tenant: { ...tenant, _id: tenantId }, assignment });
+    remaining = ledgerBefore.payableNow;
+  } else {
+    const existingPayments = await FeePayment.find({
+      tenantId,
+      assignmentId,
+      refunded: { $ne: true },
+    }).lean();
+    const totalPaid = existingPayments.reduce((sum, p) => sum + p.amount, 0);
+    remaining = calculateRemainingDue({ assignment, totalPaid, installmentIndex });
+  }
   if (amount > remaining) throw new AppError('Payment exceeds amount due', 400);
 
   const year = new Date().getFullYear();
@@ -216,9 +245,11 @@ export async function recordPayment({
   }
 
   const student = await Student.findOne({ _id: assignment.studentId, tenantId }).lean();
-  // The receipt names the organization that issued it. A sale passes the plan it
-  // sold; anything else falls back to the assignment's own coverage, if it has one.
-  const tenant = await Tenant.findById(tenantId, 'name timezone').lean();
+  // A sale passes the plan it sold; a cycle plan names its structure and the cycles
+  // this payment settled; anything else falls back to the assignment's own coverage.
+  const billingContext = billing
+    ? await billingReceiptContext({ tenant, tenantId, assignment, ledgerBefore })
+    : {};
   const receiptPdfKey = await generateReceiptPdf({
     payment,
     student,
@@ -231,6 +262,7 @@ export async function recordPayment({
       timezone: tenant?.timezone,
       coversFrom: assignment.coversFrom,
       coversTo: assignment.coversTo,
+      ...billingContext,
       ...receiptContext,
     },
   });
@@ -239,6 +271,25 @@ export async function recordPayment({
   payment.receiptPdfKey = receiptPdfKey;
 
   return payment;
+}
+
+// The structure the learner is on now, and the span of cycles that took money from
+// this payment (none when it only adds credit).
+async function billingReceiptContext({ tenant, tenantId, assignment, ledgerBefore }) {
+  const structure = await FeeStructure.findOne(
+    { _id: assignment.feeStructureId, tenantId },
+    'name'
+  ).lean();
+  // The payment is stored by now, so this ledger already includes it.
+  const ledgerAfter = await loadBillingLedger({ tenant: { ...tenant, _id: tenantId }, assignment });
+  const span = settledSpan(ledgerBefore, ledgerAfter);
+  if (!span) return { planName: structure?.name };
+  const timezone = tenant?.timezone;
+  return {
+    planName: structure?.name,
+    coversFrom: zonedMidnight(span.start, timezone),
+    coversTo: new Date(zonedMidnight(span.end, timezone) - 1),
+  };
 }
 
 async function generateReceiptPdf({
@@ -299,13 +350,20 @@ export async function initiateOnlinePayment(assignmentId, tenantId) {
   const assignment = await FeeAssignment.findOne({ _id: assignmentId, tenantId }).lean();
   if (!assignment) throw new AppError('FeeAssignment not found', 404);
 
-  const payments = await FeePayment.find({
-    tenantId,
-    assignmentId,
-    refunded: { $ne: true },
-  }).lean();
-  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-  const outstanding = calculateEffectiveTotal(assignment) - totalPaid;
+  let outstanding;
+  if (isBillingAssignment(assignment)) {
+    const tenant = await Tenant.findById(tenantId, 'timezone').lean();
+    outstanding = (await loadBillingLedger({ tenant: { ...tenant, _id: tenantId }, assignment }))
+      .payableNow;
+  } else {
+    const payments = await FeePayment.find({
+      tenantId,
+      assignmentId,
+      refunded: { $ne: true },
+    }).lean();
+    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+    outstanding = calculateEffectiveTotal(assignment) - totalPaid;
+  }
 
   if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) {
     return {
@@ -342,6 +400,10 @@ export async function applyDiscountToAssignment({ assignmentId, discountId, tena
 
   const assignment = await FeeAssignment.findOne({ _id: assignmentId, tenantId }).lean();
   if (!assignment) throw new AppError('FeeAssignment not found', 404);
+  // A fee plan takes only the learner's standing discount, applied to every cycle.
+  if (isBillingAssignment(assignment)) {
+    throw new AppError("A fee plan takes only the learner's standing discount", 422);
+  }
   if (assignment.status === 'paid' || assignment.status === 'waived') {
     throw new AppError(`Cannot apply a discount to a ${assignment.status} assignment`, 400);
   }
@@ -391,8 +453,11 @@ export async function refundPayment({ paymentId, tenantId, reason, actorId }) {
 }
 
 // What each assignment has been paid so far (refunds excluded) and what is still
-// owed, so a client never has to work out a balance from the assignment alone.
-export async function withBalances(tenantId, assignments) {
+// owed, so a client never has to work out a balance from the assignment alone. A
+// study-center fee plan has no fixed total: what it owes is what is overdue on its
+// ledger, and its row carries the ledger's balances as `ledger` (plus every cycle
+// when `cycles` is asked for: a learner's own view, not a tenant-wide list).
+export async function withBalances(tenantId, assignments, { cycles = false } = {}) {
   if (assignments.length === 0) return assignments;
   const paid = await FeePayment.aggregate([
     {
@@ -405,8 +470,16 @@ export async function withBalances(tenantId, assignments) {
     { $group: { _id: '$assignmentId', total: { $sum: '$amount' } } },
   ]);
   const paidById = new Map(paid.map((p) => [String(p._id), p.total]));
+  const ledgers = await ledgersFor({ tenantId, assignments, paidById });
   return assignments.map((a) => {
     const paidAmount = paidById.get(String(a._id)) ?? 0;
+    const ledger = ledgers.get(String(a._id));
+    if (ledger) {
+      const shown = cycles
+        ? { ...ledgerTotals(ledger), cycles: ledger.cycles }
+        : ledgerTotals(ledger);
+      return { ...a, paidAmount, balanceDue: ledger.overdue, ledger: shown };
+    }
     const balanceDue =
       a.status === 'waived' ? 0 : Math.max(calculateEffectiveTotal(a) - paidAmount, 0);
     return { ...a, paidAmount, balanceDue };

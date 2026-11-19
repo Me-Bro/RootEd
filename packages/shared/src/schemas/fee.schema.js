@@ -33,6 +33,21 @@ export const planSchema = z
     path: ['durationDays'],
   });
 
+// Study centers: a structure with a cycle bills a learner every calendar month or
+// every Monday-to-Sunday week from a start date; its amount is the price per cycle.
+export const BILLING_CYCLES = ['monthly', 'weekly'];
+// How far back a learner's billing start date may be set, in days.
+export const MAX_BACKDATE_DAYS = 31;
+
+// A calendar day in the centre's own calendar, as YYYY-MM-DD.
+export const dayStringSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD')
+  .refine((s) => {
+    const d = new Date(`${s}T00:00:00Z`);
+    return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+  }, 'Not a real date');
+
 const feeStructureBaseSchema = z.object({
   name: z.string().trim().min(1),
   academicYearId: objectId,
@@ -46,6 +61,7 @@ const feeStructureBaseSchema = z.object({
   lateFeeValue: z.coerce.number().nonnegative().optional(),
   lateFeeGraceDays: z.coerce.number().int().nonnegative().default(0),
   plan: planSchema.optional(),
+  cycle: z.enum(BILLING_CYCLES).optional(),
 });
 
 export const createFeeStructureSchema = feeStructureBaseSchema
@@ -79,7 +95,17 @@ export const createFeeStructureSchema = feeStructureBaseSchema
     message: 'A plan has no installments; each period is its own sale',
     path: ['installments'],
   })
-  .transform((v) => (v.plan ? { ...v, applicableTo: 'student' } : v));
+  // A cycle structure bills each learner from their own start date: it is neither a
+  // desk-sold plan nor paid in fixed installments, and it is set per learner.
+  .refine((v) => !v.cycle || !v.plan, {
+    message: 'A billing cycle cannot be combined with a plan',
+    path: ['cycle'],
+  })
+  .refine((v) => !v.cycle || !v.installments?.length, {
+    message: 'A billing cycle has no installments; each cycle is billed on its own',
+    path: ['installments'],
+  })
+  .transform((v) => (v.plan || v.cycle ? { ...v, applicableTo: 'student' } : v));
 
 export const updateFeeStructureSchema = feeStructureBaseSchema.partial();
 
@@ -88,10 +114,28 @@ export const assignFeeStructureSchema = z.object({
   dueDate: z.coerce.date().optional(),
 });
 
-// Study centers: the one fee structure a learner holds, set from the student page.
+// Study centers: put a learner on a fee structure from the student page. For a cycle
+// structure `startDate` is the first billable day (required the first time; on a
+// change it is the day the new structure takes over, default today).
 export const setStudentFeeStructureSchema = z.object({
   feeStructureId: objectId,
+  startDate: optional(dayStringSchema),
 });
+
+// Study centers, owner only: pause a learner's billing from `on` (their seats are
+// released), or resume it from `on`, optionally giving them a seat again.
+export const pauseBillingSchema = z.object({ on: dayStringSchema }).strict();
+export const resumeBillingSchema = z
+  .object({
+    on: dayStringSchema,
+    seatId: optional(objectId),
+    sectionId: optional(objectId),
+  })
+  .strict()
+  .refine((v) => !v.seatId === !v.sectionId, {
+    message: 'Choose both a seat and a shift, or neither',
+    path: ['seatId'],
+  });
 
 export const cloneFeeStructureSchema = z.object({
   targetAcademicYearId: objectId,

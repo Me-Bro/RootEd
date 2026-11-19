@@ -54,8 +54,15 @@ import { env } from '../config/env.js';
 import { Student } from '../models/Student.js';
 import { allocateAdmissionNo, peekAdmissionNo } from '../services/counter.service.js';
 import { Enrollment } from '../models/Enrollment.js';
-import { FeeStructure } from '../models/FeeStructure.js';
 import { assignFeesToStudents } from '../services/fee.service.js';
+import {
+  checkNewPlanStartDay,
+  endBilling,
+  findAssignableStructure,
+  reopenBilling,
+  setCyclePlan,
+} from '../services/feePlan.service.js';
+import { dayStringInTz } from '../utils/dayKey.js';
 import { Role } from '../models/Role.js';
 import { User } from '../models/User.js';
 import { TenantMembership } from '../models/TenantMembership.js';
@@ -70,7 +77,7 @@ import { logger } from '../utils/logger.js';
 import { encryptField, decryptField } from '../utils/fieldEncryption.js';
 import { mapImportRow } from '../utils/studentImport.js';
 import { loadTeachingLoad } from '../services/teachingLoad.service.js';
-import { endAllocationsFor } from '../services/seat.service.js';
+import { endAllocationsFor, endAllAllocationsFor } from '../services/seat.service.js';
 import { createBatch, updateBatch } from '../services/batch.service.js';
 import { TimetablePublish } from '../models/TimetablePublish.js';
 import { AttendanceRecord } from '../models/AttendanceRecord.js';
@@ -562,26 +569,47 @@ function parseStudentBody(schemaFor, req, res) {
 const sectionExists = (tenantId, sectionId) =>
   Section.findOne({ _id: sectionId, tenantId }, '_id').lean();
 
+// Both steps do nothing when there is nothing to do (billing already ended, or never
+// ended), so the route runs them on every status write. That makes a retry heal a
+// request that saved the status but failed before billing caught up.
+async function syncBillingWithStatus({ tenant, studentId, to, actorId, ip }) {
+  const today = dayStringInTz(new Date(), tenant.timezone);
+  let plan = null;
+  if (to === 'withdrawn') {
+    plan = await endBilling({ tenant, studentId, onDay: today });
+    await endAllAllocationsFor(tenant._id, studentId);
+  } else if (to === 'active') {
+    plan = await reopenBilling({ tenant, studentId, onDay: today });
+  }
+  if (plan) {
+    await auditLog({
+      actorId,
+      tenantId: tenant._id.toString(),
+      action: to === 'withdrawn' ? 'student.feePlan.end' : 'student.feePlan.reopen',
+      target: { model: 'FeeAssignment', id: plan._id },
+      after: { on: today },
+      ip,
+    });
+  }
+}
+
 router.post('/students', requirePermission('students:write'), async (req, res, next) => {
   try {
     const body = parseStudentBody(studentCreateSchemaFor, req, res);
     if (!body) return;
     const tenantId = req.tenant._id;
-    const { email, aadhaar, feeStructureId, ...fields } = body;
+    const { email, aadhaar, feeStructureId, feeStructureStartDate, ...fields } = body;
 
-    // Checked before the student exists, so a bad id never leaves a half-made record.
-    // Plans are sold at the desk (POST /fee/sales), never assigned this way.
+    // Checked before the student exists, so a bad id or start date never leaves a
+    // half-made record. Plans are sold at the desk (POST /fee/sales), never assigned
+    // this way.
+    let structure = null;
     if (feeStructureId) {
-      const structure = await FeeStructure.findOne(
-        {
-          _id: feeStructureId,
-          tenantId,
-          isActive: { $ne: false },
-          'plan.kind': { $exists: false },
-        },
-        '_id'
-      ).lean();
+      structure = await findAssignableStructure(tenantId, feeStructureId);
       if (!structure) return res.status(404).json({ error: 'Fee structure not found' });
+      if (structure.cycle && feeStructureStartDate) {
+        checkNewPlanStartDay({ tenant: req.tenant, startDay: feeStructureStartDate });
+      }
     }
 
     // Study centers may omit it; the server then assigns the next free number.
@@ -629,9 +657,18 @@ router.post('/students', requirePermission('students:write'), async (req, res, n
     delete out.aadhaarEnc;
 
     // Like the login below, a failed assignment must not lose the saved student.
-    if (feeStructureId) {
+    if (structure) {
       try {
-        await assignFeesToStudents({ studentIds: [student._id], feeStructureId, tenantId });
+        if (structure.cycle) {
+          await setCyclePlan({
+            tenant: req.tenant,
+            studentId: student._id,
+            structure,
+            startDay: feeStructureStartDate,
+          });
+        } else {
+          await assignFeesToStudents({ studentIds: [student._id], feeStructureId, tenantId });
+        }
       } catch (err) {
         logger.warn({ err, studentId: student._id }, 'fee structure could not be assigned');
         out.feeError = 'the fee structure could not be assigned';
@@ -858,6 +895,19 @@ router.patch('/students/:id', requirePermission('students:write'), async (req, r
     });
     if (!student) return res.status(404).json({ error: 'Not found' });
     if (set.sectionId) await ensureEnrollment(tenantId, student);
+
+    // Study centers: a learner who withdraws stops being billed from today and gives
+    // up their seats; one who comes back is billed again from today, never for the
+    // days away.
+    if (body.status && hasSeats(req.tenant.orgType)) {
+      await syncBillingWithStatus({
+        tenant: req.tenant,
+        studentId: student._id,
+        to: body.status,
+        actorId: req.user.sub,
+        ip: req.ip,
+      });
+    }
 
     // Setting or clearing the number is recorded too (never its value).
     if (aadhaar !== undefined) {

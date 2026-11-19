@@ -16,11 +16,17 @@ import { formatCurrency, formatDate } from '../../utils/intl.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
 import { RecordList, RecordListItem } from '../../components/ui/RecordList.jsx';
+import { hasSeats } from '@rooted/shared/utils';
+import { useAuth } from '../../contexts/useAuth.js';
+import { assignmentRow } from '../../utils/feePlan.js';
 
 // Defaulters leads: chasing 160 unpaid + 254 partial assignments (₹1.98Cr
 // outstanding) is this module's real job, not an afterthought behind two
 // other tabs. See docs/mobile-ui/17-fee-collection-approved.html.
+// A study center bills by cycle from each learner's own start date, so there is no
+// single due date to be a defaulter of: it has no Defaulters tab.
 const TAB_IDS = ['defaulters', 'assignments', 'payments'];
+const SEATS_TAB_IDS = ['assignments', 'payments'];
 
 function statusVariant(status) {
   if (status === 'paid') return 'success';
@@ -42,6 +48,8 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
   const [error, setError] = useState('');
   const [onlineSuccess, setOnlineSuccess] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  // A monthly/weekly plan may be paid ahead, so its cap is more than what is overdue.
+  const payable = assignment ? assignmentRow(assignment).payable : 0;
 
   function update(field) {
     return (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -161,9 +169,7 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
               </strong>
               <br />
               {t('fee.collection.totalDueLabel')}{' '}
-              <strong className="text-foreground">
-                {formatCurrency(assignment?.balanceDue ?? 0)}
-              </strong>
+              <strong className="text-foreground">{formatCurrency(payable)}</strong>
             </div>
             <Input
               label={t('fee.collection.amountLabel')}
@@ -172,8 +178,8 @@ function CollectPaymentModal({ open, onOpenChange, assignment }) {
               onChange={update('amount')}
               required
               min="1"
-              max={assignment?.balanceDue || undefined}
-              placeholder={assignment?.balanceDue ? String(assignment.balanceDue) : undefined}
+              max={payable || undefined}
+              placeholder={payable ? String(payable) : undefined}
             />
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium">{t('fee.collection.paymentMethod')}</label>
@@ -422,32 +428,38 @@ function AssignmentsTab() {
         isEmpty={filtered.length === 0}
         emptyMessage={t('fee.collection.noAssignmentsFound')}
       >
-        {filtered.map((a) => (
-          <RecordListItem
-            key={a._id}
-            title={`${a.studentId?.firstName ?? ''} ${a.studentId?.lastName ?? ''}`.trim()}
-            meta={`${a.studentId?.admissionNo ?? '—'} · ${a.feeStructureId?.name ?? '—'} · ${formatCurrency(
-              a.totalAmount ?? 0
-            )}${a.dueDate ? ` · ${formatDate(a.dueDate)}` : ''}`}
-            trailing={<Badge variant={statusVariant(a.status)}>{a.status}</Badge>}
-            footer={
-              a.status !== 'paid' &&
-              a.status !== 'waived' && (
-                <div className="flex flex-wrap gap-1.5">
-                  <Button size="sm" onClick={() => setCollectFor(a)}>
-                    {t('fee.collection.collectButton')}
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setDiscountFor(a)}>
-                    {t('fee.collection.discountButton')}
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setWaiveFor(a)}>
-                    {t('fee.collection.waive')}
-                  </Button>
-                </div>
-              )
-            }
-          />
-        ))}
+        {filtered.map((a) => {
+          const row = assignmentRow(a);
+          return (
+            <RecordListItem
+              key={a._id}
+              title={`${a.studentId?.firstName ?? ''} ${a.studentId?.lastName ?? ''}`.trim()}
+              meta={`${a.studentId?.admissionNo ?? '—'} · ${a.feeStructureId?.name ?? '—'} · ${formatCurrency(
+                a.totalAmount ?? 0
+              )}${a.dueDate ? ` · ${formatDate(a.dueDate)}` : ''}`}
+              trailing={<Badge variant={statusVariant(row.status)}>{row.status}</Badge>}
+              footer={
+                row.canCollect && (
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button size="sm" onClick={() => setCollectFor(a)}>
+                      {t('fee.collection.collectButton')}
+                    </Button>
+                    {row.canAdjust && (
+                      <>
+                        <Button size="sm" variant="outline" onClick={() => setDiscountFor(a)}>
+                          {t('fee.collection.discountButton')}
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setWaiveFor(a)}>
+                          {t('fee.collection.waive')}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                )
+              }
+            />
+          );
+        })}
       </RecordList>
 
       <DataTable
@@ -468,44 +480,51 @@ function AssignmentsTab() {
         isEmpty={filtered.length === 0}
         emptyMessage={t('fee.collection.noAssignmentsFound')}
       >
-        {filtered.map((a) => (
-          <TableRow key={a._id} className="bg-card">
-            <TableCell className="px-4 py-3">
-              {a.studentId?.firstName} {a.studentId?.lastName}
-            </TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">
-              {a.studentId?.admissionNo}
-            </TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">
-              {a.feeStructureId?.name}
-            </TableCell>
-            <TableCell className="px-4 py-3">{formatCurrency(a.totalAmount ?? 0)}</TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">
-              {formatCurrency(a.discountAmount ?? 0)}
-            </TableCell>
-            <TableCell className="px-4 py-3">
-              <Badge variant={statusVariant(a.status)}>{a.status}</Badge>
-            </TableCell>
-            <TableCell className="px-4 py-3 text-muted-foreground">
-              {a.dueDate ? formatDate(a.dueDate) : '—'}
-            </TableCell>
-            <TableCell className="px-4 py-3">
-              {a.status !== 'paid' && a.status !== 'waived' && (
-                <div className="flex gap-1.5">
-                  <Button size="sm" onClick={() => setCollectFor(a)}>
-                    {t('fee.collection.collectButton')}
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setDiscountFor(a)}>
-                    {t('fee.collection.discountButton')}
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setWaiveFor(a)}>
-                    {t('fee.collection.waive')}
-                  </Button>
-                </div>
-              )}
-            </TableCell>
-          </TableRow>
-        ))}
+        {filtered.map((a) => {
+          const row = assignmentRow(a);
+          return (
+            <TableRow key={a._id} className="bg-card">
+              <TableCell className="px-4 py-3">
+                {a.studentId?.firstName} {a.studentId?.lastName}
+              </TableCell>
+              <TableCell className="px-4 py-3 text-muted-foreground">
+                {a.studentId?.admissionNo}
+              </TableCell>
+              <TableCell className="px-4 py-3 text-muted-foreground">
+                {a.feeStructureId?.name}
+              </TableCell>
+              <TableCell className="px-4 py-3">{formatCurrency(a.totalAmount ?? 0)}</TableCell>
+              <TableCell className="px-4 py-3 text-muted-foreground">
+                {formatCurrency(a.discountAmount ?? 0)}
+              </TableCell>
+              <TableCell className="px-4 py-3">
+                <Badge variant={statusVariant(row.status)}>{row.status}</Badge>
+              </TableCell>
+              <TableCell className="px-4 py-3 text-muted-foreground">
+                {a.dueDate ? formatDate(a.dueDate) : '—'}
+              </TableCell>
+              <TableCell className="px-4 py-3">
+                {row.canCollect && (
+                  <div className="flex gap-1.5">
+                    <Button size="sm" onClick={() => setCollectFor(a)}>
+                      {t('fee.collection.collectButton')}
+                    </Button>
+                    {row.canAdjust && (
+                      <>
+                        <Button size="sm" variant="outline" onClick={() => setDiscountFor(a)}>
+                          {t('fee.collection.discountButton')}
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => setWaiveFor(a)}>
+                          {t('fee.collection.waive')}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </DataTable>
 
       <CollectPaymentModal
@@ -833,7 +852,9 @@ function DefaultersTab() {
 
 export default function FeesPage() {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState('defaulters');
+  const { user } = useAuth();
+  const tabIds = hasSeats(user?.orgType) ? SEATS_TAB_IDS : TAB_IDS;
+  const [activeTab, setActiveTab] = useState(tabIds[0]);
 
   const TAB_LABELS = {
     defaulters: t('fee.collection.tabDefaulters'),
@@ -846,7 +867,7 @@ export default function FeesPage() {
       <PageHeader title={t('nav.feeCollection')} />
 
       <div className="flex gap-1 overflow-x-auto border-b border-border">
-        {TAB_IDS.map((id) => (
+        {tabIds.map((id) => (
           <button
             key={id}
             onClick={() => setActiveTab(id)}

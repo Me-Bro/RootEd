@@ -142,7 +142,11 @@ export async function checkIn({
     warning:
       entitlement.status === 'valid'
         ? null
-        : { status: entitlement.status, coversTo: entitlement.coversTo },
+        : {
+            status: entitlement.status,
+            coversTo: entitlement.coversTo,
+            ...(entitlement.overdue ? { overdue: entitlement.overdue } : {}),
+          },
   };
 }
 
