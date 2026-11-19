@@ -1,11 +1,20 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { Badge } from '../ui/Badge.jsx';
+import { Button } from '../ui/Button.jsx';
+import CollectPaymentModal from '../fee/CollectPaymentModal.jsx';
 import StudentFeeStructurePanel from '../students/StudentFeeStructurePanel.jsx';
 import StudentPaymentsTable from './StudentPaymentsTable.jsx';
 import { formatCurrency, formatDate } from '../../utils/intl.js';
-import { ENTITLEMENT_VARIANT, dayText, discountStatus, planHistory } from '../../utils/feePlan.js';
+import {
+  ENTITLEMENT_VARIANT,
+  collectableFees,
+  dayText,
+  discountStatus,
+  planHistory,
+} from '../../utils/feePlan.js';
 
 const prefix = 'studyCenter.studentBilling';
 
@@ -115,18 +124,88 @@ function StandingDiscounts({ studentId }) {
   );
 }
 
+// What the learner owes right now, fee by fee, each with a way to take a payment.
+function AmountsDue({ studentId, learnerName, canCollect, onDone }) {
+  const { t } = useTranslation();
+  const [paying, setPaying] = useState(null);
+  const { data: assignments = [] } = useQuery({
+    queryKey: ['student-fee-assignments', studentId],
+    queryFn: () => api.get(`/fee/assignments?studentId=${studentId}`).then((r) => r.data),
+  });
+  const rows = collectableFees(assignments);
+  if (rows.length === 0) {
+    return <p className="text-sm text-muted-foreground">{t(`${prefix}.nothingDue`)}</p>;
+  }
+  return (
+    <>
+      <ul className="flex flex-col gap-2 text-sm">
+        {rows.map(({ assignment, payable }) => (
+          <li key={assignment._id} className="flex flex-wrap items-center justify-between gap-2">
+            <span>
+              {assignment.feeStructureId?.name ?? '—'}
+              <span className="text-muted-foreground">
+                {' · '}
+                {t(`${prefix}.payable`, { amount: formatCurrency(payable) })}
+              </span>
+            </span>
+            {canCollect && (
+              <Button size="sm" variant="outline" onClick={() => setPaying(assignment)}>
+                {t(`${prefix}.collect`)}
+              </Button>
+            )}
+          </li>
+        ))}
+      </ul>
+      {paying && (
+        <CollectPaymentModal
+          open
+          onOpenChange={(open) => !open && setPaying(null)}
+          assignment={paying}
+          learnerName={learnerName}
+          onDone={onDone}
+        />
+      )}
+    </>
+  );
+}
+
 /**
  * A study-center learner's money in one place: whether they may come in, their plan
- * and its cycles (with pause and resume), the plan's history, their standing
- * discount and every payment with its receipt.
+ * and its cycles (with pause and resume), what is due now with a way to take a payment,
+ * the plan's history, their standing discount and every payment with its receipt (and a
+ * refund for the owner).
  */
-export default function StudentBillingTab({ studentId, canWrite }) {
+export default function StudentBillingTab({
+  studentId,
+  canWrite,
+  canCollect = false,
+  canRefund = false,
+  learnerName,
+}) {
   const { t, i18n } = useTranslation();
+  const queryClient = useQueryClient();
   const locale = i18n.language?.startsWith('hi') ? 'hi-IN' : 'en-IN';
+  // Money moved: the ledger, the payments, what is due, the badge and the history all change.
+  const refresh = () =>
+    [
+      'student-payments',
+      'student-billing',
+      'student-fee-assignments',
+      'student-entitlement',
+      'student-history',
+    ].forEach((key) => queryClient.invalidateQueries({ queryKey: [key, studentId] }));
   return (
     <div className="flex flex-col gap-5">
       <EntitlementLine studentId={studentId} />
       <StudentFeeStructurePanel studentId={studentId} canWrite={canWrite} />
+      <Section title={t(`${prefix}.dueHeading`)}>
+        <AmountsDue
+          studentId={studentId}
+          learnerName={learnerName}
+          canCollect={canCollect}
+          onDone={refresh}
+        />
+      </Section>
       <Section title={t(`${prefix}.historyHeading`)}>
         <PlanHistory studentId={studentId} locale={locale} />
       </Section>
@@ -134,7 +213,7 @@ export default function StudentBillingTab({ studentId, canWrite }) {
         <StandingDiscounts studentId={studentId} />
       </Section>
       <Section title={t(`${prefix}.paymentsHeading`)}>
-        <StudentPaymentsTable studentId={studentId} />
+        <StudentPaymentsTable studentId={studentId} canRefund={canRefund} onDone={refresh} />
       </Section>
     </div>
   );

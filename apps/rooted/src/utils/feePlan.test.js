@@ -169,3 +169,23 @@ test('every entitlement status has a badge colour', () => {
     assert.ok(ENTITLEMENT_VARIANT[s], s);
   }
 });
+
+import { collectableFees } from './feePlan.js';
+
+test('collectableFees lists fees with something to pay, using the plan payable and the one-off balance', () => {
+  const rows = collectableFees([
+    { _id: 'plan', status: 'unpaid', balanceDue: 0, ledger: { overdue: 0, payableNow: 500 } },
+    { _id: 'one', status: 'partial', balanceDue: 200 },
+    { _id: 'paid', status: 'paid', balanceDue: 0 },
+    { _id: 'waived', status: 'waived', balanceDue: 0 },
+    { _id: 'clear', status: 'unpaid', balanceDue: 0, ledger: { overdue: 0, payableNow: 0 } },
+  ]);
+  assert.deepEqual(
+    rows.map((r) => [r.assignment._id, r.payable]),
+    [
+      ['plan', 500],
+      ['one', 200],
+    ]
+  );
+  assert.deepEqual(collectableFees(), []);
+});

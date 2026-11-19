@@ -5,6 +5,7 @@ import api from '../../lib/api.js';
 import { Badge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
 import { DataTable, TableRow, TableCell } from '../ui/DataTable.jsx';
+import RefundPaymentModal from '../fee/RefundPaymentModal.jsx';
 import { formatCurrency, formatDate } from '../../utils/intl.js';
 import { apiError } from '../../utils/studyCenter.js';
 
@@ -12,11 +13,15 @@ const PAGE_SIZE = 8;
 // The payments endpoint is unpaged; one learner has few, so ask for a generous cap.
 const FETCH_LIMIT = 200;
 
-/** Every payment taken from one learner, newest first, each with its receipt. */
-export default function StudentPaymentsTable({ studentId }) {
+/**
+ * Every payment taken from one learner, newest first, each with its receipt. The owner
+ * (`canRefund`) can refund one; `onDone` lets the page refresh what a refund changes.
+ */
+export default function StudentPaymentsTable({ studentId, canRefund = false, onDone }) {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [error, setError] = useState('');
+  const [refunding, setRefunding] = useState(null);
   const prefix = 'studyCenter.studentBilling';
 
   const {
@@ -77,9 +82,16 @@ export default function StudentPaymentsTable({ studentId }) {
               {p.collectedBy?.email ?? '—'}
             </TableCell>
             <TableCell className="px-4 py-2 text-right">
-              <Button variant="outline" size="sm" onClick={() => openReceipt(p._id)}>
-                {t(`${prefix}.receipt`)}
-              </Button>
+              <span className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => openReceipt(p._id)}>
+                  {t(`${prefix}.receipt`)}
+                </Button>
+                {canRefund && !p.refunded && (
+                  <Button variant="outline" size="sm" onClick={() => setRefunding(p)}>
+                    {t(`${prefix}.refund`)}
+                  </Button>
+                )}
+              </span>
             </TableCell>
           </TableRow>
         ))}
@@ -89,6 +101,15 @@ export default function StudentPaymentsTable({ studentId }) {
         <p className="text-sm text-destructive" role="alert">
           {error}
         </p>
+      )}
+
+      {refunding && (
+        <RefundPaymentModal
+          open
+          onOpenChange={(open) => !open && setRefunding(null)}
+          payment={refunding}
+          onDone={onDone}
+        />
       )}
 
       {pages > 1 && (

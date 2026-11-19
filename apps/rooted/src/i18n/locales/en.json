@@ -2364,6 +2364,11 @@
     },
     "studentBilling": {
       "overdue": "Overdue: {{amount}}",
+      "dueHeading": "Due now",
+      "nothingDue": "Nothing to pay right now.",
+      "payable": "{{amount}} to pay",
+      "collect": "Collect payment",
+      "refund": "Refund",
       "historyHeading": "Plan history",
       "noHistory": "No plan history yet.",
       "historyPlan": "{{name}} · {{amount}} {{cycle}}",

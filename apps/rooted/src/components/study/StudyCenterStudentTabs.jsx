@@ -50,7 +50,13 @@ export default function StudyCenterStudentTabs({ studentId, student, permissions
       )}
       {tabs.includes('billing') && (
         <TabsContent value="billing" className="pt-4">
-          <StudentBillingTab studentId={studentId} canWrite={permissions.includes('fees:write')} />
+          <StudentBillingTab
+            studentId={studentId}
+            canWrite={permissions.includes('fees:write')}
+            canCollect={permissions.includes('fees:collect')}
+            canRefund={permissions.includes('tenant:admin')}
+            learnerName={`${student.firstName} ${student.lastName}`}
+          />
         </TabsContent>
       )}
       <TabsContent value="history" className="pt-4">

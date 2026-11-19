@@ -130,3 +130,13 @@ export function discountStatus(discount, now = new Date()) {
   if (discount.validTo && new Date(discount.validTo) < now) return 'ended';
   return 'active';
 }
+
+// The fees on a learner's page that can take a payment right now, with how much: a plan
+// by what is payable today (so paying ahead works), anything else by its balance. Waived,
+// paid and zero-balance fees are left out.
+export function collectableFees(assignments = []) {
+  return assignments
+    .map((assignment) => ({ assignment, ...assignmentRow(assignment) }))
+    .filter((row) => row.canCollect && row.payable > 0)
+    .map(({ assignment, payable }) => ({ assignment, payable }));
+}
