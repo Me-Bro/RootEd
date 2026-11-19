@@ -479,7 +479,9 @@
       "defaultersCard_one": "student in default",
       "defaultersCard_other": "students in default",
       "overdueAmount": "₹{{amount}} overdue",
-      "viewDefaulters": "View all defaulters"
+      "viewDefaulters": "View all defaulters",
+      "overdueOnly": "overdue across all plans",
+      "viewFees": "View learner fees"
     },
     "staffSummary": {
       "title": "Staff Summary",
