@@ -2404,6 +2404,7 @@
     },
     "studentVisits": {
       "heading": "विज़िट",
+      "checkedInOn": "सीट {{seat}} पर चेक-इन किया।",
       "insideNow": "अभी अंदर हैं",
       "insideSince": "{{time}} से सीट {{seat}} पर",
       "monthSummary_one": "इस महीने: {{count}} विज़िट, सीट पर {{time}}।",

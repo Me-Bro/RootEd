@@ -8,14 +8,16 @@ import { DataTable, TableRow, TableCell } from '../ui/DataTable.jsx';
 import { formatDate, formatTime } from '../../utils/intl.js';
 import { formatDuration } from '../../utils/duration.js';
 import { ENTITLEMENT_VARIANT } from '../../utils/feePlan.js';
+import StudentCheckInControls from './StudentCheckInControls.jsx';
 
 const PAGE_SIZE = 10;
 
 /**
  * A study-center learner's visits: whether they are inside now, this month's totals,
  * and a page of past visits with the seat, how long, and any flags the desk raised.
+ * Someone who may mark attendance (`canMark`) can also check the learner in or out.
  */
-export default function StudentVisitsTable({ studentId }) {
+export default function StudentVisitsTable({ studentId, canMark = false, active = true }) {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
 
@@ -44,6 +46,10 @@ export default function StudentVisitsTable({ studentId }) {
             })}
           </span>
         </p>
+      )}
+
+      {canMark && data && (
+        <StudentCheckInControls studentId={studentId} open={data.open} active={active} />
       )}
 
       {summary && (

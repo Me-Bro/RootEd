@@ -45,7 +45,11 @@ export default function StudyCenterStudentTabs({ studentId, student, permissions
       </TabsContent>
       {tabs.includes('visits') && (
         <TabsContent value="visits" className="pt-4">
-          <StudentVisitsTable studentId={studentId} />
+          <StudentVisitsTable
+            studentId={studentId}
+            canMark={permissions.includes('attendance:write')}
+            active={student.status === 'active'}
+          />
         </TabsContent>
       )}
       {tabs.includes('billing') && (

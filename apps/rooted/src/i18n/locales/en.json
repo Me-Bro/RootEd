@@ -2404,6 +2404,7 @@
     },
     "studentVisits": {
       "heading": "Visits",
+      "checkedInOn": "Checked in on seat {{seat}}.",
       "insideNow": "Inside now",
       "insideSince": "since {{time}} on seat {{seat}}",
       "monthSummary_one": "This month: {{count}} visit, {{time}} on seat.",
