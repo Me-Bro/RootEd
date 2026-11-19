@@ -509,7 +509,9 @@ function PrincipalDashboard() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-foreground">
-            {t('dashboard.principal.greeting', { name: staffMe?.firstName ?? tenant?.name ?? '' })}
+            {staffMe?.firstName
+              ? t(`dashboard.principal.${greetingKey(new Date())}`, { name: staffMe.firstName })
+              : t(`dashboard.principal.${greetingKey(new Date())}NoName`)}
           </h2>
           <p className="text-sm text-muted-foreground">
             {t('dashboard.principal.subtitle', {
