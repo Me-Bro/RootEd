@@ -19,6 +19,19 @@ export async function endAllocationsFor(tenantId, studentId, sectionId) {
   );
 }
 
+/**
+ * Frees every seat a learner holds, in every shift: their billing was paused or they
+ * withdrew. The seats are free for others at once (the unique indexes only cover
+ * active holds). Returns how many holds were ended.
+ */
+export async function endAllAllocationsFor(tenantId, studentId) {
+  const result = await SeatAllocation.updateMany(
+    { tenantId, studentId, status: 'active' },
+    { $set: { status: 'ended', endDate: new Date() } }
+  );
+  return result.modifiedCount;
+}
+
 export async function createSeats(tenantId, { prefix, count, start, zone }) {
   const labels = bulkLabels({ prefix, count, start });
   const existing = await Seat.find({ tenantId, label: { $in: labels } }, 'label').lean();

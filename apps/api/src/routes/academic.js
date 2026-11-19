@@ -57,9 +57,12 @@ import { Enrollment } from '../models/Enrollment.js';
 import { assignFeesToStudents } from '../services/fee.service.js';
 import {
   checkNewPlanStartDay,
+  endBilling,
   findAssignableStructure,
+  reopenBilling,
   setCyclePlan,
 } from '../services/feePlan.service.js';
+import { dayStringInTz } from '../utils/dayKey.js';
 import { Role } from '../models/Role.js';
 import { User } from '../models/User.js';
 import { TenantMembership } from '../models/TenantMembership.js';
@@ -74,7 +77,7 @@ import { logger } from '../utils/logger.js';
 import { encryptField, decryptField } from '../utils/fieldEncryption.js';
 import { mapImportRow } from '../utils/studentImport.js';
 import { loadTeachingLoad } from '../services/teachingLoad.service.js';
-import { endAllocationsFor } from '../services/seat.service.js';
+import { endAllocationsFor, endAllAllocationsFor } from '../services/seat.service.js';
 import { createBatch, updateBatch } from '../services/batch.service.js';
 import { TimetablePublish } from '../models/TimetablePublish.js';
 import { AttendanceRecord } from '../models/AttendanceRecord.js';
@@ -566,6 +569,27 @@ function parseStudentBody(schemaFor, req, res) {
 const sectionExists = (tenantId, sectionId) =>
   Section.findOne({ _id: sectionId, tenantId }, '_id').lean();
 
+async function syncBillingWithStatus({ tenant, studentId, from, to, actorId, ip }) {
+  const today = dayStringInTz(new Date(), tenant.timezone);
+  let plan = null;
+  if (to === 'withdrawn') {
+    plan = await endBilling({ tenant, studentId, onDay: today });
+    await endAllAllocationsFor(tenant._id, studentId);
+  } else if (from === 'withdrawn' && to === 'active') {
+    plan = await reopenBilling({ tenant, studentId, onDay: today });
+  }
+  if (plan) {
+    await auditLog({
+      actorId,
+      tenantId: tenant._id.toString(),
+      action: to === 'withdrawn' ? 'student.feePlan.end' : 'student.feePlan.reopen',
+      target: { model: 'FeeAssignment', id: plan._id },
+      after: { on: today },
+      ip,
+    });
+  }
+}
+
 router.post('/students', requirePermission('students:write'), async (req, res, next) => {
   try {
     const body = parseStudentBody(studentCreateSchemaFor, req, res);
@@ -868,6 +892,20 @@ router.patch('/students/:id', requirePermission('students:write'), async (req, r
     });
     if (!student) return res.status(404).json({ error: 'Not found' });
     if (set.sectionId) await ensureEnrollment(tenantId, student);
+
+    // Study centers: a learner who withdraws stops being billed from today and gives
+    // up their seats; one who comes back is billed again from today, never for the
+    // days away.
+    if (statusChanged && hasSeats(req.tenant.orgType)) {
+      await syncBillingWithStatus({
+        tenant: req.tenant,
+        studentId: student._id,
+        from: current.status,
+        to: body.status,
+        actorId: req.user.sub,
+        ip: req.ip,
+      });
+    }
 
     // Setting or clearing the number is recorded too (never its value).
     if (aadhaar !== undefined) {

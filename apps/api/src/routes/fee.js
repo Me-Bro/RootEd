@@ -28,7 +28,9 @@ import {
   addOneOff,
   findAssignableStructure,
   findBillableLearner,
+  pauseBilling,
   removeOneOff,
+  resumeBilling,
   setCyclePlan,
 } from '../services/feePlan.service.js';
 import { isBillingAssignment } from '../utils/billingCycle.js';
@@ -51,6 +53,8 @@ import {
   updateFeeStructureSchema,
   assignFeeStructureSchema,
   setStudentFeeStructureSchema,
+  pauseBillingSchema,
+  resumeBillingSchema,
   cloneFeeStructureSchema,
   createFeeDiscountSchema,
   recordFeePaymentSchema,
@@ -503,6 +507,66 @@ router.put(
         assignmentId: assignment._id,
         billing: assignment.toObject().billing,
       });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// Study centers, owner only: pause a learner's billing from a day (today or earlier).
+// Paused days are not billed and the learner's seats are freed for others.
+router.post(
+  '/students/:studentId/pause',
+  requireSeatsOrg,
+  requirePermission('tenant:admin'),
+  validate(pauseBillingSchema),
+  async (req, res, next) => {
+    try {
+      const { assignment, seatsReleased, seatError } = await pauseBilling({
+        tenant: req.tenant,
+        studentId: req.params.studentId,
+        onDay: req.body.on,
+      });
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: req.tenant._id.toString(),
+        action: 'student.feePlan.pause',
+        target: { model: 'FeeAssignment', id: assignment._id },
+        after: { on: req.body.on, seatsReleased },
+        ip: req.ip,
+      });
+      res.json({ billing: assignment.toObject().billing, seatsReleased, seatError });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// Study centers, owner only: resume a paused learner's billing from a day, optionally
+// giving them a seat in a shift again.
+router.post(
+  '/students/:studentId/resume',
+  requireSeatsOrg,
+  requirePermission('tenant:admin'),
+  validate(resumeBillingSchema),
+  async (req, res, next) => {
+    try {
+      const { assignment, seat, seatError } = await resumeBilling({
+        tenant: req.tenant,
+        studentId: req.params.studentId,
+        onDay: req.body.on,
+        seatId: req.body.seatId,
+        sectionId: req.body.sectionId,
+      });
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: req.tenant._id.toString(),
+        action: 'student.feePlan.resume',
+        target: { model: 'FeeAssignment', id: assignment._id },
+        after: { on: req.body.on, seatId: seat?.seatId, sectionId: seat?.sectionId },
+        ip: req.ip,
+      });
+      res.json({ billing: assignment.toObject().billing, seat, seatError });
     } catch (err) {
       next(err);
     }
