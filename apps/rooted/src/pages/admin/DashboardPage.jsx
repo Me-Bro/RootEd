@@ -416,6 +416,7 @@ function PrincipalDashboard() {
   const { data: gradesSummary } = useQuery({
     queryKey: ['academic', 'grades', 'summary'],
     queryFn: () => api.get('/academic/grades/summary').then((r) => r.data),
+    enabled: showDefaulters,
   });
 
   const { data: trend = [] } = useQuery({
@@ -547,7 +548,9 @@ function PrincipalDashboard() {
         <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
           {t('dashboard.principal.keyNumbers')}
         </p>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div
+          className={`grid grid-cols-2 gap-3 ${showDefaulters ? 'lg:grid-cols-4' : 'lg:grid-cols-3'}`}
+        >
           <KpiCard
             label={t(
               isToday ? 'dashboard.principal.attendanceToday' : 'dashboard.principal.attendanceOn'
@@ -564,15 +567,19 @@ function PrincipalDashboard() {
             tone={tone(feeSummary?.collectedPct)}
             onTap={() => navigate('/dashboard/finance')}
           />
-          <KpiCard
-            label={t('dashboard.principal.avgScore')}
-            valueLabel={
-              gradesSummary?.classAverageScore != null ? `${gradesSummary.classAverageScore}%` : '—'
-            }
-            percent={gradesSummary?.classAverageScore ?? 0}
-            tone={tone(gradesSummary?.classAverageScore)}
-            onTap={() => navigate('/dashboard/academic')}
-          />
+          {showDefaulters && (
+            <KpiCard
+              label={t('dashboard.principal.avgScore')}
+              valueLabel={
+                gradesSummary?.classAverageScore != null
+                  ? `${gradesSummary.classAverageScore}%`
+                  : '—'
+              }
+              percent={gradesSummary?.classAverageScore ?? 0}
+              tone={tone(gradesSummary?.classAverageScore)}
+              onTap={() => navigate('/dashboard/academic')}
+            />
+          )}
           <KpiCard
             label={t('dashboard.principal.staffPresent')}
             valueLabel={staffPct !== null ? `${staffPct}%` : '—'}

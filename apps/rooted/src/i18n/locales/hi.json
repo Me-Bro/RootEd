@@ -479,7 +479,9 @@
       "defaultersCard_one": "छात्र बकायादार",
       "defaultersCard_other": "छात्र बकायादार",
       "overdueAmount": "₹{{amount}} बकाया",
-      "viewDefaulters": "सभी बकायादार देखें"
+      "viewDefaulters": "सभी बकायादार देखें",
+      "overdueOnly": "सभी प्लान में बकाया",
+      "viewFees": "शिक्षार्थी शुल्क देखें"
     },
     "staffSummary": {
       "title": "स्टाफ सारांश",

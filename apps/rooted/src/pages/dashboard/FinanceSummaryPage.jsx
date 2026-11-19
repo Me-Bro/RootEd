@@ -55,6 +55,24 @@ export default function FinanceSummaryPage() {
         </CardContent>
       </Card>
 
+      {!showDefaulters && feeSummary && (
+        <>
+          <Card className={feeSummary.overdueTotal > 0 ? 'border-destructive/30' : undefined}>
+            <CardContent className="pt-4">
+              <p className="text-3xl font-bold text-foreground">
+                ₹{feeSummary.overdueTotal.toLocaleString('en-IN')}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t('dashboard.financeSummary.overdueOnly')}
+              </p>
+            </CardContent>
+          </Card>
+          <Link to="/fee" className="text-sm text-primary hover:underline w-fit">
+            {t('dashboard.financeSummary.viewFees')} ›
+          </Link>
+        </>
+      )}
+
       {showDefaulters && (
         <>
           <Card className="border-destructive/30">
