@@ -190,6 +190,26 @@ export function buildLedger({ billing, discounts = [], payments = [], today, stu
   };
 }
 
+/**
+ * The span of cycles a payment put money on: the first and last cycle whose `paid`
+ * grew between the ledger before it and the ledger after it, as `{ start, end }`
+ * (end exclusive). null when the payment only added credit.
+ */
+export function settledSpan(before, after) {
+  const settled = after.cycles.filter((c, i) => before.cycles[i] && c.paid > before.cycles[i].paid);
+  if (!settled.length) return null;
+  return { start: settled[0].start, end: settled[settled.length - 1].end };
+}
+
+/** Is this fee assignment a learner's cycle plan (as opposed to a one-off or a sale)? */
+export const isBillingAssignment = (assignment) => Boolean(assignment?.billing?.segments?.length);
+
+/** The day key (UTC-midnight Date) stored for a centre day string. */
+export const dayKeyOf = (dayString) => new Date(`${dayString}T00:00:00Z`);
+
+/** The centre day string of a stored day key. */
+export const dayStringOf = (dayKey) => new Date(dayKey).toISOString().slice(0, 10);
+
 /** Whether a learner on cycle billing may use the centre, from their ledger. */
 export function billingEntitlement(ledger) {
   if (['none', 'ended', 'scheduled', 'paused'].includes(ledger.state)) return ledger.state;

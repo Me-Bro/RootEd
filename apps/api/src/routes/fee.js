@@ -24,6 +24,14 @@ import {
   refundPayment,
 } from '../services/fee.service.js';
 import { sellPlan, voidSale } from '../services/sale.service.js';
+import {
+  addOneOff,
+  findAssignableStructure,
+  findBillableLearner,
+  removeOneOff,
+  setCyclePlan,
+} from '../services/feePlan.service.js';
+import { isBillingAssignment } from '../utils/billingCycle.js';
 import { entitlementFor } from '../services/entitlement.service.js';
 import { dayPassSales, expiringPlans } from '../services/studyReports.service.js';
 import { resolveCentreSettings } from '../utils/centreSettings.js';
@@ -97,6 +105,11 @@ router.post(
       if (req.body.plan && !hasSeats(req.tenant.orgType)) {
         return res.status(400).json({ error: 'Plans are only available for study centers' });
       }
+      if (req.body.cycle && !hasSeats(req.tenant.orgType)) {
+        return res
+          .status(400)
+          .json({ error: 'Billing cycles are only available for study centers' });
+      }
 
       const existing = await FeeStructure.findOne({ tenantId, name, academicYearId });
       if (existing) {
@@ -161,6 +174,21 @@ router.patch(
           return res.status(400).json({ error: 'A plan has no installments' });
         }
       }
+      // Same rules as create for a billing cycle: study centers only, per learner, and
+      // never together with a plan or installments.
+      const cycle = update.cycle ?? before.cycle;
+      if (update.cycle && !hasSeats(req.tenant.orgType)) {
+        return res
+          .status(400)
+          .json({ error: 'Billing cycles are only available for study centers' });
+      }
+      if (cycle && (update.plan ?? before.plan)?.kind) {
+        return res.status(400).json({ error: 'A billing cycle cannot be combined with a plan' });
+      }
+      if (cycle && (update.installments ?? before.installments)?.length) {
+        return res.status(400).json({ error: 'A billing cycle has no installments' });
+      }
+      if (update.cycle) update.applicableTo = 'student';
 
       const doc = await FeeStructure.findOneAndUpdate(
         { _id: req.params.id, tenantId },
@@ -414,9 +442,10 @@ router.get('/assignments', requirePermission('fees:read'), async (req, res, next
   }
 });
 
-// Study centers: a learner holds one fee structure at a time (plans are sold at the
-// desk and carry coversFrom, so they are not counted here). Setting the same one is a
-// no-op; swapping is allowed only while nothing has been paid against the old one.
+// Study centers: put a learner on a fee structure. A structure with a billing cycle
+// sets (or changes) the learner's one fee plan from `startDate` (default today); any
+// other structure is a one-off fee added alongside it. Plans sold at the desk are not
+// assignable here.
 router.put(
   '/students/:studentId/structure',
   requireSeatsOrg,
@@ -426,65 +455,82 @@ router.put(
     try {
       const tenantId = req.tenant._id;
       const { studentId } = req.params;
-      const { feeStructureId } = req.body;
+      const { feeStructureId, startDate } = req.body;
 
-      const student = await Student.findOne({ _id: studentId, tenantId }, 'kind').lean();
-      if (!student) return res.status(404).json({ error: 'Student not found' });
-      if (student.kind === 'walk_in') {
-        return res.status(400).json({ error: 'Walk-ins buy a day pass instead' });
-      }
-
-      const structure = await FeeStructure.findOne(
-        {
-          _id: feeStructureId,
-          tenantId,
-          isActive: { $ne: false },
-          'plan.kind': { $exists: false },
-        },
-        '_id'
-      ).lean();
+      await findBillableLearner(tenantId, studentId);
+      const structure = await findAssignableStructure(tenantId, feeStructureId);
       if (!structure) return res.status(404).json({ error: 'Fee structure not found' });
 
-      const current = await FeeAssignment.find({
-        tenantId,
-        studentId,
-        coversFrom: { $exists: false },
-      }).lean();
-
-      if (current.some((a) => String(a.feeStructureId) === String(structure._id))) {
-        return res.json({ created: 0, skipped: 1 });
-      }
-      if (current.length) {
-        const paid = await FeePayment.exists({
-          tenantId,
-          assignmentId: { $in: current.map((a) => a._id) },
-          refunded: { $ne: true },
-        });
-        if (paid) {
-          return res
-            .status(409)
-            .json({ error: 'Payments were recorded against the current fee structure' });
+      if (!structure.cycle) {
+        const result = await addOneOff({ tenantId, studentId, structure });
+        if (result.created) {
+          await auditLog({
+            actorId: req.user.sub,
+            tenantId: tenantId.toString(),
+            action: 'student.feeStructure.add',
+            target: { model: 'Student', id: studentId },
+            after: { feeStructureId: structure._id },
+            ip: req.ip,
+          });
         }
-        await FeeAssignment.deleteMany({ tenantId, _id: { $in: current.map((a) => a._id) } });
+        return res.json({ kind: 'one_off', ...result });
       }
 
-      const result = await assignFeesToStudents({
-        studentIds: [studentId],
-        feeStructureId: structure._id,
-        tenantId,
+      const before = await FeeAssignment.findOne(
+        { tenantId, studentId, billing: { $exists: true } },
+        'billing feeStructureId'
+      ).lean();
+      const { result, assignment } = await setCyclePlan({
+        tenant: req.tenant,
+        studentId,
+        structure,
+        startDay: startDate,
       });
+      if (result !== 'unchanged') {
+        await auditLog({
+          actorId: req.user.sub,
+          tenantId: tenantId.toString(),
+          action: 'student.feePlan.set',
+          target: { model: 'FeeAssignment', id: assignment._id },
+          before: before ? { billing: before.billing } : undefined,
+          after: { billing: assignment.toObject().billing },
+          ip: req.ip,
+        });
+      }
+      res.status(result === 'created' ? 201 : 200).json({
+        kind: 'plan',
+        result,
+        assignmentId: assignment._id,
+        billing: assignment.toObject().billing,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
+// Study centers: remove a one-off fee from a learner while nothing is paid against it.
+router.delete(
+  '/students/:studentId/assignments/:id',
+  requireSeatsOrg,
+  requirePermission('fees:write'),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const removed = await removeOneOff({
+        tenantId,
+        studentId: req.params.studentId,
+        assignmentId: req.params.id,
+      });
       await auditLog({
         actorId: req.user.sub,
         tenantId: tenantId.toString(),
-        action: 'student.feeStructure.set',
-        target: { model: 'Student', id: studentId },
-        before: { feeStructureIds: current.map((a) => a.feeStructureId) },
-        after: { feeStructureId: structure._id },
+        action: 'student.feeStructure.remove',
+        target: { model: 'FeeAssignment', id: removed._id },
+        before: removed,
         ip: req.ip,
       });
-
-      res.json(result);
+      res.status(204).end();
     } catch (err) {
       next(err);
     }
@@ -533,6 +579,9 @@ router.post(
       const tenantId = req.tenant._id;
       const doc = await FeeAssignment.findOne({ _id: req.params.id, tenantId });
       if (!doc) return res.status(404).json({ error: 'Not found' });
+      if (isBillingAssignment(doc)) {
+        return res.status(422).json({ error: 'A fee plan cannot be waived' });
+      }
       if (!canWaiveAssignment(doc.status)) {
         return res.status(400).json({ error: `Cannot waive a ${doc.status} assignment` });
       }

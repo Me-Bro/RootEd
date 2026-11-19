@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { indianMobileSchema } from './studyCenter.schema.js';
+import { dayStringSchema } from './fee.schema.js';
 import { hasSeats } from '../utils/orgTypes.js';
 import { isValidAadhaar, normalizeAadhaar, studentGroupFor } from '../utils/student.js';
 
@@ -167,8 +168,12 @@ function build(mode, orgType) {
     const admissionNo = z.string().trim().min(1).max(50);
     shape.admissionNo = hasSeats(orgType) ? admissionNo.optional() : admissionNo;
     shape.email = f(z.string().trim().toLowerCase().email());
-    // Study centers: one fee structure to assign to the new learner.
-    if (hasSeats(orgType)) shape.feeStructureId = f(objectId);
+    // Study centers: one fee structure to assign to the new learner, and for a
+    // monthly/weekly structure the day billing starts (default today).
+    if (hasSeats(orgType)) {
+      shape.feeStructureId = f(objectId);
+      shape.feeStructureStartDate = f(dayStringSchema);
+    }
   } else {
     shape.status = z.enum(STUDENT_STATUSES).optional();
     shape.statusReason = f(text(200));

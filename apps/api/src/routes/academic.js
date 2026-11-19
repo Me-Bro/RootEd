@@ -54,8 +54,12 @@ import { env } from '../config/env.js';
 import { Student } from '../models/Student.js';
 import { allocateAdmissionNo, peekAdmissionNo } from '../services/counter.service.js';
 import { Enrollment } from '../models/Enrollment.js';
-import { FeeStructure } from '../models/FeeStructure.js';
 import { assignFeesToStudents } from '../services/fee.service.js';
+import {
+  checkNewPlanStartDay,
+  findAssignableStructure,
+  setCyclePlan,
+} from '../services/feePlan.service.js';
 import { Role } from '../models/Role.js';
 import { User } from '../models/User.js';
 import { TenantMembership } from '../models/TenantMembership.js';
@@ -567,21 +571,18 @@ router.post('/students', requirePermission('students:write'), async (req, res, n
     const body = parseStudentBody(studentCreateSchemaFor, req, res);
     if (!body) return;
     const tenantId = req.tenant._id;
-    const { email, aadhaar, feeStructureId, ...fields } = body;
+    const { email, aadhaar, feeStructureId, feeStructureStartDate, ...fields } = body;
 
-    // Checked before the student exists, so a bad id never leaves a half-made record.
-    // Plans are sold at the desk (POST /fee/sales), never assigned this way.
+    // Checked before the student exists, so a bad id or start date never leaves a
+    // half-made record. Plans are sold at the desk (POST /fee/sales), never assigned
+    // this way.
+    let structure = null;
     if (feeStructureId) {
-      const structure = await FeeStructure.findOne(
-        {
-          _id: feeStructureId,
-          tenantId,
-          isActive: { $ne: false },
-          'plan.kind': { $exists: false },
-        },
-        '_id'
-      ).lean();
+      structure = await findAssignableStructure(tenantId, feeStructureId);
       if (!structure) return res.status(404).json({ error: 'Fee structure not found' });
+      if (structure.cycle && feeStructureStartDate) {
+        checkNewPlanStartDay({ tenant: req.tenant, startDay: feeStructureStartDate });
+      }
     }
 
     // Study centers may omit it; the server then assigns the next free number.
@@ -629,9 +630,18 @@ router.post('/students', requirePermission('students:write'), async (req, res, n
     delete out.aadhaarEnc;
 
     // Like the login below, a failed assignment must not lose the saved student.
-    if (feeStructureId) {
+    if (structure) {
       try {
-        await assignFeesToStudents({ studentIds: [student._id], feeStructureId, tenantId });
+        if (structure.cycle) {
+          await setCyclePlan({
+            tenant: req.tenant,
+            studentId: student._id,
+            structure,
+            startDay: feeStructureStartDate,
+          });
+        } else {
+          await assignFeesToStudents({ studentIds: [student._id], feeStructureId, tenantId });
+        }
       } catch (err) {
         logger.warn({ err, studentId: student._id }, 'fee structure could not be assigned');
         out.feeError = 'the fee structure could not be assigned';

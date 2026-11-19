@@ -3,6 +3,10 @@ import {
   buildLedger,
   validateStartDay,
   billingEntitlement,
+  settledSpan,
+  isBillingAssignment,
+  dayKeyOf,
+  dayStringOf,
 } from '../utils/billingCycle.js';
 import { dayStringInTz } from '../utils/dayKey.js';
 
@@ -311,6 +315,36 @@ describe('validateStartDay (R3, EH5)', () => {
 
   test('any future day is allowed', () => {
     expect(validateStartDay({ startDay: '2028-01-01', today: '2027-04-10' })).toBeNull();
+  });
+});
+
+describe('settledSpan (receipt period)', () => {
+  const billing = monthly('2027-03-17');
+  const before = ledgerOf(billing, '2027-05-02', { payments: [{ amount: 500 }] });
+
+  test('spans the cycles a payment put money on', () => {
+    const after = ledgerOf(billing, '2027-05-02', { payments: [{ amount: 500 }, { amount: 800 }] });
+    expect(settledSpan(before, after)).toEqual({ start: '2027-03-01', end: '2027-05-01' });
+  });
+
+  test('is null when a payment only adds credit', () => {
+    const paidUp = ledgerOf(billing, '2027-03-20', { payments: [{ amount: 726 }] });
+    const more = ledgerOf(billing, '2027-03-20', { payments: [{ amount: 726 }, { amount: 50 }] });
+    expect(settledSpan(paidUp, more)).toBeNull();
+  });
+});
+
+describe('small helpers', () => {
+  test('isBillingAssignment', () => {
+    expect(isBillingAssignment({ billing: monthly('2027-03-01') })).toBe(true);
+    expect(isBillingAssignment({ billing: { segments: [] } })).toBe(false);
+    expect(isBillingAssignment({ coversFrom: new Date() })).toBe(false);
+    expect(isBillingAssignment(null)).toBe(false);
+  });
+
+  test('day keys round-trip', () => {
+    expect(dayKeyOf('2027-03-17').toISOString()).toBe('2027-03-17T00:00:00.000Z');
+    expect(dayStringOf(dayKeyOf('2028-02-29'))).toBe('2028-02-29');
   });
 });
 
