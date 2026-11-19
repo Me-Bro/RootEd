@@ -3,11 +3,9 @@ import { Seat } from '../models/Seat.js';
 import { SeatAllocation } from '../models/SeatAllocation.js';
 import { Student } from '../models/Student.js';
 import { Tenant } from '../models/Tenant.js';
-import { AttendanceRecord } from '../models/AttendanceRecord.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { entitlementFor } from './entitlement.service.js';
 import { resolveCentreSettings } from '../utils/centreSettings.js';
-import { dayKeyInTz } from '../utils/dayKey.js';
 import { isWithinOpenHours } from '../utils/openHours.js';
 import { freeSeatsFor } from '../utils/seatPool.js';
 import { selectVisitsToClose } from '../utils/visitClose.js';
@@ -56,8 +54,8 @@ async function explainVisitConflict(tenantId, { seatId, studentId }) {
  *
  * Opening hours bind everyone but an owner. The shift never blocks a check-in: a
  * member may arrive at any time at no extra cost. A plan that is unpaid, expired or
- * missing produces a warning and never a refusal. The first check-in of a day also
- * marks the learner present for that day, on the centre's own calendar.
+ * missing produces a warning and never a refusal. The visit is the record of presence:
+ * a study center has no roll-call attendance, so nothing else is written.
  */
 export async function checkIn({
   tenant,
@@ -134,8 +132,6 @@ export async function checkIn({
     throw err;
   }
 
-  await markPresent({ tenant, student, own, recordedBy, now });
-
   return {
     visit,
     seat: { label: chosen.label, zone: chosen.zone },
@@ -148,34 +144,6 @@ export async function checkIn({
             ...(entitlement.overdue ? { overdue: entitlement.overdue } : {}),
           },
   };
-}
-
-/**
- * One AttendanceRecord per learner per day, keyed the way every other attendance
- * write is (a UTC-midnight Date) but built here from the centre's own calendar,
- * never from the client. A member is attached to the shift of their earliest seat;
- * a walk-in to none. A "present" here overwrites an earlier manual mark the same day.
- */
-async function markPresent({ tenant, student, own, recordedBy, now }) {
-  const tenantId = tenant._id;
-  const date = dayKeyInTz(now, tenant.timezone);
-  const earliest = [...own].sort((a, b) => new Date(a.startDate) - new Date(b.startDate))[0];
-  await AttendanceRecord.updateOne(
-    { tenantId, date, entityType: 'student', entityId: student._id, subjectId: null },
-    {
-      $set: {
-        tenantId,
-        date,
-        entityType: 'student',
-        entityId: student._id,
-        subjectId: null,
-        status: 'present',
-        markedBy: recordedBy,
-        ...(earliest ? { sectionId: earliest.sectionId } : {}),
-      },
-    },
-    { upsert: true }
-  );
 }
 
 export async function checkOut({ tenantId, visitId, now = new Date() }) {

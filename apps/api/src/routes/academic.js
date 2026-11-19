@@ -42,6 +42,7 @@ import {
   effectivePermissionsFor,
   userHasPermission,
 } from '../middleware/requirePermission.js';
+import { rejectSeatsOrg } from '../middleware/requireSeatsOrg.js';
 import { validate } from '../middleware/validate.js';
 import { redis } from '../config/redis.js';
 import { withCache, invalidateCache } from '../utils/cache.js';
@@ -1661,6 +1662,7 @@ router.delete('/timetable/:id', requirePermission('tenant:admin'), async (req, r
 router.post(
   '/attendance',
   requirePermission('attendance:write'),
+  rejectSeatsOrg,
   validate(markAttendanceSchema),
   async (req, res, next) => {
     try {

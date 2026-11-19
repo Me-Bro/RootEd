@@ -2701,6 +2701,7 @@
       "hours": "Time on seat",
       "month": "Month",
       "timeOnSeat": "Time on seat",
+      "hoursNote": "Time is counted from check-in to check-out. A visit nobody checked out is closed automatically at closing time (or after 16 hours at a centre that is open all day) and counts in full up to that time.",
       "visits": "Visits",
       "autoClosed": "Closed automatically",
       "noVisits": "No visits this month.",
