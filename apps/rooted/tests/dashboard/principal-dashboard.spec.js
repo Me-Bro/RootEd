@@ -16,7 +16,7 @@ test.describe('Principal Dashboard', () => {
     // The plain TenantDashboard fallback shows a "School" metadata card —
     // its absence, combined with the greeting, confirms PrincipalDashboard
     // rendered instead of the fallback a non-principal role would get.
-    await expect(page.getByText(/Good morning/)).toBeVisible();
+    await expect(page.getByText(/Good (morning|afternoon|evening)/)).toBeVisible();
     await expect(page.getByText('Key numbers')).toBeVisible();
     await expect(page.getByText('School', { exact: true })).not.toBeVisible();
   });
@@ -154,6 +154,6 @@ test.describe('Non-principal roles are unaffected', () => {
     await page.waitForLoadState('networkidle');
 
     await expect(page.getByText('School', { exact: true })).toBeVisible();
-    await expect(page.getByText(/Good morning/)).not.toBeVisible();
+    await expect(page.getByText(/Good (morning|afternoon|evening)/)).not.toBeVisible();
   });
 });

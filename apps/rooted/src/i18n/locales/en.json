@@ -423,7 +423,12 @@
       "dueIn_other": "Due in {{count}} days"
     },
     "principal": {
-      "greeting": "Good morning, {{name}}",
+      "greetingMorning": "Good morning, {{name}}",
+      "greetingAfternoon": "Good afternoon, {{name}}",
+      "greetingEvening": "Good evening, {{name}}",
+      "greetingMorningNoName": "Good morning",
+      "greetingAfternoonNoName": "Good afternoon",
+      "greetingEveningNoName": "Good evening",
       "subtitle": "{{school}} · {{date}}",
       "attentionAriaLabel": "Items needing your attention",
       "defaultersLabel_one": "fee defaulter",

@@ -423,7 +423,12 @@
       "dueIn_other": "{{count}} दिन में देय"
     },
     "principal": {
-      "greeting": "सुप्रभात, {{name}}",
+      "greetingMorning": "सुप्रभात, {{name}}",
+      "greetingAfternoon": "नमस्कार, {{name}}",
+      "greetingEvening": "शुभ संध्या, {{name}}",
+      "greetingMorningNoName": "सुप्रभात",
+      "greetingAfternoonNoName": "नमस्कार",
+      "greetingEveningNoName": "शुभ संध्या",
       "subtitle": "{{school}} · {{date}}",
       "attentionAriaLabel": "ध्यान देने योग्य बातें",
       "defaultersLabel_one": "शुल्क बकायादार",
