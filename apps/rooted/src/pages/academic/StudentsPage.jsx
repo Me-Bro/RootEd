@@ -24,6 +24,8 @@ import CreateSectionDialog from '../../components/students/CreateSectionDialog.j
 import StudentExtraFields from '../../components/students/StudentExtraFields.jsx';
 import { formFromStudent, studentPayload } from '../../components/students/studentForm.js';
 import { useAuth } from '../../contexts/useAuth.js';
+import { localDayString } from '../../utils/studyCenter.js';
+import { earliestStartDay } from '../../utils/feePlan.js';
 
 const LAST_SECTION_KEY = 'students:lastSectionId';
 
@@ -57,6 +59,7 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
     retry: false,
   });
   const assignable = feeStructures.filter((s) => s.isActive !== false && !s.plan?.kind);
+  const chosenStructure = assignable.find((s) => s._id === form.feeStructureId);
 
   const mutation = useMutation({
     mutationFn: (data) =>
@@ -215,7 +218,13 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
               <select
                 id="student-fee-structure"
                 value={form.feeStructureId}
-                onChange={update('feeStructureId')}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    feeStructureId: e.target.value,
+                    feeStructureStartDate: '',
+                  }))
+                }
                 className={selectCls}
               >
                 <option value="">{t('academic.students.feeStructureNone')}</option>
@@ -225,6 +234,21 @@ function AddStudentModal({ open, onOpenChange, onAdded, sections, classes, canCr
                   </option>
                 ))}
               </select>
+            </div>
+          )}
+          {chosenStructure?.cycle && (
+            <div className="flex flex-col gap-1 sm:col-span-2">
+              <Input
+                id="student-fee-start"
+                type="date"
+                label={t('studyCenter.plan.billing.startDate')}
+                value={form.feeStructureStartDate || localDayString()}
+                min={earliestStartDay()}
+                onChange={update('feeStructureStartDate')}
+              />
+              <p className="text-xs text-muted-foreground">
+                {t('studyCenter.plan.billing.startHint')}
+              </p>
             </div>
           )}
           <StudentExtraFields form={form} setForm={setForm} orgType={orgType} />

@@ -81,12 +81,10 @@ function NewStructureModal({ open, onOpenChange }) {
   const [components, setComponents] = useState([{ label: '', amount: '', isOptional: false }]);
   const [error, setError] = useState('');
   const { user } = useAuth();
-  // A study center sells plans and day passes: one learner, one period, no installments.
+  // A study center bills a learner every month or week from their own start date (or
+  // charges a one-off fee): set per learner, no installments.
   const seats = hasSeats(user?.orgType);
-  const [planKind, setPlanKind] = useState('');
-  const [planDays, setPlanDays] = useState('30');
-  const [planShift, setPlanShift] = useState('');
-  const { sections } = useClassSections();
+  const [cycle, setCycle] = useState('');
 
   const { data: years = [] } = useQuery({
     queryKey: ['academic-years'],
@@ -114,15 +112,7 @@ function NewStructureModal({ open, onOpenChange }) {
           name,
           academicYearId: effectiveYearId,
           dueDate: dueDate || undefined,
-          ...(seats && planKind
-            ? {
-                plan: {
-                  kind: planKind,
-                  durationDays: planKind === 'day_pass' ? 1 : Number(planDays),
-                  ...(planKind === 'shift_plan' && planShift ? { sectionId: planShift } : {}),
-                },
-              }
-            : {}),
+          ...(seats && cycle ? { cycle } : {}),
           components: components.map((c) => ({
             label: c.label,
             amount: Number(c.amount),
@@ -136,7 +126,7 @@ function NewStructureModal({ open, onOpenChange }) {
       setName('');
       setYearId('');
       setDueDate('');
-      setPlanKind('');
+      setCycle('');
       setComponents([{ label: '', amount: '', isOptional: false }]);
       setError('');
     },
@@ -182,55 +172,24 @@ function NewStructureModal({ open, onOpenChange }) {
             </div>
           )}
           {seats && (
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium" htmlFor="plan-kind">
-                  {t('studyCenter.plan.type')}
-                </label>
-                <select
-                  id="plan-kind"
-                  value={planKind}
-                  onChange={(e) => setPlanKind(e.target.value)}
-                  className={selectCls}
-                >
-                  <option value="">{t('studyCenter.plan.regular')}</option>
-                  <option value="shift_plan">{t('studyCenter.plan.shiftPlan')}</option>
-                </select>
-              </div>
-              {planKind === 'shift_plan' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <Input
-                    id="plan-days"
-                    type="number"
-                    min="1"
-                    max="366"
-                    label={t('studyCenter.plan.days')}
-                    value={planDays}
-                    onChange={(e) => setPlanDays(e.target.value)}
-                  />
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-medium" htmlFor="plan-shift">
-                      {t('studyCenter.plan.shift')}
-                    </label>
-                    <select
-                      id="plan-shift"
-                      value={planShift}
-                      onChange={(e) => setPlanShift(e.target.value)}
-                      className={selectCls}
-                    >
-                      <option value="">{t('studyCenter.plan.anyShift')}</option>
-                      {sections.map((s) => (
-                        <option key={s._id} value={s._id}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              )}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium" htmlFor="structure-cycle">
+                {t('studyCenter.plan.cycleLabel')}
+              </label>
+              <select
+                id="structure-cycle"
+                value={cycle}
+                onChange={(e) => setCycle(e.target.value)}
+                className={selectCls}
+              >
+                <option value="">{t('studyCenter.plan.oneOff')}</option>
+                <option value="monthly">{t('studyCenter.plan.monthly')}</option>
+                <option value="weekly">{t('studyCenter.plan.weekly')}</option>
+              </select>
+              <p className="text-xs text-muted-foreground">{t('studyCenter.plan.cycleHint')}</p>
             </div>
           )}
-          {!(seats && planKind) && (
+          {!(seats && cycle) && (
             <Input
               label={t('fee.structures.dueDateOptional')}
               type="date"
@@ -617,6 +576,13 @@ export default function FeeStructuresPage() {
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle className="text-base">{s.name}</CardTitle>
                   <div className="flex gap-1">
+                    {s.cycle && (
+                      <Badge variant="secondary">
+                        {s.cycle === 'weekly'
+                          ? t('studyCenter.plan.weekly')
+                          : t('studyCenter.plan.monthly')}
+                      </Badge>
+                    )}
                     {s.isActive === false ? (
                       <Badge variant="danger">{t('fee.structures.inactive')}</Badge>
                     ) : (
@@ -650,6 +616,13 @@ export default function FeeStructuresPage() {
                   <span>{t('fee.structures.total')}</span>
                   <span>
                     {formatCurrency((s.components || []).reduce((sum, c) => sum + c.amount, 0))}
+                    {s.cycle && (
+                      <span className="ml-1 text-xs font-normal text-muted-foreground">
+                        {s.cycle === 'weekly'
+                          ? t('studyCenter.plan.perWeek')
+                          : t('studyCenter.plan.perMonth')}
+                      </span>
+                    )}
                   </span>
                 </div>
                 <StructureSummary summaryQuery={summaryQueries[i]} />

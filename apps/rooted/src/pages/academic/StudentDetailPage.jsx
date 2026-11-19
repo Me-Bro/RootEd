@@ -29,6 +29,7 @@ import StudentExtraFields from '../../components/students/StudentExtraFields.jsx
 import StudentProfileDetails from '../../components/students/StudentProfileDetails.jsx';
 import { formFromStudent, studentPayload } from '../../components/students/studentForm.js';
 import { formatCurrency, formatDate } from '../../utils/intl.js';
+import { statusTransitions } from '../../utils/feePlan.js';
 
 const selectCls =
   'h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
@@ -39,15 +40,6 @@ function statusVariant(status) {
   if (status === 'withdrawn') return 'danger';
   return 'default';
 }
-
-const STATUS_TRANSITIONS = {
-  active: [
-    { to: 'graduated', labelKey: 'academic.studentDetail.markGraduated' },
-    { to: 'withdrawn', labelKey: 'academic.studentDetail.markWithdrawn' },
-  ],
-  graduated: [{ to: 'active', labelKey: 'academic.studentDetail.reactivate' }],
-  withdrawn: [{ to: 'active', labelKey: 'academic.studentDetail.reactivate' }],
-};
 
 function EditStudentModal({ open, onOpenChange, student, sections }) {
   const { t } = useTranslation();
@@ -626,7 +618,8 @@ export default function StudentDetailPage() {
   if (error || !student)
     return <p className="text-destructive">{t('academic.studentDetail.loadFailed')}</p>;
 
-  const transitions = STATUS_TRANSITIONS[student.status] ?? [];
+  // A study center's learner is active or withdrawn: nobody graduates from one.
+  const transitions = statusTransitions(student.status, hasSeats(user?.orgType));
 
   return (
     <div className="flex flex-col gap-6">

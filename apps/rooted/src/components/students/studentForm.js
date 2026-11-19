@@ -52,6 +52,8 @@ export function formFromStudent(student = {}, orgType) {
     gender: text(student.gender),
     email: '',
     feeStructureId: '',
+    // Only for a monthly/weekly structure; blank means "today" (the server's day).
+    feeStructureStartDate: '',
     phone: text(student.phone),
     whatsappNumber: text(student.whatsappNumber),
     whatsappSameAsPhone: Boolean(student.whatsappSameAsPhone),
@@ -126,6 +128,8 @@ export function studentPayload(form, { mode, orgType }) {
     put('admissionNo', form.admissionNo);
     put('email', form.email);
     put('feeStructureId', form.feeStructureId);
+    // Meaningful only with a structure; the form clears it when the structure changes.
+    if (form.feeStructureId) put('feeStructureStartDate', form.feeStructureStartDate);
   }
 
   const address = Object.fromEntries(

@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Input } from '../../components/ui/Input.jsx';
-import { Badge } from '../../components/ui/Badge.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
 import { formatDate } from '../../utils/intl.js';
 import { localDayString, localMonthString, splitMinutes } from '../../utils/studyCenter.js';
@@ -129,14 +128,7 @@ export default function StudyCenterReportsPage() {
         >
           {(hours.data?.learners ?? []).map((l) => (
             <TableRow key={l.studentId}>
-              <TableCell className="font-medium">
-                {l.name}
-                {l.kind === 'walk_in' && (
-                  <Badge variant="secondary" className="ml-2">
-                    {t('studyCenter.sell.walkIn')}
-                  </Badge>
-                )}
-              </TableCell>
+              <TableCell className="font-medium">{l.name}</TableCell>
               <TableCell>{duration(l.minutes)}</TableCell>
               <TableCell>{l.visits}</TableCell>
               <TableCell>{l.autoClosedVisits}</TableCell>

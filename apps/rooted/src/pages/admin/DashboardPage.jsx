@@ -337,7 +337,10 @@ function tone(value, { good = 75, warn = 50 } = {}) {
 
 function PrincipalDashboard() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const navigate = useNavigate();
+  // A study center bills by cycle from each learner's own start date: no defaulters.
+  const showDefaulters = !hasSeats(user?.orgType);
   const [selectedDate, setSelectedDate] = useState(todayParam());
   const [period, setPeriod] = useState('7d');
   const isToday = selectedDate === todayParam();
@@ -439,18 +442,22 @@ function PrincipalDashboard() {
   const staffPct = pct(staffPresentCount, staffTotal);
 
   const attentionItems = [
-    {
-      key: 'defaulters',
-      count: feeSummary?.defaulterCount ?? 0,
-      tone: 'bad',
-      labelKey: 'dashboard.principal.defaultersLabel',
-      meta: feeSummary
-        ? t('dashboard.principal.defaultersMeta', {
-            amount: feeSummary.overdueTotal.toLocaleString('en-IN'),
-          })
-        : undefined,
-      onTap: () => navigate('/dashboard/finance'),
-    },
+    ...(showDefaulters
+      ? [
+          {
+            key: 'defaulters',
+            count: feeSummary?.defaulterCount ?? 0,
+            tone: 'bad',
+            labelKey: 'dashboard.principal.defaultersLabel',
+            meta: feeSummary
+              ? t('dashboard.principal.defaultersMeta', {
+                  amount: feeSummary.overdueTotal.toLocaleString('en-IN'),
+                })
+              : undefined,
+            onTap: () => navigate('/dashboard/finance'),
+          },
+        ]
+      : []),
     {
       key: 'pendingLeave',
       count: pendingLeave?.total ?? 0,
