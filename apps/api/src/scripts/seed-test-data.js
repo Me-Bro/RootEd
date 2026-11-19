@@ -590,6 +590,24 @@ async function run() {
     ).lean();
   }
 
+  // A learner with no login, no seat and no plan, for the fee-plan e2e spec to put on a
+  // plan and pause, so the specs that rely on member2 having none stay as they are.
+  studyMembers.studyBilling = await Student.findOneAndUpdate(
+    { tenantId: studyTenantId, admissionNo: 'SC-003' },
+    {
+      $setOnInsert: {
+        tenantId: studyTenantId,
+        admissionNo: 'SC-003',
+        firstName: 'Plan',
+        lastName: 'Learner',
+        phone: '9000000003',
+        kind: 'member',
+        status: 'active',
+      },
+    },
+    { upsert: true, new: true, ...BYPASS_SC }
+  ).lean();
+
   const studyDiscounts = {};
   for (const def of [
     {
