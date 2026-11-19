@@ -134,6 +134,32 @@ export async function loadDesk({
 }
 
 /**
+ * Just the strip of the desk (inside now, free seats, today's check-ins, open or
+ * closed), for the dashboard, which has no use for the learner list.
+ */
+export async function loadDeskSummary({ tenant, now = new Date() }) {
+  const tenantId = tenant._id;
+  const centre = resolveCentreSettings(tenant);
+  const today = dayStringInTz(now, tenant.timezone);
+  const dayStart = zonedMidnight(today, tenant.timezone);
+  const dayEnd = zonedMidnight(addDaysToDayString(today, 1), tenant.timezone);
+
+  const [seats, openVisits, checkInsToday] = await Promise.all([
+    Seat.find({ tenantId }).lean(),
+    Visit.find({ tenantId, isOpen: true }, 'seatId studentId').lean(),
+    Visit.countDocuments({ tenantId, inAt: { $gte: dayStart, $lt: dayEnd } }),
+  ]);
+  const tiles = buildSeatTiles({ seats, allocations: [], openVisits, names: new Map() });
+  return buildSummary({
+    tiles,
+    openCount: openVisits.length,
+    checkInsToday,
+    open: isWithinOpenHours(now, centre, tenant.timezone),
+    centre,
+  });
+}
+
+/**
  * Closes every open visit at `now` on behalf of an owner. Each visit is closed with
  * its own conditional update, so a learner who checked out a moment earlier is simply
  * skipped. Returns the visits it closed (for the audit trail).

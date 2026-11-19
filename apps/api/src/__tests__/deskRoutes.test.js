@@ -334,6 +334,30 @@ describe('the desk payload', () => {
   });
 });
 
+describe('the desk summary', () => {
+  beforeEach(reset);
+
+  test('is the strip alone, without the learner list', async () => {
+    await checkIn('desk', ctx.m1);
+    const res = await get('/academic/visits/desk/summary', 'owner');
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      insideNow: 1,
+      seatsActive: 4,
+      freeSeats: 3,
+      checkInsToday: 1,
+    });
+    expect(res.body.learners).toBeUndefined();
+  });
+
+  test('needs attendance:read and a study center', async () => {
+    expect((await get('/academic/visits/desk/summary', 'accountant')).status).toBe(403);
+    expect((await get('/academic/visits/desk/summary', 'tuitionOwner', 'tuition')).status).toBe(
+      403
+    );
+  });
+});
+
 describe('check out everyone', () => {
   beforeEach(async () => {
     await reset();

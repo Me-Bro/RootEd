@@ -12,7 +12,7 @@ import { requirePermission, userHasPermission } from '../middleware/requirePermi
 import { requireSeatsOrg } from '../middleware/requireSeatsOrg.js';
 import { validate } from '../middleware/validate.js';
 import { checkIn, checkOut, freeSeats, listOpenVisits } from '../services/visit.service.js';
-import { checkOutAll, loadDesk } from '../services/desk.service.js';
+import { checkOutAll, loadDesk, loadDeskSummary } from '../services/desk.service.js';
 import { DESK_FILTERS } from '../utils/deskView.js';
 import { learnerVisits } from '../services/studentVisits.service.js';
 import { Student } from '../models/Student.js';
@@ -50,6 +50,15 @@ router.get('/visits/desk', requirePermission('attendance:read'), async (req, res
     if (!query.success) return res.status(400).json({ error: query.error.issues[0].message });
     const withFees = await userHasPermission(req, 'fees:read');
     res.json(await loadDesk({ tenant: req.tenant, withFees, ...query.data }));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// The desk's strip alone, for the dashboard.
+router.get('/visits/desk/summary', requirePermission('attendance:read'), async (req, res, next) => {
+  try {
+    res.json(await loadDeskSummary({ tenant: req.tenant }));
   } catch (err) {
     next(err);
   }

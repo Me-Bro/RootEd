@@ -9,7 +9,8 @@ import { cn } from '../../lib/utils.js';
 const SHORTCUT_ROUTES = [
   ['/dashboard'],
   ['/academic/students'],
-  ['/academic/attendance', '/me/attendance'],
+  // A study center has no roll call: its staff get the front desk in that slot.
+  ['/academic/attendance', '/me/attendance', '/desk'],
   ['/fee', '/me/fees'],
   // Study center only: the seat map for staff, the learner's own seat for members.
   ['/academic/seat-map', '/me/seat'],
