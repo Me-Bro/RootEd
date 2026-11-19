@@ -18,6 +18,8 @@ import { resolveCentreSettings } from '../utils/centreSettings.js';
 import { isModuleEnabled } from '@rooted/shared/utils';
 import { FeePayment } from '../models/FeePayment.js';
 import { withBalances } from '../services/fee.service.js';
+import { ledgersFor } from '../services/feePlanLedger.service.js';
+import { isBillingAssignment } from '../utils/billingCycle.js';
 import { Class } from '../models/Class.js';
 import { Section } from '../models/Section.js';
 import { Student } from '../models/Student.js';
@@ -304,7 +306,10 @@ router.get(
         FeePayment.find({ tenantId, studentId }, '-notes').sort({ paymentDate: -1 }).lean(),
       ]);
 
-      res.json({ assignments: await withBalances(tenantId, assignments), payments });
+      res.json({
+        assignments: await withBalances(tenantId, assignments, { cycles: true }),
+        payments,
+      });
     } catch (err) {
       next(err);
     }
@@ -358,11 +363,22 @@ router.get(
           { tenantId, _id: { $in: assignments.map((a) => a.feeStructureId) } },
           'name'
         ).lean();
-        ({ plan, nextDue } = summarizePlan({
-          assignments,
-          payments,
-          structureNames: new Map(structures.map((s) => [String(s._id), s.name])),
-        }));
+        const structureNames = new Map(structures.map((s) => [String(s._id), s.name]));
+        // A monthly/weekly fee plan is computed from its ledger.
+        const feePlan = assignments.find(isBillingAssignment);
+        let billing;
+        if (feePlan) {
+          const ledger = (await ledgersFor({ tenant: req.tenant, assignments: [feePlan] })).get(
+            String(feePlan._id)
+          );
+          const segments = feePlan.billing.segments;
+          billing = {
+            name: structureNames.get(String(feePlan.feeStructureId)) ?? null,
+            cycle: segments[segments.length - 1].cycle,
+            ledger,
+          };
+        }
+        ({ plan, nextDue } = summarizePlan({ assignments, payments, structureNames, billing }));
       }
 
       // This month's time on seat, and when the centre is open. Counts and minutes

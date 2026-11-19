@@ -20,8 +20,12 @@ const visitSchema = new mongoose.Schema(
     autoClosed: { type: Boolean, default: false },
     // Checked in outside opening hours, which only an owner may do.
     outsideHours: { type: Boolean, default: false },
-    // valid | unpaid | expired | none, as it stood at check-in.
-    entitlementAtCheckIn: { type: String, enum: ['valid', 'unpaid', 'expired', 'none'] },
+    // As it stood at check-in: valid | unpaid | expired | none, and for a learner on
+    // a monthly/weekly fee plan also paused | ended | scheduled.
+    entitlementAtCheckIn: {
+      type: String,
+      enum: ['valid', 'unpaid', 'expired', 'none', 'paused', 'ended', 'scheduled'],
+    },
   },
   { timestamps: true }
 );

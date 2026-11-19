@@ -23,7 +23,7 @@ import { buildReceiptLines } from '../utils/receiptLines.js';
 import { scheduleLateCharge } from '../workers/feeLateCharge.worker.js';
 import { isBillingAssignment, settledSpan } from '../utils/billingCycle.js';
 import { zonedMidnight } from '../utils/dayKey.js';
-import { loadBillingLedger } from './feePlanLedger.service.js';
+import { ledgersFor, ledgerTotals, loadBillingLedger } from './feePlanLedger.service.js';
 
 const MAX_MUTATION_ATTEMPTS = 3;
 
@@ -453,8 +453,11 @@ export async function refundPayment({ paymentId, tenantId, reason, actorId }) {
 }
 
 // What each assignment has been paid so far (refunds excluded) and what is still
-// owed, so a client never has to work out a balance from the assignment alone.
-export async function withBalances(tenantId, assignments) {
+// owed, so a client never has to work out a balance from the assignment alone. A
+// study-center fee plan has no fixed total: what it owes is what is overdue on its
+// ledger, and its row carries the ledger's balances as `ledger` (plus every cycle
+// when `cycles` is asked for: a learner's own view, not a tenant-wide list).
+export async function withBalances(tenantId, assignments, { cycles = false } = {}) {
   if (assignments.length === 0) return assignments;
   const paid = await FeePayment.aggregate([
     {
@@ -467,8 +470,16 @@ export async function withBalances(tenantId, assignments) {
     { $group: { _id: '$assignmentId', total: { $sum: '$amount' } } },
   ]);
   const paidById = new Map(paid.map((p) => [String(p._id), p.total]));
+  const ledgers = await ledgersFor({ tenantId, assignments, paidById });
   return assignments.map((a) => {
     const paidAmount = paidById.get(String(a._id)) ?? 0;
+    const ledger = ledgers.get(String(a._id));
+    if (ledger) {
+      const shown = cycles
+        ? { ...ledgerTotals(ledger), cycles: ledger.cycles }
+        : ledgerTotals(ledger);
+      return { ...a, paidAmount, balanceDue: ledger.overdue, ledger: shown };
+    }
     const balanceDue =
       a.status === 'waived' ? 0 : Math.max(calculateEffectiveTotal(a) - paidAmount, 0);
     return { ...a, paidAmount, balanceDue };

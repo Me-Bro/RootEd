@@ -33,7 +33,8 @@ import {
   resumeBilling,
   setCyclePlan,
 } from '../services/feePlan.service.js';
-import { isBillingAssignment } from '../utils/billingCycle.js';
+import { isBillingAssignment, dayStringOf } from '../utils/billingCycle.js';
+import { ledgersFor } from '../services/feePlanLedger.service.js';
 import { entitlementFor } from '../services/entitlement.service.js';
 import { dayPassSales, expiringPlans } from '../services/studyReports.service.js';
 import { resolveCentreSettings } from '../utils/centreSettings.js';
@@ -513,6 +514,59 @@ router.put(
   }
 );
 
+// Study centers: a learner's fee plan and its ledger, computed now. Days are the
+// centre's calendar days (YYYY-MM-DD); `to` and `endedOn` are the first day not
+// billed. `{ plan: null }` when the learner has no plan.
+router.get(
+  '/students/:studentId/billing',
+  requireSeatsOrg,
+  requirePermission('fees:read'),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const assignment = await FeeAssignment.findOne({
+        tenantId,
+        studentId: req.params.studentId,
+        billing: { $exists: true },
+      }).lean();
+      if (!assignment) return res.json({ plan: null });
+
+      const { segments, pauses, endedOn } = assignment.billing;
+      const [ledgers, structures] = await Promise.all([
+        ledgersFor({ tenant: req.tenant, assignments: [assignment] }),
+        FeeStructure.find(
+          { tenantId, _id: { $in: segments.map((s) => s.feeStructureId) } },
+          'name'
+        ).lean(),
+      ]);
+      const names = new Map(structures.map((s) => [String(s._id), s.name]));
+      const day = (d) => (d ? dayStringOf(d) : null);
+
+      res.json({
+        plan: {
+          assignmentId: assignment._id,
+          feeStructureId: assignment.feeStructureId,
+          name: names.get(String(assignment.feeStructureId)) ?? null,
+          cycle: segments[segments.length - 1].cycle,
+          segments: segments.map((s) => ({
+            feeStructureId: s.feeStructureId,
+            name: names.get(String(s.feeStructureId)) ?? null,
+            cycle: s.cycle,
+            amount: s.amount,
+            from: day(s.from),
+            to: day(s.to),
+          })),
+          pauses: pauses.map((p) => ({ from: day(p.from), to: day(p.to) })),
+          endedOn: day(endedOn),
+          ...ledgers.get(String(assignment._id)),
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 // Study centers, owner only: pause a learner's billing from a day (today or earlier).
 // Paused days are not billed and the learner's seats are freed for others.
 router.post(
@@ -797,8 +851,9 @@ router.get('/collection-summary', requirePermission('fees:read'), async (req, re
       FeeAssignment.find(filter).lean(),
       getDefaulters(tenantId, academicYearId),
     ]);
+    const ledgers = await ledgersFor({ tenant: req.tenant, assignments });
 
-    res.json(summarizeFeeCollection(assignments, defaulters));
+    res.json(summarizeFeeCollection(assignments, defaulters, new Date(), ledgers));
   } catch (err) {
     next(err);
   }
