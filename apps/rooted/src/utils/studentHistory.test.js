@@ -176,3 +176,11 @@ test('every wording the code can pick exists in English and Hindi', async () => 
     }
   }
 });
+
+test('a check-out by the owner at closing has its own wording', () => {
+  assert.ok(
+    historyMessage(entry('visit.checkOut', { seat: 'A-1', bulkClosed: true })).key.endsWith(
+      'visit_checkOut_bulk'
+    )
+  );
+});

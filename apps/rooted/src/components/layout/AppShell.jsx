@@ -73,8 +73,7 @@ const STUDY_CENTER_HIDDEN = new Set([
   '/me/grades',
   '/academic/subjects',
   '/academic/my-classes',
-  // Front desk and plan sales are not offered yet.
-  '/desk',
+  // Plan sales are not offered yet (the front desk is).
   '/fee/sell',
 ]);
 

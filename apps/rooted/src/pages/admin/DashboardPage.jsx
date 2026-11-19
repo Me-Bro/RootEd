@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { isSelfScoped } from '@rooted/shared/constants';
 import { hasSeats, isModuleEnabled } from '@rooted/shared/utils';
 import api from '../../lib/api.js';
 import { formatDate, formatDateTime, localDay } from '../../utils/intl.js';
 import { useAuth } from '../../contexts/useAuth.js';
+import { landsOnDesk } from '../../utils/deskView.js';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
@@ -615,6 +616,10 @@ function PrincipalDashboard() {
 export default function DashboardPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  // Desk staff at a study center work from the front desk, not a dashboard.
+  if (landsOnDesk({ seats: hasSeats(user?.orgType), permissions: user?.permissions })) {
+    return <Navigate to="/desk" replace />;
+  }
   const isSuperAdmin = user?.systemRole === 'super_admin';
   const isStudentView = !isSuperAdmin && hasSelfScopedVisibility(user);
   const isPrincipalView = !isSuperAdmin && !isStudentView && hasSchoolWideVisibility(user);

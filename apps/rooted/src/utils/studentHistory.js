@@ -48,7 +48,7 @@ export function historyMessage(entry, labels = {}) {
       return { key: base, params: { seat: dash(p.seat) } };
     case 'visit.checkOut':
       return {
-        key: p.autoClosed ? `${base}_auto` : base,
+        key: p.autoClosed ? `${base}_auto` : p.bulkClosed ? `${base}_bulk` : base,
         params: { seat: dash(p.seat), time: time(p.outAt) },
       };
     case 'seatAllocation.create':

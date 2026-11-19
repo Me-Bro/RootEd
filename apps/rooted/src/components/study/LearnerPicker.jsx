@@ -13,11 +13,16 @@ const nameOf = (s) => `${s.firstName} ${s.lastName}`.trim();
  * not found can be registered on the spot (name and phone); a phone already on file
  * returns that visitor instead of a second record.
  */
-export default function LearnerPicker({ value, onChange, allowWalkIn = false }) {
+export default function LearnerPicker({
+  value,
+  onChange,
+  allowWalkIn = false,
+  startAdding = false,
+}) {
   const { t } = useTranslation();
   const [text, setText] = useState('');
   const [submitted, setSubmitted] = useState('');
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState(startAdding);
   const [walkIn, setWalkIn] = useState({ firstName: '', lastName: '', phone: '' });
   const [error, setError] = useState('');
 
