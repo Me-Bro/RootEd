@@ -13,7 +13,7 @@ import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { LoginBadge } from '../../components/ui/LoginBadge.jsx';
-import StudentFeeStructurePanel from '../../components/students/StudentFeeStructurePanel.jsx';
+import StudentBillingTab from '../../components/study/StudentBillingTab.jsx';
 import SectionTeachersCard from '../../components/academic/SectionTeachersCard.jsx';
 import {
   Dialog,
@@ -722,14 +722,11 @@ export default function StudentDetailPage() {
         {hasSeats(user?.orgType) &&
           student.kind !== 'walk_in' &&
           permissions.includes('fees:read') && (
-            <div className="rounded-lg border border-border p-4">
+            <div className="rounded-lg border border-border p-4 sm:col-span-2">
               <h2 className="mb-3 text-sm font-semibold">
                 {t('academic.studentDetail.feeStructureHeading')}
               </h2>
-              <StudentFeeStructurePanel
-                studentId={id}
-                canWrite={permissions.includes('fees:write')}
-              />
+              <StudentBillingTab studentId={id} canWrite={permissions.includes('fees:write')} />
             </div>
           )}
         {student.sectionId && !hasSeats(user?.orgType) && (

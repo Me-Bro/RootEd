@@ -117,3 +117,55 @@ test('a graduated or withdrawn learner can always be reactivated', () => {
   }
   assert.deepEqual(statusTransitions('mystery', true), []);
 });
+
+import { ENTITLEMENT_VARIANT, planHistory, discountStatus } from './feePlan.js';
+
+test('planHistory lists stretches, pauses and the end, newest first', () => {
+  const plan = {
+    segments: [
+      { name: 'Monthly', cycle: 'monthly', amount: 1500, from: '2027-01-01', to: '2027-03-01' },
+      { name: 'Weekly', cycle: 'weekly', amount: 400, from: '2027-03-01', to: null },
+    ],
+    pauses: [{ from: '2027-02-10', to: '2027-02-20' }],
+    endedOn: null,
+  };
+  assert.deepEqual(
+    planHistory(plan).map((r) => [r.kind, r.from]),
+    [
+      ['plan', '2027-03-01'],
+      ['pause', '2027-02-10'],
+      ['plan', '2027-01-01'],
+    ]
+  );
+});
+
+test('planHistory shows the end, ahead of anything else on the same day', () => {
+  const rows = planHistory({
+    segments: [{ name: 'M', cycle: 'monthly', amount: 1, from: '2027-01-01', to: '2027-04-01' }],
+    pauses: [{ from: '2027-04-01', to: null }],
+    endedOn: '2027-04-01',
+  });
+  assert.deepEqual(
+    rows.map((r) => r.kind),
+    ['ended', 'pause', 'plan']
+  );
+});
+
+test('planHistory of no plan, or a plan with nothing recorded, is empty', () => {
+  assert.deepEqual(planHistory(null), []);
+  assert.deepEqual(planHistory({}), []);
+});
+
+test('discountStatus compares the dates with now; no dates is always active', () => {
+  const now = new Date('2027-03-15T00:00:00Z');
+  assert.equal(discountStatus({}, now), 'active');
+  assert.equal(discountStatus({ validFrom: '2027-03-01', validTo: '2027-03-31' }, now), 'active');
+  assert.equal(discountStatus({ validFrom: '2027-04-01' }, now), 'upcoming');
+  assert.equal(discountStatus({ validTo: '2027-03-01' }, now), 'ended');
+});
+
+test('every entitlement status has a badge colour', () => {
+  for (const s of ['valid', 'unpaid', 'expired', 'none', 'paused', 'ended', 'scheduled']) {
+    assert.ok(ENTITLEMENT_VARIANT[s], s);
+  }
+});

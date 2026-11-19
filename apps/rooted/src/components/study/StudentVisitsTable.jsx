@@ -7,19 +7,9 @@ import { Button } from '../ui/Button.jsx';
 import { DataTable, TableRow, TableCell } from '../ui/DataTable.jsx';
 import { formatDate, formatTime } from '../../utils/intl.js';
 import { formatDuration } from '../../utils/duration.js';
+import { ENTITLEMENT_VARIANT } from '../../utils/feePlan.js';
 
 const PAGE_SIZE = 10;
-
-// A warning-coloured badge for an entitlement that should catch the eye at the desk.
-const ENTITLEMENT_VARIANT = {
-  valid: 'success',
-  unpaid: 'warning',
-  expired: 'danger',
-  none: 'danger',
-  paused: 'warning',
-  ended: 'danger',
-  scheduled: 'warning',
-};
 
 /**
  * A study-center learner's visits: whether they are inside now, this month's totals,
