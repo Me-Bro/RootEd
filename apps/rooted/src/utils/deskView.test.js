@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  DESK_FILTER_KEYS,
   canCheckOutAll,
   groupByZone,
   landsOnDesk,
@@ -63,10 +62,6 @@ test('only an owner gets the check-out-everyone button', () => {
   assert.equal(canCheckOutAll(['tenant:admin', 'attendance:write']), true);
   assert.equal(canCheckOutAll(['attendance:write', 'fees:read']), false);
   assert.equal(canCheckOutAll(), false);
-});
-
-test('the filter names match the API', () => {
-  assert.deepEqual(DESK_FILTER_KEYS, ['all', 'inside', 'notInside', 'warning']);
 });
 
 test('desk staff at a study center land on the desk; owners and other org types do not', () => {

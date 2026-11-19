@@ -32,8 +32,6 @@ export function seatClickAction(tile, learner) {
 // Only an owner may close everyone at once; the server decides, this decides the button.
 export const canCheckOutAll = (permissions = []) => permissions.includes('tenant:admin');
 
-export const DESK_FILTER_KEYS = ['all', 'inside', 'notInside', 'warning'];
-
 // A study-center user who works the desk (may check people in) but is not the owner
 // lands on the front desk instead of a dashboard they have little use for.
 export const landsOnDesk = ({ seats, permissions = [] }) =>

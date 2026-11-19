@@ -13,7 +13,7 @@ import { requireSeatsOrg } from '../middleware/requireSeatsOrg.js';
 import { validate } from '../middleware/validate.js';
 import { checkIn, checkOut, freeSeats, listOpenVisits } from '../services/visit.service.js';
 import { checkOutAll, loadDesk, loadDeskSummary } from '../services/desk.service.js';
-import { DESK_FILTERS } from '../utils/deskView.js';
+import { DESK_FILTERS } from '@rooted/shared/constants';
 import { learnerVisits } from '../services/studentVisits.service.js';
 import { Student } from '../models/Student.js';
 import { auditLog } from '../services/audit.service.js';

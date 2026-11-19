@@ -2,8 +2,6 @@ import { bySeatLabel } from './seatAvailability.js';
 
 // Pure pieces of the front-desk payload (services/desk.service.js loads the data).
 
-export const DESK_FILTERS = ['all', 'inside', 'notInside', 'warning'];
-
 const minutesBetween = (from, to) => Math.max(0, Math.round((to - new Date(from)) / 60_000));
 
 /**

@@ -5,7 +5,8 @@ import { Input } from '../ui/Input.jsx';
 import { cn } from '../../lib/utils.js';
 import { formatTime } from '../../utils/intl.js';
 import { formatDuration } from '../../utils/duration.js';
-import { DESK_FILTER_KEYS, minutesSince } from '../../utils/deskView.js';
+import { DESK_FILTERS } from '@rooted/shared/constants';
+import { minutesSince } from '../../utils/deskView.js';
 
 const WARN_VARIANT = 'warning';
 const needsWarning = (entitlement) => entitlement && entitlement.status !== 'valid';
@@ -51,7 +52,7 @@ export default function DeskLearnerList({
       </div>
 
       <div className="flex flex-wrap gap-2" role="group" aria-label={t('studyCenter.desk.filters')}>
-        {DESK_FILTER_KEYS.map((key) => (
+        {DESK_FILTERS.map((key) => (
           <Button
             key={key}
             size="sm"

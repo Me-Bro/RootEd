@@ -1,11 +1,6 @@
 import { describe, expect, test } from '@jest/globals';
-import {
-  DESK_FILTERS,
-  buildActivity,
-  buildSeatTiles,
-  buildSummary,
-  filterLearners,
-} from '../utils/deskView.js';
+import { DESK_FILTERS } from '@rooted/shared/constants';
+import { buildActivity, buildSeatTiles, buildSummary, filterLearners } from '../utils/deskView.js';
 
 const id = (n) => `id-${n}`;
 const seat = (n, extra = {}) => ({ _id: id(`seat${n}`), label: `A-${n}`, ...extra });
