@@ -1,12 +1,10 @@
+import { MAX_BACKDATE_DAYS } from '@rooted/shared/schemas';
 import { daysAgoString } from './studyCenter.js';
 
 // Study-center fee plans (monthly / weekly). Pure helpers for the pages; the server
 // is the authority on every rule.
 
-// How far back a plan's start date may be set (mirrors MAX_BACKDATE_DAYS in shared).
-export const MAX_BACKDATE_DAYS = 31;
-
-// The earliest start date to offer in a date input.
+// The earliest start date to offer in a date input (how far back the API allows).
 export const earliestStartDay = (now = new Date()) => daysAgoString(MAX_BACKDATE_DAYS, now);
 
 // Structures a learner can be put on, split into the ones that bill every cycle and the
@@ -90,7 +88,3 @@ export function statusTransitions(status, seats) {
   if (status === 'graduated' || status === 'withdrawn') return [reactivate];
   return [];
 }
-
-// Every status the entitlement can have; anything else gets a neutral label.
-const KNOWN_ENTITLEMENTS = ['valid', 'unpaid', 'expired', 'none', 'paused', 'ended', 'scheduled'];
-export const entitlementKey = (status) => (KNOWN_ENTITLEMENTS.includes(status) ? status : 'none');

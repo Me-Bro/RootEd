@@ -569,13 +569,16 @@ function parseStudentBody(schemaFor, req, res) {
 const sectionExists = (tenantId, sectionId) =>
   Section.findOne({ _id: sectionId, tenantId }, '_id').lean();
 
-async function syncBillingWithStatus({ tenant, studentId, from, to, actorId, ip }) {
+// Both steps do nothing when there is nothing to do (billing already ended, or never
+// ended), so the route runs them on every status write. That makes a retry heal a
+// request that saved the status but failed before billing caught up.
+async function syncBillingWithStatus({ tenant, studentId, to, actorId, ip }) {
   const today = dayStringInTz(new Date(), tenant.timezone);
   let plan = null;
   if (to === 'withdrawn') {
     plan = await endBilling({ tenant, studentId, onDay: today });
     await endAllAllocationsFor(tenant._id, studentId);
-  } else if (from === 'withdrawn' && to === 'active') {
+  } else if (to === 'active') {
     plan = await reopenBilling({ tenant, studentId, onDay: today });
   }
   if (plan) {
@@ -896,11 +899,10 @@ router.patch('/students/:id', requirePermission('students:write'), async (req, r
     // Study centers: a learner who withdraws stops being billed from today and gives
     // up their seats; one who comes back is billed again from today, never for the
     // days away.
-    if (statusChanged && hasSeats(req.tenant.orgType)) {
+    if (body.status && hasSeats(req.tenant.orgType)) {
       await syncBillingWithStatus({
         tenant: req.tenant,
         studentId: student._id,
-        from: current.status,
         to: body.status,
         actorId: req.user.sub,
         ip: req.ip,

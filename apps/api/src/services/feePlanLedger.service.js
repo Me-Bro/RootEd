@@ -13,21 +13,8 @@ import { dayStringInTz } from '../utils/dayKey.js';
 
 /** The ledger of one billing assignment as of `now`. */
 export async function loadBillingLedger({ tenant, assignment, now = new Date() }) {
-  const tenantId = tenant._id;
-  const [discounts, payments] = await Promise.all([
-    FeeDiscount.find({ tenantId, applicableTo: 'student', studentId: assignment.studentId }).lean(),
-    FeePayment.find(
-      { tenantId, assignmentId: assignment._id, refunded: { $ne: true } },
-      'amount refunded'
-    ).lean(),
-  ]);
-  return buildLedger({
-    billing: assignment.billing,
-    discounts,
-    payments,
-    today: dayStringInTz(now, tenant.timezone),
-    studentId: assignment.studentId,
-  });
+  const ledgers = await ledgersFor({ tenant, assignments: [assignment], now });
+  return ledgers.get(String(assignment._id));
 }
 
 /**

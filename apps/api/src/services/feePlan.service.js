@@ -33,6 +33,9 @@ export async function findAssignableStructure(tenantId, feeStructureId) {
   }).lean();
 }
 
+const findPlan = (tenantId, studentId) =>
+  FeeAssignment.findOne({ tenantId, studentId, billing: { $exists: true } });
+
 const segmentFor = (structure, fromKey) => ({
   feeStructureId: structure._id,
   cycle: structure.cycle,
@@ -69,7 +72,7 @@ export async function setCyclePlan({ tenant, studentId, structure, startDay, now
   if (!structure.cycle) throw new AppError('This fee structure has no billing cycle', 422);
 
   const today = dayStringInTz(now, tenant.timezone);
-  const existing = await FeeAssignment.findOne({ tenantId, studentId, billing: { $exists: true } });
+  const existing = await findPlan(tenantId, studentId);
 
   if (!existing) {
     const from = startDay ?? today;
@@ -131,9 +134,6 @@ async function savePlan(doc) {
     throw err;
   }
 }
-
-const findPlan = (tenantId, studentId) =>
-  FeeAssignment.findOne({ tenantId, studentId, billing: { $exists: true } });
 
 /**
  * Pause a learner's billing from `onDay` (today or earlier): paused days are not

@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  MAX_BACKDATE_DAYS,
   earliestStartDay,
   splitFeeStructures,
   cyclePrice,
@@ -10,8 +9,8 @@ import {
   planActions,
   assignmentRow,
   statusTransitions,
-  entitlementKey,
 } from './feePlan.js';
+import { MAX_BACKDATE_DAYS } from '@rooted/shared/schemas';
 
 test('the earliest start day is 31 days back', () => {
   assert.equal(MAX_BACKDATE_DAYS, 31);
@@ -117,10 +116,4 @@ test('a graduated or withdrawn learner can always be reactivated', () => {
     );
   }
   assert.deepEqual(statusTransitions('mystery', true), []);
-});
-
-test('unknown entitlement statuses fall back to a neutral label', () => {
-  assert.equal(entitlementKey('paused'), 'paused');
-  assert.equal(entitlementKey('scheduled'), 'scheduled');
-  assert.equal(entitlementKey('whatever'), 'none');
 });

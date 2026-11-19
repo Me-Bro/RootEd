@@ -376,6 +376,24 @@ describe('withdrawal ends billing (R12, AC7)', () => {
     expect(plan.billing.endedOn.toISOString()).toBe(key(today()));
   });
 
+  test('a retry heals a withdrawal that saved the status but never ended billing', async () => {
+    const s = await learner('WD-5');
+    // As if an earlier request wrote the status and then failed.
+    await Student.updateOne({ _id: s._id, tenantId: tenants.study._id }, { status: 'withdrawn' });
+    expect((await planOf(s)).billing.endedOn).toBeUndefined();
+
+    expect((await patch(s, { status: 'withdrawn' })).status).toBe(200);
+    expect((await planOf(s)).billing.endedOn.toISOString()).toBe(key(today()));
+  });
+
+  test('an ordinary edit with the status unchanged leaves billing alone', async () => {
+    const s = await learner('WD-6');
+    expect((await patch(s, { status: 'active', firstName: 'Renamed' })).status).toBe(200);
+    const plan = await planOf(s);
+    expect(plan.billing.endedOn).toBeUndefined();
+    expect(plan.billing.pauses).toHaveLength(0);
+  });
+
   test('a learner without a plan withdraws as before', async () => {
     const s = await learner('WD-4', { plan: false });
     expect((await patch(s, { status: 'withdrawn' })).status).toBe(200);
