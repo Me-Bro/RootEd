@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { hasSeats } from '@rooted/shared/utils';
 import { DOCUMENT_KINDS } from '@rooted/shared/schemas';
@@ -13,6 +13,7 @@ import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { LoginBadge } from '../../components/ui/LoginBadge.jsx';
 import StudyCenterStudentTabs from '../../components/study/StudyCenterStudentTabs.jsx';
+import StudentAddedNotice from '../../components/students/StudentAddedNotice.jsx';
 import SectionTeachersCard from '../../components/academic/SectionTeachersCard.jsx';
 import {
   Dialog,
@@ -601,6 +602,17 @@ export default function StudentDetailPage() {
   const [statusTarget, setStatusTarget] = useState(null);
   const { sections } = useClassSections();
 
+  // Arriving from "Add student" carries a notice about the new student's login and fee.
+  // It is kept here and cleared from the history entry, so a reload does not repeat it.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [addedNotice, setAddedNotice] = useState(() => location.state?.justAdded ?? null);
+  useEffect(() => {
+    if (location.state?.justAdded) {
+      navigate(`${location.pathname}${location.search}`, { replace: true, state: null });
+    }
+  }, [location, navigate]);
+
   const {
     data: student,
     isLoading,
@@ -699,6 +711,10 @@ export default function StudentDetailPage() {
           )
         }
       />
+
+      {addedNotice?.studentId === id && (
+        <StudentAddedNotice notice={addedNotice} onDismiss={() => setAddedNotice(null)} />
+      )}
 
       <PhotoPanel student={student} canWrite={canWrite} />
 

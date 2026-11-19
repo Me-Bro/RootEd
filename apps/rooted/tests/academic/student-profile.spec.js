@@ -67,11 +67,11 @@ test.describe('Add student: richer profile', () => {
 
     await dialog.getByRole('button', { name: 'Add Student' }).click();
     await expect(dialog).not.toBeVisible({ timeout: 8_000 });
-    await expect(page.getByRole('status')).toContainText('Rich Tester added');
 
-    // Open the new student's profile.
-    await page.getByPlaceholder(/search/i).fill(admissionNo);
-    await page.getByRole('link', { name: new RegExp(admissionNo) }).click();
+    // Adding a student opens their profile, with a notice about the login.
+    await expect(page).toHaveURL(/\/academic\/students\/[0-9a-f]{24}$/);
+    await expect(page.getByRole('status')).toContainText('Rich Tester added');
+    await expect(page.getByText(admissionNo).first()).toBeVisible();
 
     await expect(page.getByText('9876543210').first()).toBeVisible();
     await expect(page.getByRole('link', { name: 'WhatsApp' }).first()).toHaveAttribute(

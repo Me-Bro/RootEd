@@ -38,8 +38,8 @@ test.describe('learner profile', () => {
     await dialog.getByRole('button', { name: 'Add Student' }).click();
     await expect(dialog).not.toBeVisible({ timeout: 8_000 });
 
-    await page.getByPlaceholder(/search/i).fill(admissionNo);
-    await page.getByRole('link', { name: new RegExp(admissionNo) }).click();
+    // The new learner's profile opens by itself.
+    await expect(page).toHaveURL(/\/academic\/students\/[0-9a-f]{24}$/);
     await expect(page.getByText('NEET')).toBeVisible();
     await expect(page.getByText('Walk-by')).toBeVisible();
   });

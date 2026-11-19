@@ -617,6 +617,7 @@
       "female": "Female",
       "other": "Other",
       "addFailed": "Failed to add student",
+      "addedGeneric": "{{name}} added.",
       "addedNext": "{{name}} added. Attendance and grades are entered by section. No login is created for a student automatically.",
       "addedWithLogin": "{{name}} added. A login link was sent to {{email}}.",
       "addedNoLogin": "{{name}} was added, but the login was not created: {{reason}}.",
