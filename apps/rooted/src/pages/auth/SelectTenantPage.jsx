@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Building2, Plus } from 'lucide-react';
 import { useAuth } from '../../contexts/useAuth.js';
 import {
   Card,
@@ -77,6 +78,30 @@ export default function SelectTenantPage() {
                 </Button>
               ))}
               {error && <p className="text-sm text-destructive">{error}</p>}
+            </div>
+            {/* Someone who already belongs to an org never reaches /onboarding,
+                so this is their only way to join or start another one. */}
+            <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={pendingId !== null}
+                onClick={() => navigate('/orgs/join')}
+                className="w-full justify-start gap-2"
+              >
+                <Building2 size={16} />
+                {t('org.joinOrganization')}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={pendingId !== null}
+                onClick={() => navigate('/orgs/new')}
+                className="w-full justify-start gap-2"
+              >
+                <Plus size={16} />
+                {t('org.createOrganization')}
+              </Button>
             </div>
           </CardContent>
         </Card>
