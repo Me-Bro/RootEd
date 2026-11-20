@@ -24,6 +24,7 @@ import {
   Grid,
   Layers,
   LayoutDashboard,
+  LifeBuoy,
   LogOut,
   Menu,
   MessageSquare,
@@ -371,6 +372,8 @@ function getNavGroups(t, orgType) {
         // No permission: account settings belong to the person, not the
         // organization, so every signed-in user has them.
         { to: '/settings/account', label: t('nav.accountSettings'), icon: UserCog },
+        // Same: any signed-in user can ask for help, whatever their role.
+        { to: '/help', label: t('nav.helpSupport'), icon: LifeBuoy },
       ],
     },
   ];

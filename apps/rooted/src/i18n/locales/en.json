@@ -51,6 +51,7 @@
     "desk": "Front desk",
     "studyReports": "Reports",
     "accountSettings": "Account settings",
+    "helpSupport": "Help & support",
     "subjects": "Subjects",
     "emailLogs": "Email Logs"
   },
@@ -202,6 +203,26 @@
     "groups": {
       "setup": "Set up your school",
       "daily": "Day to day"
+    },
+    "support": {
+      "heading": "Contact support",
+      "description": "Stuck, found a problem, or have a suggestion? Send us a message and the support team will get back to you by email.",
+      "drawerHint": "Can't find an answer? Contact the support team from the Help page.",
+      "replyTo": "We will reply to {{email}}.",
+      "categoryLabel": "What is this about?",
+      "categories": {
+        "contact": "I need help",
+        "bug": "Something is not working",
+        "feedback": "Feedback or a suggestion",
+        "other": "Something else"
+      },
+      "messageLabel": "Your message",
+      "submit": "Send message",
+      "sending": "Sending…",
+      "success": "Thanks, your message has been sent. The support team will reply by email.",
+      "sendAnother": "Send another message",
+      "failed": "We could not send your message. Please try again.",
+      "tooMany": "You have sent several messages recently. Please try again in a while."
     },
     "topics": {
       "addYear": {
