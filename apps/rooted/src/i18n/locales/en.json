@@ -1369,6 +1369,7 @@
       "deactivate": "Deactivate"
     },
     "collection": {
+      "backToFees": "Back to fees",
       "paymentFailed": "Payment failed",
       "verificationFailed": "Payment verification failed",
       "initiateFailed": "Failed to initiate online payment",
@@ -2592,6 +2593,9 @@
       }
     },
     "desk": {
+      "backToDesk": "Back to desk",
+      "profile": "Profile",
+      "openProfile": "Open {{name}}'s profile",
       "title": "Front desk",
       "description": "Check learners in and out, see every seat live, and close the day.",
       "seat": "Seat",

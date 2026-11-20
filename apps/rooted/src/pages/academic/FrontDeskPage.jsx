@@ -27,6 +27,7 @@ export default function FrontDeskPage() {
   const queryClient = useQueryClient();
   const permissions = user?.permissions ?? [];
   const isOwner = canCheckOutAll(permissions);
+  const canOpenProfile = permissions.includes('students:read');
 
   const [text, setText] = useState('');
   const [search, setSearch] = useState('');
@@ -220,7 +221,7 @@ export default function FrontDeskPage() {
         </Card>
       )}
 
-      {permissions.includes('fees:read') && <ExpiringPlans />}
+      {permissions.includes('fees:read') && <ExpiringPlans canOpenProfile={canOpenProfile} />}
 
       {addingWalkIn && (
         <Card>
@@ -277,6 +278,7 @@ export default function FrontDeskPage() {
             busy={busy}
             now={new Date()}
             onNewWalkIn={() => setAddingWalkIn(true)}
+            canOpenProfile={canOpenProfile}
           />
         </div>
         <div className={view === 'map' ? 'block' : 'hidden lg:block'}>
@@ -284,7 +286,11 @@ export default function FrontDeskPage() {
         </div>
       </div>
 
-      <DeskActivity rows={data?.activity ?? []} isLoading={desk.isLoading} />
+      <DeskActivity
+        rows={data?.activity ?? []}
+        isLoading={desk.isLoading}
+        canOpenProfile={canOpenProfile}
+      />
     </div>
   );
 }

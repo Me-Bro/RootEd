@@ -90,6 +90,7 @@ export function buildActivity({ visits, names, seatLabels, now, limit = 50 }) {
     .slice(0, limit)
     .map((v) => ({
       visitId: v._id,
+      studentId: v.studentId,
       name: names.get(String(v.studentId)) ?? null,
       seatLabel: seatLabels.get(String(v.seatId)) ?? null,
       inAt: v.inAt,

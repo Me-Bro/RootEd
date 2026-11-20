@@ -21,6 +21,7 @@ import { useAuth } from '../../contexts/useAuth.js';
 import { assignmentRow } from '../../utils/feePlan.js';
 import CollectPaymentModal from '../../components/fee/CollectPaymentModal.jsx';
 import RefundPaymentModal from '../../components/fee/RefundPaymentModal.jsx';
+import StudentNameLink from '../../components/fee/StudentNameLink.jsx';
 
 // Defaulters leads: chasing 160 unpaid + 254 partial assignments (₹1.98Cr
 // outstanding) is this module's real job, not an afterthought behind two
@@ -239,7 +240,7 @@ function AssignmentsTab() {
           return (
             <RecordListItem
               key={a._id}
-              title={`${a.studentId?.firstName ?? ''} ${a.studentId?.lastName ?? ''}`.trim()}
+              title={<StudentNameLink student={a.studentId} />}
               meta={`${a.studentId?.admissionNo ?? '—'} · ${a.feeStructureId?.name ?? '—'} · ${formatCurrency(
                 a.totalAmount ?? 0
               )}${a.dueDate ? ` · ${formatDate(a.dueDate)}` : ''}`}
@@ -291,7 +292,7 @@ function AssignmentsTab() {
           return (
             <TableRow key={a._id} className="bg-card">
               <TableCell className="px-4 py-3">
-                {a.studentId?.firstName} {a.studentId?.lastName}
+                <StudentNameLink student={a.studentId} />
               </TableCell>
               <TableCell className="px-4 py-3 text-muted-foreground">
                 {a.studentId?.admissionNo}
@@ -395,7 +396,7 @@ function PaymentsTab() {
         {payments.map((p) => (
           <RecordListItem
             key={p._id}
-            title={`${p.studentId?.firstName ?? ''} ${p.studentId?.lastName ?? ''}`.trim()}
+            title={<StudentNameLink student={p.studentId} />}
             meta={`${p.receiptNumber} · ${formatCurrency(p.amount ?? 0)} · ${p.paymentMethod}${
               p.paymentDate ? ` · ${formatDate(p.paymentDate)}` : ''
             }`}
@@ -442,7 +443,7 @@ function PaymentsTab() {
           <TableRow key={p._id} className="bg-card">
             <TableCell className="px-4 py-3 font-mono text-xs">{p.receiptNumber}</TableCell>
             <TableCell className="px-4 py-3">
-              {p.studentId?.firstName} {p.studentId?.lastName}
+              <StudentNameLink student={p.studentId} />
             </TableCell>
             <TableCell className="px-4 py-3">{formatCurrency(p.amount ?? 0)}</TableCell>
             <TableCell className="px-4 py-3 capitalize">{p.paymentMethod}</TableCell>
@@ -545,7 +546,7 @@ function DefaultersTab() {
         {sorted.map((d) => (
           <RecordListItem
             key={d._id}
-            title={`${d.studentId?.firstName ?? ''} ${d.studentId?.lastName ?? ''}`.trim()}
+            title={<StudentNameLink student={d.studentId} />}
             meta={`${d.studentId?.admissionNo ?? '—'} · ${formatCurrency(d.balanceDue)}${d.dueDate ? ` · ${formatDate(d.dueDate)}` : ''}`}
             trailing={
               <>
@@ -576,7 +577,7 @@ function DefaultersTab() {
         {sorted.map((d) => (
           <TableRow key={d._id} className="bg-card">
             <TableCell className="px-4 py-3">
-              {d.studentId?.firstName} {d.studentId?.lastName}
+              <StudentNameLink student={d.studentId} />
             </TableCell>
             <TableCell className="px-4 py-3 text-muted-foreground">
               {d.studentId?.admissionNo}

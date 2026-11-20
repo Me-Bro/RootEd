@@ -145,6 +145,7 @@ describe('buildActivity', () => {
     const rows = buildActivity({ visits, names, seatLabels: labels, now });
     expect(rows.map((r) => r.visitId)).toEqual(['v3', 'v1', 'v2', 'v4']);
     expect(rows[0]).toMatchObject({
+      studentId: 's1',
       name: 'Asha Study',
       seatLabel: 'A-1',
       minutes: 180,
