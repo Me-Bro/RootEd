@@ -63,6 +63,7 @@ import { AuditLog } from '../models/AuditLog.js';
 import { Feedback } from '../models/Feedback.js';
 import { CollegeEnquiry } from '../models/CollegeEnquiry.js';
 import { hashPassword } from '../services/auth.service.js';
+import { ensureOrgCode } from '../services/orgCode.service.js';
 
 const CLEAN = process.argv.includes('--clean');
 
@@ -169,6 +170,7 @@ async function run() {
     tenant = await Tenant.create({
       name: 'Test School',
       subdomain: 'testschool',
+      orgCode: 'TESTSCH2',
       plan: 'pro',
       status: 'active',
       locale: 'en',
@@ -246,6 +248,7 @@ async function run() {
     secondTenant = await Tenant.create({
       name: 'Second School',
       subdomain: 'secondschool',
+      orgCode: 'SECOND22',
       plan: 'starter',
       status: 'active',
       locale: 'en',
@@ -308,6 +311,7 @@ async function run() {
     tuitionTenant = await Tenant.create({
       name: 'Tuition Center',
       subdomain: 'tuitioncenter',
+      orgCode: 'TUITION2',
       plan: 'starter',
       orgType: 'tuition_center',
       status: 'active',
@@ -354,6 +358,7 @@ async function run() {
       await Tenant.create({
         name: 'Study Center',
         subdomain: 'studycenter',
+        orgCode: 'STUDYCT2',
         plan: 'starter',
         orgType: 'study_center',
         status: 'active',
@@ -2617,6 +2622,11 @@ async function run() {
       doc = (await CollegeEnquiry.create(def)).toObject();
     }
     enquiries.push(doc);
+  }
+
+  // Tenants that survived a no-wipe re-seed from before org codes existed.
+  for (const id of [tenantId, secondTenantId, tuitionTenantId, studyTenantId]) {
+    await ensureOrgCode(id);
   }
 
   await mongoose.disconnect();

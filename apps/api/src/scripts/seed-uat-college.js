@@ -38,6 +38,7 @@ import { PlacementApplication } from '../models/PlacementApplication.js';
 import { Enrollment } from '../models/Enrollment.js';
 import { scoreToLetter } from '@rooted/shared/utils';
 import { hashPassword } from '../services/auth.service.js';
+import { allocateOrgCode } from '../services/orgCode.service.js';
 
 const TENANT_NAME = 'Demo Engineering College (UAT)';
 const SUBDOMAIN = 'demo-college';
@@ -136,6 +137,7 @@ async function run() {
       await Tenant.create({
         name: TENANT_NAME,
         subdomain: SUBDOMAIN,
+        orgCode: await allocateOrgCode(),
         orgType: 'college',
         plan: 'pro',
         status: 'active',

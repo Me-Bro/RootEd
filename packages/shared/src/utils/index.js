@@ -20,6 +20,13 @@ export function normalizeJoinCode(input) {
     .replace(/O/g, '0');
 }
 
+/** `ABCD2345` -> `ABCD-2345`. Null-safe: an org without a code shows nothing. */
+export function formatOrgCode(stored) {
+  if (!stored) return '';
+  const half = Math.ceil(stored.length / 2);
+  return `${stored.slice(0, half)}-${stored.slice(half)}`;
+}
+
 /**
  * The API's sanitizeBody turns a typed `&`, `<` or `>` into an HTML entity.
  * Plain-text fields are shown through React, which escapes on its own, so put

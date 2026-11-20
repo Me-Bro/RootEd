@@ -11,6 +11,10 @@ const tenantSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     subdomain: { type: String, lowercase: true, trim: true },
+    // Permanent public identifier, shown beside the name wherever orgs are
+    // listed. Generated once (services/orgCode.service.js), never edited or
+    // rotated. Unrelated to joinPolicy.code, which is a revocable credential.
+    orgCode: { type: String, uppercase: true, trim: true, immutable: true },
     plan: {
       type: String,
       enum: PLANS,
@@ -60,6 +64,7 @@ const tenantSchema = new mongoose.Schema(
 );
 
 tenantSchema.index({ subdomain: 1 }, { unique: true, sparse: true });
+tenantSchema.index({ orgCode: 1 }, { unique: true, sparse: true });
 tenantSchema.index({ status: 1 });
 tenantSchema.index({ 'joinPolicy.code': 1 }, { unique: true, sparse: true });
 

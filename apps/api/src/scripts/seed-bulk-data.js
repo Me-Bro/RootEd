@@ -62,6 +62,7 @@ import { StockMovement } from '../models/StockMovement.js';
 import { PurchaseRequisition } from '../models/PurchaseRequisition.js';
 import { Notification } from '../models/Notification.js';
 import { hashPassword } from '../services/auth.service.js';
+import { allocateOrgCode } from '../services/orgCode.service.js';
 import { encryptField } from '../utils/fieldEncryption.js';
 
 // ── CLI ──────────────────────────────────────────────────────────────────────
@@ -655,6 +656,7 @@ async function run() {
       await Tenant.create({
         name: 'Greenwood Public School',
         subdomain: SUBDOMAIN,
+        orgCode: await allocateOrgCode(),
         plan: 'pro',
         status: 'active',
         locale: 'en',

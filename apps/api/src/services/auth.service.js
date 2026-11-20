@@ -7,6 +7,7 @@ import { TenantMembership } from '../models/TenantMembership.js';
 import { redis } from '../config/redis.js';
 import { env } from '../config/env.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { ensureOrgCode } from './orgCode.service.js';
 
 const LOCKOUT_ATTEMPTS = 5;
 const LOCKOUT_WINDOW_MS = 15 * 60 * 1000;
@@ -146,12 +147,17 @@ async function getTenantsForUser(userId, status) {
   const tenantIds = memberships.map((m) => m.tenantId);
   const tenants = await Tenant.find(
     { _id: { $in: tenantIds }, status: 'active' },
-    '_id name subdomain'
+    '_id name subdomain orgCode'
   ).lean();
 
-  return tenants.map((t) => ({
-    _id: t._id.toString(),
-    name: t.name,
-    subdomain: t.subdomain,
-  }));
+  // A tenant created before the backfill migration ran has no code yet; the
+  // picker must never show a blank one, so fill it in on the way past.
+  return Promise.all(
+    tenants.map(async (t) => ({
+      _id: t._id.toString(),
+      name: t.name,
+      subdomain: t.subdomain,
+      orgCode: t.orgCode ?? (await ensureOrgCode(t._id)),
+    }))
+  );
 }
