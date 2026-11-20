@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api, { setAccessToken } from '../../lib/api.js';
 import { useAuth } from '../../contexts/useAuth.js';
@@ -11,7 +11,10 @@ export default function JoinOrgPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { refreshUser } = useAuth();
-  const [joinCode, setJoinCode] = useState('');
+  // A scanned QR code lands here as /orgs/join?code=…; it only prefills the field, so
+  // joining is still an explicit tap.
+  const [searchParams] = useSearchParams();
+  const [joinCode, setJoinCode] = useState(() => (searchParams.get('code') ?? '').slice(0, 40));
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);

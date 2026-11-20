@@ -104,7 +104,7 @@ test.describe('Add student: richer profile', () => {
     await dialog.getByLabel(/Student email/).fill(email);
     await dialog.getByRole('button', { name: 'Add Student' }).click();
     await expect(dialog).not.toBeVisible({ timeout: 8_000 });
-    await expect(page.getByRole('status')).toContainText(`A login link was sent to ${email}`);
+    await expect(page.getByRole('status')).toContainText(`A login was created for ${email}`);
   });
 
   test('the student is still added when the login cannot be made, and the reason shows', async ({

@@ -11,6 +11,9 @@ const userSchema = new mongoose.Schema(
     // claiming, confirming an email change).
     emailBouncedAt: { type: Date },
     emailBounceReason: { type: String },
+    // Last time a claim (set-your-password) link was mailed. Unset = never sent, which is
+    // how an admin tells "login created, not yet invited" from "invited, not claimed".
+    claimEmailSentAt: { type: Date },
     emailVerificationToken: { type: String, select: false },
     emailVerificationExpires: { type: Date, select: false },
     // An email change is a two-phase confirm: the new address lands here and

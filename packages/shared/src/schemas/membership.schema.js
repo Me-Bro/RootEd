@@ -24,6 +24,12 @@ export const studentAccountSchema = z
   .object({ email: z.string().trim().toLowerCase().email() })
   .strict();
 
+// Bulk "send login emails": an explicit list, or omit it for every student whose login was
+// created but never mailed.
+export const sendStudentLoginsSchema = z
+  .object({ studentIds: z.array(objectId).min(1).max(1000).optional() })
+  .strict();
+
 // A staff member added straight away, with a login they claim by email.
 export const addMemberSchema = z
   .object({

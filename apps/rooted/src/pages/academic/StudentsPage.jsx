@@ -399,6 +399,16 @@ export default function StudentsPage() {
     },
   });
 
+  const [loginsMessage, setLoginsMessage] = useState('');
+  const sendLogins = useMutation({
+    mutationFn: () => api.post('/academic/students/send-logins').then((r) => r.data),
+    onSuccess: ({ sent }) => {
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      setLoginsMessage(t('academic.students.loginsSent', { count: sent }));
+    },
+    onError: () => setLoginsMessage(t('academic.students.loginsSendFailed')),
+  });
+
   function handleExpandClass(classId) {
     initialResolvedRef.current = true;
     const opening = classId !== drillClassId;
@@ -450,10 +460,22 @@ export default function StudentsPage() {
                 e.target.value = '';
               }}
             />
+            <Button
+              variant="outline"
+              onClick={() => sendLogins.mutate()}
+              disabled={sendLogins.isPending}
+            >
+              {t('academic.students.sendLogins')}
+            </Button>
             <Button onClick={() => setShowAdd(true)}>{t('academic.students.addStudent')}</Button>
           </div>
         }
       />
+      {loginsMessage && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {loginsMessage}
+        </p>
+      )}
 
       <SearchField value={searchInput} onChange={setSearchInput} />
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import { useTranslation } from 'react-i18next';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api.js';
@@ -177,6 +178,19 @@ export default function JoinPolicyPage() {
               </span>
             </button>
             <p className="text-xs text-muted-foreground">{t('joinPolicy.codeHint')}</p>
+            {/* Scanning only opens the join page with the code filled in; the person
+                still confirms, and approval rules apply exactly as for a typed code. */}
+            <div className="flex w-fit flex-col gap-2 rounded-md border bg-white p-3">
+              <QRCodeSVG
+                value={`${window.location.origin}/orgs/join?code=${encodeURIComponent(code)}`}
+                size={176}
+                marginSize={2}
+                role="img"
+                title={t('joinPolicy.qrLabel')}
+                data-testid="join-qr"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">{t('joinPolicy.qrHint')}</p>
             <div>
               <Button variant="outline" disabled={rotate.isPending} onClick={() => rotate.mutate()}>
                 {t('joinPolicy.rotateCode')}
