@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Building2, Plus } from 'lucide-react';
+import { formatOrgCode } from '@rooted/shared/utils';
 import { useAuth } from '../../contexts/useAuth.js';
 import {
   Card,
@@ -74,7 +75,16 @@ export default function SelectTenantPage() {
                   onClick={() => handleSelect(tenant._id)}
                   className="w-full justify-start"
                 >
-                  {pendingId === tenant._id ? t('auth.entering') : tenant.name}
+                  <span className="flex min-w-0 flex-col items-start">
+                    <span className="truncate">
+                      {pendingId === tenant._id ? t('auth.entering') : tenant.name}
+                    </span>
+                    {tenant.orgCode && (
+                      <span className="font-mono text-xs font-normal tracking-wider text-muted-foreground">
+                        {formatOrgCode(tenant.orgCode)}
+                      </span>
+                    )}
+                  </span>
                 </Button>
               ))}
               {error && <p className="text-sm text-destructive">{error}</p>}

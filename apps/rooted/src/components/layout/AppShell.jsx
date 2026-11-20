@@ -359,6 +359,8 @@ function getNavGroups(t, orgType) {
     {
       label: t('nav.organization'),
       items: [
+        // No permission: every member may see who their organization is.
+        { to: '/tenant/profile', label: t('nav.orgProfile'), icon: Building2 },
         { to: '/tenant/members', label: t('nav.members'), icon: Users, permission: 'roles:read' },
         {
           to: '/tenant/join-policy',

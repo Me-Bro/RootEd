@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Building2, Check, ChevronDown, Plus } from 'lucide-react';
+import { formatOrgCode } from '@rooted/shared/utils';
 import { useAuth } from '../../contexts/useAuth.js';
 import { Button } from '../ui/Button.jsx';
 
@@ -94,8 +95,17 @@ export default function OrgSwitcher() {
                   size={14}
                   className={org._id === user?.tenantId ? 'opacity-100' : 'opacity-0'}
                 />
-                <span className="truncate">
-                  {pendingId === org._id ? t('auth.entering') : org.name}
+                {/* Name alone is not an identity: two orgs can share one. The
+                    code is what tells them apart. */}
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate">
+                    {pendingId === org._id ? t('auth.entering') : org.name}
+                  </span>
+                  {org.orgCode && (
+                    <span className="font-mono text-xs tracking-wider text-muted-foreground">
+                      {formatOrgCode(org.orgCode)}
+                    </span>
+                  )}
                 </span>
               </button>
             ))}

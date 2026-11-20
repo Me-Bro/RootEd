@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { formatOrgCode } from '@rooted/shared/utils';
 import { useAuth } from '@/contexts/useAuth.js';
 import { homeRoute } from '@/lib/access.js';
 import { Button } from '@/components/ui/Button.jsx';
@@ -53,7 +54,17 @@ export default function SelectCollegePage() {
               disabled={pendingId !== null}
               onClick={() => choose(org._id)}
             >
-              {pendingId === org._id ? t('auth.entering') : org.name}
+              <span className="flex min-w-0 flex-col items-start">
+                <span className="truncate">
+                  {pendingId === org._id ? t('auth.entering') : org.name}
+                </span>
+                {/* Two colleges can share a name; the code tells them apart. */}
+                {org.orgCode && (
+                  <span className="font-mono text-xs font-normal tracking-wider text-muted-foreground">
+                    {formatOrgCode(org.orgCode)}
+                  </span>
+                )}
+              </span>
             </Button>
           ))}
           {error && (
