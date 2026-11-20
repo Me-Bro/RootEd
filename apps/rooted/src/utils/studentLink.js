@@ -4,6 +4,7 @@
 const ORIGINS = {
   desk: { path: '/desk', labelKey: 'studyCenter.desk.backToDesk' },
   fees: { path: '/fee', labelKey: 'fee.collection.backToFees' },
+  pending: { path: '/fee/pending', labelKey: 'pendingFees.backToPending' },
 };
 
 /** `to` and `state` for a <Link>/navigate() to a learner's page. `tab` opens that tab. */

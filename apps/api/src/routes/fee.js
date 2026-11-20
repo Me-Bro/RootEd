@@ -37,6 +37,12 @@ import { isBillingAssignment, dayStringOf } from '../utils/billingCycle.js';
 import { ledgersFor } from '../services/feePlanLedger.service.js';
 import { entitlementFor } from '../services/entitlement.service.js';
 import { dayPassSales, expiringPlans } from '../services/studyReports.service.js';
+import {
+  financeOverview,
+  monthlyCollection,
+  pendingFees,
+  resolveMonth,
+} from '../services/centreFinance.service.js';
 import { resolveCentreSettings } from '../utils/centreSettings.js';
 import { canApplyAdHocDiscount } from '../utils/discountPolicy.js';
 import { summarizeFeeCollection } from '../utils/feeCollectionSummary.js';
@@ -66,6 +72,8 @@ import {
   voidSaleSchema,
   entitlementQuerySchema,
   dayRangeQuerySchema,
+  financeMonthQuerySchema,
+  pendingFeesQuerySchema,
   expiringQuerySchema,
 } from '@rooted/shared/schemas';
 import { hasSeats } from '@rooted/shared/utils';
@@ -1165,6 +1173,50 @@ router.get(
   async (req, res, next) => {
     try {
       res.json(await expiringPlans(req.tenant, expiringQuerySchema.parse(req.query)));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// What learners still owe, per learner (default) or per month. Cycle plans are read
+// from their computed ledger, so this agrees with each learner's own fee page.
+router.get(
+  '/reports/pending',
+  requireSeatsOrg,
+  requirePermission('fees:read'),
+  async (req, res, next) => {
+    try {
+      res.json(await pendingFees(req.tenant, pendingFeesQuerySchema.parse(req.query)));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// The centre's own money is the owner's to see: collected, spent and what is left.
+router.get(
+  '/reports/monthly-collection',
+  requireSeatsOrg,
+  requirePermission('tenant:admin'),
+  async (req, res, next) => {
+    try {
+      const { month } = financeMonthQuerySchema.parse(req.query);
+      res.json(await monthlyCollection(req.tenant, resolveMonth(req.tenant, month)));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/reports/finance-overview',
+  requireSeatsOrg,
+  requirePermission('tenant:admin'),
+  async (req, res, next) => {
+    try {
+      const { month } = financeMonthQuerySchema.parse(req.query);
+      res.json(await financeOverview(req.tenant, resolveMonth(req.tenant, month)));
     } catch (err) {
       next(err);
     }

@@ -57,6 +57,7 @@ import { AttendanceRecord } from '../models/AttendanceRecord.js';
 import { FeeAssignment } from '../models/FeeAssignment.js';
 import { FeePayment } from '../models/FeePayment.js';
 import { FeeDiscount } from '../models/FeeDiscount.js';
+import { ExpenseEntry } from '../models/ExpenseEntry.js';
 import { FeatureFlag } from '../models/FeatureFlag.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { Feedback } from '../models/Feedback.js';
@@ -702,6 +703,92 @@ async function run() {
           outAt: new Date(inAt.getTime() + minutes * 60 * 1000),
           recordedBy: users.studyDesk._id,
           entitlementAtCheckIn: 'valid',
+        },
+      },
+      { upsert: true, ...BYPASS_SC }
+    );
+  }
+
+  // Money reports (finance + pending fees): one learner who has been on a 1500/month plan
+  // since the first of the month before last. They paid 500 of the first cycle, nothing
+  // since, so they owe 1000 + 1500 overdue and 1500 on the current cycle (4000), whatever
+  // day the seed runs. Seeded expenses sit on the 1st and 2nd of this month and the 1st
+  // of last (centre calendar), so the owner's Finance page always has two months to show.
+  const firstOfMonth = (monthsBack) =>
+    new Date(Date.UTC(istNow.getUTCFullYear(), istNow.getUTCMonth() - monthsBack, 1));
+  studyMembers.studyOverdue = await Student.findOneAndUpdate(
+    { tenantId: studyTenantId, admissionNo: 'SC-004' },
+    {
+      $setOnInsert: {
+        tenantId: studyTenantId,
+        admissionNo: 'SC-004',
+        firstName: 'Overdue',
+        lastName: 'Learner',
+        phone: '9000000004',
+        kind: 'member',
+        status: 'active',
+      },
+    },
+    { upsert: true, new: true, ...BYPASS_SC }
+  ).lean();
+  const overduePlan = await FeeAssignment.findOneAndUpdate(
+    { tenantId: studyTenantId, studentId: studyMembers.studyOverdue._id },
+    {
+      $setOnInsert: {
+        tenantId: studyTenantId,
+        studentId: studyMembers.studyOverdue._id,
+        feeStructureId: studyPlans['Seat monthly']._id,
+        academicYearId: studyYear._id,
+        totalAmount: 1500,
+        billing: {
+          segments: [
+            {
+              feeStructureId: studyPlans['Seat monthly']._id,
+              cycle: 'monthly',
+              amount: 1500,
+              from: firstOfMonth(2),
+            },
+          ],
+          pauses: [],
+        },
+      },
+    },
+    { upsert: true, new: true, ...BYPASS_SC }
+  ).lean();
+  await FeePayment.findOneAndUpdate(
+    { tenantId: studyTenantId, receiptNumber: 'RCP-SEED-STUDY-0099' },
+    {
+      $setOnInsert: {
+        tenantId: studyTenantId,
+        assignmentId: overduePlan._id,
+        studentId: studyMembers.studyOverdue._id,
+        amount: 500,
+        paymentMethod: 'upi',
+        receiptNumber: 'RCP-SEED-STUDY-0099',
+        paymentDate: new Date(firstOfMonth(2).getTime() + 4 * dayMs),
+        collectedBy: users.studyDesk._id,
+      },
+    },
+    { upsert: true, ...BYPASS_SC }
+  );
+  for (const [title, category, amount, date] of [
+    ['Seed rent', 'rent', 20000, firstOfMonth(0)],
+    ['Seed electricity', 'electricity', 3500, new Date(firstOfMonth(0).getTime() + dayMs)],
+    ['Seed rent (last month)', 'rent', 20000, firstOfMonth(1)],
+  ]) {
+    await ExpenseEntry.findOneAndUpdate(
+      { tenantId: studyTenantId, title },
+      {
+        $setOnInsert: {
+          tenantId: studyTenantId,
+          title,
+          category,
+          amount,
+          invoiceDate: date,
+          paymentMethod: 'bank_transfer',
+          submittedBy: users.studyOwner._id,
+          status: 'approved',
+          approvalChain: [],
         },
       },
       { upsert: true, ...BYPASS_SC }

@@ -13,3 +13,4 @@ export * from './roadmap.schema.js';
 export * from './studyCenter.schema.js';
 export * from './student.schema.js';
 export * from './reportCard.schema.js';
+export * from './expense.schema.js';

@@ -53,7 +53,9 @@
     "accountSettings": "Account settings",
     "helpSupport": "Help & support",
     "subjects": "Subjects",
-    "emailLogs": "Email Logs"
+    "emailLogs": "Email Logs",
+    "pendingFees": "Pending fees",
+    "finance": "Finance"
   },
   "auth": {
     "login": "Login",
@@ -335,6 +337,24 @@
         "step1": "Open Front desk.",
         "step2": "Find the learner and click Check in. A warning shows if their plan is unpaid or has ended, but you can still check them in.",
         "step3": "Click Check out when they leave. At closing time the owner can use Check out everyone."
+      },
+      "addExpense": {
+        "title": "Record an expense",
+        "step1": "Open Expenses and click Add expense.",
+        "step2": "Choose the category (rent, electricity, salary and so on), enter the amount and the date.",
+        "step3": "Save. It counts in that month's total straight away; you can edit or delete it later."
+      },
+      "pendingFees": {
+        "title": "See who owes fees",
+        "step1": "Open Pending fees.",
+        "step2": "Student-wise lists every learner with something due, largest first. Search by name or phone.",
+        "step3": "Month-wise shows, for each month, what was billed, what was paid and what is still pending."
+      },
+      "monthlyMoney": {
+        "title": "Check the month's money",
+        "step1": "Open Finance and pick the month.",
+        "step2": "See what was collected, what was spent and what is left over.",
+        "step3": "The chart compares the last six months; use View as table for exact figures."
       }
     }
   },
@@ -1573,6 +1593,46 @@
       "tableRemaining": "Remaining",
       "tableUtilization": "Utilization",
       "noneConfigured": "No budgets configured"
+    },
+    "centre": {
+      "title": "Expenses",
+      "description": "What the centre spends: rent, electricity, salaries and more.",
+      "add": "Add expense",
+      "edit": "Edit expense",
+      "editTitle": "Edit expense",
+      "addTitle": "Add an expense",
+      "category": "Category",
+      "amount": "Amount (₹)",
+      "date": "Date",
+      "note": "Note",
+      "noteHint": "Optional, e.g. October bill",
+      "vendor": "Paid to",
+      "paymentMethod": "Paid by",
+      "save": "Save",
+      "saving": "Saving…",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this expense? This cannot be undone.",
+      "deleted": "Expense deleted",
+      "saved": "Expense saved",
+      "saveFailed": "Could not save the expense",
+      "deleteFailed": "Could not delete the expense",
+      "loadFailed": "Could not load expenses",
+      "month": "Month",
+      "total": "Total this month",
+      "count_one": "{{count}} entry",
+      "count_other": "{{count}} entries",
+      "none": "No expenses recorded for this month.",
+      "actions": "Actions",
+      "categories": {
+        "rent": "Rent",
+        "electricity": "Electricity",
+        "salary": "Salary",
+        "internet": "Internet",
+        "maintenance": "Maintenance",
+        "supplies": "Supplies",
+        "marketing": "Marketing",
+        "other": "Other"
+      }
     }
   },
   "inventory": {
@@ -3125,6 +3185,61 @@
           "body": "{{company}}\nEmail: {{contactEmail}}"
         }
       }
+    }
+  },
+  "finance": {
+    "title": "Finance",
+    "description": "What came in, what went out and what learners still owe.",
+    "month": "Month",
+    "collected": "Collected",
+    "spent": "Spent",
+    "net": "Left over",
+    "owed": "Still owed",
+    "netNegative": "Spent more than collected this month",
+    "owedHint": "{{overdue}} overdue · {{count}} learners",
+    "seeExpenses": "See expenses",
+    "trend": "Last 6 months",
+    "legend": "Legend",
+    "chartLabel": "Collected and spent for each of the last six months",
+    "viewTable": "View as table",
+    "viewChart": "View as chart",
+    "byCategory": "Spending by category",
+    "byMethod": "Collection by payment method",
+    "noSpend": "Nothing spent this month.",
+    "noCollection": "Nothing collected this month.",
+    "methodCheque": "Cheque",
+    "note": "Collected is fees received in the month (refunds left out). Spent is expenses recorded for the month. Salaries count only when you record them under Expenses."
+  },
+  "pendingFees": {
+    "title": "Pending fees",
+    "description": "Learners who owe fees, and how the dues build up month by month.",
+    "backToPending": "Back to pending fees",
+    "byStudent": "Student-wise",
+    "byMonth": "Month-wise",
+    "totalPending": "Total pending",
+    "overdue": "Overdue",
+    "learnersOwing": "Learners owing",
+    "search": "Search",
+    "searchHint": "Name, admission number or phone",
+    "learner": "Learner",
+    "admissionNo": "Admission no.",
+    "phone": "Phone",
+    "currentCycle": "Current cycle",
+    "pending": "Pending",
+    "oldest": "Oldest unpaid",
+    "overdueShort": "Overdue {{amount}}",
+    "currentShort": "Current {{amount}}",
+    "since": "since {{month}}",
+    "noneStudent": "No learner owes anything.",
+    "noneMonth": "Nothing has been billed yet.",
+    "month": "Month",
+    "billed": "Billed",
+    "collected": "Collected",
+    "monthNote": "A cycle counts in the month it falls due. Payments settle the oldest cycle first.",
+    "monthMeta": "Billed {{billed}} · paid {{paid}} · {{count}} owing",
+    "status": {
+      "closed": "Closed",
+      "running": "Running"
     }
   }
 }
