@@ -35,7 +35,7 @@ export default function SelectTenantPage() {
     setPendingId(tenantId);
     try {
       await selectTenant(tenantId);
-      navigate('/dashboard');
+      navigate('/home');
     } catch (err) {
       setError(err.response?.data?.error || err.message || t('auth.couldNotActivateTenant'));
     } finally {

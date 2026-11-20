@@ -42,6 +42,7 @@
     "joinPolicy": "Joining",
     "closeOrg": "Close organization",
     "orgProfile": "Organization profile",
+    "home": "Home",
     "centreSettings": "Centre settings",
     "reportCardSettings": "Report card design",
     "seats": "Seats",
@@ -2973,6 +2974,11 @@
     "policyHint_staff": "Everyone with fee management access, as before.",
     "saved": "Settings saved.",
     "saveFailed": "Could not save the settings."
+  },
+  "orgHome": {
+    "shortcuts": "Shortcuts",
+    "completeProfile": "Complete your profile",
+    "emptyAdmin": "Your organization has not added its profile yet. Add an address, contact details and a logo so people can recognize it."
   },
   "orgProfile": {
     "title": "Organization profile",

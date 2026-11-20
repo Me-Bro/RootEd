@@ -37,10 +37,10 @@ export default function OrgSwitcher() {
     try {
       await selectTenant(tenantId);
       setOpen(false);
-      // Land on the dashboard rather than whatever page was open: the current
-      // route may not exist for this organization's modules or the caller's
-      // roles in it.
-      navigate('/dashboard');
+      // Land on the organization's home rather than whatever page was open: the
+      // current route may not exist for this organization's modules or the
+      // caller's roles in it, and the home page says which org this now is.
+      navigate('/home');
     } finally {
       setPendingId(null);
     }
