@@ -13,7 +13,6 @@ export default function HelpDrawer() {
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const topics = useHelpTopics();
-  if (topics.length === 0) return null;
 
   const { here, rest } = topicsForPath(topics, pathname);
   const close = () => setOpen(false);
@@ -50,9 +49,15 @@ export default function HelpDrawer() {
                 <HelpTopicList topics={rest} onNavigate={close} />
               </section>
             )}
+            {topics.length === 0 && (
+              <p className="text-sm text-muted-foreground">{t('help.empty')}</p>
+            )}
             <Link to="/help" onClick={close} className="w-fit text-sm font-medium underline">
-              {t('help.seeAll')}
+              {topics.length > 0 ? t('help.seeAll') : t('help.support.heading')}
             </Link>
+            {topics.length > 0 && (
+              <p className="text-sm text-muted-foreground">{t('help.support.drawerHint')}</p>
+            )}
           </div>
         </SheetContent>
       </Sheet>
