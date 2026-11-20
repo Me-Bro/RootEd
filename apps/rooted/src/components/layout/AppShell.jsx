@@ -80,6 +80,8 @@ const STUDY_CENTER_HIDDEN = new Set([
   '/me/attendance',
   // Plan sales are not offered yet (the front desk is).
   '/fee/sell',
+  // One owner and no approval chain: budgets and cost centers are a school's.
+  '/expense/budgets',
 ]);
 
 function getNavGroups(t, orgType) {
@@ -311,6 +313,20 @@ function getNavGroups(t, orgType) {
           to: '/fee/discounts',
           label: t('nav.discounts'),
           icon: CreditCard,
+          permission: 'tenant:admin',
+          seatsOnly: true,
+        },
+        {
+          to: '/fee/pending',
+          label: t('nav.pendingFees'),
+          icon: CreditCard,
+          permission: 'fees:read',
+          seatsOnly: true,
+        },
+        {
+          to: '/fee/finance',
+          label: t('nav.finance'),
+          icon: PieChart,
           permission: 'tenant:admin',
           seatsOnly: true,
         },

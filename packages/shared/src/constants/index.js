@@ -52,7 +52,7 @@ export const ORG_TYPE_CONFIG = {
     terms: { classLevel: 'Batch', section: 'Group', student: 'Learner' },
   },
   study_center: {
-    enabledModules: ['academic', 'staff', 'fee', 'billing'],
+    enabledModules: ['academic', 'staff', 'expense', 'fee', 'billing'],
     // One tier only: a batch is the shift, so there is no "Group" under it. Each batch
     // keeps one hidden Section (services/batch.service.js); `section` is never shown.
     terms: { classLevel: 'Batch', section: 'Batch', student: 'Learner' },
@@ -60,6 +60,19 @@ export const ORG_TYPE_CONFIG = {
 };
 
 export const ORG_TYPES = Object.keys(ORG_TYPE_CONFIG);
+
+// A study center records what it spends against a fixed list, so "electricity" is
+// one line in the monthly totals however it was typed. Schools keep free text.
+export const CENTRE_EXPENSE_CATEGORIES = [
+  'rent',
+  'electricity',
+  'internet',
+  'salary',
+  'maintenance',
+  'supplies',
+  'marketing',
+  'other',
+];
 
 // A study center has no school year, but fee plans and discounts need an academic
 // year to hang from, so one long-running year is created for it. Nothing reads a

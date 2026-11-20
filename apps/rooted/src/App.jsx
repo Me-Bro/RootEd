@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'rea
 import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import i18n from './i18n/index.js';
-import { isModuleEnabled } from '@rooted/shared/utils';
+import { hasSeats, isModuleEnabled } from '@rooted/shared/utils';
 import { AuthProvider } from './contexts/AuthContext.jsx';
 import { useAuth } from './contexts/useAuth.js';
 import HomePage from './pages/marketing/HomePage.jsx';
@@ -31,6 +31,8 @@ import SellPage from './pages/fee/SellPage.jsx';
 import FrontDeskPage from './pages/academic/FrontDeskPage.jsx';
 import StudyCenterReportsPage from './pages/academic/StudyCenterReportsPage.jsx';
 import DiscountsPage from './pages/fee/DiscountsPage.jsx';
+import FinancePage from './pages/fee/FinancePage.jsx';
+import PendingFeesPage from './pages/fee/PendingFeesPage.jsx';
 import SeatMapPage from './pages/academic/SeatMapPage.jsx';
 import MySeatPage from './pages/me/MySeatPage.jsx';
 import AppShell from './components/layout/AppShell.jsx';
@@ -69,6 +71,7 @@ import LeaveRequestsPage from './pages/staff/LeaveRequestsPage.jsx';
 import SalaryPage from './pages/staff/SalaryPage.jsx';
 import SalaryStructuresPage from './pages/staff/SalaryStructuresPage.jsx';
 import ExpensesPage from './pages/expense/ExpensesPage.jsx';
+import CentreExpensesPage from './pages/expense/CentreExpensesPage.jsx';
 import BudgetsPage from './pages/expense/BudgetsPage.jsx';
 import FeesPage from './pages/fee/FeesPage.jsx';
 import FeeStructuresPage from './pages/fee/FeeStructuresPage.jsx';
@@ -153,6 +156,13 @@ function RequireModuleEnabled({ moduleName, children }) {
   if (loading) return null;
   if (!isModuleEnabled(user, moduleName)) return <RouteStatus kind="moduleOff" />;
   return children;
+}
+
+// A study center records expenses on one simple page; every other org keeps the
+// approval-queue page.
+function ExpensesRoute() {
+  const { user } = useAuth();
+  return hasSeats(user?.orgType) ? <CentreExpensesPage /> : <ExpensesPage />;
 }
 
 function RequirePermission({ permission, children }) {
@@ -496,7 +506,7 @@ function AppRoutes() {
             path="/expense"
             element={
               <RequirePermission permission="expense:read">
-                <ExpensesPage />
+                <ExpensesRoute />
               </RequirePermission>
             }
           />
@@ -630,6 +640,22 @@ function AppRoutes() {
           element={
             <RequirePermission permission="tenant:admin">
               <DiscountsPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/fee/pending"
+          element={
+            <RequirePermission permission="fees:read">
+              <PendingFeesPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/fee/finance"
+          element={
+            <RequirePermission permission="tenant:admin">
+              <FinancePage />
             </RequirePermission>
           }
         />

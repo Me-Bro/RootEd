@@ -57,6 +57,15 @@ export function localDayString(date = new Date()) {
 export function localMonthString(date = new Date()) {
   return localDayString(date).slice(0, 7);
 }
+// "2026-11" as "Nov 2026". Built in UTC so no timezone can shift it into another month.
+export function formatMonth(month) {
+  const [y, m] = month.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-IN', {
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
 export function daysAgoString(days, date = new Date()) {
   const d = new Date(date.getFullYear(), date.getMonth(), date.getDate() - days);
   return localDayString(d);

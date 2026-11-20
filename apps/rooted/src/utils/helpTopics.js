@@ -185,6 +185,36 @@ export const HELP_TOPICS = [
     module: 'academic',
     paths: ['/desk', '/dashboard'],
   },
+  {
+    key: 'addExpense',
+    group: 'daily',
+    audience: 'centre',
+    steps: 3,
+    to: '/expense',
+    permission: 'expense:write',
+    module: 'expense',
+    paths: ['/expense'],
+  },
+  {
+    key: 'pendingFees',
+    group: 'daily',
+    audience: 'centre',
+    steps: 3,
+    to: '/fee/pending',
+    permission: 'fees:read',
+    module: 'fee',
+    paths: ['/fee/pending'],
+  },
+  {
+    key: 'monthlyMoney',
+    group: 'daily',
+    audience: 'centre',
+    steps: 3,
+    to: '/fee/finance',
+    permission: 'tenant:admin',
+    module: 'fee',
+    paths: ['/fee/finance'],
+  },
 ];
 
 /**

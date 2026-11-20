@@ -14,8 +14,18 @@ import {
 } from '../services/expense.service.js';
 import { uploadBuffer } from '../services/storage.service.js';
 import { auditLog } from '../services/audit.service.js';
+import { validate } from '../middleware/validate.js';
 import { decryptField } from '../utils/fieldEncryption.js';
 import { scheduleEscalation } from '../workers/expenseEscalation.worker.js';
+import { hasSeats } from '@rooted/shared/utils';
+import {
+  createCentreExpenseSchema,
+  financeMonthQuerySchema,
+  updateCentreExpenseSchema,
+} from '@rooted/shared/schemas';
+import { dayKeyInTz } from '../utils/dayKey.js';
+import { requireSeatsOrg } from '../middleware/requireSeatsOrg.js';
+import { expenseSummary, resolveMonth } from '../services/centreFinance.service.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -44,6 +54,131 @@ router.get('/cost-centers', requirePermission('expense:read'), async (req, res, 
 });
 
 // ── Expense Entries ───────────────────────────────────────────────────────────
+
+// A study center has one owner and no approval chain: an expense is recorded as
+// approved straight away, against the fixed category list, on a centre-calendar day
+// (`invoiceDate` holds that day as a UTC-midnight Date, like every other day key).
+// These handlers sit in front of the school ones and call next('route') for other orgs.
+const centreOnly = (req, _res, next) => (hasSeats(req.tenant.orgType) ? next() : next('route'));
+
+function centreEntryFields(body, timezone, { creating = false } = {}) {
+  const fields = {};
+  if (body.category !== undefined) fields.category = body.category;
+  if (body.amount !== undefined) fields.amount = body.amount;
+  if (body.paymentMethod !== undefined) fields.paymentMethod = body.paymentMethod;
+  if (body.vendor !== undefined) fields.vendor = body.vendor || undefined;
+  if (body.title !== undefined) fields.title = body.title;
+  if (body.date !== undefined) fields.invoiceDate = new Date(body.date);
+  else if (creating) fields.invoiceDate = dayKeyInTz(new Date(), timezone);
+  return fields;
+}
+
+// A month's spending by category, with the last six months beside it.
+router.get(
+  '/summary',
+  requireSeatsOrg,
+  requirePermission('expense:read'),
+  async (req, res, next) => {
+    try {
+      const { month } = financeMonthQuerySchema.parse(req.query);
+      res.json(await expenseSummary(req.tenant, resolveMonth(req.tenant, month)));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/entries',
+  requirePermission('expense:write'),
+  centreOnly,
+  validate(createCentreExpenseSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const fields = centreEntryFields(req.body, req.tenant.timezone, { creating: true });
+      const entry = await ExpenseEntry.create({
+        tenantId,
+        ...fields,
+        title: fields.title || fields.category,
+        submittedBy: req.user.sub,
+        status: 'approved',
+        approvalChain: [],
+      });
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'expense.create',
+        target: { model: 'ExpenseEntry', id: entry._id },
+        after: entry.toObject(),
+        ip: req.ip,
+      });
+      res.status(201).json(entry);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.patch(
+  '/entries/:id',
+  requirePermission('expense:write'),
+  centreOnly,
+  validate(updateCentreExpenseSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const before = await ExpenseEntry.findOne({ _id: req.params.id, tenantId }).lean();
+      if (!before) return res.status(404).json({ error: 'Not found' });
+      const fields = centreEntryFields(req.body, req.tenant.timezone);
+      // Changing the category without a title keeps the title in step with it.
+      if (fields.category && fields.title === undefined && before.title === before.category) {
+        fields.title = fields.category;
+      }
+      const entry = await ExpenseEntry.findOneAndUpdate(
+        { _id: req.params.id, tenantId },
+        { $set: fields },
+        { new: true }
+      );
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'expense.update',
+        target: { model: 'ExpenseEntry', id: entry._id },
+        before,
+        after: entry.toObject(),
+        ip: req.ip,
+      });
+      res.json(entry);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.delete(
+  '/entries/:id',
+  requirePermission('expense:write'),
+  centreOnly,
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const before = await ExpenseEntry.findOneAndDelete({ _id: req.params.id, tenantId }).lean();
+      if (!before) return res.status(404).json({ error: 'Not found' });
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'expense.delete',
+        target: { model: 'ExpenseEntry', id: before._id },
+        before,
+        ip: req.ip,
+      });
+      res.status(204).end();
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.post('/entries', requirePermission('expense:write'), async (req, res, next) => {
   try {
