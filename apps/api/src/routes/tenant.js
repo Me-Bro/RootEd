@@ -16,14 +16,20 @@ import {
   updateJoinPolicySchema,
   centreSettingsSchema,
   reportCardSettingsSchema,
+  tenantProfileSchema,
 } from '@rooted/shared/schemas';
 import { hasSeats } from '@rooted/shared/utils';
 import { resolveCentreSettings } from '../utils/centreSettings.js';
 import { resolveReportCardConfig } from '../utils/reportCardConfig.js';
-import { uploadBuffer, removeObject } from '../services/storage.service.js';
+import { uploadBuffer, removeObject, getSignedUrl } from '../services/storage.service.js';
+import { ensureOrgCode } from '../services/orgCode.service.js';
 import { authenticate } from '../middleware/authenticate.js';
 import { validate } from '../middleware/validate.js';
-import { requirePermission, invalidatePermissions } from '../middleware/requirePermission.js';
+import {
+  requirePermission,
+  invalidatePermissions,
+  userHasPermission,
+} from '../middleware/requirePermission.js';
 import { Role } from '../models/Role.js';
 import { Student } from '../models/Student.js';
 import { Invite } from '../models/Invite.js';
@@ -121,6 +127,25 @@ router.get('/audit', requirePermission('audit:read'), async (req, res, next) => 
 
 // ── Tenant Settings ───────────────────────────────────────────────────────────
 
+/**
+ * The org profile as a client may see it: the storage key becomes a short-lived
+ * signed URL (a failure there drops the logo, not the response), and the
+ * registration number goes only to tenant:admin.
+ */
+async function presentProfile(profile, isAdmin) {
+  const { logoKey, registrationNumber, ...rest } = profile ?? {};
+  const out = { ...rest };
+  if (isAdmin && registrationNumber) out.registrationNumber = registrationNumber;
+  if (logoKey) {
+    try {
+      out.logoUrl = await getSignedUrl(logoKey);
+    } catch (err) {
+      logger.warn({ err }, 'Could not sign the org logo url');
+    }
+  }
+  return out;
+}
+
 router.get('/settings', async (req, res, next) => {
   try {
     // joinPolicy is withheld: this route has no permission check, so returning
@@ -128,6 +153,13 @@ router.get('/settings', async (req, res, next) => {
     // exposed only through GET /tenant/join-policy, behind tenant:admin.
     const tenant = { ...req.tenant };
     delete tenant.joinPolicy;
+    // Created between a deploy and the backfill migration: give it a code now,
+    // so the UI never has to render an org without one.
+    tenant.orgCode = tenant.orgCode ?? (await ensureOrgCode(tenant._id));
+    tenant.profile = await presentProfile(
+      tenant.profile,
+      await userHasPermission(req, 'tenant:admin')
+    );
     // Study centers also get the centre settings with defaults filled in, so the
     // settings page never has to know what an unsaved value means.
     if (hasSeats(tenant.orgType)) tenant.centre = resolveCentreSettings(req.tenant);
@@ -147,7 +179,25 @@ const settingsUpdateSchema = z.object({
   centre: centreSettingsSchema.optional(),
   // Report card preset, branding text and signatories. The logo has its own route.
   reportCard: reportCardSettingsSchema.optional(),
+  // Address, contact details and description. The logo has its own route.
+  profile: tenantProfileSchema.optional(),
+  // The code is permanent. Named here only so a request that sends one is
+  // refused outright instead of having the key silently dropped.
+  orgCode: z.never({ message: 'Organization code cannot be changed' }).optional(),
 });
+
+const PROFILE_AUDIT_KEYS = [
+  'description',
+  'phone',
+  'email',
+  'website',
+  'registrationNumber',
+  'address',
+];
+const pickProfile = (profile) =>
+  Object.fromEntries(
+    PROFILE_AUDIT_KEYS.filter((k) => profile?.[k] !== undefined).map((k) => [k, profile[k]])
+  );
 
 router.patch('/settings', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
@@ -167,8 +217,25 @@ router.patch('/settings', requirePermission('tenant:admin'), async (req, res, ne
       }
     }
 
-    const { centre, reportCard, ...rest } = updates;
+    const { centre, reportCard, profile, ...rest } = updates;
     const $set = { ...rest };
+    const $unset = {};
+    // Written key by key, so saving the address keeps the phone. An empty
+    // string clears the key rather than storing a blank.
+    const writeProfileKey = (path, value) => {
+      if (value === '') $unset[path] = '';
+      else $set[path] = value;
+    };
+    if (profile) {
+      for (const [key, value] of Object.entries(profile)) {
+        if (key === 'address') {
+          for (const [part, v] of Object.entries(value))
+            writeProfileKey(`profile.address.${part}`, v);
+        } else {
+          writeProfileKey(`profile.${key}`, value);
+        }
+      }
+    }
     // Written key by key, like centre, so saving the accent color keeps the preset.
     if (reportCard) {
       for (const [key, value] of Object.entries(reportCard)) {
@@ -186,9 +253,24 @@ router.patch('/settings', requirePermission('tenant:admin'), async (req, res, ne
       for (const [key, value] of Object.entries(centre)) $set[`settings.centre.${key}`] = value;
     }
 
-    const tenant = await Tenant.findByIdAndUpdate(req.tenant._id, { $set }, { new: true });
+    const update = { $set, ...(Object.keys($unset).length ? { $unset } : {}) };
+    const tenant = await Tenant.findByIdAndUpdate(req.tenant._id, update, { new: true }).lean();
     if (!tenant) throw new AppError('Tenant not found', 404);
-    res.json(tenant);
+
+    if (profile) {
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: String(req.tenant._id),
+        action: 'tenant.profile_update',
+        target: { model: 'Tenant', id: String(req.tenant._id) },
+        before: { profile: pickProfile(req.tenant.profile) },
+        after: { profile: pickProfile(tenant.profile) },
+        ip: req.ip,
+      });
+    }
+    // The caller passed requirePermission('tenant:admin'), so the registration
+    // number stays in; the logo key still becomes a signed URL.
+    res.json({ ...tenant, profile: await presentProfile(tenant.profile, true) });
   } catch (err) {
     next(err);
   }
@@ -296,6 +378,77 @@ router.delete('/report-card/logo', requirePermission('tenant:admin'), async (req
       ip: req.ip,
     });
     res.json(resolveReportCardConfig(tenant));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Org profile logo ──────────────────────────────────────────────────────────
+// Separate from the report card logo: that one is a print branding choice and
+// may differ. Same file rules, same storage prefix.
+
+router.post(
+  '/profile/logo',
+  requirePermission('tenant:admin'),
+  receiveLogo,
+  async (req, res, next) => {
+    try {
+      if (!req.file) throw new AppError('Attach a PNG or JPEG file in the "logo" field', 400);
+      const type = sniffLogo(req.file.buffer);
+      if (!type) throw new AppError('Logo must be a PNG or JPEG image', 400);
+
+      const tenantId = req.tenant._id.toString();
+      const previous = req.tenant.profile?.logoKey;
+      const key = `branding/${tenantId}/org-logo-${Date.now()}.${type.ext}`;
+      await uploadBuffer(key, req.file.buffer, type.mime);
+
+      const tenant = await Tenant.findByIdAndUpdate(
+        req.tenant._id,
+        { $set: { 'profile.logoKey': key } },
+        { new: true }
+      ).lean();
+      await dropLogoObject(tenantId, previous);
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId,
+        action: 'tenant.logo_set',
+        target: { model: 'Tenant', id: tenantId },
+        before: { logoKey: previous ?? null },
+        after: { logoKey: key },
+        ip: req.ip,
+      });
+      res.json({ profile: await presentProfile(tenant.profile, true) });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.delete('/profile/logo', requirePermission('tenant:admin'), async (req, res, next) => {
+  try {
+    const tenantId = req.tenant._id.toString();
+    const previous = req.tenant.profile?.logoKey;
+    if (!previous) {
+      return res.json({ profile: await presentProfile(req.tenant.profile, true) });
+    }
+
+    const tenant = await Tenant.findByIdAndUpdate(
+      req.tenant._id,
+      { $unset: { 'profile.logoKey': '' } },
+      { new: true }
+    ).lean();
+    await dropLogoObject(tenantId, previous);
+
+    await auditLog({
+      actorId: req.user.sub,
+      tenantId,
+      action: 'tenant.logo_remove',
+      target: { model: 'Tenant', id: tenantId },
+      before: { logoKey: previous },
+      ip: req.ip,
+    });
+    res.json({ profile: await presentProfile(tenant.profile, true) });
   } catch (err) {
     next(err);
   }

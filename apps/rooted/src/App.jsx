@@ -26,6 +26,8 @@ import JoinPolicyPage from './pages/tenant/JoinPolicyPage.jsx';
 import CloseOrgPage from './pages/tenant/CloseOrgPage.jsx';
 import CentreSettingsPage from './pages/tenant/CentreSettingsPage.jsx';
 import ReportCardSettingsPage from './pages/tenant/ReportCardSettingsPage.jsx';
+import OrgProfilePage from './pages/tenant/OrgProfilePage.jsx';
+import OrgHomePage from './pages/org/OrgHomePage.jsx';
 import SeatsPage from './pages/academic/SeatsPage.jsx';
 import SellPage from './pages/fee/SellPage.jsx';
 import FrontDeskPage from './pages/academic/FrontDeskPage.jsx';
@@ -229,6 +231,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
+        <Route path="/home" element={<OrgHomePage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route
           path="/tenants"
@@ -699,6 +702,9 @@ function AppRoutes() {
             </RequirePermission>
           }
         />
+        {/* No permission: every member may read their org's profile; only
+            tenant:admin sees the edit form (the page checks it itself). */}
+        <Route path="/tenant/profile" element={<OrgProfilePage />} />
         <Route path="/setup" element={<SetupWizardPage />} />
         <Route path="*" element={<RouteStatus kind="notFound" />} />
       </Route>

@@ -32,9 +32,10 @@ test.describe('General-portal login — tenant picker', () => {
       timeout: 15_000,
     });
 
+    // Choosing an org lands on that org's home page.
     await page.getByRole('button', { name: 'Test School' }).click();
-    await page.waitForURL('**/dashboard', { timeout: 15_000 });
-    await expect(page).toHaveURL(/\/dashboard/);
+    await page.waitForURL('**/home', { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/home/);
   });
 
   test('the picker survives a reload', async ({ page }) => {

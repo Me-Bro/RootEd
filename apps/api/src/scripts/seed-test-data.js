@@ -63,6 +63,7 @@ import { AuditLog } from '../models/AuditLog.js';
 import { Feedback } from '../models/Feedback.js';
 import { CollegeEnquiry } from '../models/CollegeEnquiry.js';
 import { hashPassword } from '../services/auth.service.js';
+import { ensureOrgCode } from '../services/orgCode.service.js';
 
 const CLEAN = process.argv.includes('--clean');
 
@@ -169,6 +170,7 @@ async function run() {
     tenant = await Tenant.create({
       name: 'Test School',
       subdomain: 'testschool',
+      orgCode: 'TESTSCH2',
       plan: 'pro',
       status: 'active',
       locale: 'en',
@@ -178,6 +180,30 @@ async function run() {
     tenant = tenant.toObject();
   }
   const tenantId = tenant._id;
+
+  // A filled-in org profile on the main school, for the profile and home specs.
+  // The study center is left without one on purpose, to exercise the empty state.
+  await Tenant.updateOne(
+    { _id: tenantId },
+    {
+      $set: {
+        profile: {
+          description: 'A seeded test school used by the end-to-end specs.',
+          address: {
+            line1: '12 Station Road',
+            city: 'Pune',
+            state: 'Maharashtra',
+            pincode: '411001',
+            country: 'India',
+          },
+          phone: '+91 20 5555 0100',
+          email: 'office@testschool.local',
+          website: 'https://testschool.example',
+          registrationNumber: 'REG-TEST-0001',
+        },
+      },
+    }
+  );
 
   // The seeded school is a `school` orgType, which has no training module. An
   // explicit override (the list replaces the orgType default, so it names every
@@ -246,6 +272,7 @@ async function run() {
     secondTenant = await Tenant.create({
       name: 'Second School',
       subdomain: 'secondschool',
+      orgCode: 'SECOND22',
       plan: 'starter',
       status: 'active',
       locale: 'en',
@@ -308,6 +335,7 @@ async function run() {
     tuitionTenant = await Tenant.create({
       name: 'Tuition Center',
       subdomain: 'tuitioncenter',
+      orgCode: 'TUITION2',
       plan: 'starter',
       orgType: 'tuition_center',
       status: 'active',
@@ -354,6 +382,7 @@ async function run() {
       await Tenant.create({
         name: 'Study Center',
         subdomain: 'studycenter',
+        orgCode: 'STUDYCT2',
         plan: 'starter',
         orgType: 'study_center',
         status: 'active',
@@ -2617,6 +2646,11 @@ async function run() {
       doc = (await CollegeEnquiry.create(def)).toObject();
     }
     enquiries.push(doc);
+  }
+
+  // Tenants that survived a no-wipe re-seed from before org codes existed.
+  for (const id of [tenantId, secondTenantId, tuitionTenantId, studyTenantId]) {
+    await ensureOrgCode(id);
   }
 
   await mongoose.disconnect();

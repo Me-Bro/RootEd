@@ -11,6 +11,10 @@ const tenantSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     subdomain: { type: String, lowercase: true, trim: true },
+    // Permanent public identifier, shown beside the name wherever orgs are
+    // listed. Generated once (services/orgCode.service.js), never edited or
+    // rotated. Unrelated to joinPolicy.code, which is a revocable credential.
+    orgCode: { type: String, uppercase: true, trim: true, immutable: true },
     plan: {
       type: String,
       enum: PLANS,
@@ -34,6 +38,24 @@ const tenantSchema = new mongoose.Schema(
     timezone: { type: String, default: 'Asia/Kolkata' },
     currency: { type: String, default: 'INR' },
     settings: { type: mongoose.Schema.Types.Mixed, default: {} },
+    // Who the org is, for its members. Validated by tenantProfileSchema in
+    // packages/shared; logoKey is set only by the logo upload route.
+    profile: {
+      description: String,
+      address: {
+        line1: String,
+        line2: String,
+        city: String,
+        state: String,
+        pincode: String,
+        country: String,
+      },
+      phone: String,
+      email: String,
+      website: String,
+      registrationNumber: String,
+      logoKey: String,
+    },
     // Unlike every other secret in this codebase the join code is stored in
     // clear: it is meant to be displayed to an admin and read off a whiteboard,
     // so it has to be retrievable. It is a low-value credential — it buys a
@@ -60,6 +82,7 @@ const tenantSchema = new mongoose.Schema(
 );
 
 tenantSchema.index({ subdomain: 1 }, { unique: true, sparse: true });
+tenantSchema.index({ orgCode: 1 }, { unique: true, sparse: true });
 tenantSchema.index({ status: 1 });
 tenantSchema.index({ 'joinPolicy.code': 1 }, { unique: true, sparse: true });
 

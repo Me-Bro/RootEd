@@ -34,7 +34,14 @@ test('one active membership in an active tenant is returned', async () => {
   await TenantMembership.create({ tenantId: tenant._id, userId, roleIds: [], status: 'active' });
 
   const tenants = await getActiveTenantsForUser(userId);
-  expect(tenants).toEqual([{ _id: tenant._id.toString(), name: 'Acme', subdomain: 'auth-acme' }]);
+  expect(tenants).toEqual([
+    {
+      _id: tenant._id.toString(),
+      name: 'Acme',
+      subdomain: 'auth-acme',
+      orgCode: expect.stringMatching(/^[A-HJ-KM-NP-Z2-9]{8}$/),
+    },
+  ]);
 });
 
 test('memberships that are not active are excluded', async () => {

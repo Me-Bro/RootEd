@@ -121,6 +121,12 @@ export const JOIN_CODE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
 export const JOIN_CODE_LENGTH = 10;
 export const JOIN_CODE_PREFIX = 'RTED';
 
+// The permanent organization code. Unlike the join code it identifies an org,
+// grants nothing, and is shown to every member, so it is read aloud and typed
+// into support requests: 0/O and 1/I/L are all excluded rather than folded.
+export const ORG_CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+export const ORG_CODE_LENGTH = 8;
+
 export const PASSWORD_MIN_LENGTH = 8;
 
 export const USERNAME_MIN_LENGTH = 3;

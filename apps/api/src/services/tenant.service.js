@@ -14,6 +14,7 @@ import {
   storeResetToken,
   INVITE_TOKEN_TTL_MS,
 } from './auth.service.js';
+import { allocateOrgCode } from './orgCode.service.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { sendTenantInvite } from './email.service.js';
 import { env, getPortalHost } from '../config/env.js';
@@ -37,8 +38,9 @@ async function provisionTenant(
     ? { trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), isTrialActive: true }
     : {};
 
+  const orgCode = await allocateOrgCode();
   const [tenant] = await Tenant.create(
-    [{ name, subdomain, plan, orgType, locale, timezone, currency, ...trial }],
+    [{ name, subdomain, orgCode, plan, orgType, locale, timezone, currency, ...trial }],
     { session }
   );
 
