@@ -1,4 +1,6 @@
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { studentLink } from '../../utils/studentLink.js';
 import { Badge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
 import { Input } from '../ui/Input.jsx';
@@ -31,6 +33,7 @@ export default function DeskLearnerList({
   busy,
   now,
   onNewWalkIn,
+  canOpenProfile = false,
 }) {
   const { t } = useTranslation();
 
@@ -107,6 +110,15 @@ export default function DeskLearnerList({
                         : t('studyCenter.desk.noSeat')}
                   </span>
                 </button>
+                {canOpenProfile && (
+                  <Link
+                    className="text-xs text-primary hover:underline"
+                    aria-label={t('studyCenter.desk.openProfile', { name: l.name })}
+                    {...studentLink(l._id, { from: 'desk' })}
+                  >
+                    {t('studyCenter.desk.profile')}
+                  </Link>
+                )}
                 {l.inside ? (
                   <Button
                     variant="outline"

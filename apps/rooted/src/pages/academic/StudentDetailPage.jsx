@@ -31,6 +31,7 @@ import StudentProfileDetails from '../../components/students/StudentProfileDetai
 import { formFromStudent, studentPayload } from '../../components/students/studentForm.js';
 import { formatCurrency, formatDate } from '../../utils/intl.js';
 import { statusTransitions } from '../../utils/feePlan.js';
+import { studentBack } from '../../utils/studentLink.js';
 
 const selectCls =
   'h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50';
@@ -609,9 +610,19 @@ export default function StudentDetailPage() {
   const [addedNotice, setAddedNotice] = useState(() => location.state?.justAdded ?? null);
   useEffect(() => {
     if (location.state?.justAdded) {
-      navigate(`${location.pathname}${location.search}`, { replace: true, state: null });
+      // Only the notice is dropped; `from` (where the back link returns to) stays.
+      const rest = { ...location.state };
+      delete rest.justAdded;
+      navigate(`${location.pathname}${location.search}`, {
+        replace: true,
+        state: Object.keys(rest).length ? rest : null,
+      });
     }
   }, [location, navigate]);
+  const back = studentBack(location.state, {
+    path: '/academic/students',
+    labelKey: 'academic.studentDetail.backToList',
+  });
 
   const {
     data: student,
@@ -705,8 +716,8 @@ export default function StudentDetailPage() {
       <PageHeader
         title={`${student.firstName} ${student.lastName}`}
         description={student.admissionNo}
-        backTo="/academic/students"
-        backLabel={t('academic.studentDetail.backToList')}
+        backTo={back.to}
+        backLabel={t(back.labelKey)}
         action={
           canWrite && (
             <Button className="w-full sm:w-auto" onClick={() => setShowEdit(true)}>

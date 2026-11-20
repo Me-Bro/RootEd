@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
+import { studentLink } from '../../utils/studentLink.js';
 import { Card, CardContent } from '../ui/Card.jsx';
 import { Badge } from '../ui/Badge.jsx';
 
@@ -17,7 +19,7 @@ function expiryLabel(t, daysLeft) {
  * Members whose plan ends soon or just ended and who have not renewed, for the front
  * desk. The phone is a tap-to-call link.
  */
-export default function ExpiringPlans() {
+export default function ExpiringPlans({ canOpenProfile = false }) {
   const { t } = useTranslation();
   const plans = useQuery({
     queryKey: ['expiring-plans'],
@@ -44,7 +46,16 @@ export default function ExpiringPlans() {
             >
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium">
-                  {r.name}
+                  {canOpenProfile ? (
+                    <Link
+                      className="hover:underline"
+                      {...studentLink(r.studentId, { from: 'desk', tab: 'billing' })}
+                    >
+                      {r.name}
+                    </Link>
+                  ) : (
+                    r.name
+                  )}
                   <Badge variant={r.state === 'lapsed' ? 'warning' : 'secondary'} className="ml-2">
                     {t(`studyCenter.desk.badge_${r.state}`)}
                   </Badge>
