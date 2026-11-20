@@ -202,6 +202,7 @@
     "empty": "There are no help topics for your role yet.",
     "groups": {
       "setup": "Set up your school",
+      "setupCentre": "Set up your centre",
       "daily": "Day to day"
     },
     "support": {
@@ -298,6 +299,42 @@
         "step2": "Choose the class, the subject and the term.",
         "step3": "Type each student's marks, then click Save Grades.",
         "step4": "Publish them when they are final, if you have permission."
+      },
+      "addShift": {
+        "title": "Create a shift",
+        "step1": "Open Batches (your shifts) and click New Batch.",
+        "step2": "Name it, such as Morning, and set its start and end time.",
+        "step3": "Seats and members are held per shift, so add one for each time slot you sell."
+      },
+      "addSeats": {
+        "title": "Add seats",
+        "step1": "Open Seats.",
+        "step2": "Add a seat, or use Add several seats with a prefix and a count: prefix A- and 6 seats makes A-1 to A-6.",
+        "step3": "Use Take out of use for a broken chair. You can put it back later."
+      },
+      "addPlan": {
+        "title": "Add a fee plan",
+        "step1": "Open Fee Structures and click New Structure.",
+        "step2": "Name it, set the price, and choose Monthly or Weekly as the cycle.",
+        "step3": "A member is billed that price every cycle from their start date. Start the plan for a member from their page."
+      },
+      "addMember": {
+        "title": "Add members",
+        "step1": "Open Learners and click Add Student, or Import CSV to add many at once.",
+        "step2": "Fill in the details and save.",
+        "step3": "Then give each member a seat in their shift from the Seat map."
+      },
+      "seatMember": {
+        "title": "Give a member a seat",
+        "step1": "Open Seat map and choose the shift.",
+        "step2": "Choose a learner to seat, then click a free seat.",
+        "step3": "To change it later, use Move or End on the seat. A seat cannot be held in two shifts that overlap."
+      },
+      "checkInOut": {
+        "title": "Check a member in and out",
+        "step1": "Open Front desk.",
+        "step2": "Find the learner and click Check in. A warning shows if their plan is unpaid or has ended, but you can still check them in.",
+        "step3": "Click Check out when they leave. At closing time the owner can use Check out everyone."
       }
     }
   },

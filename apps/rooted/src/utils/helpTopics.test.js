@@ -15,6 +15,34 @@ test('visibleTopics keeps only topics the user has the permission and module for
   assert.ok(keys(noStaff).includes('addYear'));
 });
 
+test('a study center gets centre topics only, a school gets school topics only', () => {
+  const on = () => true;
+  const owner = [
+    'tenant:admin',
+    'staff:write',
+    'students:write',
+    'fees:write',
+    'attendance:write',
+    'grades:write',
+  ];
+  const centre = keys(visibleTopics(owner, on, HELP_TOPICS, true));
+  const school = keys(visibleTopics(owner, on, HELP_TOPICS, false));
+  // Screens a study center has hidden must never be offered as help.
+  for (const k of ['addClass', 'addSubject', 'buildTimetable', 'takeAttendance', 'enterGrades']) {
+    assert.ok(!centre.includes(k), `centre should not see ${k}`);
+    assert.ok(school.includes(k), `school should see ${k}`);
+  }
+  for (const k of ['addShift', 'addSeats', 'addPlan', 'seatMember', 'checkInOut']) {
+    assert.ok(centre.includes(k), `centre should see ${k}`);
+    assert.ok(!school.includes(k), `school should not see ${k}`);
+  }
+  assert.ok(centre.includes('addStaff') && school.includes('addStaff'));
+  // Front desk staff: check-in/out only, none of the owner's setup topics.
+  assert.deepEqual(keys(visibleTopics(['attendance:write'], on, HELP_TOPICS, true)), [
+    'checkInOut',
+  ]);
+});
+
 test('topicsForPath puts the page topics first and matches sub-routes', () => {
   const { here, rest } = topicsForPath(HELP_TOPICS, '/academic/subjects');
   assert.deepEqual(keys(here), ['addSubject', 'assignTeacher']);
