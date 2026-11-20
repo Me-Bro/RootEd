@@ -6,6 +6,8 @@ import { useAuth } from '../../contexts/useAuth.js';
 import AuthShell from '../../components/auth/AuthShell.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Input } from '../../components/ui/Input.jsx';
+import QrScanDialog from '../../components/org/QrScanDialog.jsx';
+import { canScanQr } from '../../utils/joinScan.js';
 
 export default function JoinOrgPage() {
   const { t } = useTranslation();
@@ -18,6 +20,7 @@ export default function JoinOrgPage() {
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const [submitted, setSubmitted] = useState(null);
 
   async function handleSubmit(e) {
@@ -79,6 +82,13 @@ export default function JoinOrgPage() {
           // code copied off a whiteboard still works.
           spellCheck={false}
         />
+
+        {canScanQr() && (
+          <Button type="button" variant="outline" onClick={() => setScanning(true)}>
+            {t('org.scanQr')}
+          </Button>
+        )}
+        <QrScanDialog open={scanning} onOpenChange={setScanning} onCode={setJoinCode} />
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="join-note" className="text-sm font-medium">
