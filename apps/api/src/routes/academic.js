@@ -23,6 +23,7 @@ import {
   reportCardHistoryQuerySchema,
   reportCardPreviewSchema,
   studentAccountSchema,
+  sendStudentLoginsSchema,
   createSubjectSchema,
   updateSubjectSchema,
   subjectTeacherSchema,
@@ -731,7 +732,7 @@ async function accountsFor(tenantId, students) {
   const userIds = students.map((s) => s.userId).filter(Boolean);
   if (!userIds.length) return new Map();
   const [users, memberships] = await Promise.all([
-    User.find({ _id: { $in: userIds } }, 'email status emailBouncedAt').lean(),
+    User.find({ _id: { $in: userIds } }, 'email status emailBouncedAt claimEmailSentAt').lean(),
     TenantMembership.find({ tenantId, userId: { $in: userIds } }, 'userId status').lean(),
   ]);
   const suspended = new Set(
@@ -743,6 +744,7 @@ async function accountsFor(tenantId, students) {
       {
         email: u.email,
         emailBouncedAt: u.emailBouncedAt ?? null,
+        claimEmailSentAt: u.claimEmailSentAt ?? null,
         status: suspended.has(String(u._id)) ? 'suspended' : u.status,
         membershipId: memberships.find((m) => String(m.userId) === String(u._id))?._id ?? null,
       },
@@ -1000,6 +1002,51 @@ router.post(
       });
 
       res.status(201).json({ userId: user._id, email: req.body.email });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// Sends the login (claim) email to many students at once. Creating or importing
+// students mails nobody; this is the deliberate step. Either an explicit list or
+// `pendingOnly: true` (every student whose login was created but never mailed).
+router.post(
+  '/students/send-logins',
+  requirePermission('students:write'),
+  validate(sendStudentLoginsSchema),
+  async (req, res, next) => {
+    try {
+      const tenantId = req.tenant._id;
+      const { studentIds } = req.body;
+      const filter = { tenantId, userId: { $ne: null } };
+      if (studentIds) filter._id = { $in: studentIds };
+      const students = await Student.find(filter, 'userId').lean();
+      const users = await User.find(
+        { _id: { $in: students.map((s) => s.userId) }, status: 'pending_claim' },
+        'email status claimEmailSentAt'
+      ).lean();
+
+      let sent = 0;
+      let skipped = studentIds ? studentIds.length - students.length : 0;
+      for (const user of users) {
+        // The bulk "send to everyone" never re-mails someone already invited;
+        // an explicit list does (that is the resend).
+        if (!studentIds && user.claimEmailSentAt) continue;
+        if (await sendClaimEmail({ tenant: req.tenant, user, email: user.email })) sent += 1;
+      }
+      skipped += students.length - sent;
+
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: tenantId.toString(),
+        action: 'student.claim_bulk_sent',
+        target: { model: 'Tenant', id: tenantId },
+        after: { sent, requested: studentIds?.length ?? null },
+        ip: req.ip,
+      });
+
+      res.json({ sent, skipped });
     } catch (err) {
       next(err);
     }

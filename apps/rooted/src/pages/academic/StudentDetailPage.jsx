@@ -549,7 +549,9 @@ function LoginPanel({ student }) {
             disabled={resend.isPending}
             onClick={() => resend.mutate()}
           >
-            {t('academic.studentDetail.resendLink')}
+            {student.account?.claimEmailSentAt
+              ? t('academic.studentDetail.resendLink')
+              : t('academic.studentDetail.sendLink')}
           </Button>
         )}
         {state === 'none' && !asking && (

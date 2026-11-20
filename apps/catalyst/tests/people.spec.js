@@ -28,7 +28,7 @@ test.describe('administrator manages student logins', () => {
 
     await page.getByRole('button', { name: 'Give login to Student9 Test' }).click();
     await page.getByLabel('Email for Student9 Test').fill('student9@testschool.local');
-    await page.getByRole('button', { name: 'Send link', exact: true }).click();
+    await page.getByRole('button', { name: 'Create login', exact: true }).click();
     await expect(state(r)).toHaveText('Waiting for password');
     await expect(r).toContainText('student9@testschool.local');
 
@@ -84,7 +84,7 @@ test.describe('administrator manages student logins', () => {
     await page.getByRole('button', { name: 'Import', exact: true }).click();
 
     await expect(page.getByTestId('import-result')).toContainText(
-      '2 added, 0 already on the roll, 1 logins sent.'
+      '2 added, 0 already on the roll, 1 logins created (no emails sent yet).'
     );
     await expect(state(row(page, 'E2E-100'))).toHaveText('Waiting for password');
     await expect(state(row(page, 'E2E-101'))).toHaveText('No login');

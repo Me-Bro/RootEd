@@ -55,19 +55,25 @@ async function roster(firstName = 'Rita') {
   });
 }
 
-const provision = (student, email) =>
-  provisionStudentAccount({ tenant, student, email, studentRoleId: studentRole._id, enqueue });
+const provision = (student, email, sendEmail = false) =>
+  provisionStudentAccount({
+    tenant,
+    student,
+    email,
+    studentRoleId: studentRole._id,
+    sendEmail,
+    enqueue,
+  });
 
 test('a roster student gets a claimable account, not a usable one', async () => {
   const student = await roster();
   const { user } = await provision(student, `claim${n}@school.edu`);
 
-  const stored = await User.findById(user._id).select('+passwordHash +passwordResetToken').lean();
+  const stored = await User.findById(user._id).select('+passwordHash').lean();
   expect(stored.status).toBe('pending_claim');
   expect(stored.emailVerified).toBe(false);
   // A password exists so the document is valid, but nobody was ever told it.
   expect(stored.passwordHash).toEqual(expect.any(String));
-  expect(stored.passwordResetToken).toEqual(expect.any(String));
 
   const linked = await Student.findById(student._id).lean();
   expect(String(linked.userId)).toBe(String(user._id));
@@ -81,10 +87,20 @@ test('a roster student gets a claimable account, not a usable one', async () => 
   expect(membership.roleIds.map(String)).toEqual([String(studentRole._id)]);
 });
 
+test('creating a login mails nobody until an administrator sends it', async () => {
+  const student = await roster();
+  const { user } = await provision(student, `quiet${n}@school.edu`);
+
+  expect(queued).toHaveLength(0);
+  const stored = await User.findById(user._id).select('+passwordResetToken').lean();
+  expect(stored.passwordResetToken).toBeUndefined();
+  expect(stored.claimEmailSentAt).toBeUndefined();
+});
+
 test('the claim link is queued, never sent inline', async () => {
   const student = await roster();
   const email = `queued${n}@school.edu`;
-  await provision(student, email);
+  await provision(student, email, true);
 
   expect(queued).toHaveLength(1);
   expect(queued[0].kind).toBe('accountClaim');
@@ -96,6 +112,7 @@ test('the claim link is queued, never sent inline', async () => {
   const token = url.split('token=')[1];
   const stored = await User.findOne({ email }).select('+passwordResetToken').lean();
   expect(stored.passwordResetToken).toBe(hashToken(token));
+  expect(stored.claimEmailSentAt).toEqual(expect.any(Date));
 });
 
 test('an existing account is linked but gets no claim link', async () => {

@@ -369,7 +369,9 @@ function StudentRow({ student, canWrite, canSuspend }) {
               disabled={resend.isPending}
               onClick={() => resend.mutate()}
             >
-              {t('people.students.resend')}
+              {student.account?.claimEmailSentAt
+                ? t('people.students.resend')
+                : t('people.students.sendLogin')}
             </Button>
           )}
           {canSuspend && state === 'pending' && emailBounced(student.account) && (
@@ -408,6 +410,7 @@ function StudentRow({ student, canWrite, canSuspend }) {
 
 export default function PeopleStudentsPage() {
   const { t } = useTranslation();
+  const qc = useQueryClient();
   const { user } = useAuth();
   const canWrite = hasPermission(user, 'students:write');
   const canSuspend = canWrite && hasPermission(user, 'roles:write');
@@ -435,6 +438,16 @@ export default function PeopleStudentsPage() {
     placeholderData: keepPreviousData,
   });
 
+  const sendAll = useMutation({
+    mutationFn: () => api.post('/academic/students/send-logins').then((r) => r.data),
+    meta: { silent: true },
+    onSuccess: ({ sent }) => {
+      pushToast(t('people.students.sentAll', { count: sent }));
+      refresh(qc);
+    },
+    onError: (err) => pushToast(err.response?.data?.error || t('common.error'), 'error'),
+  });
+
   const students = list.data?.students ?? [];
   const toggle = (name) => setPanel((p) => (p === name ? null : name));
 
@@ -446,6 +459,13 @@ export default function PeopleStudentsPage() {
         action={
           canWrite && (
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                disabled={sendAll.isPending}
+                onClick={() => sendAll.mutate()}
+              >
+                {t('people.students.sendAll')}
+              </Button>
               <Button variant="outline" onClick={() => toggle('import')}>
                 <Upload className="size-4" aria-hidden="true" />
                 {t('people.students.import.open')}

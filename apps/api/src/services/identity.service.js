@@ -207,11 +207,13 @@ export async function sendClaimEmail({ tenant, user, email, enqueue = queueEmail
   const token = generateToken();
   await storeResetToken(user._id, token, CLAIM_TOKEN_TTL_MS);
   await enqueue('accountClaim', [email, tenant.name, claimUrlFor(tenant, token)]);
+  await User.updateOne({ _id: user._id }, { $set: { claimEmailSentAt: new Date() } });
   return true;
 }
 
 /**
- * Gives a roster student a login they can claim.
+ * Gives a roster student a login they can claim. No email is sent unless
+ * `sendEmail` is true; the claim link goes out when an administrator asks.
  *
  * The account is created holding a random password nobody is ever told; the
  * person sets their own through the emailed link, which is what activates it.
@@ -230,6 +232,7 @@ export async function provisionStudentAccount({
   student,
   email,
   studentRoleId,
+  sendEmail = false,
   enqueue = queueEmail,
 }) {
   const gate = (await blockedBySuspension(tenant, email)) ?? (await emailDomainProblem(email));
@@ -256,7 +259,9 @@ export async function provisionStudentAccount({
   }
 
   await ensureMembership(tenant, user, [studentRoleId]);
-  await sendClaimEmail({ tenant, user, email, enqueue });
+  // Off by default: an administrator sends the login emails when ready (single
+  // resend or the bulk send), so creating or importing students mails nobody.
+  if (sendEmail) await sendClaimEmail({ tenant, user, email, enqueue });
 
   return { user, reason: null };
 }
