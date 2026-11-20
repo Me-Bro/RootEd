@@ -181,6 +181,30 @@ async function run() {
   }
   const tenantId = tenant._id;
 
+  // A filled-in org profile on the main school, for the profile and home specs.
+  // The study center is left without one on purpose, to exercise the empty state.
+  await Tenant.updateOne(
+    { _id: tenantId },
+    {
+      $set: {
+        profile: {
+          description: 'A seeded test school used by the end-to-end specs.',
+          address: {
+            line1: '12 Station Road',
+            city: 'Pune',
+            state: 'Maharashtra',
+            pincode: '411001',
+            country: 'India',
+          },
+          phone: '+91 20 5555 0100',
+          email: 'office@testschool.local',
+          website: 'https://testschool.example',
+          registrationNumber: 'REG-TEST-0001',
+        },
+      },
+    }
+  );
+
   // The seeded school is a `school` orgType, which has no training module. An
   // explicit override (the list replaces the orgType default, so it names every
   // module) turns it on for the training specs without changing the tenant's
