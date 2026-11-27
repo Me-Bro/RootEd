@@ -7,6 +7,7 @@ import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { apiError } from '../../utils/studyCenter.js';
+import { requestLocation } from '../../utils/geo.js';
 
 // Opened by the phone camera from the centre's QR code (/me/scan?t=<token>). Reads
 // the phone's position and asks the API to check the learner in, or out if inside.
@@ -25,28 +26,15 @@ export default function ScanCheckInPage() {
   const locate = () => {
     setGeoError(null);
     scan.reset();
-    const send = ({ coords }) =>
+    requestLocation().then((r) => {
+      if (r.error) return setGeoError(r.error);
       scan.mutate({
         token,
-        lat: coords.latitude,
-        lng: coords.longitude,
-        accuracy: coords.accuracy,
+        lat: r.coords.latitude,
+        lng: r.coords.longitude,
+        accuracy: r.coords.accuracy,
       });
-    if (!navigator.geolocation) return setGeoError('unavailable');
-    // Precise GPS first. Indoors it often times out, so a coarser fix (wifi / cell) is
-    // tried once before giving up; the server still refuses a fix that is too vague.
-    navigator.geolocation.getCurrentPosition(
-      send,
-      (err) => {
-        if (err.code === 1) return setGeoError('denied');
-        navigator.geolocation.getCurrentPosition(
-          send,
-          (e) => setGeoError(e.code === 1 ? 'denied' : 'unavailable'),
-          { enableHighAccuracy: false, timeout: 20000, maximumAge: 0 }
-        );
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
+    });
   };
 
   // One scan per page open: a re-render must never toggle the learner back out.
