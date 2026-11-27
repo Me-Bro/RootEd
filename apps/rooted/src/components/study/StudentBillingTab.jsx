@@ -6,6 +6,7 @@ import { Badge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
 import CollectPaymentModal from '../fee/CollectPaymentModal.jsx';
 import StudentFeeStructurePanel from '../students/StudentFeeStructurePanel.jsx';
+import WhatsappReminder from './WhatsappReminder.jsx';
 import StudentPaymentsTable from './StudentPaymentsTable.jsx';
 import StudentDiscountForm from './StudentDiscountForm.jsx';
 import { formatCurrency, formatDate } from '../../utils/intl.js';
@@ -126,7 +127,7 @@ function StandingDiscounts({ studentId }) {
 }
 
 // What the learner owes right now, fee by fee, each with a way to take a payment.
-function AmountsDue({ studentId, learnerName, canCollect, onDone }) {
+function AmountsDue({ studentId, learnerName, whatsapp, canCollect, onDone }) {
   const { t } = useTranslation();
   const [paying, setPaying] = useState(null);
   const { data: assignments = [] } = useQuery({
@@ -157,6 +158,13 @@ function AmountsDue({ studentId, learnerName, canCollect, onDone }) {
           </li>
         ))}
       </ul>
+      <div>
+        <WhatsappReminder
+          number={whatsapp}
+          name={learnerName}
+          amount={rows.reduce((sum, r) => sum + r.payable, 0)}
+        />
+      </div>
       {paying && (
         <CollectPaymentModal
           open
@@ -183,6 +191,7 @@ export default function StudentBillingTab({
   canRefund = false,
   canAddDiscount = false,
   learnerName,
+  whatsapp,
 }) {
   const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
@@ -204,6 +213,7 @@ export default function StudentBillingTab({
         <AmountsDue
           studentId={studentId}
           learnerName={learnerName}
+          whatsapp={whatsapp}
           canCollect={canCollect}
           onDone={refresh}
         />
