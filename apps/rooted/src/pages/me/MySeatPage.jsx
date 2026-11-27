@@ -8,7 +8,7 @@ import { Card, CardContent } from '../../components/ui/Card.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import QrScanDialog from '../../components/org/QrScanDialog.jsx';
 import { canScanQr, checkInTokenFromScan } from '../../utils/joinScan.js';
-import { locationState, requestLocation } from '../../utils/geo.js';
+import { requestLocation } from '../../utils/geo.js';
 import ShiftSeats from '../../components/study/ShiftSeats.jsx';
 import { formatCurrency, formatDate } from '../../utils/intl.js';
 import { splitMinutes } from '../../utils/studyCenter.js';
@@ -27,12 +27,13 @@ export default function MySeatPage() {
   });
 
   // Check-in needs the phone's location, so ask for it first, from this tap. If it is
-  // blocked the camera is never opened: scanning would only end in an error.
+  // blocked the camera is never opened: scanning would only end in an error. Not
+  // pre-checked with navigator.permissions: Android WebView (the RootEd app) always
+  // reports geolocation as 'denied' there, even when the app would grant it.
   async function startScan() {
     setLocationError(null);
     setChecking(true);
-    const result =
-      (await locationState()) === 'denied' ? { error: 'denied' } : await requestLocation();
+    const result = await requestLocation();
     setChecking(false);
     if (result.error) setLocationError(result.error);
     else setScanning(true);

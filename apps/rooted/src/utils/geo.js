@@ -1,12 +1,3 @@
-/** `granted` | `prompt` | `denied` | `unknown` (no Permissions API, e.g. older Safari). */
-export async function locationState() {
-  try {
-    return (await navigator.permissions.query({ name: 'geolocation' })).state;
-  } catch {
-    return 'unknown';
-  }
-}
-
 const getPosition = (options) =>
   new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
