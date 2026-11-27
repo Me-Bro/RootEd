@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { locationState, requestLocation } from './geo.js';
+import { requestLocation } from './geo.js';
 
 function withNavigator(nav, fn) {
   const original = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
@@ -59,11 +59,4 @@ test('both attempts failing, or no geolocation at all, is unavailable', async ()
   await withNavigator({}, async () =>
     assert.deepEqual(await requestLocation(), { error: 'unavailable' })
   );
-});
-
-test('locationState reports the permission, or unknown without the API', async () => {
-  await withNavigator({ permissions: { query: async () => ({ state: 'denied' }) } }, async () =>
-    assert.equal(await locationState(), 'denied')
-  );
-  await withNavigator({}, async () => assert.equal(await locationState(), 'unknown'));
 });
