@@ -37,6 +37,11 @@ export const centreSettingsSchema = z
     closeTime: hhmm.optional(),
     open24h: z.boolean().optional(),
     discountPolicy: z.enum(DISCOUNT_POLICIES).optional(),
+    // Where the centre is, for self check-in by QR code: a learner must be within
+    // radiusM metres of this point.
+    lat: z.number().min(-90).max(90).optional(),
+    lng: z.number().min(-180).max(180).optional(),
+    radiusM: z.number().int().min(10).max(500).optional(),
   })
   .strict()
   .refine((v) => v.open24h || !v.openTime || !v.closeTime || v.closeTime > v.openTime, {
@@ -106,6 +111,16 @@ export const sectionTimesSchema = z
 // The seat is optional: left out, the server picks the first free one.
 export const checkInSchema = z
   .object({ studentId: objectId, seatId: objectId.optional() })
+  .strict();
+
+// A learner scanning the centre's QR code: the code's token plus where the phone is.
+export const scanVisitSchema = z
+  .object({
+    token: z.string().min(8).max(128),
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+    accuracy: z.number().min(0).max(100000),
+  })
   .strict();
 
 export const freeSeatsQuerySchema = z.object({ studentId: objectId });

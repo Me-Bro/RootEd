@@ -32,7 +32,10 @@ import {
   progressQuerySchema,
   myRoadmapQuerySchema,
   roadmapProgressUpdateSchema,
+  scanVisitSchema,
 } from '@rooted/shared/schemas';
+import { scanToggle } from '../services/visit.service.js';
+import { auditLog } from '../services/audit.service.js';
 import { validate } from '../middleware/validate.js';
 import {
   getMyRoadmaps,
@@ -394,6 +397,53 @@ router.get(
         nextDue,
         visits,
         centre: { openTime: centre.openTime, closeTime: centre.closeTime, open24h: centre.open24h },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// The learner scans the centre's QR code: in if outside, out if inside (see scanToggle).
+router.post(
+  '/visits/scan',
+  requireSeatsOrg,
+  requireModuleEnabled('academic'),
+  requirePermission('self:seat:write'),
+  validate(scanVisitSchema),
+  async (req, res, next) => {
+    try {
+      const result = await scanToggle({
+        tenant: req.tenant,
+        studentId: studentIdOf(req),
+        recordedBy: req.user.sub,
+        ...req.body,
+      });
+      const { visit, distanceM } = result;
+      await auditLog({
+        actorId: req.user.sub,
+        tenantId: req.tenant._id.toString(),
+        action: result.action === 'check-in' ? 'visit.checkIn' : 'visit.checkOut',
+        target: { model: 'Visit', id: visit._id },
+        after: { ...(visit.toObject ? visit.toObject() : visit), distanceM: Math.round(distanceM) },
+        ip: req.ip,
+      });
+      if (visit.outsideHours) {
+        await auditLog({
+          actorId: req.user.sub,
+          tenantId: req.tenant._id.toString(),
+          action: 'visit.outsideHours',
+          target: { model: 'Visit', id: visit._id },
+          after: visit.toObject ? visit.toObject() : visit,
+          ip: req.ip,
+        });
+      }
+      res.status(result.action === 'check-in' ? 201 : 200).json({
+        action: result.action,
+        seat: result.seat ?? null,
+        warning: result.warning ?? null,
+        inAt: visit.inAt,
+        outAt: visit.outAt ?? null,
       });
     } catch (err) {
       next(err);
