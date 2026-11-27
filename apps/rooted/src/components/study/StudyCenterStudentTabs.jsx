@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs.jsx';
+import { resolveWhatsapp } from '@rooted/shared/utils';
 import StudentBillingTab from './StudentBillingTab.jsx';
 import StudentHistoryTimeline from './StudentHistoryTimeline.jsx';
 import StudentVisitsTable from './StudentVisitsTable.jsx';
@@ -61,6 +62,7 @@ export default function StudyCenterStudentTabs({ studentId, student, permissions
             canRefund={permissions.includes('tenant:admin')}
             canAddDiscount={permissions.includes('tenant:admin')}
             learnerName={`${student.firstName} ${student.lastName}`}
+            whatsapp={resolveWhatsapp(student) ?? student.phone}
           />
         </TabsContent>
       )}
