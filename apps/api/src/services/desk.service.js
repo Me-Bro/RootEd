@@ -1,3 +1,4 @@
+import { resolveWhatsapp } from '@rooted/shared/utils';
 import { Visit } from '../models/Visit.js';
 import { Seat } from '../models/Seat.js';
 import { SeatAllocation } from '../models/SeatAllocation.js';
@@ -59,7 +60,10 @@ export async function loadDesk({
       ? { $and: searched }
       : { $or: [{ kind: { $ne: 'walk_in' } }, { _id: { $in: insideIds } }] }),
   };
-  const roster = await Student.find(rosterQuery, 'firstName lastName phone kind status')
+  const roster = await Student.find(
+    rosterQuery,
+    'firstName lastName phone whatsappNumber whatsappSameAsPhone kind status'
+  )
     .sort({ firstName: 1, lastName: 1 })
     .limit(DESK_LEARNER_LIMIT + 1)
     .lean();
@@ -103,6 +107,7 @@ export async function loadDesk({
       name: fullName(s),
       kind: s.kind ?? 'member',
       phone: s.phone ?? null,
+      whatsapp: resolveWhatsapp(s) ?? s.phone ?? null,
       inside: open
         ? {
             visitId: open._id,

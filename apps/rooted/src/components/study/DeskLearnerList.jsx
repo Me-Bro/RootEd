@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { studentLink } from '../../utils/studentLink.js';
+import WhatsappReminder from './WhatsappReminder.jsx';
 import { Badge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
 import { Input } from '../ui/Input.jsx';
@@ -119,6 +120,11 @@ export default function DeskLearnerList({
                     {t('studyCenter.desk.profile')}
                   </Link>
                 )}
+                <WhatsappReminder
+                  number={l.whatsapp}
+                  name={l.name}
+                  amount={l.entitlement?.overdue}
+                />
                 {l.inside ? (
                   <Button
                     variant="outline"
