@@ -318,6 +318,13 @@ describe('waLink', () => {
     expect(waLink('+91 9876543210')).toBe('https://wa.me/919876543210');
   });
 
+  test('pre-fills the message, url-encoded', () => {
+    expect(waLink('9876543210', 'Hi Asha, ₹500 due & more')).toBe(
+      'https://wa.me/919876543210?text=Hi%20Asha%2C%20%E2%82%B9500%20due%20%26%20more'
+    );
+    expect(waLink('12345', 'Hi')).toBeNull();
+  });
+
   test('returns null for anything that is not a mobile number', () => {
     for (const bad of [undefined, null, '', '12345', '5876543210']) {
       expect(waLink(bad)).toBeNull();
