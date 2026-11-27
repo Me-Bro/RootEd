@@ -3002,7 +3002,8 @@
     "checkedOut": "You are checked out.",
     "warning": "Your plan is {{status}}. Please see the front desk.",
     "failed": "Could not check you in.",
-    "noLocation": "Could not get your location. Allow location access and scan again.",
+    "locationDenied": "Location access is blocked for this site. Allow it in your browser or phone settings, then tap Try again.",
+    "noLocation": "Could not find your location. Turn on your phone's location (GPS), step near a window or outside, then tap Try again.",
     "noToken": "This is not a valid centre QR code.",
     "retry": "Try again",
     "mySeat": "Back to my seat"

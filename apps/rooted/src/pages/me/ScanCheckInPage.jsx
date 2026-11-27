@@ -15,7 +15,7 @@ export default function ScanCheckInPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const token = useSearchParams()[0].get('t');
-  const [geoError, setGeoError] = useState(false);
+  const [geoError, setGeoError] = useState(null); // null | 'denied' | 'unavailable'
 
   const scan = useMutation({
     mutationFn: (body) => api.post('/me/visits/scan', body).then((r) => r.data),
@@ -23,18 +23,29 @@ export default function ScanCheckInPage() {
   });
 
   const locate = () => {
-    setGeoError(false);
+    setGeoError(null);
     scan.reset();
+    const send = ({ coords }) =>
+      scan.mutate({
+        token,
+        lat: coords.latitude,
+        lng: coords.longitude,
+        accuracy: coords.accuracy,
+      });
+    if (!navigator.geolocation) return setGeoError('unavailable');
+    // Precise GPS first. Indoors it often times out, so a coarser fix (wifi / cell) is
+    // tried once before giving up; the server still refuses a fix that is too vague.
     navigator.geolocation.getCurrentPosition(
-      ({ coords }) =>
-        scan.mutate({
-          token,
-          lat: coords.latitude,
-          lng: coords.longitude,
-          accuracy: coords.accuracy,
-        }),
-      () => setGeoError(true),
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      send,
+      (err) => {
+        if (err.code === 1) return setGeoError('denied');
+        navigator.geolocation.getCurrentPosition(
+          send,
+          (e) => setGeoError(e.code === 1 ? 'denied' : 'unavailable'),
+          { enableHighAccuracy: false, timeout: 20000, maximumAge: 0 }
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
@@ -50,6 +61,7 @@ export default function ScanCheckInPage() {
   const data = scan.data;
   let message = null;
   if (!token) message = t('scan.noToken');
+  else if (geoError === 'denied') message = t('scan.locationDenied');
   else if (geoError) message = t('scan.noLocation');
   else if (scan.isError) message = apiError(scan.error, t('scan.failed'));
 
