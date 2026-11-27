@@ -2429,6 +2429,11 @@
     "reject": "Reject"
   },
   "studyCenter": {
+    "whatsapp": {
+      "remind": "Remind",
+      "feeDue": "Hello {{name}}, a gentle reminder: {{amount}} is due at {{centre}}. Please pay when you can. Thank you.",
+      "feeOverdue": "Hello {{name}}, a gentle reminder: {{amount}} is due at {{centre}}, of which {{overdue}} is overdue. Please pay when you can. Thank you."
+    },
     "mySeat": {
       "scanButton": "Scan to check in / out",
       "scanChecking": "Checking your location…",

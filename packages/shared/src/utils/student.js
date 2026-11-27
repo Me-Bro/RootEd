@@ -25,9 +25,12 @@ export function primaryContact(parentContacts) {
 }
 
 // A wa.me link for a typed Indian mobile number, or null if it is not one.
-export function waLink(number) {
+// `text` pre-fills the chat; the sender still has to press send.
+export function waLink(number, text) {
   const digits = normalizeIndianMobile(number);
-  return /^[6-9]\d{9}$/.test(digits) ? `https://wa.me/91${digits}` : null;
+  if (!/^[6-9]\d{9}$/.test(digits)) return null;
+  const url = `https://wa.me/91${digits}`;
+  return text ? `${url}?text=${encodeURIComponent(text)}` : url;
 }
 
 // Verhoeff tables (the checksum Aadhaar uses): multiplication, permutation.

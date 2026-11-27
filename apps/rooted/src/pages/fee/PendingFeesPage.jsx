@@ -9,12 +9,17 @@ import { Input } from '../../components/ui/Input.jsx';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { DataTable, TableRow, TableCell } from '../../components/ui/DataTable.jsx';
 import { RecordList, RecordListItem } from '../../components/ui/RecordList.jsx';
+import WhatsappReminder from '../../components/study/WhatsappReminder.jsx';
 import { useAuth } from '../../contexts/useAuth.js';
 import { formatCurrency } from '../../utils/intl.js';
 import { formatMonth } from '../../utils/studyCenter.js';
 import { studentLink } from '../../utils/studentLink.js';
 
 const TABS = ['student', 'month'];
+
+const Reminder = ({ l }) => (
+  <WhatsappReminder number={l.whatsapp} name={l.name} amount={l.pending} overdue={l.overdue} />
+);
 
 function Stat({ label, value, tone, testId }) {
   return (
@@ -133,7 +138,10 @@ export default function PendingFeesPage() {
                 title={name(l)}
                 meta={[l.admissionNo, l.phone].filter(Boolean).join(' · ')}
                 trailing={
-                  <span className="text-sm font-semibold">{formatCurrency(l.pending)}</span>
+                  <span className="flex flex-col items-end gap-1">
+                    <span className="text-sm font-semibold">{formatCurrency(l.pending)}</span>
+                    <Reminder l={l} />
+                  </span>
                 }
                 footer={
                   <p className="text-xs text-muted-foreground">
@@ -158,6 +166,7 @@ export default function PendingFeesPage() {
               t('pendingFees.currentCycle'),
               t('pendingFees.pending'),
               t('pendingFees.oldest'),
+              t('studyCenter.whatsapp.remind'),
             ]}
             isLoading={isLoading}
             isEmpty={learners.length === 0}
@@ -177,6 +186,9 @@ export default function PendingFeesPage() {
                 </TableCell>
                 <TableCell className="px-4 py-3 text-muted-foreground">
                   {l.oldestMonth ? formatMonth(l.oldestMonth) : '—'}
+                </TableCell>
+                <TableCell className="px-4 py-3">
+                  <Reminder l={l} />
                 </TableCell>
               </TableRow>
             ))}

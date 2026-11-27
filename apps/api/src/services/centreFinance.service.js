@@ -1,3 +1,4 @@
+import { resolveWhatsapp } from '@rooted/shared/utils';
 import { ExpenseEntry } from '../models/ExpenseEntry.js';
 import { FeeAssignment } from '../models/FeeAssignment.js';
 import { FeePayment } from '../models/FeePayment.js';
@@ -130,7 +131,7 @@ export async function pendingFees(
   const rows = pendingByStudent(items);
   const students = await Student.find(
     { tenantId: tenant._id, _id: { $in: rows.map((r) => r.studentId) } },
-    'firstName lastName admissionNo phone kind status'
+    'firstName lastName admissionNo phone whatsappNumber whatsappSameAsPhone kind status'
   ).lean();
   const byId = new Map(students.map((s) => [String(s._id), s]));
 
@@ -141,6 +142,7 @@ export async function pendingFees(
       name: fullName(s, '—'),
       admissionNo: s?.admissionNo ?? null,
       phone: s?.phone ?? null,
+      whatsapp: resolveWhatsapp(s) ?? s?.phone ?? null,
       status: s?.status ?? null,
     };
   });
