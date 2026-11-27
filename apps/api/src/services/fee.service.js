@@ -19,7 +19,9 @@ import {
   discountAppliesTo,
 } from '../utils/feeCalculations.js';
 import { autoAssignSupported } from '../utils/feeAutoAssignScope.js';
-import { buildReceiptLines } from '../utils/receiptLines.js';
+import { buildReceiptView } from '../utils/receiptLines.js';
+import { drawReceipt } from '../utils/receiptPdf.js';
+import { loadReportCardLogo } from './reportCardLogo.service.js';
 import { scheduleLateCharge } from '../workers/feeLateCharge.worker.js';
 import { isBillingAssignment, settledSpan } from '../utils/billingCycle.js';
 import { zonedMidnight } from '../utils/dayKey.js';
@@ -184,7 +186,7 @@ export async function recordPayment({
 
   // The receipt names the organization that issued it; a cycle plan also needs the
   // centre's calendar to know what is due.
-  const tenant = await Tenant.findById(tenantId, 'name timezone').lean();
+  const tenant = await Tenant.findById(tenantId, 'name timezone profile').lean();
   const billing = isBillingAssignment(assignment);
 
   let remaining;
@@ -259,6 +261,8 @@ export async function recordPayment({
     tenantId,
     receiptContext: {
       tenantName: tenant?.name,
+      profile: tenant?.profile,
+      logo: await loadReportCardLogo(tenant?.profile?.logoKey),
       timezone: tenant?.timezone,
       coversFrom: assignment.coversFrom,
       coversTo: assignment.coversTo,
@@ -318,8 +322,9 @@ async function generateReceiptPdf({
     });
     doc.on('error', reject);
 
-    const { organization, lines } = buildReceiptLines({
+    const view = buildReceiptView({
       tenantName: receiptContext.tenantName,
+      profile: receiptContext.profile,
       receiptNumber,
       paymentDate: payment.paymentDate || new Date(),
       student,
@@ -332,16 +337,7 @@ async function generateReceiptPdf({
       timezone: receiptContext.timezone,
     });
 
-    doc.fontSize(20).text('Fee Receipt', { align: 'center' });
-    if (organization) {
-      doc.moveDown();
-      doc.fontSize(12).text(organization, { align: 'center' });
-    }
-    doc.moveDown(2);
-
-    doc.fontSize(11);
-    for (const line of lines) doc.text(line);
-
+    drawReceipt(doc, view, receiptContext.logo);
     doc.end();
   });
 }

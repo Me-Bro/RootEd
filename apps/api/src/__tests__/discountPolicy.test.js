@@ -4,7 +4,12 @@ import {
   pickStandingDiscount,
 } from '../utils/discountPolicy.js';
 import { discountAppliesTo } from '../utils/feeCalculations.js';
-import { buildReceiptLines } from '../utils/receiptLines.js';
+import {
+  buildReceiptLines,
+  amountInWords,
+  formatInr,
+  buildReceiptView,
+} from '../utils/receiptLines.js';
 
 const none = { admin: false, feesWrite: false, feesCollect: false };
 
@@ -160,5 +165,39 @@ describe('buildReceiptLines', () => {
       'Transaction ID: T123'
     );
     expect(buildReceiptLines(base).lines.join('\n')).not.toMatch(/Transaction/);
+  });
+});
+
+describe('receipt money and view', () => {
+  test('formatInr uses Indian grouping and the rupee sign', () => {
+    expect(formatInr(1234567)).toBe('₹12,34,567');
+    expect(formatInr(1200.5)).toBe('₹1,200.50');
+  });
+
+  test('amountInWords', () => {
+    expect(amountInWords(0)).toBe('Rupees Zero Only');
+    expect(amountInWords(1200)).toBe('Rupees One Thousand Two Hundred Only');
+    expect(amountInWords(1234567.5)).toBe(
+      'Rupees Twelve Lakh Thirty Four Thousand Five Hundred Sixty Seven and Fifty Paise Only'
+    );
+    expect(amountInWords(25000000)).toBe('Rupees Two Crore Fifty Lakh Only');
+  });
+
+  test('buildReceiptView carries the org profile and the table row', () => {
+    const v = buildReceiptView({
+      tenantName: 'Quiet Corner',
+      profile: {
+        address: { line1: '1 Main Rd', city: 'Pune', state: 'MH', pincode: '411001' },
+        phone: '99999',
+      },
+      receiptNumber: 'RCP-1',
+      paymentDate: new Date('2026-05-11T05:00:00Z'),
+      amount: 1200,
+      paymentMethod: 'bank_transfer',
+    });
+    expect(v.address).toEqual(['1 Main Rd', 'Pune, MH - 411001']);
+    expect(v.contact).toBe('99999');
+    expect(v.method).toBe('Bank transfer');
+    expect(v.item).toEqual({ description: 'Fee payment', period: '-', amount: '₹1,200' });
   });
 });

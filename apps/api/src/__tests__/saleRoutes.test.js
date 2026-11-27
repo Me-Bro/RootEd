@@ -32,6 +32,7 @@ jest.unstable_mockModule('bullmq', () => ({
 const uploadBuffer = jest.fn(async () => undefined);
 jest.unstable_mockModule('../services/storage.service.js', () => ({
   uploadBuffer,
+  getObjectBuffer: jest.fn(async () => null),
   getSignedUrl: jest.fn(async (key) => `https://files.test/${key}`),
 }));
 
