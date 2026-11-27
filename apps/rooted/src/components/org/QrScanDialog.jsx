@@ -17,16 +17,31 @@ import { codeFromScan } from '../../utils/joinScan.js';
  * The scanner is its own component so it mounts (and starts the camera) only while the
  * dialog is open, and its state starts fresh every time.
  */
-export default function QrScanDialog({ open, onOpenChange, onCode }) {
+export default function QrScanDialog({
+  open,
+  onOpenChange,
+  onCode,
+  parse = codeFromScan,
+  title,
+  hint,
+  notCodeHint,
+}) {
   const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('org.scanTitle')}</DialogTitle>
-          <DialogDescription>{t('org.scanHint')}</DialogDescription>
+          <DialogTitle>{title ?? t('org.scanTitle')}</DialogTitle>
+          <DialogDescription>{hint ?? t('org.scanHint')}</DialogDescription>
         </DialogHeader>
-        {open && <Scanner onCode={onCode} onOpenChange={onOpenChange} />}
+        {open && (
+          <Scanner
+            onCode={onCode}
+            onOpenChange={onOpenChange}
+            parse={parse}
+            notCodeHint={notCodeHint}
+          />
+        )}
         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
           {t('common.cancel')}
         </Button>
@@ -35,16 +50,16 @@ export default function QrScanDialog({ open, onOpenChange, onCode }) {
   );
 }
 
-function Scanner({ onCode, onOpenChange }) {
+function Scanner({ onCode, onOpenChange, parse, notCodeHint }) {
   const { t } = useTranslation();
   const videoRef = useRef(null);
   const [error, setError] = useState('');
   const [notCode, setNotCode] = useState(false);
 
   // The latest callbacks, so a parent re-render never restarts the camera.
-  const handlers = useRef({ onCode, onOpenChange });
+  const handlers = useRef({ onCode, onOpenChange, parse });
   useEffect(() => {
-    handlers.current = { onCode, onOpenChange };
+    handlers.current = { onCode, onOpenChange, parse };
   });
 
   useEffect(() => {
@@ -104,7 +119,7 @@ function Scanner({ onCode, onOpenChange }) {
         try {
           const text = await read();
           if (text) {
-            const code = codeFromScan(text);
+            const code = handlers.current.parse(text);
             if (code) {
               stopped = true;
               handlers.current.onCode(code);
@@ -147,7 +162,7 @@ function Scanner({ onCode, onOpenChange }) {
       />
       {notCode && (
         <p role="status" className="text-sm text-muted-foreground">
-          {t('org.scanNotCode')}
+          {notCodeHint ?? t('org.scanNotCode')}
         </p>
       )}
     </div>

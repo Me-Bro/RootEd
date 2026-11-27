@@ -2430,6 +2430,10 @@
   },
   "studyCenter": {
     "mySeat": {
+      "scanButton": "Scan to check in / out",
+      "scanTitle": "Scan the centre QR code",
+      "scanHint": "Point your camera at the QR code at the centre entrance.",
+      "scanNotCentre": "That is not a centre check-in QR code. Keep looking for the right one.",
       "title": "My seat",
       "description": "Your shift and seat at the centre.",
       "noSeat": "No seat yet. Ask the front desk.",

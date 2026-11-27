@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { codeFromScan } from './joinScan.js';
+import { checkInTokenFromScan, codeFromScan } from './joinScan.js';
 
 test('reads the code out of a join link', () => {
   assert.equal(
@@ -18,4 +18,11 @@ test('ignores a QR code that is not a join code', () => {
   assert.equal(codeFromScan('hello'), null);
   assert.equal(codeFromScan(''), null);
   assert.equal(codeFromScan('x'.repeat(500)), null);
+});
+
+test('reads the check-in token out of a centre QR link, and ignores anything else', () => {
+  assert.equal(checkInTokenFromScan('https://c.example.com/me/scan?t=abc123'), 'abc123');
+  assert.equal(checkInTokenFromScan('https://c.example.com/orgs/join?code=RTED-ABCDE-FGH23'), null);
+  assert.equal(checkInTokenFromScan('https://c.example.com/me/scan'), null);
+  assert.equal(checkInTokenFromScan('not a url'), null);
 });

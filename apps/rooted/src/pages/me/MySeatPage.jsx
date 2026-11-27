@@ -1,8 +1,13 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '../../lib/api.js';
 import { PageHeader } from '../../components/ui/PageHeader.jsx';
 import { Card, CardContent } from '../../components/ui/Card.jsx';
+import { Button } from '../../components/ui/Button.jsx';
+import QrScanDialog from '../../components/org/QrScanDialog.jsx';
+import { canScanQr, checkInTokenFromScan } from '../../utils/joinScan.js';
 import ShiftSeats from '../../components/study/ShiftSeats.jsx';
 import { formatCurrency, formatDate } from '../../utils/intl.js';
 import { splitMinutes } from '../../utils/studyCenter.js';
@@ -11,6 +16,8 @@ import { splitMinutes } from '../../utils/studyCenter.js';
 // this page in later phases; the endpoint's answer only ever concerns the caller.
 export default function MySeatPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [scanning, setScanning] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ['me', 'seat'],
     queryFn: () => api.get('/me/seat').then((r) => r.data),
@@ -22,6 +29,20 @@ export default function MySeatPage() {
         title={t('studyCenter.mySeat.title')}
         description={t('studyCenter.mySeat.description')}
       />
+      {canScanQr() && (
+        <div>
+          <Button onClick={() => setScanning(true)}>{t('studyCenter.mySeat.scanButton')}</Button>
+          <QrScanDialog
+            open={scanning}
+            onOpenChange={setScanning}
+            parse={checkInTokenFromScan}
+            onCode={(token) => navigate(`/me/scan?t=${encodeURIComponent(token)}`)}
+            title={t('studyCenter.mySeat.scanTitle')}
+            hint={t('studyCenter.mySeat.scanHint')}
+            notCodeHint={t('studyCenter.mySeat.scanNotCentre')}
+          />
+        </div>
+      )}
       <Card>
         <CardContent className="pt-4">
           {isLoading ? (

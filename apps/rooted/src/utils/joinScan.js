@@ -29,3 +29,17 @@ export const canScanQr = () =>
   typeof window !== 'undefined' &&
   window.isSecureContext &&
   Boolean(navigator.mediaDevices?.getUserMedia);
+
+/**
+ * The check-in token inside a centre's QR code (`…/me/scan?t=<token>`), or null for any
+ * other QR code, so a stray one is ignored.
+ */
+export function checkInTokenFromScan(text) {
+  try {
+    const url = new URL(String(text ?? '').trim());
+    const token = url.searchParams.get('t');
+    return url.pathname === '/me/scan' && token && token.length <= 128 ? token : null;
+  } catch {
+    return null;
+  }
+}
