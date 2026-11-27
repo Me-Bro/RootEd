@@ -118,6 +118,7 @@ test('GET gives a study center its centre settings with defaults filled in', asy
     closeTime: '22:00',
     open24h: false,
     discountPolicy: 'owner',
+    radiusM: 50,
   });
 });
 

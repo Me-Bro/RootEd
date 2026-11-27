@@ -232,6 +232,8 @@ export const PERMISSIONS = [
   'self:training:write',
   // The learner's own shift, seat, plan and visits at a study center (GET /me/seat).
   'self:seat:read',
+  // Checks the caller in or out by scanning the centre's QR code (POST /me/visits/scan).
+  'self:seat:write',
 ];
 
 // Learning roadmap (training module): what an item asks the student to do, and

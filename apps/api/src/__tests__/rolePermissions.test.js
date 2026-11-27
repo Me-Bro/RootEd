@@ -132,7 +132,11 @@ describe('self-scoped permissions', () => {
   // 'seat:read' does not exist either: staff read seats, allocations and the seat
   // map through 'students:read' and change them with 'students:write', so a
   // study-center learner's own seat has no tenant-wide permission to mirror.
-  const WITHOUT_TENANT_WIDE_COUNTERPART = ['self:timetable:read', 'self:seat:read'];
+  const WITHOUT_TENANT_WIDE_COUNTERPART = [
+    'self:timetable:read',
+    'self:seat:read',
+    'self:seat:write',
+  ];
 
   test('every self: permission has a real tenant-wide counterpart', () => {
     // Guards against a typo like 'self:grade:read' that would gate a route

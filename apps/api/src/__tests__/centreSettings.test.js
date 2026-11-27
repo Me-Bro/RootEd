@@ -8,6 +8,7 @@ describe('resolveCentreSettings', () => {
       closeTime: '22:00',
       open24h: false,
       discountPolicy: 'owner',
+      radiusM: 50,
     });
   });
 
@@ -27,6 +28,7 @@ describe('resolveCentreSettings', () => {
       closeTime: '23:30',
       open24h: false,
       discountPolicy: 'desk',
+      radiusM: 50,
     });
   });
 

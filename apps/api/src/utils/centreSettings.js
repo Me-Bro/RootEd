@@ -10,5 +10,9 @@ export function resolveCentreSettings(tenant) {
     closeTime: saved.closeTime ?? '22:00',
     open24h: saved.open24h ?? false,
     discountPolicy: saved.discountPolicy ?? (hasSeats(tenant?.orgType) ? 'owner' : 'staff'),
+    // lat/lng stay undefined until the owner sets them (the QR check-in is off till then).
+    lat: saved.lat,
+    lng: saved.lng,
+    radiusM: saved.radiusM ?? 50,
   };
 }

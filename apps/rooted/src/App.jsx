@@ -37,6 +37,7 @@ import FinancePage from './pages/fee/FinancePage.jsx';
 import PendingFeesPage from './pages/fee/PendingFeesPage.jsx';
 import SeatMapPage from './pages/academic/SeatMapPage.jsx';
 import MySeatPage from './pages/me/MySeatPage.jsx';
+import ScanCheckInPage from './pages/me/ScanCheckInPage.jsx';
 import AppShell from './components/layout/AppShell.jsx';
 import DashboardPage from './pages/admin/DashboardPage.jsx';
 import TenantsPage from './pages/admin/TenantsPage.jsx';
@@ -683,6 +684,14 @@ function AppRoutes() {
           element={
             <RequirePermission permission="self:seat:read">
               <MySeatPage />
+            </RequirePermission>
+          }
+        />
+        <Route
+          path="/me/scan"
+          element={
+            <RequirePermission permission="self:seat:write">
+              <ScanCheckInPage />
             </RequirePermission>
           }
         />

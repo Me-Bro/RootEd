@@ -1,4 +1,6 @@
+import { timingSafeEqual } from 'node:crypto';
 import { Visit } from '../models/Visit.js';
+import { checkGeofence } from '../utils/geofence.js';
 import { Seat } from '../models/Seat.js';
 import { SeatAllocation } from '../models/SeatAllocation.js';
 import { Student } from '../models/Student.js';
@@ -63,6 +65,7 @@ export async function checkIn({
   seatId,
   recordedBy,
   isOwner,
+  method = 'manual',
   now = new Date(),
 }) {
   const tenantId = tenant._id;
@@ -118,6 +121,7 @@ export async function checkIn({
       seatId: chosen.seatId,
       inAt: now,
       isOpen: true,
+      method,
       recordedBy,
       outsideHours,
       entitlementAtCheckIn: entitlement.status,
@@ -154,6 +158,62 @@ export async function checkOut({ tenantId, visitId, now = new Date() }) {
   );
   if (!visit) throw new AppError('Visit not found, or already closed', 404);
   return visit;
+}
+
+const sameToken = (a, b) => {
+  const x = Buffer.from(String(a));
+  const y = Buffer.from(String(b));
+  return x.length === y.length && timingSafeEqual(x, y);
+};
+
+/**
+ * A learner scanned the centre's QR code: checks them out if they are inside, in
+ * otherwise. The code proves nothing alone (it can be photographed), so the phone
+ * must also be within the centre's radius. Owner-only rules (after hours) still bind.
+ */
+export async function scanToggle({
+  tenant,
+  studentId,
+  recordedBy,
+  token,
+  lat,
+  lng,
+  accuracy,
+  now,
+}) {
+  const centre = resolveCentreSettings(tenant);
+  const saved = tenant.settings?.centre?.qrToken;
+  if (!saved || !sameToken(token, saved)) {
+    throw new AppError('This QR code is no longer valid. Ask the centre for the current one', 403);
+  }
+  if (centre.lat == null || centre.lng == null) {
+    throw new AppError('This centre has not set its location yet', 422);
+  }
+  const geo = checkGeofence({ lat, lng, accuracy }, centre);
+  if (geo.vague) {
+    throw new AppError('Your location is too vague. Turn on precise location and retry', 422);
+  }
+  if (!geo.ok) {
+    throw new AppError(
+      `You are too far from the centre (${Math.round(geo.distanceM)} m away, limit ${centre.radiusM} m)`,
+      403
+    );
+  }
+
+  const open = await Visit.findOne({ tenantId: tenant._id, studentId, isOpen: true }, '_id').lean();
+  if (open) {
+    const visit = await checkOut({ tenantId: tenant._id, visitId: open._id, now });
+    return { action: 'check-out', visit, distanceM: geo.distanceM };
+  }
+  const result = await checkIn({
+    tenant,
+    studentId,
+    recordedBy,
+    isOwner: false,
+    method: 'qr',
+    now,
+  });
+  return { action: 'check-in', ...result, distanceM: geo.distanceM };
 }
 
 /** Who is in right now, with names and seats. */

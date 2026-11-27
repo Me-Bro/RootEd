@@ -18,6 +18,7 @@ import {
   reportCardSettingsSchema,
   tenantProfileSchema,
 } from '@rooted/shared/schemas';
+import { randomBytes } from 'node:crypto';
 import { hasSeats } from '@rooted/shared/utils';
 import { resolveCentreSettings } from '../utils/centreSettings.js';
 import { resolveReportCardConfig } from '../utils/reportCardConfig.js';
@@ -163,6 +164,13 @@ router.get('/settings', async (req, res, next) => {
     // Study centers also get the centre settings with defaults filled in, so the
     // settings page never has to know what an unsaved value means.
     if (hasSeats(tenant.orgType)) tenant.centre = resolveCentreSettings(req.tenant);
+    // The QR token is what lets a phone check in: only an owner sees it.
+    const qrToken = tenant.settings?.centre?.qrToken;
+    if (qrToken) {
+      tenant.settings = { ...tenant.settings, centre: { ...tenant.settings.centre } };
+      delete tenant.settings.centre.qrToken;
+      if (await userHasPermission(req, 'tenant:admin')) tenant.centreQrToken = qrToken;
+    }
     res.json(tenant);
   } catch (err) {
     next(err);
@@ -198,6 +206,24 @@ const pickProfile = (profile) =>
   Object.fromEntries(
     PROFILE_AUDIT_KEYS.filter((k) => profile?.[k] !== undefined).map((k) => [k, profile[k]])
   );
+
+// Makes (or replaces) the token printed in the centre's QR code. Replacing it
+// invalidates every poster already on the wall.
+router.post('/centre/qr', requirePermission('tenant:admin'), async (req, res, next) => {
+  try {
+    if (!hasSeats(req.tenant.orgType)) {
+      throw new AppError('Centre settings are only available for study centers', 400);
+    }
+    const qrToken = randomBytes(16).toString('hex');
+    await Tenant.updateOne(
+      { _id: req.tenant._id },
+      { $set: { 'settings.centre.qrToken': qrToken } }
+    );
+    res.json({ qrToken });
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.patch('/settings', requirePermission('tenant:admin'), async (req, res, next) => {
   try {
