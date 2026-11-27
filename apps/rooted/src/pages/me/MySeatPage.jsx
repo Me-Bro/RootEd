@@ -8,6 +8,7 @@ import { Card, CardContent } from '../../components/ui/Card.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import QrScanDialog from '../../components/org/QrScanDialog.jsx';
 import { canScanQr, checkInTokenFromScan } from '../../utils/joinScan.js';
+import { locationState, requestLocation } from '../../utils/geo.js';
 import ShiftSeats from '../../components/study/ShiftSeats.jsx';
 import { formatCurrency, formatDate } from '../../utils/intl.js';
 import { splitMinutes } from '../../utils/studyCenter.js';
@@ -18,10 +19,24 @@ export default function MySeatPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [scanning, setScanning] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [locationError, setLocationError] = useState(null); // null | 'denied' | 'unavailable'
   const { data, isLoading } = useQuery({
     queryKey: ['me', 'seat'],
     queryFn: () => api.get('/me/seat').then((r) => r.data),
   });
+
+  // Check-in needs the phone's location, so ask for it first, from this tap. If it is
+  // blocked the camera is never opened: scanning would only end in an error.
+  async function startScan() {
+    setLocationError(null);
+    setChecking(true);
+    const result =
+      (await locationState()) === 'denied' ? { error: 'denied' } : await requestLocation();
+    setChecking(false);
+    if (result.error) setLocationError(result.error);
+    else setScanning(true);
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -31,7 +46,14 @@ export default function MySeatPage() {
       />
       {canScanQr() && (
         <div>
-          <Button onClick={() => setScanning(true)}>{t('studyCenter.mySeat.scanButton')}</Button>
+          <Button disabled={checking} onClick={startScan}>
+            {checking ? t('studyCenter.mySeat.scanChecking') : t('studyCenter.mySeat.scanButton')}
+          </Button>
+          {locationError && (
+            <p role="alert" className="mt-2 text-sm text-destructive">
+              {locationError === 'denied' ? t('scan.locationDenied') : t('scan.noLocation')}
+            </p>
+          )}
           <QrScanDialog
             open={scanning}
             onOpenChange={setScanning}
