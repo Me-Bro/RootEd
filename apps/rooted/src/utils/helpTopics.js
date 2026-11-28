@@ -49,6 +49,18 @@ export const HELP_TOPICS = [
   {
     key: 'addStaff',
     group: 'setup',
+    audience: 'school',
+    steps: 4,
+    to: '/staff',
+    permission: 'staff:write',
+    module: 'staff',
+    paths: ['/staff'],
+  },
+  // A study center's staff are its front desk, not teachers.
+  {
+    key: 'addStaffCentre',
+    group: 'setup',
+    audience: 'centre',
     steps: 4,
     to: '/staff',
     permission: 'staff:write',
@@ -146,6 +158,26 @@ export const HELP_TOPICS = [
     paths: ['/academic/seat-map'],
   },
   {
+    key: 'centreSettings',
+    group: 'setup',
+    audience: 'centre',
+    steps: 3,
+    to: '/tenant/centre',
+    permission: 'tenant:admin',
+    module: 'academic',
+    paths: ['/tenant/centre'],
+  },
+  {
+    key: 'centreQr',
+    group: 'setup',
+    audience: 'centre',
+    steps: 3,
+    to: '/tenant/centre',
+    permission: 'tenant:admin',
+    module: 'academic',
+    paths: ['/tenant/centre'],
+  },
+  {
     key: 'myClasses',
     group: 'daily',
     audience: 'school',
@@ -185,6 +217,18 @@ export const HELP_TOPICS = [
     module: 'academic',
     paths: ['/desk', '/dashboard'],
   },
+  // The learner's own: scan the centre's QR code from My seat.
+  {
+    key: 'scanCheckIn',
+    group: 'daily',
+    audience: 'centre',
+    steps: 3,
+    to: '/me/seat',
+    // The scan itself (POST /me/visits/scan) needs write, not just seeing the seat.
+    permission: 'self:seat:write',
+    module: 'academic',
+    paths: ['/me/seat', '/me/scan'],
+  },
   {
     key: 'addExpense',
     group: 'daily',
@@ -204,6 +248,27 @@ export const HELP_TOPICS = [
     permission: 'fees:read',
     module: 'fee',
     paths: ['/fee/pending'],
+  },
+  // The Remind button is on Pending fees, the front desk row and the Billing tab.
+  {
+    key: 'remindWhatsapp',
+    group: 'daily',
+    audience: 'centre',
+    steps: 3,
+    to: '/fee/pending',
+    permission: 'fees:read',
+    module: 'fee',
+    paths: ['/fee/pending', '/desk'],
+  },
+  {
+    key: 'pauseBilling',
+    group: 'daily',
+    audience: 'centre',
+    steps: 3,
+    to: '/academic/students',
+    permission: 'tenant:admin',
+    module: 'fee',
+    paths: ['/academic/students'],
   },
   {
     key: 'monthlyMoney',

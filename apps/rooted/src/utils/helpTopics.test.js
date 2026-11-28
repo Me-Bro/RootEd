@@ -32,22 +32,49 @@ test('a study center gets centre topics only, a school gets school topics only',
     assert.ok(!centre.includes(k), `centre should not see ${k}`);
     assert.ok(school.includes(k), `school should see ${k}`);
   }
-  for (const k of ['addShift', 'addSeats', 'addPlan', 'seatMember', 'checkInOut']) {
+  for (const k of [
+    'addShift',
+    'addSeats',
+    'addPlan',
+    'seatMember',
+    'checkInOut',
+    'addStaffCentre',
+    'centreSettings',
+    'centreQr',
+    'pauseBilling',
+  ]) {
     assert.ok(centre.includes(k), `centre should see ${k}`);
     assert.ok(!school.includes(k), `school should not see ${k}`);
   }
-  assert.ok(centre.includes('addStaff') && school.includes('addStaff'));
+  // Each audience gets its own staff topic: teachers for a school, the front desk for a centre.
+  assert.ok(school.includes('addStaff') && !centre.includes('addStaff'));
   // Front desk staff: check-in/out only, none of the owner's setup topics.
   assert.deepEqual(keys(visibleTopics(['attendance:write'], on, HELP_TOPICS, true)), [
     'checkInOut',
   ]);
+  // The real front_desk role also reads fees, so it gets the reminder but not the owner's pause.
+  const desk = keys(
+    visibleTopics(
+      ['students:read', 'students:write', 'attendance:write', 'fees:read', 'fees:collect'],
+      on,
+      HELP_TOPICS,
+      true
+    )
+  );
+  assert.ok(desk.includes('remindWhatsapp') && !desk.includes('pauseBilling'));
+  // A learner: only the QR scan.
+  const learner = keys(visibleTopics(['self:seat:read', 'self:seat:write'], on, HELP_TOPICS, true));
+  assert.deepEqual(learner, ['scanCheckIn']);
 });
 
 test('topicsForPath puts the page topics first and matches sub-routes', () => {
   const { here, rest } = topicsForPath(HELP_TOPICS, '/academic/subjects');
   assert.deepEqual(keys(here), ['addSubject', 'assignTeacher']);
   assert.equal(here.length + rest.length, HELP_TOPICS.length);
-  assert.deepEqual(keys(topicsForPath(HELP_TOPICS, '/staff/123').here), ['addStaff']);
+  assert.deepEqual(keys(topicsForPath(HELP_TOPICS, '/staff/123').here), [
+    'addStaff',
+    'addStaffCentre',
+  ]);
   assert.deepEqual(keys(topicsForPath(HELP_TOPICS, '/staffing').here), []);
 });
 
