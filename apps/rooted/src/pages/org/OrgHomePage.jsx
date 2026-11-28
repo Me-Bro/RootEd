@@ -1,4 +1,4 @@
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowRight, Globe, Mail, MapPin, Phone } from 'lucide-react';
@@ -26,10 +26,6 @@ export default function OrgHomePage() {
     queryFn: () => api.get('/tenant/settings').then((r) => r.data),
   });
 
-  // Desk staff at a study center work from the front desk, as on the dashboard.
-  if (landsOnDesk({ seats: hasSeats(user?.orgType), permissions: user?.permissions })) {
-    return <Navigate to="/desk" replace />;
-  }
   if (settings.isLoading) return null;
 
   const data = settings.data;
@@ -39,9 +35,16 @@ export default function OrgHomePage() {
   const address = [form.line1, form.line2, place, form.country].filter(Boolean).join(', ');
 
   // One way in per area: the first item of each labelled group the nav shows.
+  // Desk staff at a study center are sent from the dashboard to the front desk, so
+  // their first shortcut goes to the desk directly.
+  const deskUser = landsOnDesk({ seats: hasSeats(user?.orgType), permissions: user?.permissions });
+  const start = deskUser
+    ? { to: '/desk', label: t('nav.desk') }
+    : { to: '/dashboard', label: t('nav.dashboard') };
   const shortcuts = visibleNavGroups(t, user)
     .filter((g) => g.label)
-    .map((g) => ({ label: g.label, ...g.items[0] }));
+    .map((g) => ({ label: g.label, ...g.items[0] }))
+    .filter((s) => s.to !== start.to);
 
   return (
     <div className="flex flex-col gap-6">
@@ -117,7 +120,7 @@ export default function OrgHomePage() {
           {t('orgHome.shortcuts')}
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Shortcut to="/dashboard" label={t('nav.dashboard')} />
+          <Shortcut to={start.to} label={start.label} />
           {shortcuts.map((s) => (
             <Shortcut key={s.to} to={s.to} label={s.label} />
           ))}

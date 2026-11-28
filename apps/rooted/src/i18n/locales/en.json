@@ -54,6 +54,7 @@
     "studyReports": "Reports",
     "accountSettings": "Account settings",
     "helpSupport": "Help & support",
+    "yourAccount": "Your account",
     "subjects": "Subjects",
     "emailLogs": "Email Logs",
     "pendingFees": "Pending fees",
@@ -260,6 +261,13 @@
         "step3": "Pick a Login role such as Teacher so they get an email link to set a password. Choose No login yet to add them without one.",
         "step4": "Added them without a login? Open their record and click Create login in the Login card."
       },
+      "addStaffCentre": {
+        "title": "Add a front desk staff member",
+        "step1": "Open Staff Directory and click Add Staff.",
+        "step2": "Fill in Basic Info and Contact.",
+        "step3": "Pick front desk as the Login role so they get an email link to set a password. They can add learners, check them in and out and take payments, but cannot change plans or settings.",
+        "step4": "Added them without a login? Open their record and click Create login in the Login card."
+      },
       "assignTeacher": {
         "title": "Choose who teaches a subject",
         "step1": "Open Subjects and click Teachers on the subject's row.",
@@ -319,8 +327,8 @@
       "addPlan": {
         "title": "Add a fee plan",
         "step1": "Open Fee Structures and click New Structure.",
-        "step2": "Name it, set the price, and choose Monthly or Weekly as the cycle.",
-        "step3": "A member is billed that price every cycle from their start date. Start the plan for a member from their page."
+        "step2": "Name it, keep Billing on Monthly (or pick Weekly), and enter the price in a row under Components.",
+        "step3": "A member is billed that price every cycle from their start date. To start it, open the member, go to the Billing tab and click Start plan."
       },
       "addMember": {
         "title": "Add members",
@@ -334,11 +342,29 @@
         "step2": "Choose a learner to seat, then click a free seat.",
         "step3": "To change it later, use Move or End on the seat. A seat cannot be held in two shifts that overlap."
       },
+      "centreSettings": {
+        "title": "Set opening hours and who gives discounts",
+        "step1": "Open Centre settings.",
+        "step2": "Set Opens at and Closes at, or tick Open 24 hours. After closing, only the owner can check someone in.",
+        "step3": "Under Who can apply a discount, choose Only the owner, The front desk too, or Anyone who manages fees, then click Save."
+      },
+      "centreQr": {
+        "title": "Let learners check in with a QR code",
+        "step1": "Open Centre settings. Standing inside the centre, click Use my current location, set the Radius, then click Save.",
+        "step2": "Click Create QR code, then Print, and put it up at the entrance.",
+        "step3": "Learners scan it to check in or out, only from inside the radius. Replace QR code makes every printed copy stop working."
+      },
       "checkInOut": {
         "title": "Check a member in and out",
         "step1": "Open Front desk.",
-        "step2": "Find the learner and click Check in. A warning shows if their plan is unpaid or has ended, but you can still check them in.",
+        "step2": "Find the learner and click Check in. A warning shows if they have no plan, or their plan is unpaid, paused, ended or not started yet, but you can still check them in.",
         "step3": "Click Check out when they leave. At closing time the owner can use Check out everyone."
+      },
+      "scanCheckIn": {
+        "title": "Check in with the QR code",
+        "step1": "Open My seat and tap Scan to check in / out.",
+        "step2": "Allow location when asked, then point the camera at the QR code at the centre entrance.",
+        "step3": "Scan again when you leave to check out. If something is wrong with your plan, you are still checked in, with a note to see the front desk."
       },
       "addExpense": {
         "title": "Record an expense",
@@ -349,8 +375,20 @@
       "pendingFees": {
         "title": "See who owes fees",
         "step1": "Open Pending fees.",
-        "step2": "Student-wise lists every learner with something due, largest first. Search by name or phone.",
+        "step2": "Student-wise lists every learner with something due, largest first. Search by name, admission number or phone.",
         "step3": "Month-wise shows, for each month, what was billed, what was paid and what is still pending."
+      },
+      "remindWhatsapp": {
+        "title": "Remind a learner to pay on WhatsApp",
+        "step1": "Find the learner on Pending fees, in the Front desk list, or on the Billing tab of their page.",
+        "step2": "Click Remind. WhatsApp opens with a reminder of the amount due already typed.",
+        "step3": "Check the message and press send in WhatsApp. Remind shows only for a learner who owes something and has a valid WhatsApp number."
+      },
+      "pauseBilling": {
+        "title": "Pause a learner's billing, or mark them withdrawn",
+        "step1": "Open the learner from Learners and go to the Billing tab.",
+        "step2": "Click Pause billing and choose the day: billing stops and their seats are freed. When they come back, click Resume billing; you can give a seat again there.",
+        "step3": "Leaving for good? Click Mark Withdrawn on their page to end billing. Reactivate opens it again and counts the time away as a pause."
       },
       "monthlyMoney": {
         "title": "Check the month's money",

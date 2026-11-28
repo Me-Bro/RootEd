@@ -84,7 +84,8 @@ function NewStructureModal({ open, onOpenChange }) {
   // A study center bills a learner every month or week from their own start date (or
   // charges a one-off fee): set per learner, no installments.
   const seats = hasSeats(user?.orgType);
-  const [cycle, setCycle] = useState('');
+  // Monthly is the usual plan, so it is the default; '' means a one-off fee.
+  const [cycle, setCycle] = useState('monthly');
 
   const { data: years = [] } = useQuery({
     queryKey: ['academic-years'],
@@ -126,7 +127,7 @@ function NewStructureModal({ open, onOpenChange }) {
       setName('');
       setYearId('');
       setDueDate('');
-      setCycle('');
+      setCycle('monthly');
       setComponents([{ label: '', amount: '', isOptional: false }]);
       setError('');
     },
@@ -182,9 +183,9 @@ function NewStructureModal({ open, onOpenChange }) {
                 onChange={(e) => setCycle(e.target.value)}
                 className={selectCls}
               >
-                <option value="">{t('studyCenter.plan.oneOff')}</option>
                 <option value="monthly">{t('studyCenter.plan.monthly')}</option>
                 <option value="weekly">{t('studyCenter.plan.weekly')}</option>
+                <option value="">{t('studyCenter.plan.oneOff')}</option>
               </select>
               <p className="text-xs text-muted-foreground">{t('studyCenter.plan.cycleHint')}</p>
             </div>

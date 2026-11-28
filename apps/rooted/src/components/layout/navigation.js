@@ -26,6 +26,7 @@ import {
   Settings2,
   ToggleLeft,
   UserCog,
+  UserPlus,
   Users,
   Wallet,
 } from 'lucide-react';
@@ -340,19 +341,7 @@ export function getNavGroups(t, orgType) {
         {
           to: '/tenant/join-policy',
           label: t('nav.joinPolicy'),
-          icon: Settings2,
-          permission: 'tenant:admin',
-        },
-        {
-          to: '/tenant/close',
-          label: t('nav.closeOrg'),
-          icon: Archive,
-          permission: 'tenant:admin',
-        },
-        {
-          to: '/tenant/report-card',
-          label: t('nav.reportCardSettings'),
-          icon: FileText,
+          icon: UserPlus,
           permission: 'tenant:admin',
         },
         {
@@ -362,6 +351,25 @@ export function getNavGroups(t, orgType) {
           permission: 'tenant:admin',
           seatsOnly: true,
         },
+        {
+          to: '/tenant/report-card',
+          label: t('nav.reportCardSettings'),
+          icon: FileText,
+          permission: 'tenant:admin',
+        },
+        // Last on purpose: the one irreversible action sits apart from the settings.
+        {
+          to: '/tenant/close',
+          label: t('nav.closeOrg'),
+          icon: Archive,
+          permission: 'tenant:admin',
+        },
+      ],
+    },
+    {
+      // The person's own items, not the organization's.
+      label: t('nav.yourAccount'),
+      items: [
         // No permission: account settings belong to the person, not the
         // organization, so every signed-in user has them.
         { to: '/settings/account', label: t('nav.accountSettings'), icon: UserCog },
